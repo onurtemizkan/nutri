@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Password reset
+  resetToken          String?
+  resetTokenExpiresAt DateTime?
+
+  // User profile data
+  goalCalories    Int      @default(2000)
+  goalProtein     Float    @default(150)
+  goalCarbs       Float    @default(200)
+  goalFat         Float    @default(65)
+  currentWeight   Float?
+  goalWeight      Float?
+  height          Float?
+  activityLevel   String   @default("moderate") // sedentary, light, moderate, active, veryActive
+
+  meals           Meal[]
+  waterIntakes    WaterIntake[]
+  weightRecords   WeightRecord[]
+
+  @@index([email])
+  @@index([resetToken])
+}
+
+model Meal {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name        String
+  mealType    String   // breakfast, lunch, dinner, snack
+  calories    Float
+  protein     Float
+  carbs       Float
+  fat         Float
+  fiber       Float?
+  sugar       Float?
+
+  servingSize String?
+  notes       String?
+  imageUrl    String?
+
+  consumedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, consumedAt])
+  @@index([userId, mealType])
+}
+
+model WaterIntake {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  amount    Float    // in ml
+  recordedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([userId, recordedAt])
+}
+
+model WeightRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  weight    Float    // in kg
+  recordedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([userId, recordedAt])
+}
