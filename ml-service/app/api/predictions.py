@@ -302,18 +302,18 @@ async def list_models(
                 with open(metadata_path, "rb") as f:
                     metadata = pickle.load(f)
 
-                # Load training metrics (if available)
-                # For now, use dummy metrics
+                # Load training metrics from metadata
                 from app.schemas.predictions import TrainingMetrics
 
+                validation_metrics = metadata.get("validation_metrics", {})
                 training_metrics = TrainingMetrics(
                     train_loss=metadata.get("train_loss", 0.0),
                     val_loss=metadata.get("val_loss", 0.0),
                     best_val_loss=metadata.get("best_val_loss", 0.0),
-                    mae=metadata.get("mae", 0.0),
-                    rmse=metadata.get("rmse", 0.0),
-                    r2_score=metadata.get("r2_score", 0.0),
-                    mape=metadata.get("mape", 0.0),
+                    mae=validation_metrics.get("mae", 0.0),
+                    rmse=validation_metrics.get("rmse", 0.0),
+                    r2_score=validation_metrics.get("r2_score", 0.0),
+                    mape=validation_metrics.get("mape", 0.0),
                     epochs_trained=metadata.get("epochs_trained", 0),
                     early_stopped=metadata.get("early_stopped", False),
                     training_time_seconds=metadata.get("training_time_seconds", 0.0),

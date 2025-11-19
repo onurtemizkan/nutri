@@ -5,7 +5,7 @@ Analyzes statistical correlations between nutrition/activity features and health
 Implements Pearson, Spearman, Kendall correlations with lag analysis for time-delayed effects.
 """
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, UTC
 from typing import List, Optional, Tuple
 
 import numpy as np
@@ -95,7 +95,7 @@ class CorrelationEngineService:
             return CorrelationResponse(
                 user_id=user_id,
                 target_metric=target_metric,
-                analyzed_at=datetime.utcnow(),
+                analyzed_at=datetime.now(UTC),
                 lookback_days=lookback_days,
                 correlations=[],
                 total_features_analyzed=0,
@@ -164,7 +164,7 @@ class CorrelationEngineService:
         return CorrelationResponse(
             user_id=user_id,
             target_metric=target_metric,
-            analyzed_at=datetime.utcnow(),
+            analyzed_at=datetime.now(UTC),
             lookback_days=lookback_days,
             correlations=top_correlations,
             total_features_analyzed=len(aligned_features.columns),
@@ -341,7 +341,7 @@ class CorrelationEngineService:
                 user_id=user_id,
                 target_metric=target_metric,
                 feature_name=feature_name,
-                analyzed_at=datetime.utcnow(),
+                analyzed_at=datetime.now(UTC),
                 lag_results=[],
                 optimal_lag_hours=None,
                 optimal_correlation=None,
@@ -426,7 +426,7 @@ class CorrelationEngineService:
             user_id=user_id,
             target_metric=target_metric,
             feature_name=feature_name,
-            analyzed_at=datetime.utcnow(),
+            analyzed_at=datetime.now(UTC),
             lag_results=lag_results,
             optimal_lag_hours=optimal_lag_hours,
             optimal_correlation=optimal_correlation,
@@ -681,7 +681,7 @@ class CorrelationEngineService:
         return CorrelationResponse(
             user_id=request.user_id,
             target_metric=request.target_metric,
-            analyzed_at=datetime.utcnow(),
+            analyzed_at=datetime.now(UTC),
             lookback_days=request.lookback_days,
             correlations=[],
             total_features_analyzed=0,
@@ -697,7 +697,7 @@ class CorrelationEngineService:
             user_id=request.user_id,
             target_metric=request.target_metric,
             feature_name=request.feature_name,
-            analyzed_at=datetime.utcnow(),
+            analyzed_at=datetime.now(UTC),
             lag_results=[],
             optimal_lag_hours=None,
             optimal_correlation=None,

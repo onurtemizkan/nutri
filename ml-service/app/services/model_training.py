@@ -162,6 +162,7 @@ class ModelTrainingService:
             config=config,
             feature_names=feature_names,
             request=request,
+            eval_metrics=eval_metrics,
         )
 
         print(f"✅ Model saved:")
@@ -443,6 +444,7 @@ class ModelTrainingService:
         config: LSTMConfig,
         feature_names: List[str],
         request: TrainModelRequest,
+        eval_metrics: Dict,
     ) -> Dict:
         """
         Save model and all artifacts needed for inference.
@@ -498,6 +500,12 @@ class ModelTrainingService:
                 "learning_rate": request.learning_rate,
                 "batch_size": request.batch_size,
                 "epochs": request.epochs,
+            },
+            "validation_metrics": {
+                "mae": eval_metrics["mae"],
+                "rmse": eval_metrics["rmse"],
+                "r2_score": eval_metrics["r2_score"],
+                "mape": eval_metrics["mape"],
             },
         }
 

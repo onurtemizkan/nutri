@@ -306,8 +306,9 @@ class PredictionService:
             {"lower": float, "upper": float}
         """
         # Use 1.96 * MAE as confidence interval width (approximation for 95% CI)
-        # In practice, this should use the model's prediction uncertainty
-        mae = metadata.get("mae", predicted_value * 0.1)  # Fallback: 10% of value
+        # Get MAE from validation_metrics (saved during training)
+        validation_metrics = metadata.get("validation_metrics", {})
+        mae = validation_metrics.get("mae", predicted_value * 0.1)  # Fallback: 10% of value
 
         margin = 1.96 * mae
 
@@ -334,7 +335,8 @@ class PredictionService:
             Confidence score between 0 and 1
         """
         # Factor 1: Model R² (0.5 to 1.0 maps to 0.5 to 1.0 confidence)
-        r2_score = metadata.get("r2_score", 0.5)
+        validation_metrics = metadata.get("validation_metrics", {})
+        r2_score = validation_metrics.get("r2_score", 0.5)
         r2_confidence = max(0, min(1, r2_score))
 
         # Factor 2: In-distribution check
@@ -537,10 +539,10 @@ class PredictionService:
         cached = await redis_client.get(cache_key)
 
         if cached:
-            import json
-
-            data = json.loads(cached)
-            return PredictResponse(**data)
+            # redis_client.get() already deserializes JSON to dict
+            # Set cached=True to indicate this came from cache
+            cached["cached"] = True
+            return PredictResponse(**cached)
 
         return None
 
@@ -548,13 +550,11 @@ class PredictionService:
         self, cache_key: str, response: PredictResponse
     ) -> None:
         """Cache prediction in Redis."""
-        import json
-
         # NOTE: Do NOT set response.cached = True here!
         # The cached flag should remain False for fresh predictions.
         # It's only True when retrieving from cache.
 
-        # Serialize to JSON
-        data = response.model_dump_json()
+        # Convert to dict (redis_client.set will handle JSON encoding)
+        data = response.model_dump()
 
         await redis_client.set(cache_key, data, ttl=self.cache_ttl)

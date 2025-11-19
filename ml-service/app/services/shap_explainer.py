@@ -433,8 +433,8 @@ class SHAPExplainerService:
         avg_feature_values = np.mean(feature_values, axis=0)
 
         for i, feature_name in enumerate(feature_names):
-            shap_value = float(shap_values[i])
-            feature_value = float(avg_feature_values[i])
+            shap_value = float(shap_values[i].item()) if hasattr(shap_values[i], 'item') else float(shap_values[i])
+            feature_value = float(avg_feature_values[i].item()) if hasattr(avg_feature_values[i], 'item') else float(avg_feature_values[i])
 
             # Determine impact direction
             if shap_value > 0:
