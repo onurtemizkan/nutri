@@ -8,7 +8,7 @@
  * - Configures global test lifecycle hooks
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Activity, HealthMetric, ActivityType, ActivityIntensity, HealthMetricType } from '@prisma/client';
 
 // Set test environment variables before any imports
 process.env.NODE_ENV = 'test';
@@ -190,26 +190,26 @@ export async function createTestActivity(userId: string, overrides?: Partial<{
   startedAt: Date;
   endedAt: Date;
   duration: number;
-  activityType: any;
-  intensity: any;
+  activityType: ActivityType;
+  intensity: ActivityIntensity;
   caloriesBurned: number;
   source: string;
-}>) {
+}>): Promise<Activity> {
   const now = new Date();
   const defaultActivity = {
     userId,
     startedAt: now,
     endedAt: new Date(now.getTime() + 30 * 60 * 1000), // 30 minutes later
     duration: 30,
-    activityType: 'RUNNING' as any,
-    intensity: 'MODERATE' as any,
+    activityType: ActivityType.RUNNING,
+    intensity: ActivityIntensity.MODERATE,
     caloriesBurned: 250,
     source: 'manual',
     ...overrides,
   };
 
   return prisma.activity.create({
-    data: defaultActivity as any,
+    data: defaultActivity,
   });
 }
 
@@ -218,15 +218,15 @@ export async function createTestActivity(userId: string, overrides?: Partial<{
  */
 export async function createTestHealthMetric(userId: string, overrides?: Partial<{
   recordedAt: Date;
-  metricType: any;
+  metricType: HealthMetricType;
   value: number;
   unit: string;
   source: string;
-}>) {
+}>): Promise<HealthMetric> {
   const defaultMetric = {
     userId,
     recordedAt: new Date(),
-    metricType: 'RESTING_HEART_RATE' as any,
+    metricType: HealthMetricType.RESTING_HEART_RATE,
     value: 60.0,
     unit: 'bpm',
     source: 'manual',
@@ -234,7 +234,7 @@ export async function createTestHealthMetric(userId: string, overrides?: Partial
   };
 
   return prisma.healthMetric.create({
-    data: defaultMetric as any,
+    data: defaultMetric,
   });
 }
 
@@ -254,7 +254,7 @@ export function assertValidToken(token: string) {
 /**
  * Assert that response has user data structure
  */
-export function assertUserStructure(user: any) {
+export function assertUserStructure(user: unknown): void {
   expect(user).toHaveProperty('id');
   expect(user).toHaveProperty('email');
   expect(user).toHaveProperty('name');
@@ -264,7 +264,7 @@ export function assertUserStructure(user: any) {
 /**
  * Assert that response has meal data structure
  */
-export function assertMealStructure(meal: any) {
+export function assertMealStructure(meal: unknown): void {
   expect(meal).toHaveProperty('id');
   expect(meal).toHaveProperty('userId');
   expect(meal).toHaveProperty('name');
@@ -277,7 +277,7 @@ export function assertMealStructure(meal: any) {
 /**
  * Assert that response has activity data structure
  */
-export function assertActivityStructure(activity: any) {
+export function assertActivityStructure(activity: unknown): void {
   expect(activity).toHaveProperty('id');
   expect(activity).toHaveProperty('userId');
   expect(activity).toHaveProperty('startedAt');
@@ -290,7 +290,7 @@ export function assertActivityStructure(activity: any) {
 /**
  * Assert that response has health metric data structure
  */
-export function assertHealthMetricStructure(metric: any) {
+export function assertHealthMetricStructure(metric: unknown): void {
   expect(metric).toHaveProperty('id');
   expect(metric).toHaveProperty('userId');
   expect(metric).toHaveProperty('metricType');

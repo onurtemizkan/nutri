@@ -3,6 +3,11 @@ import { z } from 'zod';
 import { healthMetricService } from '../services/healthMetricService';
 import { AuthenticatedRequest } from '../types';
 import { requireAuth } from '../utils/authHelpers';
+import {
+  parseOptionalHealthMetricType,
+  parseOptionalHealthMetricSource,
+  parseHealthMetricType,
+} from '../utils/enumValidation';
 
 // Zod schemas for validation
 const createHealthMetricSchema = z.object({
@@ -115,10 +120,10 @@ export class HealthMetricController {
       if (!userId) return;
 
       const query = {
-        metricType: req.query.metricType as any,
+        metricType: parseOptionalHealthMetricType(req.query.metricType),
         startDate: req.query.startDate ? new Date(req.query.startDate as string) : undefined,
         endDate: req.query.endDate ? new Date(req.query.endDate as string) : undefined,
-        source: req.query.source as any,
+        source: parseOptionalHealthMetricSource(req.query.source),
         limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
       };
 
@@ -158,12 +163,7 @@ export class HealthMetricController {
       const userId = requireAuth(req, res);
       if (!userId) return;
 
-      const metricType = req.params.metricType as any;
-
-      if (!metricType) {
-        res.status(400).json({ error: 'Metric type is required' });
-        return;
-      }
+      const metricType = parseHealthMetricType(req.params.metricType);
 
       const metric = await healthMetricService.getLatestMetric(userId, metricType);
 
@@ -188,7 +188,7 @@ export class HealthMetricController {
       const userId = requireAuth(req, res);
       if (!userId) return;
 
-      const metricType = req.params.metricType as any;
+      const metricType = parseHealthMetricType(req.params.metricType);
       const date = req.query.date ? new Date(req.query.date as string) : undefined;
 
       const average = await healthMetricService.getDailyAverage(userId, metricType, date);
@@ -214,7 +214,7 @@ export class HealthMetricController {
       const userId = requireAuth(req, res);
       if (!userId) return;
 
-      const metricType = req.params.metricType as any;
+      const metricType = parseHealthMetricType(req.params.metricType);
 
       const average = await healthMetricService.getWeeklyAverage(userId, metricType);
 
@@ -239,7 +239,7 @@ export class HealthMetricController {
       const userId = requireAuth(req, res);
       if (!userId) return;
 
-      const metricType = req.params.metricType as any;
+      const metricType = parseHealthMetricType(req.params.metricType);
       const startDate = req.query.startDate ? new Date(req.query.startDate as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : new Date();
 
@@ -266,7 +266,7 @@ export class HealthMetricController {
       const userId = requireAuth(req, res);
       if (!userId) return;
 
-      const metricType = req.params.metricType as any;
+      const metricType = parseHealthMetricType(req.params.metricType);
       const days = req.query.days ? parseInt(req.query.days as string) : 30;
 
       const stats = await healthMetricService.getMetricStats(userId, metricType, days);

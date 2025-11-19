@@ -13,6 +13,7 @@ import {
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authApi } from '@/lib/api/auth';
+import { getErrorMessage } from '@/lib/utils/errorHandling';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -53,15 +54,15 @@ export default function ForgotPasswordScreen() {
             },
             {
               text: 'Go to Reset',
-              onPress: () => router.push('/auth/reset-password' as any)
+              onPress: () => router.push('/auth/reset-password')
             }
           ]
         );
       }
-    } catch (error: any) {
+    } catch (error) {
       Alert.alert(
         'Error',
-        error.response?.data?.error || 'Failed to send reset email'
+        getErrorMessage(error, 'Failed to send reset email')
       );
     } finally {
       setIsLoading(false);

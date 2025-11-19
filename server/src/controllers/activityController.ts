@@ -3,6 +3,12 @@ import { z } from 'zod';
 import { activityService } from '../services/activityService';
 import { AuthenticatedRequest } from '../types';
 import { requireAuth } from '../utils/authHelpers';
+import {
+  parseOptionalActivityType,
+  parseOptionalActivityIntensity,
+  parseOptionalActivitySource,
+  parseActivityType,
+} from '../utils/enumValidation';
 
 // Zod schemas for validation
 const createActivitySchema = z.object({
@@ -152,11 +158,11 @@ export class ActivityController {
       if (!userId) return;
 
       const query = {
-        activityType: req.query.activityType as any,
-        intensity: req.query.intensity as any,
+        activityType: parseOptionalActivityType(req.query.activityType),
+        intensity: parseOptionalActivityIntensity(req.query.intensity),
         startDate: req.query.startDate ? new Date(req.query.startDate as string) : undefined,
         endDate: req.query.endDate ? new Date(req.query.endDate as string) : undefined,
-        source: req.query.source as any,
+        source: parseOptionalActivitySource(req.query.source),
         limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
       };
 
@@ -283,7 +289,7 @@ export class ActivityController {
       const userId = requireAuth(req, res);
       if (!userId) return;
 
-      const activityType = req.params.activityType as any;
+      const activityType = parseActivityType(req.params.activityType);
       const days = req.query.days ? parseInt(req.query.days as string) : 30;
 
       const stats = await activityService.getActivityStatsByType(userId, activityType, days);

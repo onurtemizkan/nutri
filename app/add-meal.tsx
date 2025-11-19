@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { mealsApi } from '@/lib/api/meals';
 import { CreateMealInput } from '@/lib/types';
+import { getErrorMessage } from '@/lib/utils/errorHandling';
 
 export default function AddMealScreen() {
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('lunch');
@@ -63,8 +64,8 @@ export default function AddMealScreen() {
           onPress: () => router.back(),
         },
       ]);
-    } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.error || 'Failed to add meal');
+    } catch (error) {
+      Alert.alert('Error', getErrorMessage(error, 'Failed to add meal'));
     } finally {
       setIsLoading(false);
     }

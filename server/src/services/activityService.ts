@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import { CreateActivityInput, UpdateActivityInput, GetActivitiesQuery, ActivityType } from '../types';
+import { Prisma } from '@prisma/client';
 
 export class ActivityService {
   /**
@@ -61,7 +62,7 @@ export class ActivityService {
   async getActivities(userId: string, query: GetActivitiesQuery = {}) {
     const { activityType, intensity, startDate, endDate, source, limit = 100 } = query;
 
-    const where: any = { userId };
+    const where: Prisma.ActivityWhereInput = { userId };
 
     if (activityType) {
       where.activityType = activityType;

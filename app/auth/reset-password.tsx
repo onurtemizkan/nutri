@@ -14,6 +14,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authApi } from '@/lib/api/auth';
+import { getErrorMessage } from '@/lib/utils/errorHandling';
 
 export default function ResetPasswordScreen() {
   const [token, setToken] = useState('');
@@ -40,14 +41,14 @@ export default function ResetPasswordScreen() {
       const response = await authApi.verifyResetToken(tokenToVerify);
       setTokenValid(true);
       setUserEmail(response.email);
-    } catch (error: any) {
+    } catch (error) {
       Alert.alert(
         'Invalid Token',
         'This password reset link is invalid or has expired. Please request a new one.',
         [
           {
             text: 'Request New Link',
-            onPress: () => router.push('/auth/forgot-password' as any),
+            onPress: () => router.push('/auth/forgot-password'),
           },
         ]
       );
@@ -100,10 +101,10 @@ export default function ResetPasswordScreen() {
           },
         ]
       );
-    } catch (error: any) {
+    } catch (error) {
       Alert.alert(
         'Reset Failed',
-        error.response?.data?.error || 'Failed to reset password. The token may have expired.'
+        getErrorMessage(error, 'Failed to reset password. The token may have expired.')
       );
     } finally {
       setIsLoading(false);
@@ -162,7 +163,7 @@ export default function ResetPasswordScreen() {
               <View style={styles.footer}>
                 <Text style={styles.footerText}>Don't have a token? </Text>
                 <TouchableOpacity
-                  onPress={() => router.push('/auth/forgot-password' as any)}
+                  onPress={() => router.push('/auth/forgot-password')}
                   disabled={isLoading}
                 >
                   <Text style={styles.link}>Request One</Text>

@@ -13,6 +13,7 @@ import {
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/context/AuthContext';
+import { getErrorMessage } from '@/lib/utils/errorHandling';
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
@@ -38,10 +39,10 @@ export default function SignInScreen() {
     try {
       await login(email, password);
       router.replace('/(tabs)');
-    } catch (error: any) {
+    } catch (error) {
       Alert.alert(
         'Sign In Failed',
-        error.response?.data?.error || 'Invalid email or password'
+        getErrorMessage(error, 'Invalid email or password')
       );
     } finally {
       setIsLoading(false);
@@ -77,7 +78,7 @@ export default function SignInScreen() {
             <View style={styles.inputContainer}>
               <View style={styles.labelRow}>
                 <Text style={styles.label}>Password</Text>
-                <Link href={"/auth/forgot-password" as any} asChild>
+                <Link href="/auth/forgot-password" asChild>
                   <TouchableOpacity disabled={isLoading}>
                     <Text style={styles.forgotPasswordLink}>Forgot?</Text>
                   </TouchableOpacity>

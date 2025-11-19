@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import { CreateHealthMetricInput, GetHealthMetricsQuery, HealthMetricType } from '../types';
+import { Prisma } from '@prisma/client';
 
 export class HealthMetricService {
   /**
@@ -49,7 +50,7 @@ export class HealthMetricService {
   async getHealthMetrics(userId: string, query: GetHealthMetricsQuery = {}) {
     const { metricType, startDate, endDate, source, limit = 100 } = query;
 
-    const where: any = { userId };
+    const where: Prisma.HealthMetricWhereInput = { userId };
 
     if (metricType) {
       where.metricType = metricType;

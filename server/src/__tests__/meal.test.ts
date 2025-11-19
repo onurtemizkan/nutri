@@ -209,7 +209,7 @@ describe('Meal API Endpoints', () => {
 
       expect(Array.isArray(response.body)).toBe(true);
       expect(response.body).toHaveLength(3);
-      response.body.forEach((meal: any) => assertMealStructure(meal));
+      response.body.forEach((meal: unknown) => assertMealStructure(meal));
     });
 
     it('should get meals filtered by date', async () => {
