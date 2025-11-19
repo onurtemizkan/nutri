@@ -8,50 +8,10 @@ import {
   parseOptionalHealthMetricSource,
   parseHealthMetricType,
 } from '../utils/enumValidation';
-
-// Zod schemas for validation
-const createHealthMetricSchema = z.object({
-  metricType: z.enum([
-    'RESTING_HEART_RATE',
-    'HEART_RATE_VARIABILITY_SDNN',
-    'HEART_RATE_VARIABILITY_RMSSD',
-    'BLOOD_PRESSURE_SYSTOLIC',
-    'BLOOD_PRESSURE_DIASTOLIC',
-    'RESPIRATORY_RATE',
-    'OXYGEN_SATURATION',
-    'VO2_MAX',
-    'SLEEP_DURATION',
-    'DEEP_SLEEP_DURATION',
-    'REM_SLEEP_DURATION',
-    'SLEEP_EFFICIENCY',
-    'SLEEP_SCORE',
-    'STEPS',
-    'ACTIVE_CALORIES',
-    'TOTAL_CALORIES',
-    'EXERCISE_MINUTES',
-    'STANDING_HOURS',
-    'RECOVERY_SCORE',
-    'STRAIN_SCORE',
-    'READINESS_SCORE',
-    'BODY_FAT_PERCENTAGE',
-    'MUSCLE_MASS',
-    'BONE_MASS',
-    'WATER_PERCENTAGE',
-    'SKIN_TEMPERATURE',
-    'BLOOD_GLUCOSE',
-    'STRESS_LEVEL',
-  ]),
-  value: z.number(),
-  unit: z.string().min(1, 'Unit is required'),
-  recordedAt: z.string().datetime(),
-  source: z.enum(['apple_health', 'fitbit', 'garmin', 'oura', 'whoop', 'manual']),
-  sourceId: z.string().optional(),
-  metadata: z.record(z.any()).optional(),
-});
-
-const bulkCreateHealthMetricsSchema = z.object({
-  metrics: z.array(createHealthMetricSchema).min(1, 'At least one metric is required'),
-});
+import {
+  createHealthMetricSchema,
+  bulkCreateHealthMetricsSchema,
+} from '../validation/schemas';
 
 export class HealthMetricController {
   async createHealthMetric(req: AuthenticatedRequest, res: Response): Promise<void> {

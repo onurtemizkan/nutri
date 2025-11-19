@@ -9,85 +9,11 @@ import {
   parseOptionalActivitySource,
   parseActivityType,
 } from '../utils/enumValidation';
-
-// Zod schemas for validation
-const createActivitySchema = z.object({
-  activityType: z.enum([
-    'RUNNING',
-    'CYCLING',
-    'SWIMMING',
-    'WALKING',
-    'HIKING',
-    'ROWING',
-    'ELLIPTICAL',
-    'WEIGHT_TRAINING',
-    'BODYWEIGHT',
-    'CROSSFIT',
-    'POWERLIFTING',
-    'BASKETBALL',
-    'SOCCER',
-    'TENNIS',
-    'GOLF',
-    'YOGA',
-    'PILATES',
-    'STRETCHING',
-    'MARTIAL_ARTS',
-    'DANCE',
-    'OTHER',
-  ]),
-  intensity: z.enum(['LOW', 'MODERATE', 'HIGH', 'MAXIMUM']),
-  startedAt: z.string().datetime(),
-  endedAt: z.string().datetime(),
-  duration: z.number().int().min(1, 'Duration must be at least 1 minute'),
-  caloriesBurned: z.number().min(0).optional(),
-  averageHeartRate: z.number().min(0).optional(),
-  maxHeartRate: z.number().min(0).optional(),
-  distance: z.number().min(0).optional(),
-  steps: z.number().int().min(0).optional(),
-  source: z.enum(['apple_health', 'strava', 'garmin', 'manual']),
-  sourceId: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-const updateActivitySchema = z.object({
-  activityType: z.enum([
-    'RUNNING',
-    'CYCLING',
-    'SWIMMING',
-    'WALKING',
-    'HIKING',
-    'ROWING',
-    'ELLIPTICAL',
-    'WEIGHT_TRAINING',
-    'BODYWEIGHT',
-    'CROSSFIT',
-    'POWERLIFTING',
-    'BASKETBALL',
-    'SOCCER',
-    'TENNIS',
-    'GOLF',
-    'YOGA',
-    'PILATES',
-    'STRETCHING',
-    'MARTIAL_ARTS',
-    'DANCE',
-    'OTHER',
-  ]).optional(),
-  intensity: z.enum(['LOW', 'MODERATE', 'HIGH', 'MAXIMUM']).optional(),
-  startedAt: z.string().datetime().optional(),
-  endedAt: z.string().datetime().optional(),
-  duration: z.number().int().min(1).optional(),
-  caloriesBurned: z.number().min(0).optional(),
-  averageHeartRate: z.number().min(0).optional(),
-  maxHeartRate: z.number().min(0).optional(),
-  distance: z.number().min(0).optional(),
-  steps: z.number().int().min(0).optional(),
-  notes: z.string().optional(),
-});
-
-const bulkCreateActivitiesSchema = z.object({
-  activities: z.array(createActivitySchema).min(1, 'At least one activity is required'),
-});
+import {
+  createActivitySchema,
+  updateActivitySchema,
+  bulkCreateActivitiesSchema,
+} from '../validation/schemas';
 
 export class ActivityController {
   async createActivity(req: AuthenticatedRequest, res: Response): Promise<void> {

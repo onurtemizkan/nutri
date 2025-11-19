@@ -1,6 +1,7 @@
 import prisma from '../config/database';
 import { CreateHealthMetricInput, GetHealthMetricsQuery, HealthMetricType } from '../types';
 import { Prisma } from '@prisma/client';
+import { DEFAULT_PAGE_LIMIT, DEFAULT_TIME_PERIOD_DAYS } from '../config/constants';
 
 export class HealthMetricService {
   /**
@@ -48,7 +49,7 @@ export class HealthMetricService {
    * Get health metrics with flexible filtering
    */
   async getHealthMetrics(userId: string, query: GetHealthMetricsQuery = {}) {
-    const { metricType, startDate, endDate, source, limit = 100 } = query;
+    const { metricType, startDate, endDate, source, limit = DEFAULT_PAGE_LIMIT } = query;
 
     const where: Prisma.HealthMetricWhereInput = { userId };
 

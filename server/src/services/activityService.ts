@@ -1,6 +1,7 @@
 import prisma from '../config/database';
 import { CreateActivityInput, UpdateActivityInput, GetActivitiesQuery, ActivityType } from '../types';
 import { Prisma } from '@prisma/client';
+import { DEFAULT_PAGE_LIMIT } from '../config/constants';
 
 export class ActivityService {
   /**
@@ -60,7 +61,7 @@ export class ActivityService {
    * Get activities with flexible filtering
    */
   async getActivities(userId: string, query: GetActivitiesQuery = {}) {
-    const { activityType, intensity, startDate, endDate, source, limit = 100 } = query;
+    const { activityType, intensity, startDate, endDate, source, limit = DEFAULT_PAGE_LIMIT } = query;
 
     const where: Prisma.ActivityWhereInput = { userId };
 
