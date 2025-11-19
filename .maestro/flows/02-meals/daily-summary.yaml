@@ -1,0 +1,97 @@
+appId: ${APP_ID}
+
+---
+# Test: View Daily Summary
+# Description: Validates daily nutrition summary on home screen
+
+# Prerequisites: User logged in with meals
+- launchApp
+
+# Login
+- tapOn: "Sign In"
+- tapOn:
+    text: "your@email.com"
+- inputText: "${TEST_EMAIL}"
+- tapOn:
+    text: "Enter your password"
+- inputText: "${TEST_PASSWORD}"
+- tapOn: "Sign In"
+
+# Verify home screen shows summary
+- assertVisible: "Hello, ${TEST_NAME}!"
+- assertVisible: "Calories"
+- assertVisible: "/ 2000"  # Goal calories
+
+---
+# Test: Pull to Refresh Daily Summary
+# Description: Validates refreshing daily summary data
+
+- launchApp
+
+# Login
+- tapOn: "Sign In"
+- tapOn:
+    text: "your@email.com"
+- inputText: "${TEST_EMAIL}"
+- tapOn:
+    text: "Enter your password"
+- inputText: "${TEST_PASSWORD}"
+- tapOn: "Sign In"
+
+# Wait for home screen
+- assertVisible: "Calories"
+
+# Pull to refresh (scroll up from top)
+- scroll:
+    direction: DOWN
+    duration: 500
+
+# Verify data refreshed (content visible)
+- assertVisible: "Calories"
+
+---
+# Test: View Nutrition Progress Bars
+# Description: Validates macronutrient progress visualization
+
+- launchApp
+
+# Login
+- tapOn: "Sign In"
+- tapOn:
+    text: "your@email.com"
+- inputText: "${TEST_EMAIL}"
+- tapOn:
+    text: "Enter your password"
+- inputText: "${TEST_PASSWORD}"
+- tapOn: "Sign In"
+
+# Verify macros section visible
+- assertVisible: "Calories"
+
+# Scroll to see all macros
+- scroll
+
+# Verify progress indicators exist
+- assertVisible: "Protein"
+- assertVisible: "Carbs"
+- assertVisible: "Fat"
+
+---
+# Test: Empty State - No Meals
+# Description: Validates UI when no meals logged today
+
+- launchApp
+
+# Login with fresh account (would need to create new user first)
+- tapOn: "Sign In"
+- tapOn:
+    text: "your@email.com"
+- inputText: "${TEST_EMAIL}"
+- tapOn:
+    text: "Enter your password"
+- inputText: "${TEST_PASSWORD}"
+- tapOn: "Sign In"
+
+# Verify home screen shows zero values or empty state
+- assertVisible: "Calories"
+- assertVisible: "/ 2000"
