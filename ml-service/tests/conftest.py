@@ -12,6 +12,7 @@ import pytest_asyncio
 import asyncio
 from typing import AsyncGenerator, Generator
 
+from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -110,6 +111,25 @@ def override_get_db(db: AsyncSession):
 
     # Cleanup
     app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture(scope="function")
+async def client(override_get_db) -> AsyncGenerator[AsyncClient, None]:
+    """
+    Create an async HTTP client for testing API endpoints.
+
+    This client automatically uses the test database through the
+    override_get_db fixture.
+
+    Usage:
+        async def test_endpoint(client: AsyncClient):
+            response = await client.get("/api/endpoint")
+            assert response.status_code == 200
+    """
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
+        yield ac
 
 
 # ============================================================================
