@@ -34,6 +34,10 @@ export class AuthService {
         goalProtein: true,
         goalCarbs: true,
         goalFat: true,
+        currentWeight: true,
+        goalWeight: true,
+        height: true,
+        activityLevel: true,
         createdAt: true,
       },
     });
