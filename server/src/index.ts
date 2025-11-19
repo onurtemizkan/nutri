@@ -4,6 +4,8 @@ import { config } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './routes/authRoutes';
 import mealRoutes from './routes/mealRoutes';
+import healthMetricRoutes from './routes/healthMetricRoutes';
+import activityRoutes from './routes/activityRoutes';
 
 const app = express();
 
@@ -20,6 +22,8 @@ app.get('/health', (_req, res) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/meals', mealRoutes);
+app.use('/api/health-metrics', healthMetricRoutes);
+app.use('/api/activities', activityRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

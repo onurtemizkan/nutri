@@ -1,42 +1,88 @@
-# Nutri - Nutrition Tracking App
+# Nutri - Nutrition Tracking App with ML Engine
 
-A full-stack nutrition tracking application built with React Native (Expo) and Node.js. Track your daily meals, calories, and macronutrients with a beautiful, modern interface.
+A full-stack nutrition tracking mobile application built with React Native (Expo), Node.js, and an in-house Python ML engine. Track your daily meals, calories, and macronutrients while our ML engine analyzes how your nutrition affects your health metrics (RHR, HRV, recovery).
+
+## 🚨 Project Architecture
+
+**Mobile App + In-House ML (NOT Chatbot + NOT External Services)**
+
+- ✅ **React Native mobile app** (Expo) with structured UI
+- ✅ **In-house ML models** (PyTorch, scikit-learn, XGBoost)
+- ✅ **Node.js backend** (Express + TypeScript + Prisma + PostgreSQL)
+- ✅ **Python ML service** (FastAPI + async SQLAlchemy + Redis)
+- ❌ **NOT a chatbot** or conversational interface
+- ❌ **NOT using external ML APIs** (OpenAI, AWS ML, Google AI, etc.)
+
+**See `ARCHITECTURE.md` for complete system design.**
+
+---
 
 ## Features
 
-### Mobile App
+### Mobile App (React Native)
 - **Authentication**: Secure sign up/sign in with JWT tokens
 - **Daily Dashboard**: View calorie and macronutrient progress at a glance
 - **Meal Tracking**: Log breakfast, lunch, dinner, and snacks
 - **Nutrition Breakdown**: Track calories, protein, carbs, fat, and fiber
 - **User Goals**: Set and manage your daily nutrition goals
 - **Profile Management**: Update your goals and account settings
+- **Health Metrics**: Sync data from smartwatches (Apple Health, Fitbit, Garmin, Oura, Whoop)
+- **ML Insights** (Coming Soon): View how your nutrition affects your health metrics
+- **Predictions** (Coming Soon): See forecasts for tomorrow's RHR, HRV based on today's nutrition
 
-### Backend API
+### Backend API (Node.js)
 - **RESTful API**: Built with Express.js and TypeScript
 - **PostgreSQL Database**: Robust data storage with Prisma ORM
 - **JWT Authentication**: Secure token-based authentication
 - **Meal Management**: Full CRUD operations for meals
+- **Health Metrics API**: Track RHR, HRV, sleep, recovery, steps (30+ metric types)
+- **Activity Tracking**: Log workouts and exercise (17+ activity types)
 - **Daily/Weekly Summaries**: Get nutrition insights over time
+
+### ML Service (Python) - IN-HOUSE MODELS
+- **Feature Engineering**: Transforms raw data into 50+ ML features
+- **Correlation Analysis**: Finds patterns (e.g., "high protein → better HRV")
+- **Predictions**: LSTM neural networks (PyTorch) for RHR/HRV forecasting
+- **Recommendations**: Personalized nutrition plans based on your data
+- **Anomaly Detection**: Alerts for unusual health patterns
+- **All models trained in-house** using PyTorch, scikit-learn, XGBoost
 
 ## Tech Stack
 
-### Mobile App
-- React Native (Expo)
+### Mobile App (React Native)
+- React Native + Expo
 - TypeScript
 - Expo Router (file-based routing)
 - Axios (API calls)
 - Expo Secure Store (token storage)
+- Victory Native or React Native Charts (data visualization)
 
-### Backend
-- Node.js
-- TypeScript
+### Backend (Node.js)
+- Node.js + TypeScript
 - Express.js
 - Prisma ORM
-- PostgreSQL
+- PostgreSQL 16
 - JWT for authentication
 - bcryptjs for password hashing
 - Zod for validation
+
+### ML Service (Python) - IN-HOUSE ONLY
+- **Framework**: FastAPI + Uvicorn
+- **Database**: SQLAlchemy (async) + asyncpg
+- **Cache**: Redis (aioredis)
+- **ML Libraries** (no external ML APIs):
+  - **PyTorch** (LSTM neural networks for deep learning)
+  - scikit-learn (correlation, regression, Isolation Forest)
+  - XGBoost (gradient boosting)
+  - statsmodels (Granger causality, statistical tests)
+  - scipy (Pearson/Spearman correlation)
+  - Prophet (Facebook's time series library)
+  - pandas, numpy (data manipulation)
+
+### Infrastructure
+- PostgreSQL 16 (shared database)
+- Redis 7 (ML caching layer)
+- Docker + docker-compose (local development)
 
 ## Project Structure
 
@@ -56,16 +102,36 @@ nutri/
 │   ├── api/               # API client
 │   ├── context/           # React contexts (Auth)
 │   └── types/             # TypeScript types
-├── server/                # Backend API
+├── server/                # Node.js Backend API
 │   ├── src/
-│   │   ├── controllers/   # Request handlers
-│   │   ├── services/      # Business logic
+│   │   ├── controllers/   # Request handlers (auth, meals, health-metrics, activities)
+│   │   ├── services/      # Business logic (healthMetricService, activityService)
 │   │   ├── routes/        # API routes
 │   │   ├── middleware/    # Auth & error handling
 │   │   ├── config/        # Configuration
-│   │   └── types/         # TypeScript types
-│   └── prisma/            # Database schema
-└── components/            # Reusable UI components
+│   │   └── types/         # TypeScript types (30+ health metrics, 17+ activities)
+│   └── prisma/            # Database schema (User, Meal, HealthMetric, Activity, MLFeature, etc.)
+├── ml-service/            # Python ML Service (IN-HOUSE MODELS)
+│   ├── app/
+│   │   ├── main.py        # FastAPI app entry point
+│   │   ├── config.py      # Environment configuration
+│   │   ├── database.py    # Async SQLAlchemy connection
+│   │   ├── redis_client.py # ML-specific caching
+│   │   ├── models/        # SQLAlchemy models (matching Prisma)
+│   │   ├── schemas/       # Pydantic schemas (TODO - Phase 1)
+│   │   ├── services/      # ML business logic (TODO - Phase 1)
+│   │   │   ├── feature_engineering.py (50+ features)
+│   │   │   ├── correlation_engine.py (Pearson, Spearman, Granger)
+│   │   │   └── prediction_service.py (LSTM, XGBoost)
+│   │   └── api/           # ML API routes (TODO - Phase 1)
+│   ├── requirements.txt   # Python dependencies (TensorFlow, scikit-learn, etc.)
+│   ├── Dockerfile         # Multi-stage Docker build
+│   ├── docker-compose.yml # Full stack (PostgreSQL + Redis + ML service)
+│   └── README.md          # ML service documentation
+├── components/            # Reusable UI components
+├── ARCHITECTURE.md        # 🚨 CRITICAL: Complete system architecture
+├── ML_ENGINE_COMPREHENSIVE_PLAN.md  # Full ML implementation plan (1,000+ lines)
+└── ML_ENGINE_QUICK_START.md         # Quick reference guide
 ```
 
 ## Getting Started

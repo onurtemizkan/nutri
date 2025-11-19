@@ -1,0 +1,75 @@
+{
+  "name": "nutri-ml-service",
+  "version": "1.0.0",
+  "description": "Nutri ML Service - Nutrition tracking with LSTM predictions, SHAP explainability, and what-if analysis",
+  "scripts": {
+    "preinstall": "echo '⚠️  This is a Python project. Use: npm run setup' && exit 0",
+
+    "setup": "npm run setup:env && npm run setup:venv && npm run setup:deps",
+    "setup:env": "node scripts/setup-env.js",
+    "setup:venv": "python3 -m venv venv && echo '✅ Virtual environment created'",
+    "setup:deps": "bash -c 'source venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt'",
+    "setup:redis": "bash scripts/setup-redis.sh",
+
+    "test": "bash -c 'source venv/bin/activate && python -m pytest tests/ -v --tb=short'",
+    "test:watch": "bash -c 'source venv/bin/activate && ptw tests/ -- -v --tb=short'",
+    "test:coverage": "bash -c 'source venv/bin/activate && python -m pytest tests/ --cov=app --cov-report=html --cov-report=term'",
+    "test:phase1": "bash -c 'source venv/bin/activate && python -m pytest tests/test_e2e_phase1.py -v --tb=short'",
+    "test:phase2": "bash -c 'source venv/bin/activate && python -m pytest tests/test_e2e_phase2.py -v --tb=short'",
+    "test:phase3": "bash -c 'source venv/bin/activate && python -m pytest tests/test_e2e_phase3.py -v --tb=short'",
+    "test:pipeline": "bash -c 'source venv/bin/activate && python -m pytest tests/test_e2e_full_pipeline.py -v --tb=short'",
+    "test:fast": "bash -c 'source venv/bin/activate && python -m pytest tests/ -v --tb=line -x'",
+    "test:debug": "bash -c 'source venv/bin/activate && python -m pytest tests/ -v --tb=long -s'",
+    "test:parallel": "bash -c 'source venv/bin/activate && python -m pytest tests/ -n auto -v'",
+
+    "test:with-redis": "npm run redis:start && npm run test && npm run redis:stop",
+    "test:all": "npm run test:coverage",
+
+    "redis:start": "bash scripts/redis-start.sh",
+    "redis:stop": "bash scripts/redis-stop.sh",
+    "redis:status": "bash scripts/redis-status.sh",
+    "redis:flush": "bash scripts/redis-flush.sh",
+    "redis:cli": "redis-cli",
+
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f ml-service",
+    "docker:test": "docker-compose exec ml-service pytest tests/ -v",
+
+    "dev": "bash -c 'source venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000'",
+    "dev:with-redis": "npm run redis:start && npm run dev",
+
+    "lint": "bash -c 'source venv/bin/activate && flake8 app/ tests/'",
+    "format": "bash -c 'source venv/bin/activate && black app/ tests/'",
+    "format:check": "bash -c 'source venv/bin/activate && black --check app/ tests/'",
+    "typecheck": "bash -c 'source venv/bin/activate && mypy app/'",
+
+    "clean": "find . -type d -name '__pycache__' -exec rm -rf {} + && find . -type f -name '*.pyc' -delete && find . -type d -name '.pytest_cache' -exec rm -rf {} + && rm -rf htmlcov/ .coverage",
+    "clean:models": "rm -rf models/*.pth && echo '✅ Model files cleaned'",
+    "clean:all": "npm run clean && npm run clean:models && rm -rf venv/",
+
+    "health": "curl -f http://localhost:8000/health || echo '❌ Service not running'",
+    "info": "node scripts/info.js"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0",
+    "python": ">=3.11.0"
+  },
+  "keywords": [
+    "machine-learning",
+    "nutrition",
+    "lstm",
+    "pytorch",
+    "fastapi",
+    "shap",
+    "explainability"
+  ],
+  "author": "Nutri Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/nutri"
+  }
+}

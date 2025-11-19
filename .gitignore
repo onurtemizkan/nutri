@@ -72,3 +72,80 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Python
+__pycache__/
+*/__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyc
+*.so
+*.pyd
+
+# Python virtual environments
+venv/
+env/
+ENV/
+.venv/
+.env/
+env.bak/
+venv.bak/
+
+# Python distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Python testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.hypothesis/
+pytestdebug.log
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Python type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# ML service specific
+ml-service/.env
+ml-service/.env.local
+ml-service/venv/
+ml-service/__pycache__/
+ml-service/*.db
+ml-service/*.db-journal
+ml-service/test_output.log
+ml-service/test_results.log
+
+# ML models and data
+*.pkl
+*.pickle
+*.joblib
+*.h5
+*.pt
+*.pth
+models/
+checkpoints/

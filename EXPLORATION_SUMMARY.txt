@@ -1,0 +1,403 @@
+================================================================================
+NUTRI CODEBASE EXPLORATION - EXECUTIVE SUMMARY
+================================================================================
+
+Project: Nutri - Full-Stack Nutrition Tracking Application
+Date: November 17, 2025
+Status: Ready for ML Integration
+
+================================================================================
+1. TECH STACK OVERVIEW
+================================================================================
+
+FRONTEND:
+  - React Native (Expo 52.0.24)
+  - TypeScript
+  - Expo Router (file-based routing)
+  - React Context for state management
+  - Axios HTTP client
+  - Expo Secure Store for JWT storage
+
+BACKEND:
+  - Node.js
+  - Express.js (4.21.2)
+  - TypeScript
+  - PostgreSQL database
+  - Prisma ORM (6.2.0)
+  - JWT authentication + bcryptjs
+  - Zod for validation
+
+DEV TOOLS:
+  - Jest for testing
+  - ESLint for linting
+  - npm for package management
+
+================================================================================
+2. DATA MODELS & STRUCTURE
+================================================================================
+
+DATABASE TABLES (Prisma):
+  
+  User
+  ├─ id (CUID)
+  ├─ email (unique)
+  ├─ password (hashed)
+  ├─ name
+  ├─ Nutrition Goals: goalCalories, goalProtein, goalCarbs, goalFat
+  ├─ Physical Profile: currentWeight, goalWeight, height, activityLevel
+  └─ Relations: meals[], waterIntakes[], weightRecords[]
+  
+  Meal
+  ├─ id (CUID)
+  ├─ userId (FK)
+  ├─ name, mealType (breakfast|lunch|dinner|snack)
+  ├─ Nutrition Data: calories, protein, carbs, fat, fiber, sugar
+  ├─ Metadata: servingSize, notes, imageUrl (field exists, unused)
+  ├─ consumedAt (indexed), createdAt, updatedAt
+  └─ Indexes: (userId, consumedAt), (userId, mealType)
+  
+  WaterIntake (schema ready, feature not implemented)
+  ├─ id (CUID)
+  ├─ userId (FK)
+  ├─ amount (ml)
+  └─ recordedAt (indexed)
+  
+  WeightRecord (schema ready, feature not implemented)
+  ├─ id (CUID)
+  ├─ userId (FK)
+  ├─ weight (kg)
+  └─ recordedAt (indexed)
+
+KEY INDEXES:
+  - User: email (for login), resetToken (for password reset)
+  - Meal: (userId, consumedAt) - fast date-range queries
+  - Meal: (userId, mealType) - fast meal-type queries
+  - WaterIntake: (userId, recordedAt)
+  - WeightRecord: (userId, recordedAt)
+
+================================================================================
+3. API ENDPOINTS
+================================================================================
+
+Authentication (/api/auth) - Protected endpoints require JWT:
+  POST   /register           - Create user account
+  POST   /login              - Login & get token
+  GET    /profile            - Get user profile & goals
+  PUT    /profile            - Update profile & goals
+  POST   /forgot-password    - Request password reset
+  POST   /reset-password     - Reset password with token
+  GET    /verify-token       - Verify reset token
+
+Meals (/api/meals) - All protected:
+  POST   /                   - Create meal
+  GET    /                   - Get meals (optional: ?date=ISO)
+  GET    /:id                - Get single meal
+  PUT    /:id                - Update meal
+  DELETE /:id                - Delete meal
+  GET    /summary/daily      - Get daily totals (optional: ?date=ISO)
+  GET    /summary/weekly     - Get 7-day summary
+
+================================================================================
+4. CODE ARCHITECTURE
+================================================================================
+
+BACKEND STRUCTURE:
+  /server/src/
+  ├── config/          - env.ts (config), database.ts (Prisma client)
+  ├── controllers/     - authController.ts, mealController.ts
+  ├── services/        - authService.ts, mealService.ts (business logic)
+  ├── routes/          - authRoutes.ts, mealRoutes.ts
+  ├── middleware/      - auth.ts (JWT verify), errorHandler.ts
+  ├── types/           - index.ts (TypeScript interfaces)
+  ├── utils/           - authHelpers.ts (require auth)
+  └── index.ts         - Express app entry point
+
+FRONTEND STRUCTURE:
+  /app/
+  ├── (tabs)/
+  │   ├── index.tsx        - Dashboard (daily nutrition view)
+  │   ├── profile.tsx      - User profile & settings
+  │   └── _layout.tsx      - Tab navigation
+  ├── auth/
+  │   ├── welcome.tsx      - Welcome screen
+  │   ├── signin.tsx       - Login form
+  │   ├── signup.tsx       - Registration form
+  │   ├── forgot-password.tsx
+  │   └── reset-password.tsx
+  ├── add-meal.tsx         - Modal for adding/editing meals
+  └── _layout.tsx          - Root layout with auth routing
+  
+  /lib/
+  ├── api/
+  │   ├── client.ts        - Axios instance with JWT interceptors
+  │   ├── auth.ts          - Auth API calls
+  │   └── meals.ts         - Meal API calls
+  ├── context/
+  │   └── AuthContext.tsx  - User auth state management
+  └── types/
+      └── index.ts         - Shared TypeScript interfaces
+
+KEY PATTERNS:
+  - Services handle all business logic
+  - Controllers validate input & call services
+  - Zod schemas validate all inputs
+  - Middleware handles auth & errors
+  - API client centralizes HTTP requests
+
+================================================================================
+5. CURRENT FEATURES
+================================================================================
+
+AUTHENTICATION:
+  ✅ User registration with email verification ready
+  ✅ JWT-based login & persistent sessions
+  ✅ Secure password hashing (bcryptjs)
+  ✅ Password reset flow
+  ✅ Role-based access control (JWT auth middleware)
+
+NUTRITION TRACKING:
+  ✅ Log meals (breakfast, lunch, dinner, snacks)
+  ✅ Track 7 macro nutrients (calories, protein, carbs, fat, fiber, sugar)
+  ✅ Serving size & notes
+  ✅ Edit & delete meals
+  ✅ View all meals by day
+  ✅ Daily nutrition summary
+  ✅ Weekly summary (7-day aggregates)
+
+USER MANAGEMENT:
+  ✅ Profile screens
+  ✅ Set nutrition goals (calorie, macro targets)
+  ✅ Track physical profile (height, weight, goals)
+  ✅ Activity level selection (5 options)
+  ✅ Goal updating
+
+FRONTEND UI:
+  ✅ Dashboard with calorie progress ring
+  ✅ Macro breakdown visualization
+  ✅ Meals grouped by type
+  ✅ Pull-to-refresh
+  ✅ Floating action button (FAB) for quick meal add
+  ✅ Clean, minimal design
+
+================================================================================
+6. ML INTEGRATION READINESS
+================================================================================
+
+DATA READY FOR ML:
+  ✅ User physical profile (height, weight, goals, activity level)
+  ✅ Comprehensive meal history (name, type, all macros, timestamps)
+  ✅ Weight records (model exists, not yet used in UI)
+  ✅ Water intake (model exists, not yet used in UI)
+  ✅ Daily aggregations (totals already calculated)
+  ✅ Image field (imageUrl exists in Meal model, not used yet)
+
+DATABASE STRENGTHS:
+  ✅ Optimized indexes for common ML queries
+  ✅ Cascade deletes (clean data management)
+  ✅ CUID primary keys (distributed-friendly)
+  ✅ Precise timestamps (millisecond resolution)
+
+API DESIGN STRENGTHS:
+  ✅ Separated services (easy to add ML service)
+  ✅ Type-safe throughout (TypeScript + Zod)
+  ✅ JWT authentication (user-specific predictions)
+  ✅ Existing summary endpoints (foundation for patterns)
+
+POTENTIAL ML FEATURES:
+  1. TDEE Calculator (calorie goal recommendation) - Easy
+  2. Meal Recommendations (based on history) - Medium
+  3. Eating Pattern Detection (timing, favorites) - Medium
+  4. Weight Prediction (trend analysis) - Hard
+  5. Food Image Classification (from photos) - Hard
+  6. Nutrition Insights (anomalies, improvements) - Hard
+  7. Anomaly Detection (unusual intake alerts) - Hard
+
+================================================================================
+7. IMPLEMENTATION ROADMAP
+================================================================================
+
+PHASE 1 - FOUNDATION (Day 1):
+  1. Create /server/src/services/mlService.ts
+  2. Create /server/src/types/ml.ts
+  3. Create /server/src/routes/mlRoutes.ts
+  4. Register ML routes in index.ts
+
+PHASE 2 - FIRST FEATURE: TDEE CALCULATOR (Days 2-3):
+  1. Implement BMR calculation (Mifflin-St Jeor formula)
+  2. Implement TDEE calculation (activity-adjusted)
+  3. Add API endpoint POST /api/ml/predict-calories
+  4. Test with curl/Postman
+
+PHASE 3 - FRONTEND INTEGRATION (Days 4-5):
+  1. Create /lib/api/ml.ts for ML API calls
+  2. Add prediction display to profile screen
+  3. Show recommended calorie intake
+
+PHASE 4 - ITERATE (Weeks 2+):
+  1. Add meal recommendations
+  2. Add pattern detection
+  3. Add insights & anomaly detection
+  4. Integrate image classification
+
+================================================================================
+8. KEY FORMULAS & ALGORITHMS
+================================================================================
+
+BASAL METABOLIC RATE (BMR) - Mifflin-St Jeor:
+  Male: BMR = 10*weight(kg) + 6.25*height(cm) - 5*age + 5
+  Female: BMR = 10*weight(kg) + 6.25*height(cm) - 5*age - 161
+
+TOTAL DAILY ENERGY EXPENDITURE (TDEE):
+  TDEE = BMR * Activity Multiplier
+  - Sedentary: 1.2
+  - Light: 1.375
+  - Moderate: 1.55
+  - Active: 1.725
+  - Very Active: 1.9
+
+STANDARD MACRO DISTRIBUTION (40-30-30):
+  - Carbs: 40% of calories ÷ 4 cal/gram = grams
+  - Protein: 30% of calories ÷ 4 cal/gram = grams
+  - Fat: 30% of calories ÷ 9 cal/gram = grams
+
+EATING CONSISTENCY SCORE:
+  (Number of days with meals / Total days tracked) * 100
+
+================================================================================
+9. DATABASE EXAMPLE QUERIES
+================================================================================
+
+Get all meals for a user in date range:
+  const meals = await prisma.meal.findMany({
+    where: {
+      userId: "user-id",
+      consumedAt: { gte: startDate, lte: endDate }
+    },
+    orderBy: { consumedAt: 'asc' }
+  });
+
+Get user profile:
+  const user = await prisma.user.findUnique({
+    where: { id: "user-id" }
+  });
+
+Get weekly summary (cached calculation):
+  const weekly = await mealService.getWeeklySummary(userId);
+
+Calculate daily totals:
+  const totalCalories = meals.reduce((sum, m) => sum + m.calories, 0);
+  const totalProtein = meals.reduce((sum, m) => sum + m.protein, 0);
+
+Find meal patterns:
+  const meals = await prisma.meal.groupBy({
+    by: ['mealType'],
+    where: { userId },
+    _avg: { calories: true, protein: true }
+  });
+
+================================================================================
+10. FILE LOCATIONS REFERENCE
+================================================================================
+
+KEY FILES TO KNOW:
+  /server/package.json             - Backend dependencies
+  /server/prisma/schema.prisma     - Database schema
+  /server/src/index.ts             - Express app entry
+  /server/src/services/mealService.ts - Meal business logic
+  /server/src/controllers/mealController.ts - Request handlers
+  /server/src/routes/mealRoutes.ts - Meal endpoints
+  /server/src/types/index.ts       - Type definitions
+  /server/src/middleware/auth.ts   - JWT verification
+  
+  /package.json                    - Frontend dependencies
+  /app/_layout.tsx                 - Root layout & auth routing
+  /app/(tabs)/index.tsx            - Dashboard screen
+  /app/add-meal.tsx                - Add meal modal
+  /lib/api/client.ts               - Axios configuration
+  /lib/api/meals.ts                - Meal API calls
+  /lib/context/AuthContext.tsx     - Auth state
+  /lib/types/index.ts              - Shared types
+
+NEW FILES TO CREATE:
+  /server/src/services/mlService.ts    - ML algorithms
+  /server/src/controllers/mlController.ts - ML request handlers
+  /server/src/routes/mlRoutes.ts       - ML endpoints
+  /server/src/types/ml.ts              - ML type definitions
+  /lib/api/ml.ts                       - ML API calls
+
+================================================================================
+11. COMPLETED ANALYSIS DOCUMENTS
+================================================================================
+
+Generated Documents:
+  1. CODEBASE_ANALYSIS.md - Comprehensive 1000+ line architecture guide
+  2. ML_INTEGRATION_QUICK_REFERENCE.md - Quick start for ML developers
+  3. EXPLORATION_SUMMARY.txt - This file
+
+Location: /Users/onurtemizkan/Projects/nutri/
+
+These documents include:
+  - Detailed tech stack breakdown
+  - Complete data model documentation
+  - API endpoint reference
+  - Service & controller architecture
+  - ML integration opportunities
+  - Recommended roadmap
+  - Code examples & patterns
+  - Database query examples
+  - Performance tips
+  - Error handling patterns
+
+================================================================================
+12. NEXT STEPS FOR ML DEVELOPMENT
+================================================================================
+
+IMMEDIATE (This Week):
+  1. Read CODEBASE_ANALYSIS.md (detailed reference)
+  2. Read ML_INTEGRATION_QUICK_REFERENCE.md (quick start)
+  3. Set up mlService.ts skeleton
+  4. Implement TDEE calculator
+  5. Create test endpoint
+
+SHORT TERM (Next 2 Weeks):
+  1. Add meal recommendations
+  2. Integrate frontend ML API
+  3. Add pattern detection
+  4. Display insights in UI
+
+MEDIUM TERM (Next Month):
+  1. Image classification integration
+  2. Weight prediction
+  3. Anomaly detection
+  4. User feedback loops
+
+LONG TERM:
+  1. Advanced ML models (TensorFlow, PyTorch)
+  2. Real-time personalization
+  3. Multi-user collaborative filtering
+  4. Mobile ML (on-device models)
+
+================================================================================
+CONCLUSION
+================================================================================
+
+The Nutri codebase is PRODUCTION-READY and WELL-STRUCTURED for ML integration:
+
+✅ Comprehensive data collection (nutrition, physical profile, activity)
+✅ Optimized database with proper indexes
+✅ Clean separation of concerns (services, controllers, routes)
+✅ Type-safe throughout (TypeScript + Zod validation)
+✅ Extensible API design (easy to add new endpoints)
+✅ User authentication (JWT - ready for personalization)
+✅ Historical data patterns (foundation for ML)
+
+No major refactoring needed. Start with simple features (TDEE calculation)
+and gradually add complexity based on user feedback.
+
+The foundation is solid. Time to build!
+
+================================================================================
+For questions or additional analysis, refer to:
+  - CODEBASE_ANALYSIS.md (detailed)
+  - ML_INTEGRATION_QUICK_REFERENCE.md (quick reference)
+================================================================================
