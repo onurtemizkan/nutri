@@ -17,6 +17,13 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# Native build artifacts (expo run:ios/android)
+ios/
+android/
+*.xcworkspace
+*.xcodeproj
+Podfile.lock
+
 # Metro
 .metro-health-check*
 
@@ -45,6 +52,7 @@ server/.env
 server/.env.local
 server/.env.production
 server/node_modules/
+server/app.json
 
 # Prisma
 server/prisma/*.db
