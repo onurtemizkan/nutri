@@ -1,0 +1,306 @@
+appId: ${APP_ID}
+
+# Critical Path Test Suite
+# Description: Most important user journeys that must always work
+# Run time: ~8-10 minutes
+# Purpose: Validate core user experience end-to-end
+
+---
+# Critical Path 1: New User Complete Journey
+# Description: Registration → Add Meal → View Summary → Logout
+
+- launchApp
+
+# Step 1: Register new user
+- tapOn: "Create Account"
+- tapOn:
+    text: "Your name"
+- inputText: "Critical Path User"
+- tapOn:
+    text: "your@email.com"
+- inputText: "criticalpath${RANDOM}@example.com"
+- tapOn:
+    text: "At least 6 characters"
+- inputText: "Test123456"
+- tapOn:
+    text: "Re-enter password"
+- inputText: "Test123456"
+- tapOn: "Create Account"
+
+# Step 2: Verify landing on home screen
+- assertVisible: "Hello, Critical Path User!"
+- assertVisible: "Calories"
+- assertVisible: "/ 2000"  # Default goal
+
+# Step 3: Add first meal
+- tapOn: "Add Meal"
+- tapOn: "Breakfast"
+- tapOn:
+    text: "e.g., Grilled Chicken Salad"
+- inputText: "Morning Oatmeal"
+- tapOn:
+    text: "Calories"
+- inputText: "350"
+- tapOn:
+    text: "Protein"
+- inputText: "12"
+- tapOn:
+    text: "Carbs"
+- inputText: "60"
+- tapOn:
+    text: "Fat"
+- inputText: "8"
+- tapOn: "Save"
+- tapOn: "OK"
+
+# Step 4: Verify meal appears in summary
+- assertVisible: "350"  # Calorie count updated
+
+# Step 5: Add second meal (different type)
+- tapOn: "Add Meal"
+- tapOn: "Lunch"
+- tapOn:
+    text: "e.g., Grilled Chicken Salad"
+- inputText: "Chicken Salad"
+- tapOn:
+    text: "Calories"
+- inputText: "500"
+- tapOn:
+    text: "Protein"
+- inputText: "40"
+- tapOn:
+    text: "Carbs"
+- inputText: "35"
+- tapOn:
+    text: "Fat"
+- inputText: "20"
+- tapOn: "Save"
+- tapOn: "OK"
+
+# Step 6: Check profile and goals
+- tapOn: "Profile"
+- assertVisible: "Critical Path User"
+- assertVisible: "Daily Goals"
+- assertVisible: "Calorie Goal"
+
+# Step 7: Logout
+- scroll
+- tapOn: "Logout"
+- tapOn: "Logout"
+- assertVisible: "Nutri"
+- assertVisible: "Sign In"
+
+---
+# Critical Path 2: Existing User Daily Workflow
+# Description: Login → Check Summary → Add Meals → Edit Goals → Logout
+
+- launchApp
+
+# Step 1: Login
+- tapOn: "Sign In"
+- tapOn:
+    text: "your@email.com"
+- inputText: "${TEST_EMAIL}"
+- tapOn:
+    text: "Enter your password"
+- inputText: "${TEST_PASSWORD}"
+- tapOn: "Sign In"
+
+# Step 2: Review daily summary
+- assertVisible: "Hello, ${TEST_NAME}!"
+- assertVisible: "Calories"
+- assertVisible: "Protein"
+- assertVisible: "Carbs"
+- assertVisible: "Fat"
+
+# Step 3: Add breakfast
+- tapOn: "Add Meal"
+- tapOn: "Breakfast"
+- tapOn:
+    text: "e.g., Grilled Chicken Salad"
+- inputText: "Scrambled Eggs"
+- tapOn:
+    text: "Calories"
+- inputText: "320"
+- tapOn:
+    text: "Protein"
+- inputText: "24"
+- tapOn:
+    text: "Carbs"
+- inputText: "8"
+- tapOn:
+    text: "Fat"
+- inputText: "22"
+- tapOn: "Save"
+- tapOn: "OK"
+
+# Step 4: Add snack
+- tapOn: "Add Meal"
+- tapOn: "Snack"
+- tapOn:
+    text: "e.g., Grilled Chicken Salad"
+- inputText: "Protein Shake"
+- tapOn:
+    text: "Calories"
+- inputText: "180"
+- tapOn:
+    text: "Protein"
+- inputText: "30"
+- tapOn:
+    text: "Carbs"
+- inputText: "10"
+- tapOn:
+    text: "Fat"
+- inputText: "3"
+- tapOn: "Save"
+- tapOn: "OK"
+
+# Step 5: Update nutrition goals
+- tapOn: "Profile"
+- tapOn: "Edit"
+- tapOn:
+    text: "Calorie Goal"
+- clearTextField
+- inputText: "2400"
+- tapOn:
+    text: "Protein Goal"
+- clearTextField
+- inputText: "180"
+- tapOn: "Save"
+- assertVisible: "Goals updated successfully"
+
+# Step 6: Verify goals updated
+- assertVisible: "2400"
+- assertVisible: "180"
+
+# Step 7: Return to home to see progress
+- tapOn: "Home"
+- assertVisible: "Calories"
+- assertVisible: "/ 2400"  # Updated goal
+
+# Step 8: Logout
+- tapOn: "Profile"
+- scroll
+- tapOn: "Logout"
+- tapOn: "Logout"
+- assertVisible: "Sign In"
+
+---
+# Critical Path 3: Form Validation Journey
+# Description: Validates all critical form validations work
+
+- launchApp
+
+# Test 1: Login validation
+- tapOn: "Sign In"
+- tapOn: "Sign In"  # Try empty form
+- assertVisible: "Please enter your email"
+
+# Test 2: Invalid email
+- tapOn:
+    text: "your@email.com"
+- inputText: "not-an-email"
+- tapOn: "Sign In"
+- assertVisible: "Please enter a valid email"
+
+# Test 3: Valid login
+- clearTextField
+- inputText: "${TEST_EMAIL}"
+- tapOn:
+    text: "Enter your password"
+- inputText: "${TEST_PASSWORD}"
+- tapOn: "Sign In"
+- assertVisible: "Hello, ${TEST_NAME}!"
+
+# Test 4: Add meal validation
+- tapOn: "Add Meal"
+- tapOn: "Save"  # Try empty form
+- assertVisible: "Please fill in all required fields"
+
+# Test 5: Valid meal
+- tapOn: "Lunch"
+- tapOn:
+    text: "e.g., Grilled Chicken Salad"
+- inputText: "Validation Test"
+- tapOn:
+    text: "Calories"
+- inputText: "400"
+- tapOn:
+    text: "Protein"
+- inputText: "30"
+- tapOn:
+    text: "Carbs"
+- inputText: "40"
+- tapOn:
+    text: "Fat"
+- inputText: "15"
+- tapOn: "Save"
+- assertVisible: "Meal added successfully"
+
+---
+# Critical Path 4: Error Recovery
+# Description: Validates app handles errors gracefully
+
+- launchApp
+
+# Test 1: Wrong password recovery
+- tapOn: "Sign In"
+- tapOn:
+    text: "your@email.com"
+- inputText: "${TEST_EMAIL}"
+- tapOn:
+    text: "Enter your password"
+- inputText: "WrongPassword123"
+- tapOn: "Sign In"
+- assertVisible: "Invalid credentials"
+
+# Recover: Use correct password
+- clearTextField
+- inputText: "${TEST_PASSWORD}"
+- tapOn: "Sign In"
+- assertVisible: "Hello, ${TEST_NAME}!"
+
+# Test 2: Cancel meal entry recovery
+- tapOn: "Add Meal"
+- tapOn:
+    text: "e.g., Grilled Chicken Salad"
+- inputText: "Cancelled Meal"
+- tapOn: "Cancel"
+
+# Verify can still add meal after cancel
+- tapOn: "Add Meal"
+- tapOn: "Snack"
+- tapOn:
+    text: "e.g., Grilled Chicken Salad"
+- inputText: "Successful Meal"
+- tapOn:
+    text: "Calories"
+- inputText: "150"
+- tapOn:
+    text: "Protein"
+- inputText: "10"
+- tapOn:
+    text: "Carbs"
+- inputText: "20"
+- tapOn:
+    text: "Fat"
+- inputText: "5"
+- tapOn: "Save"
+- assertVisible: "Meal added successfully"
+
+# Test 3: Cancel goal edit recovery
+- tapOn: "Profile"
+- tapOn: "Edit"
+- tapOn:
+    text: "Calorie Goal"
+- clearTextField
+- inputText: "9999"
+- tapOn: "Cancel"
+
+# Verify goals not changed
+- assertNotVisible: "9999"
+
+# Verify can still edit goals after cancel
+- tapOn: "Edit"
+- assertVisible: "Save"
+- assertVisible: "Cancel"
