@@ -5,7 +5,7 @@ Transforms raw data (meals, activities, health metrics) into ML-ready features.
 Implements 50+ features across 5 categories: nutrition, activity, health, temporal, interaction.
 """
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, UTC
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -126,7 +126,7 @@ class FeatureEngineeringService:
         response = EngineerFeaturesResponse(
             user_id=user_id,
             target_date=target_date,
-            computed_at=datetime.utcnow(),
+            computed_at=datetime.now(UTC),
             cached=False,
             nutrition=nutrition,
             activity=activity,
@@ -223,10 +223,10 @@ class FeatureEngineeringService:
         # Meal regularity (consistency of meal timing over 7 days)
         meal_regularity = self._calculate_meal_regularity(last_7_days)
 
-        # Calorie balance (requires user TDEE)
+        # Calorie balance (estimate user TDEE from goal calories)
         calorie_deficit = None
         calorie_deficit_7d = None
-        user_tdee = getattr(user, 'tdee', None) if user else None
+        user_tdee = self._estimate_tdee(user) if user else None
         if user_tdee:
             calorie_deficit = user_tdee - calories_daily
             if not daily_sums.empty:
@@ -279,6 +279,40 @@ class FeatureEngineeringService:
         # std of 0-1 hour = 1.0, std of 3+ hours = 0.0
         regularity = max(0, 1.0 - (std / 3.0))
         return regularity
+
+    def _estimate_tdee(self, user: User) -> Optional[float]:
+        """
+        Estimate user's Total Daily Energy Expenditure (TDEE).
+
+        Uses goal_calories as baseline (users typically set goals near their TDEE).
+        Adjusts based on activity_level if available.
+
+        Returns:
+            Estimated TDEE in calories, or None if insufficient data
+        """
+        if not user:
+            return None
+
+        # Use goal_calories as baseline estimate
+        # Most users set their calorie goal based on their TDEE +/- deficit
+        base_calories = user.goal_calories if user.goal_calories else 2000
+
+        # Activity level multipliers (rough estimates)
+        activity_multipliers = {
+            "sedentary": 0.9,    # Less than goal (deficit for weight loss)
+            "light": 0.95,       # Slightly less
+            "moderate": 1.0,     # At goal
+            "active": 1.05,      # Slightly more (maintenance for active people)
+            "very_active": 1.1,  # More (maintenance for very active people)
+        }
+
+        # Get activity level (default to moderate)
+        activity_level = user.activity_level if hasattr(user, 'activity_level') else "moderate"
+        multiplier = activity_multipliers.get(activity_level, 1.0)
+
+        estimated_tdee = base_calories * multiplier
+
+        return estimated_tdee
 
     def _empty_nutrition_features(self) -> NutritionFeatures:
         """Return nutrition features with all zeros (no data available)."""
@@ -376,7 +410,7 @@ class FeatureEngineeringService:
 
         # Activity type distribution (7 days)
         cardio_types = ["RUNNING", "CYCLING", "SWIMMING", "WALKING", "ROWING"]
-        strength_types = ["STRENGTH_TRAINING", "WEIGHTLIFTING", "BODYWEIGHT", "CROSSFIT"]
+        strength_types = ["WEIGHT_TRAINING", "BODYWEIGHT", "CROSSFIT", "POWERLIFTING"]
         flexibility_types = ["YOGA", "STRETCHING", "PILATES"]
 
         cardio_minutes_7d = last_7_days[
@@ -488,7 +522,7 @@ class FeatureEngineeringService:
 
         # Sleep features
         sleep_duration_df = health_df[health_df["metric_type"] == "SLEEP_DURATION"]
-        sleep_quality_df = health_df[health_df["metric_type"] == "SLEEP_QUALITY_SCORE"]
+        sleep_quality_df = health_df[health_df["metric_type"] == "SLEEP_SCORE"]
 
         sleep_duration_last = self._get_yesterday_value(sleep_duration_df, target_date)
         sleep_quality_last = self._get_yesterday_value(sleep_quality_df, target_date)
@@ -647,7 +681,7 @@ class FeatureEngineeringService:
         # Nutrition per body weight
         protein_per_kg = None
         calories_per_kg = None
-        user_weight = getattr(user, 'weight', None) if user else None
+        user_weight = user.current_weight if (user and user.current_weight) else None
         if user_weight and nutrition:
             protein_per_kg = nutrition.protein_daily / user_weight
             calories_per_kg = nutrition.calories_daily / user_weight
