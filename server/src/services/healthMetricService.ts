@@ -17,7 +17,7 @@ export class HealthMetricService {
         recordedAt: data.recordedAt,
         source: data.source,
         sourceId: data.sourceId,
-        metadata: data.metadata || {},
+        metadata: (data.metadata as Prisma.InputJsonValue) || Prisma.JsonNull,
       },
     });
 
@@ -37,7 +37,7 @@ export class HealthMetricService {
         recordedAt: metric.recordedAt,
         source: metric.source,
         sourceId: metric.sourceId,
-        metadata: metric.metadata || {},
+        metadata: (metric.metadata as Prisma.InputJsonValue) || Prisma.JsonNull,
       })),
       skipDuplicates: true, // Skip if exact same metric already exists (based on unique constraint)
     });
