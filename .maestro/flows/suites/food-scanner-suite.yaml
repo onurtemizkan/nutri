@@ -1,0 +1,25 @@
+# Food Scanner Test Suite
+# Comprehensive E2E tests for AR-powered food scanning feature
+
+flows:
+  # Happy path: Complete scan to save flow
+  - food-scanner/scan-and-save-meal.yaml
+
+  # Permission handling
+  - food-scanner/camera-permissions.yaml
+
+  # Error scenarios
+  - food-scanner/scan-error-handling.yaml
+
+  # Manual editing after scan
+  - food-scanner/scan-with-editing.yaml
+
+# Configuration
+config:
+  retries: 2
+  timeout: 120000  # 2 minutes max per test
+  continueOnFailure: false
+
+# Environment
+env:
+  APP_ENV: test

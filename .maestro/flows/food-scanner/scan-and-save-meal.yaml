@@ -1,0 +1,90 @@
+appId: com.nutri.app
+---
+# Food Scanner: Complete Scan and Save Meal Flow
+# Tests the happy path from camera to saved meal
+
+- launchApp:
+    clearState: true
+
+- assertVisible: "Home"
+
+# Navigate to Add Meal screen
+- tapOn: "Add Meal"
+- assertVisible: "Add Meal"
+
+# Tap on Scan Food button
+- tapOn: "Scan Food with Camera"
+- assertVisible: "Scan Food"
+
+# Wait for camera to load
+- waitForAnimationToEnd
+
+# Grant camera permission if prompted (iOS)
+- runFlow:
+    when:
+      visible: "Allow"
+    commands:
+      - tapOn: "Allow"
+
+# Take a photo
+- tapOn: "Take Photo"
+- waitForAnimationToEnd
+
+# Analyze the photo
+- tapOn: "Analyze Food"
+- assertVisible: "Analyzing"
+
+# Wait for analysis to complete (max 10 seconds)
+- waitForAnimationToEnd:
+    timeout: 10000
+
+# Verify results are shown
+- assertVisible: "Analysis Results"
+- assertVisible:
+    text: "Confidence:"
+
+# Verify nutrition info is displayed
+- assertVisible:
+    text: "Calories"
+- assertVisible:
+    text: "Protein"
+- assertVisible:
+    text: "Carbs"
+- assertVisible:
+    text: "Fat"
+
+# Use these results
+- tapOn: "Use These Results"
+
+# Should navigate back to Add Meal with pre-filled data
+- assertVisible: "Add Meal"
+
+# Verify fields are pre-filled
+- assertVisible:
+    id: "name-input"
+- assertVisible:
+    id: "calories-input"
+
+# Optionally adjust values
+- tapOn:
+    id: "calories-input"
+- inputText: "500"
+
+# Save the meal
+- scrollUntilVisible:
+    element: "Save Meal"
+    direction: DOWN
+- tapOn: "Save Meal"
+
+# Wait for save to complete
+- waitForAnimationToEnd
+
+# Should navigate back to home
+- assertVisible: "Home"
+
+# Verify meal appears in list
+- assertVisible: "Today's Meals"
+- scrollUntilVisible:
+    element:
+      text: "500"
+    direction: DOWN

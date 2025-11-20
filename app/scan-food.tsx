@@ -273,7 +273,7 @@ export default function ScanFoodScreen() {
             <View style={styles.resultsContainer}>
               <Text style={styles.resultsTitle}>Detected Food</Text>
 
-              {scanResult.foodItems.map((item, index) => (
+              {scanResult.foodItems.map((item: any, index: number) => (
                 <View key={index} style={styles.foodItem}>
                   <View style={styles.foodItemHeader}>
                     <Text style={styles.foodName}>{item.name}</Text>
@@ -316,7 +316,7 @@ export default function ScanFoodScreen() {
               {scanResult.suggestions && scanResult.suggestions.length > 0 && (
                 <View style={styles.suggestions}>
                   <Text style={styles.suggestionsTitle}>Suggestions:</Text>
-                  {scanResult.suggestions.map((suggestion, index) => (
+                  {scanResult.suggestions.map((suggestion: string, index: number) => (
                     <Text key={index} style={styles.suggestionText}>
                       • {suggestion}
                     </Text>

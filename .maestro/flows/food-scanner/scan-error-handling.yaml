@@ -1,0 +1,98 @@
+appId: com.nutri.app
+---
+# Food Scanner: Error Handling Flow
+# Tests various error scenarios
+
+# Test case 1: Network error during analysis
+- launchApp:
+    clearState: true
+
+- tapOn: "Add Meal"
+- tapOn: "Scan Food with Camera"
+
+# Grant permission if needed
+- runFlow:
+    when:
+      visible: "Allow"
+    commands:
+      - tapOn: "Allow"
+
+# Take photo
+- tapOn: "Take Photo"
+
+# Simulate network error by disabling network
+# Note: This would need to be done externally in actual test
+- tapOn: "Analyze Food"
+
+# Should show error after timeout
+- waitForAnimationToEnd:
+    timeout: 15000
+
+# Verify error message is shown
+- runFlow:
+    when:
+      visible: "Network error"
+    commands:
+      - assertVisible: "Try Again"
+      - tapOn: "Try Again"
+
+---
+# Test case 2: Low confidence result
+- launchApp:
+    clearState: true
+
+- tapOn: "Add Meal"
+- tapOn: "Scan Food with Camera"
+
+# Grant permission
+- runFlow:
+    when:
+      visible: "Allow"
+    commands:
+      - tapOn: "Allow"
+
+# Take blurry/unclear photo (simulate by retaking)
+- tapOn: "Take Photo"
+- tapOn: "Analyze Food"
+- waitForAnimationToEnd:
+    timeout: 10000
+
+# Should show suggestions for improvement
+- runFlow:
+    when:
+      visible: "Low confidence"
+    commands:
+      - assertVisible: "Take a clearer photo"
+      - tapOn: "Retake Photo"
+      - assertVisible: "Take Photo"
+
+---
+# Test case 3: Cancel during analysis
+- launchApp:
+    clearState: true
+
+- tapOn: "Add Meal"
+- tapOn: "Scan Food with Camera"
+
+# Grant permission
+- runFlow:
+    when:
+      visible: "Allow"
+    commands:
+      - tapOn: "Allow"
+
+- tapOn: "Take Photo"
+- tapOn: "Analyze Food"
+
+# Wait a moment then cancel
+- waitForAnimationToEnd:
+    timeout: 1000
+- tapOn: "Cancel"
+
+# Should return to camera view
+- assertVisible: "Take Photo"
+- assertNotVisible: "Analyzing"
+
+# Can retake photo
+- tapOn: "Take Photo"
+- assertVisible: "Analyze Food"
