@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,13 +11,25 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { mealsApi } from '@/lib/api/meals';
 import { CreateMealInput } from '@/lib/types';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 
 export default function AddMealScreen() {
+  const params = useLocalSearchParams<{
+    name?: string;
+    calories?: string;
+    protein?: string;
+    carbs?: string;
+    fat?: string;
+    fiber?: string;
+    servingSize?: string;
+    fromScan?: string;
+  }>();
+
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('lunch');
   const [name, setName] = useState('');
   const [calories, setCalories] = useState('');
@@ -29,6 +41,19 @@ export default function AddMealScreen() {
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+  // Pre-fill form if coming from food scanner
+  useEffect(() => {
+    if (params.fromScan === 'true') {
+      if (params.name) setName(params.name);
+      if (params.calories) setCalories(params.calories);
+      if (params.protein) setProtein(params.protein);
+      if (params.carbs) setCarbs(params.carbs);
+      if (params.fat) setFat(params.fat);
+      if (params.fiber) setFiber(params.fiber);
+      if (params.servingSize) setServingSize(params.servingSize);
+    }
+  }, [params]);
 
   const mealTypes: ('breakfast' | 'lunch' | 'dinner' | 'snack')[] = [
     'breakfast',
@@ -121,6 +146,31 @@ export default function AddMealScreen() {
                 ))}
               </View>
             </View>
+
+            {/* Scan Food Button */}
+            <TouchableOpacity
+              style={styles.scanButton}
+              onPress={() => router.push('/scan-food')}
+              disabled={isLoading}
+            >
+              <Ionicons name="camera" size={24} color="#3b5998" />
+              <View style={styles.scanButtonText}>
+                <Text style={styles.scanButtonTitle}>Scan Food with Camera</Text>
+                <Text style={styles.scanButtonSubtitle}>
+                  Automatically estimate nutrition using AI
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#999" />
+            </TouchableOpacity>
+
+            {params.fromScan === 'true' && (
+              <View style={styles.scanBadge}>
+                <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                <Text style={styles.scanBadgeText}>
+                  Values from food scan - you can edit them
+                </Text>
+              </View>
+            )}
 
             {/* Meal Name */}
             <View style={styles.section}>
@@ -334,5 +384,43 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     marginBottom: 16,
+  },
+  scanButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f4ff',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#d0dbff',
+  },
+  scanButtonText: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  scanButtonTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#3b5998',
+    marginBottom: 2,
+  },
+  scanButtonSubtitle: {
+    fontSize: 12,
+    color: '#7890c4',
+  },
+  scanBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e8f5e9',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  scanBadgeText: {
+    fontSize: 13,
+    color: '#4CAF50',
+    marginLeft: 8,
+    fontWeight: '500',
   },
 });

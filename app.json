@@ -10,7 +10,14 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.nutri"
+      "bundleIdentifier": "com.anonymous.nutri",
+      "bitcode": false,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Nutri needs camera access to scan and analyze your food for automatic nutrition tracking.",
+        "NSPhotoLibraryUsageDescription": "Nutri needs photo library access to save food images for your meal history.",
+        "NSPhotoLibraryAddUsageDescription": "Nutri would like to save food photos to your photo library.",
+        "NSMicrophoneUsageDescription": "Microphone access is required for video recording features."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -32,6 +39,20 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Nutri to access your camera to scan and analyze food for automatic nutrition tracking.",
+          "microphonePermission": "Allow Nutri to access your microphone for video features.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Nutri needs access to your photos to save food images."
         }
       ]
     ],
