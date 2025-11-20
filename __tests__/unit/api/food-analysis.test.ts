@@ -10,7 +10,7 @@ import {
   createMockFormData,
   mockImageURIs,
   testImageBase64,
-} from '../../fixtures/food-analysis-fixtures';
+} from '../../../test-fixtures/food-analysis-fixtures';
 
 // Mock dependencies
 jest.mock('axios');
