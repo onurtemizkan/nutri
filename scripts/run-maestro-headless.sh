@@ -41,6 +41,25 @@ if ! command -v maestro &> /dev/null; then
     exit 1
 fi
 
+# Workaround: Temporarily move docker-compose.yml to avoid Maestro parsing it
+DOCKER_COMPOSE_MOVED=false
+if [ -f "docker-compose.yml" ]; then
+    mv docker-compose.yml docker-compose.yml.tmp
+    DOCKER_COMPOSE_MOVED=true
+    echo -e "${YELLOW}Note: Temporarily moved docker-compose.yml to avoid conflicts${NC}"
+fi
+
+# Cleanup function to restore docker-compose.yml
+cleanup() {
+    if [ "$DOCKER_COMPOSE_MOVED" = true ]; then
+        mv docker-compose.yml.tmp docker-compose.yml
+        echo -e "${YELLOW}Restored docker-compose.yml${NC}"
+    fi
+}
+
+# Set trap to ensure cleanup happens on exit
+trap cleanup EXIT
+
 # Configuration
 APP_ID=${APP_ID:-"com.anonymous.nutri"}
 PLATFORM=${PLATFORM:-"ios"}
@@ -118,8 +137,50 @@ TEST_TARGET=${1:-"smoke"}
 
 case $TEST_TARGET in
     smoke)
-        echo -e "${GREEN}Running smoke tests...${NC}"
-        run_maestro_test "smoke-tests.xml" ".maestro/flows/suites/smoke-tests.yaml"
+        echo -e "${GREEN}Running smoke tests sequentially...${NC}"
+        echo ""
+
+        # Run each smoke test individually in sequence
+        SMOKE_TESTS=(
+            "01-login-navigation.yaml"
+            "02-add-meal.yaml"
+            "03-profile-logout.yaml"
+            "04-registration.yaml"
+        )
+
+        FAILED_TESTS=()
+        PASSED_TESTS=()
+
+        for test in "${SMOKE_TESTS[@]}"; do
+            test_name=$(basename "$test" .yaml)
+            echo -e "${YELLOW}→ Running: $test_name${NC}"
+
+            if run_maestro_test "smoke-$test_name.xml" ".maestro/flows/smoke/$test"; then
+                echo -e "${GREEN}✓ Passed: $test_name${NC}"
+                PASSED_TESTS+=("$test_name")
+            else
+                echo -e "${RED}✗ Failed: $test_name${NC}"
+                FAILED_TESTS+=("$test_name")
+                # Continue with other tests even if one fails
+            fi
+            echo ""
+        done
+
+        # Print summary
+        echo -e "${GREEN}========================================${NC}"
+        echo -e "${GREEN}Smoke Tests Summary${NC}"
+        echo -e "${GREEN}========================================${NC}"
+        echo "Passed: ${#PASSED_TESTS[@]}/${#SMOKE_TESTS[@]}"
+        echo "Failed: ${#FAILED_TESTS[@]}/${#SMOKE_TESTS[@]}"
+
+        if [ ${#FAILED_TESTS[@]} -gt 0 ]; then
+            echo ""
+            echo -e "${RED}Failed tests:${NC}"
+            for test in "${FAILED_TESTS[@]}"; do
+                echo "  - $test"
+            done
+            exit 1
+        fi
         ;;
 
     all)

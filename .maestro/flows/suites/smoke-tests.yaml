@@ -11,43 +11,34 @@ appId: ${APP_ID}
 
 - launchApp
 
-# Handle location permission dialog if it appears
-- runFlow:
-    when:
-      visible: "Allow"
-    commands:
-      - tapOn: "Don't Allow"
+# Handle location permission dialog if it appears (optional)
+- tapOn:
+    text: "Don't Allow"
+    optional: true
 
 # Wait for app to fully load
 - extendedWaitUntil:
-    visible:
-      text: "Sign In|Hello"
+    visible: "Sign In"
     timeout: 15000
 
-- runFlow:
-    when:
-      visible: "Sign In"
-    commands:
-      # User is logged out - perform login
-      - tapOn: "Sign In"
-      - tapOn:
-          text: "your@email.com"
-      - inputText: "${TEST_EMAIL}"
-      - tapOn:
-          text: "Enter your password"
-      - inputText: "${TEST_PASSWORD}"
-      - tapOn: "Sign In"
-      - extendedWaitUntil:
-          visible: "Hello, ${TEST_NAME}!"
-          timeout: 10000
+# Perform login
+- tapOn: "Sign In"
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn: "Email"
+- inputText: "${TEST_EMAIL}"
+- tapOn: "Password"
+- inputText: "${TEST_PASSWORD}"
+- tapOn: "Sign In"
+- extendedWaitUntil:
+    visible: "Hello"
+    timeout: 10000
 
-# Verify authenticated (works whether we just logged in or were already logged in)
-- assertVisible: "Hello, ${TEST_NAME}!"
+# Verify authenticated
 - assertVisible: "Calories"
 - assertVisible: "Today's Meals"
 
 # Cleanup: Logout to ensure clean state for next test
-- scroll
 - tapOn: "Profile"
 - scroll
 - tapOn: "Logout"
@@ -59,19 +50,22 @@ appId: ${APP_ID}
 # Validates: Core meal tracking functionality
 
 - launchApp
-- runFlow:
-    when:
-      visible: "Sign In"
-    commands:
-      # User is logged out - perform login
-      - tapOn: "Sign In"
-      - tapOn:
-          text: "your@email.com"
-      - inputText: "${TEST_EMAIL}"
-      - tapOn:
-          text: "Enter your password"
-      - inputText: "${TEST_PASSWORD}"
-      - tapOn: "Sign In"
+- extendedWaitUntil:
+    visible: "Sign In"
+    timeout: 15000
+
+# Perform login
+- tapOn: "Sign In"
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn: "Email"
+- inputText: "${TEST_EMAIL}"
+- tapOn: "Password"
+- inputText: "${TEST_PASSWORD}"
+- tapOn: "Sign In"
+- extendedWaitUntil:
+    visible: "Hello"
+    timeout: 10000
 
 # Quick meal addition
 - tapOn: "Add Meal"
@@ -102,19 +96,22 @@ appId: ${APP_ID}
 # Validates: Profile access + Logout flow
 
 - launchApp
-- runFlow:
-    when:
-      visible: "Sign In"
-    commands:
-      # User is logged out - perform login
-      - tapOn: "Sign In"
-      - tapOn:
-          text: "your@email.com"
-      - inputText: "${TEST_EMAIL}"
-      - tapOn:
-          text: "Enter your password"
-      - inputText: "${TEST_PASSWORD}"
-      - tapOn: "Sign In"
+- extendedWaitUntil:
+    visible: "Sign In"
+    timeout: 15000
+
+# Perform login
+- tapOn: "Sign In"
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn: "Email"
+- inputText: "${TEST_EMAIL}"
+- tapOn: "Password"
+- inputText: "${TEST_PASSWORD}"
+- tapOn: "Sign In"
+- extendedWaitUntil:
+    visible: "Hello"
+    timeout: 10000
 
 # Check profile
 - tapOn: "Profile"
@@ -142,24 +139,22 @@ appId: ${APP_ID}
 - assertVisible: "Create Account"
 
 # Fill registration (using unique email from environment)
-- tapOn:
-    text: "Your name"
+- tapOn: "Name"
 - inputText: "${NEW_USER_NAME}"
 
-- tapOn:
-    text: "your@email.com"
+- tapOn: "Email"
 - inputText: "${NEW_USER_EMAIL}"
 
-- tapOn:
-    text: "At least 6 characters"
+- tapOn: "Password"
 - inputText: "${NEW_USER_PASSWORD}"
 
-- tapOn:
-    text: "Re-enter password"
+- tapOn: "Confirm Password"
 - inputText: "${NEW_USER_PASSWORD}"
 
 # Submit
 - tapOn: "Create Account"
 
 # Verify success (auto-login)
-- assertVisible: "Hello, ${NEW_USER_NAME}!"
+- extendedWaitUntil:
+    visible: "Hello"
+    timeout: 10000

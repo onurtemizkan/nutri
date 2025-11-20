@@ -1,0 +1,48 @@
+appId: ${APP_ID}
+
+---
+# Smoke Test 2: Add Meal Flow
+# Validates: Core meal tracking functionality
+# Duration: ~45 seconds
+
+- launchApp
+- extendedWaitUntil:
+    visible: "Sign In"
+    timeout: 15000
+
+# Perform login
+- tapOn: "Sign In"
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn: "Email"
+- inputText: "${TEST_EMAIL}"
+- tapOn: "Password"
+- inputText: "${TEST_PASSWORD}"
+- tapOn: "Sign In"
+- extendedWaitUntil:
+    visible: "Hello"
+    timeout: 10000
+
+# Quick meal addition
+- tapOn: "Add Meal"
+- tapOn: "Breakfast"
+- tapOn:
+    text: "e.g., Grilled Chicken Salad"
+- inputText: "Smoke Test Meal"
+- tapOn:
+    text: "Calories"
+- inputText: "250"
+- tapOn:
+    text: "Protein"
+- inputText: "15"
+- tapOn:
+    text: "Carbs"
+- inputText: "30"
+- tapOn:
+    text: "Fat"
+- inputText: "8"
+- tapOn: "Save"
+
+# Verify success
+- assertVisible: "Meal added successfully"
+- tapOn: "OK"

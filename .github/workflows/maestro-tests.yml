@@ -3,9 +3,8 @@ name: Maestro E2E Tests
 on:
   push:
     branches: [master, develop]
-  # Disabled for PRs - use the E2E tests in ci.yml instead
-  # pull_request:
-  #   branches: [master, develop]
+  pull_request:
+    branches: [master, develop]
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
@@ -86,7 +85,8 @@ jobs:
           # Install on booted simulator
           xcrun simctl install booted "$APP_PATH"
 
-      - name: Run Maestro Smoke Tests
+      - name: Run Maestro Smoke Tests (PRs)
+        if: github.event_name == 'pull_request'
         run: |
           chmod +x ./scripts/run-maestro-headless.sh
           ./scripts/run-maestro-headless.sh smoke
@@ -95,15 +95,23 @@ jobs:
           PLATFORM: ios
           FORMAT: junit
           OUTPUT_DIR: maestro-results
+          TEST_EMAIL: testuser@example.com
+          TEST_PASSWORD: Test123456
+          TEST_NAME: Test User
 
-      - name: Run All Maestro Tests
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: ./scripts/run-maestro-headless.sh all
+      - name: Run Full Maestro Test Suite (Push to main/develop)
+        if: github.event_name == 'push'
+        run: |
+          chmod +x ./scripts/run-maestro-headless.sh
+          ./scripts/run-maestro-headless.sh all
         env:
           APP_ID: com.anonymous.nutri
           PLATFORM: ios
           FORMAT: junit
           OUTPUT_DIR: maestro-results
+          TEST_EMAIL: testuser@example.com
+          TEST_PASSWORD: Test123456
+          TEST_NAME: Test User
 
       - name: Upload Test Results
         if: always()

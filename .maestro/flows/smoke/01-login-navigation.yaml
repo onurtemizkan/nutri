@@ -1,0 +1,42 @@
+appId: ${APP_ID}
+
+---
+# Smoke Test 1: Login and Basic Navigation
+# Validates: Authentication + Tab Navigation
+# Duration: ~30 seconds
+
+- launchApp
+
+# Handle optional permission dialog
+- tapOn:
+    text: "Don't Allow"
+    optional: true
+
+# Wait for app to fully load
+- extendedWaitUntil:
+    visible: "Sign In"
+    timeout: 15000
+
+# Perform login
+- tapOn: "Sign In"
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn: "Email"
+- inputText: "${TEST_EMAIL}"
+- tapOn: "Password"
+- inputText: "${TEST_PASSWORD}"
+- tapOn: "Sign In"
+- extendedWaitUntil:
+    visible: "Hello"
+    timeout: 10000
+
+# Verify authenticated
+- assertVisible: "Calories"
+- assertVisible: "Today's Meals"
+
+# Cleanup: Logout to ensure clean state for next test
+- tapOn: "Profile"
+- scroll
+- tapOn: "Logout"
+- tapOn: "Logout"
+- assertVisible: "Sign In"
