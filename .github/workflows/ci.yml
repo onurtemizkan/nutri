@@ -114,7 +114,7 @@ jobs:
     timeout-minutes: 60
 
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nutri_db
+      DATABASE_URL: postgresql://runner@localhost:5432/nutri_db
       JWT_SECRET: test-jwt-secret-key-for-ci
       JWT_EXPIRES_IN: 7d
       REDIS_URL: redis://localhost:6379
