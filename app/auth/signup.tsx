@@ -14,6 +14,7 @@ import {
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/context/AuthContext';
+import { getErrorMessage } from '@/lib/utils/errorHandling';
 
 export default function SignUpScreen() {
   const [name, setName] = useState('');
@@ -60,10 +61,10 @@ export default function SignUpScreen() {
     try {
       await register(email, password, name);
       router.replace('/(tabs)');
-    } catch (error: any) {
+    } catch (error) {
       Alert.alert(
         'Sign Up Failed',
-        error.response?.data?.error || 'Failed to create account'
+        getErrorMessage(error, 'Failed to create account')
       );
     } finally {
       setIsLoading(false);

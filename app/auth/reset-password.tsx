@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authApi } from '@/lib/api/auth';
+import { getErrorMessage } from '@/lib/utils/errorHandling';
 
 export default function ResetPasswordScreen() {
   const [token, setToken] = useState('');
@@ -26,35 +27,36 @@ export default function ResetPasswordScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
 
+  const verifyToken = useCallback(async (tokenToVerify: string) => {
+    setIsVerifying(true);
+    try {
+      const response = await authApi.verifyResetToken(tokenToVerify);
+      setTokenValid(true);
+      setUserEmail(response.email);
+    } catch {
+      Alert.alert(
+        'Invalid Token',
+        'This password reset link is invalid or has expired. Please request a new one.',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.replace('/auth/forgot-password'),
+          },
+        ]
+      );
+      setTokenValid(false);
+    } finally {
+      setIsVerifying(false);
+    }
+  }, [router]);
+
   useEffect(() => {
     // Check if token is in URL params
     if (params.token && typeof params.token === 'string') {
       setToken(params.token);
       verifyToken(params.token);
     }
-  }, [params.token]);
-
-  const verifyToken = async (tokenToVerify: string) => {
-    setIsVerifying(true);
-    try {
-      const response = await authApi.verifyResetToken(tokenToVerify);
-      setTokenValid(true);
-      setUserEmail(response.email);
-    } catch (error: any) {
-      Alert.alert(
-        'Invalid Token',
-        'This password reset link is invalid or has expired. Please request a new one.',
-        [
-          {
-            text: 'Request New Link',
-            onPress: () => router.push('/auth/forgot-password' as any),
-          },
-        ]
-      );
-    } finally {
-      setIsVerifying(false);
-    }
-  };
+  }, [params.token, verifyToken]);
 
   const handleVerifyToken = async () => {
     if (!token) {
@@ -100,10 +102,10 @@ export default function ResetPasswordScreen() {
           },
         ]
       );
-    } catch (error: any) {
+    } catch (error) {
       Alert.alert(
         'Reset Failed',
-        error.response?.data?.error || 'Failed to reset password. The token may have expired.'
+        getErrorMessage(error, 'Failed to reset password. The token may have expired.')
       );
     } finally {
       setIsLoading(false);
@@ -162,7 +164,7 @@ export default function ResetPasswordScreen() {
               <View style={styles.footer}>
                 <Text style={styles.footerText}>Don't have a token? </Text>
                 <TouchableOpacity
-                  onPress={() => router.push('/auth/forgot-password' as any)}
+                  onPress={() => router.push('/auth/forgot-password')}
                   disabled={isLoading}
                 >
                   <Text style={styles.link}>Request One</Text>

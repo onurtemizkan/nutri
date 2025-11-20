@@ -1,0 +1,141 @@
+appId: ${APP_ID}
+
+---
+# Test: User Registration Flow
+# Description: Validates complete user signup process with form validation
+
+- launchApp
+- assertVisible: "Nutri"
+- assertVisible: "Track your nutrition journey"
+
+# Navigate to signup from welcome screen
+- tapOn: "Create Account"
+- assertVisible: "Create Account"
+- assertVisible: "Start tracking your nutrition"
+
+# Fill in registration form
+- tapOn:
+    text: "Your name"
+- inputText: "${TEST_NAME}"
+
+- tapOn:
+    text: "your@email.com"
+- inputText: "${NEW_USER_EMAIL}"
+
+- tapOn:
+    text: "At least 6 characters"
+- inputText: "${NEW_USER_PASSWORD}"
+
+- tapOn:
+    text: "Re-enter password"
+- inputText: "${NEW_USER_PASSWORD}"
+
+# Submit registration
+- tapOn: "Create Account"
+
+# Wait for registration to complete and navigate to home
+- assertVisible: "Hello, ${TEST_NAME}!"
+- assertVisible: "Calories"
+
+---
+# Test: Registration Validation - Empty Fields
+# Description: Ensures form validation catches empty fields
+
+- launchApp
+- tapOn: "Create Account"
+- assertVisible: "Create Account"
+
+# Try to submit with empty fields
+- tapOn: "Create Account"
+- assertVisible: "Please fill in all fields"
+
+---
+# Test: Registration Validation - Invalid Email
+# Description: Validates email format checking
+
+- launchApp
+- tapOn: "Create Account"
+
+- tapOn:
+    text: "Your name"
+- inputText: "Test User"
+
+- tapOn:
+    text: "your@email.com"
+- inputText: "invalid-email"
+
+- tapOn:
+    text: "At least 6 characters"
+- inputText: "Test123456"
+
+- tapOn:
+    text: "Re-enter password"
+- inputText: "Test123456"
+
+- tapOn: "Create Account"
+- assertVisible: "Please enter a valid email address"
+
+---
+# Test: Registration Validation - Password Mismatch
+# Description: Ensures password confirmation works
+
+- launchApp
+- tapOn: "Create Account"
+
+- tapOn:
+    text: "Your name"
+- inputText: "Test User"
+
+- tapOn:
+    text: "your@email.com"
+- inputText: "test@example.com"
+
+- tapOn:
+    text: "At least 6 characters"
+- inputText: "Password123"
+
+- tapOn:
+    text: "Re-enter password"
+- inputText: "DifferentPassword123"
+
+- tapOn: "Create Account"
+- assertVisible: "Passwords do not match"
+
+---
+# Test: Registration Validation - Weak Password
+# Description: Validates password strength requirements
+
+- launchApp
+- tapOn: "Create Account"
+
+- tapOn:
+    text: "Your name"
+- inputText: "Test User"
+
+- tapOn:
+    text: "your@email.com"
+- inputText: "test@example.com"
+
+- tapOn:
+    text: "At least 6 characters"
+- inputText: "short"
+
+- tapOn:
+    text: "Re-enter password"
+- inputText: "short"
+
+- tapOn: "Create Account"
+- assertVisible: "Password must be at least 6 characters"
+
+---
+# Test: Navigate to Sign In from Sign Up
+# Description: Validates navigation between auth screens
+
+- launchApp
+- tapOn: "Create Account"
+- assertVisible: "Create Account"
+
+# Navigate to sign in
+- tapOn: "Sign In"
+- assertVisible: "Welcome Back"
+- assertVisible: "Sign in to continue"

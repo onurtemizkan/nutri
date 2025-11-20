@@ -1,0 +1,116 @@
+appId: ${APP_ID}
+
+# Regression Test Suite
+# Description: Comprehensive test coverage for all features
+# Run time: ~20-30 minutes
+# Purpose: Full validation before releases
+
+# This suite runs all individual test flows in sequence
+# Organized by feature area for easy debugging
+
+# ============================================
+# AUTHENTICATION FLOWS
+# ============================================
+
+# Run all auth flows
+- runFlow: ../01-auth/signup.yaml
+- runFlow: ../01-auth/signin.yaml
+- runFlow: ../01-auth/logout.yaml
+- runFlow: ../01-auth/forgot-password.yaml
+
+# ============================================
+# MEAL TRACKING FLOWS
+# ============================================
+
+# Run all meal flows
+- runFlow: ../02-meals/add-meal.yaml
+- runFlow: ../02-meals/daily-summary.yaml
+
+# ============================================
+# PROFILE MANAGEMENT FLOWS
+# ============================================
+
+# Run all profile flows
+- runFlow: ../03-profile/view-profile.yaml
+- runFlow: ../03-profile/edit-goals.yaml
+
+# ============================================
+# NAVIGATION FLOWS
+# ============================================
+
+# Run all navigation flows
+- runFlow: ../04-navigation/tab-navigation.yaml
+- runFlow: ../04-navigation/modal-navigation.yaml
+- runFlow: ../04-navigation/auth-guard.yaml
+
+# ============================================
+# REGRESSION TEST COMPLETE
+# ============================================
+
+# Final verification: Can still perform core actions
+---
+# Regression Verification: End-to-End Flow
+# Description: Final check that all systems work together
+
+- launchApp
+
+# Login
+- tapOn: "Sign In"
+- tapOn:
+    text: "your@email.com"
+- inputText: "${TEST_EMAIL}"
+- tapOn:
+    text: "Enter your password"
+- inputText: "${TEST_PASSWORD}"
+- tapOn: "Sign In"
+
+# Add a meal
+- tapOn: "Add Meal"
+- tapOn: "Lunch"
+- tapOn:
+    text: "e.g., Grilled Chicken Salad"
+- inputText: "Regression Test Meal"
+- tapOn:
+    text: "Calories"
+- inputText: "500"
+- tapOn:
+    text: "Protein"
+- inputText: "35"
+- tapOn:
+    text: "Carbs"
+- inputText: "50"
+- tapOn:
+    text: "Fat"
+- inputText: "18"
+- tapOn: "Save"
+- tapOn: "OK"
+
+# Check profile
+- tapOn: "Profile"
+- assertVisible: "${TEST_NAME}"
+- assertVisible: "Daily Goals"
+
+# Edit goals
+- tapOn: "Edit"
+- tapOn:
+    text: "Calorie Goal"
+- clearTextField
+- inputText: "2100"
+- tapOn: "Save"
+- assertVisible: "Goals updated successfully"
+
+# Return home
+- tapOn: "Home"
+- assertVisible: "/ 2100"
+
+# Logout
+- tapOn: "Profile"
+- scroll
+- tapOn: "Logout"
+- tapOn: "Logout"
+- assertVisible: "Sign In"
+
+# ============================================
+# REGRESSION SUITE COMPLETE
+# All features validated ✓
+# ============================================

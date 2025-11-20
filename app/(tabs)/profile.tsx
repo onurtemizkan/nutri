@@ -36,7 +36,7 @@ export default function ProfileScreen() {
 
       Alert.alert('Success', 'Goals updated successfully!');
       setIsEditing(false);
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to update goals');
     } finally {
       setIsLoading(false);

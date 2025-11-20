@@ -1,0 +1,165 @@
+appId: ${APP_ID}
+
+# Smoke Test Suite
+# Description: Quick sanity checks to verify core functionality
+# Run time: ~3-5 minutes
+# Purpose: Fast validation before deeper testing
+
+---
+# Smoke Test 1: Login and Basic Navigation
+# Validates: Authentication + Tab Navigation
+
+- launchApp
+
+# Handle location permission dialog if it appears
+- runFlow:
+    when:
+      visible: "Allow"
+    commands:
+      - tapOn: "Don't Allow"
+
+# Wait for app to fully load
+- extendedWaitUntil:
+    visible:
+      text: "Sign In|Hello"
+    timeout: 15000
+
+- runFlow:
+    when:
+      visible: "Sign In"
+    commands:
+      # User is logged out - perform login
+      - tapOn: "Sign In"
+      - tapOn:
+          text: "your@email.com"
+      - inputText: "${TEST_EMAIL}"
+      - tapOn:
+          text: "Enter your password"
+      - inputText: "${TEST_PASSWORD}"
+      - tapOn: "Sign In"
+      - extendedWaitUntil:
+          visible: "Hello, ${TEST_NAME}!"
+          timeout: 10000
+
+# Verify authenticated (works whether we just logged in or were already logged in)
+- assertVisible: "Hello, ${TEST_NAME}!"
+- assertVisible: "Calories"
+- assertVisible: "Today's Meals"
+
+# Cleanup: Logout to ensure clean state for next test
+- scroll
+- tapOn: "Profile"
+- scroll
+- tapOn: "Logout"
+- tapOn: "Logout"
+- assertVisible: "Sign In"
+
+---
+# Smoke Test 2: Add Meal Flow
+# Validates: Core meal tracking functionality
+
+- launchApp
+- runFlow:
+    when:
+      visible: "Sign In"
+    commands:
+      # User is logged out - perform login
+      - tapOn: "Sign In"
+      - tapOn:
+          text: "your@email.com"
+      - inputText: "${TEST_EMAIL}"
+      - tapOn:
+          text: "Enter your password"
+      - inputText: "${TEST_PASSWORD}"
+      - tapOn: "Sign In"
+
+# Quick meal addition
+- tapOn: "Add Meal"
+- tapOn: "Breakfast"
+- tapOn:
+    text: "e.g., Grilled Chicken Salad"
+- inputText: "Smoke Test Meal"
+- tapOn:
+    text: "Calories"
+- inputText: "250"
+- tapOn:
+    text: "Protein"
+- inputText: "15"
+- tapOn:
+    text: "Carbs"
+- inputText: "30"
+- tapOn:
+    text: "Fat"
+- inputText: "8"
+- tapOn: "Save"
+
+# Verify success
+- assertVisible: "Meal added successfully"
+- tapOn: "OK"
+
+---
+# Smoke Test 3: Profile View and Logout
+# Validates: Profile access + Logout flow
+
+- launchApp
+- runFlow:
+    when:
+      visible: "Sign In"
+    commands:
+      # User is logged out - perform login
+      - tapOn: "Sign In"
+      - tapOn:
+          text: "your@email.com"
+      - inputText: "${TEST_EMAIL}"
+      - tapOn:
+          text: "Enter your password"
+      - inputText: "${TEST_PASSWORD}"
+      - tapOn: "Sign In"
+
+# Check profile
+- tapOn: "Profile"
+- assertVisible: "${TEST_NAME}"
+- assertVisible: "${TEST_EMAIL}"
+- assertVisible: "Daily Goals"
+
+# Quick logout
+- scroll
+- tapOn: "Logout"
+- tapOn: "Logout"
+
+# Verify logged out
+- assertVisible: "Nutri"
+- assertVisible: "Sign In"
+
+---
+# Smoke Test 4: Registration Flow
+# Validates: New user signup
+
+- launchApp
+
+# Navigate to signup
+- tapOn: "Create Account"
+- assertVisible: "Create Account"
+
+# Fill registration (using unique email from environment)
+- tapOn:
+    text: "Your name"
+- inputText: "${NEW_USER_NAME}"
+
+- tapOn:
+    text: "your@email.com"
+- inputText: "${NEW_USER_EMAIL}"
+
+- tapOn:
+    text: "At least 6 characters"
+- inputText: "${NEW_USER_PASSWORD}"
+
+- tapOn:
+    text: "Re-enter password"
+- inputText: "${NEW_USER_PASSWORD}"
+
+# Submit
+- tapOn: "Create Account"
+
+# Verify success (auto-login)
+- assertVisible: "Hello, ${NEW_USER_NAME}!"

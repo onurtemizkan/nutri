@@ -34,6 +34,10 @@ export class AuthService {
         goalProtein: true,
         goalCarbs: true,
         goalFat: true,
+        currentWeight: true,
+        goalWeight: true,
+        height: true,
+        activityLevel: true,
         createdAt: true,
       },
     });
@@ -145,13 +149,17 @@ export class AuthService {
 
     // In a real app, you would send an email here with the reset link
     // For now, we'll return the token (in production, this would be sent via email)
-    console.log('Password reset token:', resetToken);
-    console.log('Reset link would be: /auth/reset-password?token=' + resetToken);
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.log('Password reset token:', resetToken);
+      // eslint-disable-next-line no-console
+      console.log('Reset link would be: /auth/reset-password?token=' + resetToken);
+    }
 
     return {
       message: 'If an account with that email exists, a password reset link has been sent.',
-      // In development, return the token so we can test
-      ...(process.env.NODE_ENV === 'development' && { resetToken })
+      // In development/test, return the token so we can test
+      ...((process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') && { resetToken })
     };
   }
 

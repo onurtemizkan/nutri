@@ -3,34 +3,7 @@ import { z } from 'zod';
 import { mealService } from '../services/mealService';
 import { AuthenticatedRequest } from '../types';
 import { requireAuth } from '../utils/authHelpers';
-
-const createMealSchema = z.object({
-  name: z.string().min(1, 'Meal name is required'),
-  mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
-  calories: z.number().min(0, 'Calories must be positive'),
-  protein: z.number().min(0, 'Protein must be positive'),
-  carbs: z.number().min(0, 'Carbs must be positive'),
-  fat: z.number().min(0, 'Fat must be positive'),
-  fiber: z.number().min(0).optional(),
-  sugar: z.number().min(0).optional(),
-  servingSize: z.string().optional(),
-  notes: z.string().optional(),
-  consumedAt: z.string().datetime().optional(),
-});
-
-const updateMealSchema = z.object({
-  name: z.string().min(1).optional(),
-  mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).optional(),
-  calories: z.number().min(0, 'Calories must be positive').optional(),
-  protein: z.number().min(0, 'Protein must be positive').optional(),
-  carbs: z.number().min(0, 'Carbs must be positive').optional(),
-  fat: z.number().min(0, 'Fat must be positive').optional(),
-  fiber: z.number().min(0).optional(),
-  sugar: z.number().min(0).optional(),
-  servingSize: z.string().optional(),
-  notes: z.string().optional(),
-  consumedAt: z.string().datetime().optional(),
-});
+import { createMealSchema, updateMealSchema } from '../validation/schemas';
 
 export class MealController {
   async createMeal(req: AuthenticatedRequest, res: Response): Promise<void> {

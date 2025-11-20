@@ -1,0 +1,31 @@
+# Maestro CI Configuration
+# This config is optimized for headless CI/CD environments
+
+appId: ${APP_ID}
+
+# Environment variables for CI
+env:
+  TEST_EMAIL: "testuser@example.com"
+  TEST_PASSWORD: "Test123456"
+  TEST_NAME: "Test User"
+
+  NEW_USER_EMAIL: "newuser${RANDOM}@example.com"
+  NEW_USER_PASSWORD: "NewUser123"
+  NEW_USER_NAME: "New Test User"
+
+# CI-specific settings
+# Note: Maestro Cloud handles headless execution automatically
+# For local headless testing, use --format=junit or --format=json
+
+# Output configuration
+format: junit  # For CI integration (can be: junit, json, pretty)
+
+# Timeouts
+timeout: 600000  # 10 minutes timeout for entire test suite
+
+# Retry configuration
+retries: 1  # Retry failed tests once
+
+# Parallel execution (when running multiple flows)
+# Set to number of simulators available in CI
+concurrency: 1

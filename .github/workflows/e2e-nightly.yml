@@ -1,0 +1,182 @@
+name: E2E Tests (Nightly)
+
+on:
+  schedule:
+    # Run every night at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  e2e-comprehensive:
+    name: E2E Comprehensive Tests
+    runs-on: macos-14
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        test_suite: [auth, meals, navigation, profile, validation]
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nutri_db
+      JWT_SECRET: test-jwt-secret-key-for-ci
+      JWT_EXPIRES_IN: 7d
+      REDIS_URL: redis://localhost:6379
+      NODE_ENV: development
+      PORT: 3000
+
+      # Maestro test environment variables
+      APP_ID: com.anonymous.nutri
+      TEST_EMAIL: testuser@example.com
+      TEST_PASSWORD: Test123456
+      TEST_NAME: Test User
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install server dependencies
+        run: cd server && npm ci
+
+      - name: Install and start PostgreSQL
+        run: |
+          brew install postgresql@16
+          brew services start postgresql@16
+
+          for i in {1..30}; do
+            if pg_isready -h localhost > /dev/null 2>&1; then
+              echo "PostgreSQL is ready!"
+              break
+            fi
+            echo "Waiting for PostgreSQL... ($i/30)"
+            sleep 1
+          done
+
+          createdb nutri_db
+
+      - name: Install and start Redis
+        run: |
+          brew install redis
+          brew services start redis
+
+          for i in {1..30}; do
+            if redis-cli ping > /dev/null 2>&1; then
+              echo "Redis is ready!"
+              break
+            fi
+            echo "Waiting for Redis... ($i/30)"
+            sleep 1
+          done
+
+      - name: Generate Prisma Client
+        run: cd server && npx prisma generate
+
+      - name: Run database migrations
+        run: cd server && npx prisma migrate deploy
+
+      - name: Create test user
+        run: cd server && npx tsx scripts/create-test-user.ts
+
+      - name: Setup Ruby (for CocoaPods)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Install CocoaPods
+        run: gem install cocoapods
+
+      - name: Setup iOS Simulator
+        run: |
+          SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone 15" | head -1 | grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}')
+
+          if [ -z "$SIMULATOR_ID" ]; then
+            SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone 14" | head -1 | grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}')
+          fi
+
+          xcrun simctl boot "$SIMULATOR_ID"
+
+          while ! xcrun simctl list devices | grep "$SIMULATOR_ID" | grep -q "Booted"; do
+            sleep 2
+          done
+
+      - name: Install Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "${HOME}/.maestro/bin" >> $GITHUB_PATH
+
+      - name: Prebuild iOS app
+        run: npx expo prebuild --platform ios --clean
+
+      - name: Build iOS app
+        run: |
+          xcodebuild \
+            -workspace ios/nutri.xcworkspace \
+            -scheme nutri \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath ios/build \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            build
+
+      - name: Install app on simulator
+        run: |
+          APP_PATH=$(find ios/build -name "*.app" | head -1)
+          SIMULATOR_ID=$(xcrun simctl list devices | grep "Booted" | grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}')
+          xcrun simctl install "$SIMULATOR_ID" "$APP_PATH"
+
+      - name: Start backend server
+        run: |
+          cd server && npm start &
+
+          for i in {1..30}; do
+            if curl -s http://localhost:3000/health > /dev/null; then
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Run Maestro tests - ${{ matrix.test_suite }}
+        run: |
+          ./scripts/run-maestro-headless.sh ${{ matrix.test_suite }}
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: maestro-results-${{ matrix.test_suite }}
+          path: maestro-results/
+          retention-days: 30
+
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action/macos@v2
+        if: always()
+        with:
+          files: maestro-results/*.xml
+          check_name: E2E Nightly - ${{ matrix.test_suite }}
+
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [e2e-comprehensive]
+    if: always()
+
+    steps:
+      - name: Check test results
+        run: |
+          if [[ "${{ needs.e2e-comprehensive.result }}" != "success" ]]; then
+            echo "E2E tests failed! Check the workflow for details."
+            exit 1
+          fi
+          echo "All E2E tests passed!"

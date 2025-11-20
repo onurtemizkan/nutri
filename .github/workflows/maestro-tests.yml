@@ -1,0 +1,130 @@
+name: Maestro E2E Tests
+
+on:
+  push:
+    branches: [master, develop]
+  # Disabled for PRs - use the E2E tests in ci.yml instead
+  # pull_request:
+  #   branches: [master, develop]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  test-ios:
+    name: iOS E2E Tests
+    runs-on: macos-14  # macOS required for iOS simulator
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd server && npm ci
+
+      - name: Setup Java (required for Maestro)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Maestro CLI
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+
+      - name: Start Backend Server
+        run: |
+          cd server
+          npm run dev &
+          sleep 10  # Wait for server to start
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+      - name: Setup Test Database
+        run: |
+          cd server
+          npx prisma migrate deploy
+          npx prisma db seed
+
+      - name: Build iOS App
+        run: |
+          npx expo prebuild --platform ios
+          cd ios
+          xcodebuild -workspace nutri.xcworkspace \
+            -scheme nutri \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Boot iOS Simulator
+        run: |
+          # Find available iPhone simulator
+          SIMULATOR_ID=$(xcrun simctl list devices available | \
+            grep "iPhone 16 Pro" | head -1 | \
+            grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}')
+
+          # Boot simulator
+          xcrun simctl boot "$SIMULATOR_ID" || true
+          sleep 10
+
+      - name: Install App on Simulator
+        run: |
+          # Find the built app
+          APP_PATH=$(find ios/build/Build/Products/Release-iphonesimulator -name "*.app" | head -1)
+
+          # Install on booted simulator
+          xcrun simctl install booted "$APP_PATH"
+
+      - name: Run Maestro Smoke Tests
+        run: |
+          chmod +x ./scripts/run-maestro-headless.sh
+          ./scripts/run-maestro-headless.sh smoke
+        env:
+          APP_ID: com.anonymous.nutri
+          PLATFORM: ios
+          FORMAT: junit
+          OUTPUT_DIR: maestro-results
+
+      - name: Run All Maestro Tests
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: ./scripts/run-maestro-headless.sh all
+        env:
+          APP_ID: com.anonymous.nutri
+          PLATFORM: ios
+          FORMAT: junit
+          OUTPUT_DIR: maestro-results
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-test-results
+          path: maestro-results/
+          retention-days: 30
+
+      - name: Upload Test Screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-screenshots
+          path: ~/.maestro/tests/
+          retention-days: 7
+
+      - name: Publish Test Report
+        if: always()
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: 'maestro-results/*.xml'
+          check_name: Maestro Test Results
+          fail_on_failure: true

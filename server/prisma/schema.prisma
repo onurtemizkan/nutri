@@ -36,6 +36,14 @@ model User {
   waterIntakes    WaterIntake[]
   weightRecords   WeightRecord[]
 
+  // ML Relations
+  healthMetrics   HealthMetric[]
+  activities      Activity[]
+  mlFeatures      MLFeature[]
+  mlPredictions   MLPrediction[]
+  mlInsights      MLInsight[]
+  mlProfile       UserMLProfile?
+
   @@index([email])
   @@index([resetToken])
 }
@@ -88,4 +96,320 @@ model WeightRecord {
   createdAt DateTime @default(now())
 
   @@index([userId, recordedAt])
+}
+
+// ============================================================================
+// ML ENGINE MODELS
+// ============================================================================
+
+// Health Metrics - Time series data from wearables (RHR, HRV, sleep, etc.)
+model HealthMetric {
+  id              String            @id @default(cuid())
+  userId          String
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Timestamp (UTC, precise to second)
+  recordedAt      DateTime
+
+  // Metric type (enum for type safety)
+  metricType      HealthMetricType
+
+  // Value (flexible for different units)
+  value           Float
+  unit            String            // "bpm", "ms", "%", "steps", "kcal", etc.
+
+  // Source (for data provenance)
+  source          String            // "apple_health", "fitbit", "garmin", "oura", "whoop", "manual"
+  sourceId        String?           // Original ID from source system
+
+  // Metadata (JSON for flexibility)
+  metadata        Json?             // {quality: "high", confidence: 0.95, device: "Apple Watch Series 9"}
+
+  // Audit
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([userId, recordedAt])
+  @@index([userId, metricType, recordedAt])
+  @@unique([userId, metricType, recordedAt, source])
+}
+
+// Activity - Exercise and movement data
+model Activity {
+  id              String            @id @default(cuid())
+  userId          String
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Timing
+  startedAt       DateTime
+  endedAt         DateTime
+  duration        Int               // Duration in minutes
+
+  // Type & Intensity
+  activityType    ActivityType
+  intensity       ActivityIntensity
+
+  // Metrics
+  caloriesBurned  Float?
+  averageHeartRate Float?
+  maxHeartRate    Float?
+  distance        Float?            // In meters
+  steps           Int?
+
+  // Source
+  source          String            // "apple_health", "strava", "garmin", "manual"
+  sourceId        String?
+
+  // Notes
+  notes           String?
+
+  // Audit
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([userId, startedAt])
+  @@index([userId, activityType, startedAt])
+}
+
+// ML Features - Pre-computed features for fast predictions
+model MLFeature {
+  id              String            @id @default(cuid())
+  userId          String
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Temporal scope
+  date            DateTime          // Date this feature represents (e.g., 2025-01-17)
+
+  // Feature category
+  category        MLFeatureCategory
+
+  // Features (JSON for flexibility)
+  features        Json              // {protein_7d_avg: 150, carbs_ratio: 0.4, meal_regularity: 0.85}
+
+  // Metadata
+  version         String            // "v1.2.3" - for feature engineering versioning
+
+  // Audit
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([userId, date, category])
+  @@unique([userId, date, category, version])
+}
+
+// ML Predictions - Model outputs and tracking
+model MLPrediction {
+  id              String            @id @default(cuid())
+  userId          String
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // What are we predicting?
+  targetMetric    HealthMetricType
+  targetDate      DateTime          // When is this prediction for?
+
+  // Prediction
+  predictedValue  Float
+  confidence      Float             // 0.0 to 1.0
+  predictionRange Json              // {lower: 55, upper: 61} for confidence intervals
+
+  // Model metadata
+  modelId         String            // "rhr_lstm_v2.1.0"
+  modelVersion    String            // "2.1.0"
+
+  // Feature importance (what drove this prediction?)
+  featureImportance Json            // {protein_intake: 0.35, sleep_quality: 0.28, ...}
+
+  // Actual outcome (for model evaluation)
+  actualValue     Float?
+  predictionError Float?            // Calculated after actual value is recorded
+
+  // Audit
+  createdAt       DateTime          @default(now())
+
+  @@index([userId, targetDate, targetMetric])
+  @@index([userId, modelId, createdAt])
+}
+
+// ML Insights - Actionable recommendations for users
+model MLInsight {
+  id              String            @id @default(cuid())
+  userId          String
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Insight type
+  insightType     MLInsightType
+  priority        InsightPriority
+
+  // Content
+  title           String            // "Your carb timing affects sleep quality"
+  description     String            // Detailed explanation
+  recommendation  String            // "Try eating complex carbs earlier in the day"
+
+  // Supporting data
+  correlation     Float?            // Correlation coefficient (if applicable)
+  confidence      Float             // How confident is the ML model? (0.0 to 1.0)
+  dataPoints      Int               // How many data points support this insight?
+
+  // Metadata
+  metadata        Json?             // {chart_data: [...], references: [...]}
+
+  // User interaction
+  viewed          Boolean           @default(false)
+  viewedAt        DateTime?
+  dismissed       Boolean           @default(false)
+  dismissedAt     DateTime?
+  helpful         Boolean?          // User feedback: was this helpful?
+
+  // Audit
+  createdAt       DateTime          @default(now())
+  expiresAt       DateTime?         // Some insights are time-sensitive
+
+  @@index([userId, createdAt])
+  @@index([userId, insightType, priority])
+}
+
+// User ML Profile - Per-user model configuration
+model UserMLProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Data quality
+  totalDataPoints Int      @default(0)
+  dataQualityScore Float   @default(0.0) // 0.0 to 1.0
+
+  // Minimum data requirements met?
+  hasMinimumNutritionData   Boolean @default(false)
+  hasMinimumHealthData      Boolean @default(false)
+  hasMinimumActivityData    Boolean @default(false)
+
+  // Model readiness
+  modelsAvailable Json     // {rhr_prediction: true, hrv_prediction: false, ...}
+  lastTrainingDate DateTime?
+
+  // User preferences
+  enablePredictions Boolean @default(true)
+  enableInsights    Boolean @default(true)
+  insightFrequency  String  @default("daily") // "daily", "weekly", "realtime"
+
+  // Privacy
+  shareDataForResearch Boolean @default(false)
+  dataRetentionDays    Int     @default(365)
+
+  // Audit
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum HealthMetricType {
+  // Cardiovascular
+  RESTING_HEART_RATE
+  HEART_RATE_VARIABILITY_SDNN
+  HEART_RATE_VARIABILITY_RMSSD
+  BLOOD_PRESSURE_SYSTOLIC
+  BLOOD_PRESSURE_DIASTOLIC
+
+  // Respiratory
+  RESPIRATORY_RATE
+  OXYGEN_SATURATION
+  VO2_MAX
+
+  // Sleep
+  SLEEP_DURATION
+  DEEP_SLEEP_DURATION
+  REM_SLEEP_DURATION
+  SLEEP_EFFICIENCY
+  SLEEP_SCORE
+
+  // Activity
+  STEPS
+  ACTIVE_CALORIES
+  TOTAL_CALORIES
+  EXERCISE_MINUTES
+  STANDING_HOURS
+
+  // Recovery & Strain
+  RECOVERY_SCORE
+  STRAIN_SCORE
+  READINESS_SCORE
+
+  // Body Composition
+  BODY_FAT_PERCENTAGE
+  MUSCLE_MASS
+  BONE_MASS
+  WATER_PERCENTAGE
+
+  // Other
+  SKIN_TEMPERATURE
+  BLOOD_GLUCOSE
+  STRESS_LEVEL
+}
+
+enum ActivityType {
+  // Cardio
+  RUNNING
+  CYCLING
+  SWIMMING
+  WALKING
+  HIKING
+  ROWING
+  ELLIPTICAL
+
+  // Strength
+  WEIGHT_TRAINING
+  BODYWEIGHT
+  CROSSFIT
+  POWERLIFTING
+
+  // Sports
+  BASKETBALL
+  SOCCER
+  TENNIS
+  GOLF
+
+  // Other
+  YOGA
+  PILATES
+  STRETCHING
+  MARTIAL_ARTS
+  DANCE
+  OTHER
+}
+
+enum ActivityIntensity {
+  LOW
+  MODERATE
+  HIGH
+  MAXIMUM
+}
+
+enum MLFeatureCategory {
+  NUTRITION_DAILY
+  NUTRITION_WEEKLY
+  NUTRITION_TEMPORAL
+  ACTIVITY_DAILY
+  ACTIVITY_WEEKLY
+  HEALTH_DAILY
+  HEALTH_WEEKLY
+  COMBINED_FEATURES
+}
+
+enum MLInsightType {
+  CORRELATION
+  PREDICTION
+  ANOMALY
+  RECOMMENDATION
+  GOAL_PROGRESS
+  PATTERN_DETECTED
+}
+
+enum InsightPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
 }

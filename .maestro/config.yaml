@@ -1,0 +1,36 @@
+# Maestro Configuration for Nutri App
+# This file contains global settings for all Maestro test flows
+
+# App configuration
+appId: ${APP_ID}  # Will be set per platform
+
+# Global settings
+env:
+  # Test user credentials for consistent testing
+  TEST_EMAIL: "testuser@example.com"
+  TEST_PASSWORD: "Test123456"
+  TEST_NAME: "Test User"
+
+  # New user for registration tests
+  # Note: These values are overridden by the test runner script with timestamp-based unique values
+  NEW_USER_EMAIL: "newuser@example.com"
+  NEW_USER_PASSWORD: "NewUser123"
+  NEW_USER_NAME: "New Test User"
+
+  # Meal test data
+  TEST_MEAL_NAME: "Grilled Chicken Salad"
+  TEST_MEAL_CALORIES: "450"
+  TEST_MEAL_PROTEIN: "35"
+  TEST_MEAL_CARBS: "40"
+  TEST_MEAL_FAT: "15"
+
+# Default wait times (milliseconds)
+defaults:
+  # Wait for animations and transitions
+  defaultDelay: 1000
+
+  # Timeout for assertions
+  assertionTimeout: 10000
+
+  # Timeout for app launch
+  launchTimeout: 30000

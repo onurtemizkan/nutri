@@ -1,0 +1,198 @@
+appId: ${APP_ID}
+
+---
+# Test: Modal Navigation - Open Add Meal Modal
+# Description: Validates opening add meal modal from home screen
+
+- launchApp
+
+# Login
+- tapOn: "Sign In"
+- tapOn:
+    text: "your@email.com"
+- inputText: "${TEST_EMAIL}"
+- tapOn:
+    text: "Enter your password"
+- inputText: "${TEST_PASSWORD}"
+- tapOn: "Sign In"
+
+# Verify on Home screen
+- assertVisible: "Hello, ${TEST_NAME}!"
+- assertVisible: "Add Meal"
+
+# Open modal
+- tapOn: "Add Meal"
+
+# Verify modal opened
+- assertVisible: "Add Meal"
+- assertVisible: "Meal Type"
+- assertVisible: "Cancel"
+
+# Verify home content covered by modal
+- assertNotVisible: "Hello, ${TEST_NAME}!"
+
+---
+# Test: Modal Navigation - Close Modal with Cancel
+# Description: Validates closing modal with cancel button
+
+- launchApp
+
+# Login
+- tapOn: "Sign In"
+- tapOn:
+    text: "your@email.com"
+- inputText: "${TEST_EMAIL}"
+- tapOn:
+    text: "Enter your password"
+- inputText: "${TEST_PASSWORD}"
+- tapOn: "Sign In"
+
+# Open modal
+- tapOn: "Add Meal"
+- assertVisible: "Add Meal"
+
+# Fill some data
+- tapOn:
+    text: "e.g., Grilled Chicken Salad"
+- inputText: "Test Meal"
+
+# Cancel modal
+- tapOn: "Cancel"
+
+# Verify back on home screen
+- assertVisible: "Hello, ${TEST_NAME}!"
+- assertVisible: "Calories"
+
+# Verify modal closed
+- assertNotVisible: "Meal Type"
+
+---
+# Test: Modal Navigation - Close Modal with Save
+# Description: Validates modal closes after successful save
+
+- launchApp
+
+# Login
+- tapOn: "Sign In"
+- tapOn:
+    text: "your@email.com"
+- inputText: "${TEST_EMAIL}"
+- tapOn:
+    text: "Enter your password"
+- inputText: "${TEST_PASSWORD}"
+- tapOn: "Sign In"
+
+# Open modal
+- tapOn: "Add Meal"
+
+# Fill complete meal data
+- tapOn: "Lunch"
+- tapOn:
+    text: "e.g., Grilled Chicken Salad"
+- inputText: "Complete Meal"
+- tapOn:
+    text: "Calories"
+- inputText: "400"
+- tapOn:
+    text: "Protein"
+- inputText: "30"
+- tapOn:
+    text: "Carbs"
+- inputText: "40"
+- tapOn:
+    text: "Fat"
+- inputText: "15"
+
+# Save meal
+- tapOn: "Save"
+
+# Verify success message
+- assertVisible: "Meal added successfully"
+
+# Dismiss success alert
+- tapOn: "OK"
+
+# Verify back on home screen
+- assertVisible: "Hello, ${TEST_NAME}!"
+- assertVisible: "Calories"
+
+# Verify modal closed
+- assertNotVisible: "Meal Type"
+
+---
+# Test: Modal Navigation - Reopen After Cancel
+# Description: Validates modal can be reopened after canceling
+
+- launchApp
+
+# Login
+- tapOn: "Sign In"
+- tapOn:
+    text: "your@email.com"
+- inputText: "${TEST_EMAIL}"
+- tapOn:
+    text: "Enter your password"
+- inputText: "${TEST_PASSWORD}"
+- tapOn: "Sign In"
+
+# Open modal
+- tapOn: "Add Meal"
+- assertVisible: "Add Meal"
+
+# Fill some data
+- tapOn:
+    text: "e.g., Grilled Chicken Salad"
+- inputText: "First Attempt"
+
+# Cancel
+- tapOn: "Cancel"
+- assertVisible: "Hello, ${TEST_NAME}!"
+
+# Reopen modal
+- tapOn: "Add Meal"
+
+# Verify modal is fresh (previous data cleared)
+- assertVisible: "Add Meal"
+- assertVisible: "Meal Type"
+
+# Modal should show placeholder, not previous data
+- assertVisible: "e.g., Grilled Chicken Salad"
+
+---
+# Test: Modal Navigation - Modal State Independence
+# Description: Validates modal doesn't affect tab navigation
+
+- launchApp
+
+# Login
+- tapOn: "Sign In"
+- tapOn:
+    text: "your@email.com"
+- inputText: "${TEST_EMAIL}"
+- tapOn:
+    text: "Enter your password"
+- inputText: "${TEST_PASSWORD}"
+- tapOn: "Sign In"
+
+# Open modal from Home tab
+- tapOn: "Add Meal"
+- assertVisible: "Add Meal"
+
+# Cancel modal
+- tapOn: "Cancel"
+
+# Verify still on Home tab
+- assertVisible: "Home"
+- assertVisible: "Hello, ${TEST_NAME}!"
+
+# Navigate to Profile
+- tapOn: "Profile"
+- assertVisible: "Daily Goals"
+
+# Navigate back to Home
+- tapOn: "Home"
+
+# Modal should still be accessible
+- tapOn: "Add Meal"
+- assertVisible: "Add Meal"
+- assertVisible: "Meal Type"
