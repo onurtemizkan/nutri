@@ -2,6 +2,7 @@
 Configuration management for ML Service
 Uses pydantic-settings for type-safe environment variables
 """
+from typing import Optional, List
 from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 from functools import lru_cache
@@ -28,7 +29,7 @@ class Settings(BaseSettings):
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"
-    redis_password: str | None = None
+    redis_password: Optional[str] = None
     redis_max_connections: int = 10
 
     # Cache TTL (in seconds)
@@ -45,10 +46,10 @@ class Settings(BaseSettings):
     min_data_points_for_ml: int = 30  # Minimum days of data required
 
     # CORS
-    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:5173"]
+    cors_origins: List[str] = ["http://localhost:3000", "http://localhost:5173"]
     cors_allow_credentials: bool = True
-    cors_allow_methods: list[str] = ["*"]
-    cors_allow_headers: list[str] = ["*"]
+    cors_allow_methods: List[str] = ["*"]
+    cors_allow_headers: List[str] = ["*"]
 
     # Logging
     log_level: str = "INFO"
