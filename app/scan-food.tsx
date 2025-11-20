@@ -7,8 +7,6 @@ import {
   Alert,
   ActivityIndicator,
   Image,
-  Dimensions,
-  Platform,
 } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
@@ -20,8 +18,6 @@ import type {
   FoodScanResult,
   ARMeasurement,
 } from '@/lib/types/food-analysis';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ScanFoodScreen() {
   const [permission, requestPermission] = useCameraPermissions();
