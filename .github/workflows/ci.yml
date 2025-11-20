@@ -148,6 +148,10 @@ jobs:
           brew install postgresql@16
           brew services start postgresql@16
 
+          # Add PostgreSQL to PATH
+          echo "/opt/homebrew/opt/postgresql@16/bin" >> $GITHUB_PATH
+          export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
+
           # Wait for PostgreSQL to be ready
           for i in {1..30}; do
             if pg_isready -h localhost > /dev/null 2>&1; then
