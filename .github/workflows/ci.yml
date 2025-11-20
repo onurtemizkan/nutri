@@ -74,8 +74,8 @@ jobs:
       - name: Generate Prisma Client
         run: cd server && npx prisma generate
 
-      - name: Run database migrations
-        run: cd server && npx prisma migrate deploy
+      - name: Push database schema
+        run: cd server && npx prisma db push --accept-data-loss --skip-generate
 
       - name: Run backend tests
         run: cd server && npm test -- --coverage
@@ -179,8 +179,8 @@ jobs:
       - name: Generate Prisma Client
         run: cd server && npx prisma generate
 
-      - name: Run database migrations
-        run: cd server && npx prisma migrate deploy
+      - name: Push database schema
+        run: cd server && npx prisma db push --accept-data-loss --skip-generate
 
       - name: Create test user
         run: cd server && npx tsx scripts/create-test-user.ts
