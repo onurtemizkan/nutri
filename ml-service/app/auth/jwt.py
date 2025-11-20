@@ -5,7 +5,7 @@ Handles creation, validation, and decoding of JWT tokens.
 Uses asymmetric RS256 algorithm for enhanced security.
 """
 
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 import jwt
 from jwt.exceptions import InvalidTokenError, ExpiredSignatureError

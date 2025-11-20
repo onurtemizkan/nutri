@@ -6,7 +6,7 @@ Tests for user registration, login, token management, and protected routes.
 
 import pytest
 from httpx import AsyncClient
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 
 from app.main import app
 from app.auth.jwt import JWTHandler
