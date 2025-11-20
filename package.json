@@ -10,6 +10,7 @@
     "web": "expo start --web",
     "test": "jest --watchAll",
     "lint": "expo lint",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "dev:start": "./scripts/start-all.sh",
     "dev:stop": "./scripts/stop-all.sh",
     "services:start": "./scripts/start-dev.sh",

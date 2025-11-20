@@ -119,7 +119,7 @@ export interface CreateHealthMetricInput {
   recordedAt: Date;
   source: HealthMetricSource;
   sourceId?: string;
-  metadata?: Record<string, any>; // {quality: "high", confidence: 0.95, device: "Apple Watch"}
+  metadata?: Record<string, unknown>; // {quality: "high", confidence: 0.95, device: "Apple Watch"}
 }
 
 export interface GetHealthMetricsQuery {

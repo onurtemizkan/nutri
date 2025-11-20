@@ -100,7 +100,7 @@ afterAll(async () => {
       if (fs.existsSync(dbPath)) {
         fs.unlinkSync(dbPath);
       }
-    } catch (error) {
+    } catch {
       // Ignore cleanup errors
     }
   }

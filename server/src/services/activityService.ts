@@ -216,7 +216,14 @@ export class ActivityService {
     });
 
     // Group by day
-    const dailyData: Record<string, any> = {};
+    const dailyData: Record<string, {
+      date: string;
+      totalDuration: number;
+      totalCalories: number;
+      totalDistance: number;
+      totalSteps: number;
+      activityCount: number;
+    }> = {};
 
     activities.forEach((activity) => {
       const dateKey = activity.startedAt.toISOString().split('T')[0];
