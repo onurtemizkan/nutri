@@ -112,6 +112,8 @@ jobs:
     name: E2E Tests (iOS)
     runs-on: macos-14
     timeout-minutes: 60
+    # Only run E2E tests on push to main/master to save CI costs (macOS runners are 10x more expensive)
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
 
     env:
       DATABASE_URL: postgresql://runner@localhost:5432/nutri_db
@@ -321,11 +323,12 @@ jobs:
     steps:
       - name: Check all jobs
         run: |
+          # E2E tests are optional (only run on push to main/master to save CI costs)
           if [[ "${{ needs.lint.result }}" != "success" ]] || \
              [[ "${{ needs.backend-tests.result }}" != "success" ]] || \
              [[ "${{ needs.mobile-tests.result }}" != "success" ]] || \
-             [[ "${{ needs.e2e-tests.result }}" != "success" ]]; then
+             [[ "${{ needs.e2e-tests.result }}" != "success" && "${{ needs.e2e-tests.result }}" != "skipped" ]]; then
             echo "One or more jobs failed!"
             exit 1
           fi
-          echo "All CI jobs passed!"
+          echo "All required CI jobs passed!"
