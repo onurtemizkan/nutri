@@ -26,9 +26,9 @@ statsmodels==0.14.1
 prophet==1.1.5  # Facebook Prophet for time series forecasting
 
 # Deep Learning - PyTorch (IN-HOUSE LSTM MODELS)
-torch==2.9.1  # LSTM neural networks for RHR/HRV prediction (native M1/M2/M3 support)
-torchvision==0.24.1  # PyTorch vision utilities
-torchaudio==2.9.1  # PyTorch audio utilities
+torch==2.8.0  # LSTM neural networks for RHR/HRV prediction (native M1/M2/M3 support)
+torchvision==0.19.0  # PyTorch vision utilities
+torchaudio==2.8.0  # PyTorch audio utilities
 
 # Model Interpretability (Phase 3)
 shap==0.44.1  # SHAP explanations for feature importance
