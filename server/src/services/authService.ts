@@ -154,8 +154,8 @@ export class AuthService {
 
     return {
       message: 'If an account with that email exists, a password reset link has been sent.',
-      // In development, return the token so we can test
-      ...(process.env.NODE_ENV === 'development' && { resetToken })
+      // In development/test, return the token so we can test
+      ...((process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') && { resetToken })
     };
   }
 

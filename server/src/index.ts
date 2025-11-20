@@ -28,13 +28,16 @@ app.use('/api/activities', activityRoutes);
 // Error handler (must be last)
 app.use(errorHandler);
 
-// Start server
-const PORT = config.port;
+// Only start server if not in test mode
+// In test mode, supertest will handle server lifecycle
+if (process.env.NODE_ENV !== 'test') {
+  const PORT = config.port;
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📝 Environment: ${config.nodeEnv}`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/health`);
-});
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📝 Environment: ${config.nodeEnv}`);
+    console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+  });
+}
 
 export default app;

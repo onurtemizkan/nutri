@@ -141,25 +141,25 @@ appId: ${APP_ID}
 - tapOn: "Create Account"
 - assertVisible: "Create Account"
 
-# Fill registration (using timestamp for unique email)
+# Fill registration (using unique email from environment)
 - tapOn:
     text: "Your name"
-- inputText: "Smoke Test User"
+- inputText: "${NEW_USER_NAME}"
 
 - tapOn:
     text: "your@email.com"
-- inputText: "smoketest${RANDOM}@example.com"
+- inputText: "${NEW_USER_EMAIL}"
 
 - tapOn:
     text: "At least 6 characters"
-- inputText: "Test123"
+- inputText: "${NEW_USER_PASSWORD}"
 
 - tapOn:
     text: "Re-enter password"
-- inputText: "Test123"
+- inputText: "${NEW_USER_PASSWORD}"
 
 # Submit
 - tapOn: "Create Account"
 
 # Verify success (auto-login)
-- assertVisible: "Hello, Smoke Test User!"
+- assertVisible: "Hello, ${NEW_USER_NAME}!"

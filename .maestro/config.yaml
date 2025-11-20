@@ -11,8 +11,9 @@ env:
   TEST_PASSWORD: "Test123456"
   TEST_NAME: "Test User"
 
-  # New user for registration tests (use timestamp to avoid conflicts)
-  NEW_USER_EMAIL: "newuser${RANDOM}@example.com"
+  # New user for registration tests
+  # Note: These values are overridden by the test runner script with timestamp-based unique values
+  NEW_USER_EMAIL: "newuser@example.com"
   NEW_USER_PASSWORD: "NewUser123"
   NEW_USER_NAME: "New Test User"
 

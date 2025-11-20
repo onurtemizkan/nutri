@@ -1,15 +1,6 @@
 import prisma from '../config/database';
 import { CreateMealInput, UpdateMealInput } from '../types';
 
-interface DailySummaryData {
-  date: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  mealCount: number;
-}
-
 export class MealService {
   async createMeal(userId: string, data: CreateMealInput) {
     const meal = await prisma.meal.create({
@@ -162,31 +153,30 @@ export class MealService {
       },
     });
 
-    // Group by day
-    const dailyData: Record<string, DailySummaryData> = {};
+    // Calculate totals
+    const totalCalories = meals.reduce((sum, meal) => sum + meal.calories, 0);
+    const totalProtein = meals.reduce((sum, meal) => sum + meal.protein, 0);
+    const totalCarbs = meals.reduce((sum, meal) => sum + meal.carbs, 0);
+    const totalFat = meals.reduce((sum, meal) => sum + meal.fat, 0);
+    const mealCount = meals.length;
 
-    meals.forEach((meal) => {
-      const dateKey = meal.consumedAt.toISOString().split('T')[0];
+    // Calculate daily averages (over 7 days)
+    const averageDailyCalories = totalCalories / 7;
+    const averageDailyProtein = totalProtein / 7;
+    const averageDailyCarbs = totalCarbs / 7;
+    const averageDailyFat = totalFat / 7;
 
-      if (!dailyData[dateKey]) {
-        dailyData[dateKey] = {
-          date: dateKey,
-          calories: 0,
-          protein: 0,
-          carbs: 0,
-          fat: 0,
-          mealCount: 0,
-        };
-      }
-
-      dailyData[dateKey].calories += meal.calories;
-      dailyData[dateKey].protein += meal.protein;
-      dailyData[dateKey].carbs += meal.carbs;
-      dailyData[dateKey].fat += meal.fat;
-      dailyData[dateKey].mealCount += 1;
-    });
-
-    return Object.values(dailyData);
+    return {
+      totalCalories,
+      totalProtein,
+      totalCarbs,
+      totalFat,
+      mealCount,
+      averageDailyCalories,
+      averageDailyProtein,
+      averageDailyCarbs,
+      averageDailyFat,
+    };
   }
 }
 

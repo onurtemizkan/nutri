@@ -21,7 +21,13 @@ export default function HomeScreen() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const loadSummary = async () => {
+  const loadSummary = useCallback(async () => {
+    // Only load if user is authenticated
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const data = await mealsApi.getDailySummary();
       setSummary(data);
@@ -30,17 +36,17 @@ export default function HomeScreen() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadSummary();
     setRefreshing(false);
-  }, []);
+  }, [loadSummary]);
 
   useEffect(() => {
     loadSummary();
-  }, []);
+  }, [loadSummary]);
 
   const calorieProgress =
     summary && summary.goals

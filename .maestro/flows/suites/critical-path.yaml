@@ -15,20 +15,20 @@ appId: ${APP_ID}
 - tapOn: "Create Account"
 - tapOn:
     text: "Your name"
-- inputText: "Critical Path User"
+- inputText: "${NEW_USER_NAME}"
 - tapOn:
     text: "your@email.com"
-- inputText: "criticalpath${RANDOM}@example.com"
+- inputText: "${NEW_USER_EMAIL}"
 - tapOn:
     text: "At least 6 characters"
-- inputText: "Test123456"
+- inputText: "${NEW_USER_PASSWORD}"
 - tapOn:
     text: "Re-enter password"
-- inputText: "Test123456"
+- inputText: "${NEW_USER_PASSWORD}"
 - tapOn: "Create Account"
 
 # Step 2: Verify landing on home screen
-- assertVisible: "Hello, Critical Path User!"
+- assertVisible: "Hello, ${NEW_USER_NAME}!"
 - assertVisible: "Calories"
 - assertVisible: "/ 2000"  # Default goal
 

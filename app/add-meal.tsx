@@ -30,7 +30,7 @@ export default function AddMealScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const mealTypes: Array<'breakfast' | 'lunch' | 'dinner' | 'snack'> = [
+  const mealTypes: ('breakfast' | 'lunch' | 'dinner' | 'snack')[] = [
     'breakfast',
     'lunch',
     'dinner',

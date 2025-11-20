@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -27,35 +27,36 @@ export default function ResetPasswordScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
 
+  const verifyToken = useCallback(async (tokenToVerify: string) => {
+    setIsVerifying(true);
+    try {
+      const response = await authApi.verifyResetToken(tokenToVerify);
+      setTokenValid(true);
+      setUserEmail(response.email);
+    } catch {
+      Alert.alert(
+        'Invalid Token',
+        'This password reset link is invalid or has expired. Please request a new one.',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.replace('/auth/forgot-password'),
+          },
+        ]
+      );
+      setTokenValid(false);
+    } finally {
+      setIsVerifying(false);
+    }
+  }, [router]);
+
   useEffect(() => {
     // Check if token is in URL params
     if (params.token && typeof params.token === 'string') {
       setToken(params.token);
       verifyToken(params.token);
     }
-  }, [params.token]);
-
-  const verifyToken = async (tokenToVerify: string) => {
-    setIsVerifying(true);
-    try {
-      const response = await authApi.verifyResetToken(tokenToVerify);
-      setTokenValid(true);
-      setUserEmail(response.email);
-    } catch (error) {
-      Alert.alert(
-        'Invalid Token',
-        'This password reset link is invalid or has expired. Please request a new one.',
-        [
-          {
-            text: 'Request New Link',
-            onPress: () => router.push('/auth/forgot-password'),
-          },
-        ]
-      );
-    } finally {
-      setIsVerifying(false);
-    }
-  };
+  }, [params.token, verifyToken]);
 
   const handleVerifyToken = async () => {
     if (!token) {

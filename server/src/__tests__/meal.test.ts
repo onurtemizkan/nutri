@@ -152,7 +152,7 @@ describe('Meal API Endpoints', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toContain('positive');
+      expect(response.body.error).toContain('greater than or equal to 0');
     });
 
     it('should reject meal with invalid mealType', async () => {
@@ -187,7 +187,7 @@ describe('Meal API Endpoints', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toContain('required');
+      expect(response.body.error).toContain('at least 1 character');
     });
   });
 
@@ -390,7 +390,7 @@ describe('Meal API Endpoints', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toContain('positive');
+      expect(response.body.error).toContain('greater than or equal to 0');
     });
 
     it('should reject update for non-existent meal', async () => {
@@ -533,7 +533,7 @@ describe('Meal API Endpoints', () => {
       expect(response.body).toHaveProperty('totalProtein', 55);
       expect(response.body).toHaveProperty('totalCarbs', 90);
       expect(response.body).toHaveProperty('totalFat', 30);
-      expect(response.body).toHaveProperty('mealsCount', 2);
+      expect(response.body).toHaveProperty('mealCount', 2);
     });
 
     it('should get daily summary for specific date', async () => {
@@ -555,7 +555,7 @@ describe('Meal API Endpoints', () => {
         .expect(200);
 
       expect(response.body).toHaveProperty('totalCalories', 400);
-      expect(response.body).toHaveProperty('mealsCount', 1);
+      expect(response.body).toHaveProperty('mealCount', 1);
     });
 
     it('should return zero summary when no meals exist', async () => {
@@ -566,7 +566,7 @@ describe('Meal API Endpoints', () => {
 
       expect(response.body).toHaveProperty('totalCalories', 0);
       expect(response.body).toHaveProperty('totalProtein', 0);
-      expect(response.body).toHaveProperty('mealsCount', 0);
+      expect(response.body).toHaveProperty('mealCount', 0);
     });
 
     it('should reject request without authentication', async () => {
@@ -606,7 +606,7 @@ describe('Meal API Endpoints', () => {
         .expect(200);
 
       expect(response.body).toHaveProperty('totalCalories', 900);
-      expect(response.body).toHaveProperty('mealsCount', 2);
+      expect(response.body).toHaveProperty('mealCount', 2);
       expect(response.body).toHaveProperty('averageDailyCalories');
       expect(response.body.averageDailyCalories).toBeGreaterThan(0);
     });
@@ -618,7 +618,7 @@ describe('Meal API Endpoints', () => {
         .expect(200);
 
       expect(response.body).toHaveProperty('totalCalories', 0);
-      expect(response.body).toHaveProperty('mealsCount', 0);
+      expect(response.body).toHaveProperty('mealCount', 0);
     });
 
     it('should reject request without authentication', async () => {

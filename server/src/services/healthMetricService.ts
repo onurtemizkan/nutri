@@ -1,7 +1,7 @@
 import prisma from '../config/database';
 import { CreateHealthMetricInput, GetHealthMetricsQuery, HealthMetricType } from '../types';
 import { Prisma } from '@prisma/client';
-import { DEFAULT_PAGE_LIMIT, DEFAULT_TIME_PERIOD_DAYS } from '../config/constants';
+import { DEFAULT_PAGE_LIMIT } from '../config/constants';
 
 export class HealthMetricService {
   /**

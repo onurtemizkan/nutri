@@ -12,7 +12,6 @@
 import request from 'supertest';
 import app from '../index';
 import {
-  prisma,
   createTestUser,
   createTestToken,
   assertValidToken,

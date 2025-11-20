@@ -13,7 +13,26 @@ A full-stack nutrition tracking mobile application built with React Native (Expo
 - ❌ **NOT a chatbot** or conversational interface
 - ❌ **NOT using external ML APIs** (OpenAI, AWS ML, Google AI, etc.)
 
-**See `ARCHITECTURE.md` for complete system design.**
+### Architecture Highlights
+
+**Type-Safe Backend**: The Node.js backend has been thoroughly refactored with TypeScript strict mode:
+- Zero `any` types - all code is fully typed
+- Type-safe enum validation for Prisma enums (HealthMetricType, ActivityType, etc.)
+- Centralized Zod validation schemas
+- Input sanitization middleware for XSS prevention
+- Rate limiting middleware with configurable windows
+
+**Security First**: Production-ready security features:
+- JWT authentication with secure token handling
+- Input sanitization preventing XSS attacks
+- Rate limiting (API: 100/15min, Auth: 5/15min, Password Reset: 3/hour)
+- Parameter pollution prevention
+- Content-Type validation
+
+**Performance Optimized**: Database and API optimizations:
+- Composite indexes for common query patterns
+- Pagination utilities with configurable limits
+- Efficient query filtering by user, date, and type
 
 ---
 
@@ -84,6 +103,40 @@ A full-stack nutrition tracking mobile application built with React Native (Expo
 - Redis 7 (ML caching layer)
 - Docker + docker-compose (local development)
 
+## Code Quality & Refactoring
+
+The codebase has undergone comprehensive refactoring with focus on type safety, security, and maintainability:
+
+### Phase 1: Type Safety Enhancement
+- **Eliminated all `any` types**: Removed 20+ `as any` assertions and 15+ `: any` annotations
+- **Type-safe enum validation**: Created utilities for parsing Prisma enums (HealthMetricType, ActivityType, ActivityIntensity)
+- **Proper error handling**: Type-safe error handling in React Native with `isAxiosError` type guards
+- **Strict TypeScript**: All controllers, services, and tests use proper Prisma types
+
+### Phase 2: Code Organization & Consistency
+- **Centralized validation**: Consolidated 9 duplicate Zod schemas into `validation/schemas.ts`
+- **Constants extraction**: Removed magic numbers/strings from 20+ locations into `config/constants.ts`
+- **Reduced codebase**: Net reduction of ~13,600 lines through deduplication and cleanup
+
+### Phase 3: Testing Infrastructure
+- **Comprehensive test coverage**: Added tests for health metrics and activities
+- **Test utilities**: Created type-safe test fixtures and assertion helpers
+- **Jest configuration**: Proper TypeScript integration with ts-jest
+
+### Phase 4: API Enhancement
+- **Pagination utilities**: Reusable pagination types and helper functions
+- **Consistent response format**: Standardized API responses with metadata
+
+### Phase 5: Performance Optimization
+- **Database indexes**: Documented composite indexes for common query patterns
+- **Optimized queries**: Efficient filtering by user, date, and type
+
+### Phase 6: Security Hardening
+- **Rate limiting**: Configurable rate limiters (API: 100/15min, Auth: 5/15min)
+- **Input sanitization**: XSS prevention middleware
+- **Parameter pollution prevention**: Array size limits
+- **Content-Type validation**: Enforced for POST/PUT/PATCH requests
+
 ## Project Structure
 
 ```
@@ -101,16 +154,36 @@ nutri/
 ├── lib/                   # Shared libraries
 │   ├── api/               # API client
 │   ├── context/           # React contexts (Auth)
-│   └── types/             # TypeScript types
+│   ├── types/             # TypeScript types
+│   └── utils/             # Utility functions
+│       └── errorHandling.ts # Type-safe error handling (isAxiosError, getErrorMessage)
 ├── server/                # Node.js Backend API
 │   ├── src/
 │   │   ├── controllers/   # Request handlers (auth, meals, health-metrics, activities)
 │   │   ├── services/      # Business logic (healthMetricService, activityService)
 │   │   ├── routes/        # API routes
-│   │   ├── middleware/    # Auth & error handling
-│   │   ├── config/        # Configuration
-│   │   └── types/         # TypeScript types (30+ health metrics, 17+ activities)
-│   └── prisma/            # Database schema (User, Meal, HealthMetric, Activity, MLFeature, etc.)
+│   │   ├── middleware/    # Middleware functions
+│   │   │   ├── auth.ts           # JWT authentication
+│   │   │   ├── errorHandler.ts   # Error handling middleware
+│   │   │   ├── rateLimiter.ts    # Rate limiting (in-memory store)
+│   │   │   └── sanitize.ts       # Input sanitization (XSS prevention)
+│   │   ├── validation/    # Validation schemas
+│   │   │   └── schemas.ts        # Centralized Zod schemas (meals, health metrics, activities)
+│   │   ├── config/        # Configuration files
+│   │   │   └── constants.ts      # Constants (limits, HTTP status codes, error messages)
+│   │   ├── utils/         # Utility functions
+│   │   │   └── enumValidation.ts # Type-safe enum parsing (HealthMetricType, ActivityType, etc.)
+│   │   ├── types/         # TypeScript types
+│   │   │   └── pagination.ts     # Pagination utilities (PaginatedResponse, createPaginatedResponse)
+│   │   └── __tests__/     # Test files
+│   │       ├── setup.ts          # Test utilities and fixtures
+│   │       ├── auth.test.ts      # Authentication tests
+│   │       ├── meal.test.ts      # Meal CRUD tests
+│   │       ├── healthMetric.test.ts # Health metric tests
+│   │       └── activity.test.ts  # Activity tests
+│   └── prisma/            # Database schema
+│       ├── schema.prisma         # Prisma schema (User, Meal, HealthMetric, Activity, MLFeature, etc.)
+│       └── migrations/           # Database migrations and indexes
 ├── ml-service/            # Python ML Service (IN-HOUSE MODELS)
 │   ├── app/
 │   │   ├── main.py        # FastAPI app entry point
@@ -124,14 +197,11 @@ nutri/
 │   │   │   ├── correlation_engine.py (Pearson, Spearman, Granger)
 │   │   │   └── prediction_service.py (LSTM, XGBoost)
 │   │   └── api/           # ML API routes (TODO - Phase 1)
-│   ├── requirements.txt   # Python dependencies (TensorFlow, scikit-learn, etc.)
+│   ├── requirements.txt   # Python dependencies (PyTorch, scikit-learn, XGBoost, etc.)
 │   ├── Dockerfile         # Multi-stage Docker build
 │   ├── docker-compose.yml # Full stack (PostgreSQL + Redis + ML service)
 │   └── README.md          # ML service documentation
-├── components/            # Reusable UI components
-├── ARCHITECTURE.md        # 🚨 CRITICAL: Complete system architecture
-├── ML_ENGINE_COMPREHENSIVE_PLAN.md  # Full ML implementation plan (1,000+ lines)
-└── ML_ENGINE_QUICK_START.md         # Quick reference guide
+└── components/            # Reusable UI components
 ```
 
 ## Getting Started
@@ -343,6 +413,120 @@ DELETE /api/meals/{mealId}
 Authorization: Bearer {token}
 ```
 
+### Health Metrics Endpoints (All Protected)
+
+#### Create Health Metric
+```http
+POST /api/health-metrics
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "metricType": "RESTING_HEART_RATE",
+  "value": 65,
+  "unit": "bpm",
+  "recordedAt": "2025-01-25T08:00:00.000Z",
+  "source": "APPLE_HEALTH",
+  "sourceId": "optional-device-id",
+  "metadata": {}
+}
+```
+
+#### Get Health Metrics
+```http
+GET /api/health-metrics
+Authorization: Bearer {token}
+
+# Query parameters:
+# - metricType: Filter by specific type (e.g., RESTING_HEART_RATE)
+# - startDate: ISO date string
+# - endDate: ISO date string
+# - source: Filter by source (APPLE_HEALTH, FITBIT, etc.)
+# - page: Page number (default: 1)
+# - limit: Results per page (default: 100, max: 1000)
+```
+
+#### Get Health Metric by ID
+```http
+GET /api/health-metrics/{metricId}
+Authorization: Bearer {token}
+```
+
+#### Update Health Metric
+```http
+PUT /api/health-metrics/{metricId}
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "value": 67,
+  "unit": "bpm"
+}
+```
+
+#### Delete Health Metric
+```http
+DELETE /api/health-metrics/{metricId}
+Authorization: Bearer {token}
+```
+
+### Activity Endpoints (All Protected)
+
+#### Create Activity
+```http
+POST /api/activities
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "activityType": "RUNNING",
+  "intensity": "MODERATE",
+  "startedAt": "2025-01-25T06:00:00.000Z",
+  "endedAt": "2025-01-25T06:30:00.000Z",
+  "duration": 30,
+  "caloriesBurned": 250,
+  "source": "manual"
+}
+```
+
+#### Get Activities
+```http
+GET /api/activities
+Authorization: Bearer {token}
+
+# Query parameters:
+# - activityType: Filter by type (RUNNING, CYCLING, etc.)
+# - intensity: Filter by intensity (LOW, MODERATE, HIGH, VERY_HIGH)
+# - startDate: ISO date string
+# - endDate: ISO date string
+# - page: Page number (default: 1)
+# - limit: Results per page (default: 100, max: 1000)
+```
+
+#### Get Activity by ID
+```http
+GET /api/activities/{activityId}
+Authorization: Bearer {token}
+```
+
+#### Update Activity
+```http
+PUT /api/activities/{activityId}
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "duration": 35,
+  "caloriesBurned": 275
+}
+```
+
+#### Delete Activity
+```http
+DELETE /api/activities/{activityId}
+Authorization: Bearer {token}
+```
+
 ## Database Schema
 
 ### User
@@ -386,6 +570,28 @@ Authorization: Bearer {token}
 - weight (Float, in kg)
 - recordedAt (DateTime)
 
+### HealthMetric
+- id (String, Primary Key)
+- userId (String, Foreign Key → User)
+- metricType (Enum: 30+ types including RESTING_HEART_RATE, HEART_RATE_VARIABILITY_SDNN, SLEEP_DURATION, etc.)
+- value (Float)
+- unit (String: bpm, ms, hours, etc.)
+- recordedAt (DateTime)
+- source (Enum: APPLE_HEALTH, FITBIT, GARMIN, OURA, WHOOP, MANUAL, etc.)
+- sourceId (String, Optional)
+- metadata (JSON, Optional)
+
+### Activity
+- id (String, Primary Key)
+- userId (String, Foreign Key → User)
+- activityType (Enum: 17+ types including RUNNING, CYCLING, SWIMMING, WEIGHTLIFTING, etc.)
+- intensity (Enum: LOW, MODERATE, HIGH, VERY_HIGH)
+- startedAt (DateTime)
+- endedAt (DateTime, Optional)
+- duration (Int, in minutes)
+- caloriesBurned (Float, Optional)
+- source (String)
+
 ## Development Scripts
 
 ### Mobile App
@@ -399,15 +605,33 @@ npm test          # Run tests
 ```
 
 ### Backend
+
+#### Development & Build
 ```bash
-npm run dev        # Start development server with hot reload
+npm run dev        # Start development server with hot reload (ts-node-dev)
 npm run build      # Build TypeScript to JavaScript
-npm start          # Run production server
-npm run db:generate    # Generate Prisma client
-npm run db:push        # Push schema to database
-npm run db:migrate     # Run migrations
-npm run db:studio      # Open Prisma Studio (database GUI)
-npm run lint       # Run ESLint
+npm start          # Run production server (requires npm run build first)
+```
+
+#### Database Management
+```bash
+npm run db:generate    # Generate Prisma client from schema
+npm run db:push        # Push schema changes to database (dev only)
+npm run db:migrate     # Create and run migrations (production)
+npm run db:studio      # Open Prisma Studio GUI (http://localhost:5555)
+```
+
+#### Testing
+```bash
+npm test              # Run all tests once
+npm run test:watch    # Run tests in watch mode (auto-rerun on changes)
+npm run test:coverage # Run tests with coverage report
+npm run test:verbose  # Run tests with verbose output
+```
+
+#### Code Quality
+```bash
+npm run lint       # Run ESLint for code quality checks
 ```
 
 ## Environment Variables

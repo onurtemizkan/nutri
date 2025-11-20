@@ -161,3 +161,7 @@ ml-service/test_results.log
 *.pth
 models/
 checkpoints/
+
+# Development logs
+logs/
+*.log

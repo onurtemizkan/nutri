@@ -4,6 +4,8 @@ module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.test.ts', '**/?(*.)+(spec|test).ts'],
+  // Run tests serially to avoid database race conditions
+  maxWorkers: 1,
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },

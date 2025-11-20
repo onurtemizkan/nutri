@@ -15,9 +15,8 @@ process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-secret-key-min-32-chars-long-for-testing!!!';
 process.env.PORT = '3001'; // Different port to avoid conflicts
 
-// Use in-memory SQLite for fast, isolated tests
-// In production tests, you might want to use a separate PostgreSQL test database
-process.env.DATABASE_URL = 'file:./test.db';
+// Use PostgreSQL test database
+process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/nutri_test_db';
 
 // Global Prisma client for tests
 export const prisma = new PrismaClient({
@@ -34,18 +33,16 @@ export const prisma = new PrismaClient({
  * Preserves schema, only removes data
  */
 export async function cleanDatabase() {
-  try {
-    // Delete in reverse order of dependencies to avoid foreign key constraints
-    await prisma.healthMetric.deleteMany();
-    await prisma.activity.deleteMany();
-    await prisma.meal.deleteMany();
-    await prisma.waterIntake.deleteMany();
-    await prisma.weightRecord.deleteMany();
-    await prisma.user.deleteMany();
-  } catch (error) {
-    console.error('Error cleaning database:', error);
-    // Don't throw - some tables might not exist yet, which is okay for tests
-  }
+  // Delete in reverse order of dependencies to avoid foreign key constraints
+  // Using $transaction to ensure atomicity
+  await prisma.$transaction([
+    prisma.healthMetric.deleteMany(),
+    prisma.activity.deleteMany(),
+    prisma.meal.deleteMany(),
+    prisma.waterIntake.deleteMany(),
+    prisma.weightRecord.deleteMany(),
+    prisma.user.deleteMany(),
+  ]);
 }
 
 /**
@@ -75,15 +72,16 @@ export async function resetDatabase() {
  */
 beforeAll(async () => {
   // Connect to database
-  // Note: Schema is auto-created by Prisma for SQLite
   await prisma.$connect();
+  // Clean database to ensure fresh start
+  await cleanDatabase();
 });
 
 /**
- * After each test: Clean up test data
- * Ensures test isolation
+ * Before each test: Clean database for test isolation
+ * This ensures each test starts with a clean slate
  */
-afterEach(async () => {
+beforeEach(async () => {
   await cleanDatabase();
 });
 

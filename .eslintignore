@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+server/dist/
+dist/
+build/
+.expo/
+web-build/
+
+# ML Service (Python project)
+ml-service/
+
+# Python virtual environment
+venv/
+env/
+
+# Python files (not JavaScript)
+**/*.py
+
+# Test files (have different linting rules)
+**/__tests__/
+**/*.test.ts
+**/*.test.tsx
+
+# Configuration
+.expo-shared/
+
+# Logs
+logs/
+*.log
+
+# Cache
+.cache/
