@@ -217,6 +217,110 @@ export class AuthService {
 
     return { valid: true, email: user.email };
   }
+
+  async appleSignIn(data: {
+    identityToken: string;
+    authorizationCode: string;
+    user?: {
+      email?: string;
+      name?: {
+        firstName?: string;
+        lastName?: string;
+      };
+    };
+  }) {
+    // Note: In production, you should verify the identityToken with Apple's servers
+    // For now, we'll decode it without verification (development only)
+    // See: https://developer.apple.com/documentation/sign_in_with_apple/sign_in_with_apple_rest_api/verifying_a_user
+
+    let appleId: string;
+    let email: string | undefined;
+
+    try {
+      // Decode the identity token (without verification)
+      // The token is a JWT with three parts: header.payload.signature
+      const tokenParts = data.identityToken.split('.');
+      if (tokenParts.length !== 3) {
+        throw new Error('Invalid identity token format');
+      }
+
+      const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString('utf8'));
+      appleId = payload.sub; // Apple user ID
+      email = payload.email || data.user?.email;
+
+      if (!appleId) {
+        throw new Error('Invalid identity token: missing user ID');
+      }
+    } catch (error) {
+      throw new Error('Failed to decode Apple identity token');
+    }
+
+    // Check if user already exists with this Apple ID
+    let user = await prisma.user.findUnique({
+      where: { appleId },
+    });
+
+    if (!user) {
+      // Check if user exists with this email
+      if (email) {
+        user = await prisma.user.findUnique({
+          where: { email },
+        });
+
+        if (user) {
+          // Link Apple ID to existing account
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: { appleId },
+          });
+        }
+      }
+    }
+
+    if (!user) {
+      // Create new user
+      if (!email) {
+        throw new Error('Email is required for new users');
+      }
+
+      const firstName = data.user?.name?.firstName || '';
+      const lastName = data.user?.name?.lastName || '';
+      const name = `${firstName} ${lastName}`.trim() || 'Apple User';
+
+      user = await prisma.user.create({
+        data: {
+          email,
+          appleId,
+          name,
+          password: null, // No password for OAuth users
+        },
+      });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user.id },
+      config.jwt.secret,
+      { expiresIn: config.jwt.expiresIn } as jwt.SignOptions
+    );
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        goalCalories: user.goalCalories,
+        goalProtein: user.goalProtein,
+        goalCarbs: user.goalCarbs,
+        goalFat: user.goalFat,
+        currentWeight: user.currentWeight,
+        goalWeight: user.goalWeight,
+        height: user.height,
+        activityLevel: user.activityLevel,
+      },
+      token,
+    };
+  }
 }
 
 export const authService = new AuthService();

@@ -6,12 +6,14 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/lib/context/AuthContext';
 import { useRouter } from 'expo-router';
+import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
+import { showAlert } from '@/lib/utils/alert';
 
 export default function ProfileScreen() {
   const { user, logout, updateUser } = useAuth();
@@ -34,17 +36,17 @@ export default function ProfileScreen() {
         goalFat: parseFloat(goalFat),
       });
 
-      Alert.alert('Success', 'Goals updated successfully!');
+      showAlert('Success', 'Goals updated successfully!');
       setIsEditing(false);
     } catch {
-      Alert.alert('Error', 'Failed to update goals');
+      showAlert('Error', 'Failed to update goals');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
+    showAlert('Logout', 'Are you sure you want to logout?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Logout',
@@ -63,11 +65,16 @@ export default function ProfileScreen() {
         <View style={styles.content}>
           {/* Profile Header */}
           <View style={styles.profileHeader}>
-            <View style={styles.avatar}>
+            <LinearGradient
+              colors={gradients.primary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.avatar}
+            >
               <Text style={styles.avatarText}>
                 {user?.name.charAt(0).toUpperCase()}
               </Text>
-            </View>
+            </LinearGradient>
             <Text style={styles.name}>{user?.name}</Text>
             <Text style={styles.email}>{user?.email}</Text>
           </View>
@@ -87,51 +94,63 @@ export default function ProfileScreen() {
               <>
                 <View style={styles.inputContainer}>
                   <Text style={styles.label}>Calorie Goal</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={goalCalories}
-                    onChangeText={setGoalCalories}
-                    keyboardType="numeric"
-                    editable={!isLoading}
-                  />
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={styles.input}
+                      value={goalCalories}
+                      onChangeText={setGoalCalories}
+                      keyboardType="numeric"
+                      editable={!isLoading}
+                      placeholderTextColor={colors.text.disabled}
+                    />
+                  </View>
                 </View>
 
                 <View style={styles.inputContainer}>
                   <Text style={styles.label}>Protein Goal (g)</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={goalProtein}
-                    onChangeText={setGoalProtein}
-                    keyboardType="numeric"
-                    editable={!isLoading}
-                  />
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={styles.input}
+                      value={goalProtein}
+                      onChangeText={setGoalProtein}
+                      keyboardType="numeric"
+                      editable={!isLoading}
+                      placeholderTextColor={colors.text.disabled}
+                    />
+                  </View>
                 </View>
 
                 <View style={styles.inputContainer}>
                   <Text style={styles.label}>Carbs Goal (g)</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={goalCarbs}
-                    onChangeText={setGoalCarbs}
-                    keyboardType="numeric"
-                    editable={!isLoading}
-                  />
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={styles.input}
+                      value={goalCarbs}
+                      onChangeText={setGoalCarbs}
+                      keyboardType="numeric"
+                      editable={!isLoading}
+                      placeholderTextColor={colors.text.disabled}
+                    />
+                  </View>
                 </View>
 
                 <View style={styles.inputContainer}>
                   <Text style={styles.label}>Fat Goal (g)</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={goalFat}
-                    onChangeText={setGoalFat}
-                    keyboardType="numeric"
-                    editable={!isLoading}
-                  />
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={styles.input}
+                      value={goalFat}
+                      onChangeText={setGoalFat}
+                      keyboardType="numeric"
+                      editable={!isLoading}
+                      placeholderTextColor={colors.text.disabled}
+                    />
+                  </View>
                 </View>
 
                 <View style={styles.buttonRow}>
                   <TouchableOpacity
-                    style={[styles.button, styles.cancelButton]}
+                    style={styles.cancelButton}
                     onPress={() => {
                       setIsEditing(false);
                       setGoalCalories(user?.goalCalories.toString() || '2000');
@@ -140,20 +159,29 @@ export default function ProfileScreen() {
                       setGoalFat(user?.goalFat.toString() || '65');
                     }}
                     disabled={isLoading}
+                    activeOpacity={0.8}
                   >
                     <Text style={styles.cancelButtonText}>Cancel</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[styles.button, styles.saveButton]}
+                    style={styles.saveButton}
                     onPress={handleSaveGoals}
                     disabled={isLoading}
+                    activeOpacity={0.8}
                   >
-                    {isLoading ? (
-                      <ActivityIndicator color="#fff" />
-                    ) : (
-                      <Text style={styles.saveButtonText}>Save</Text>
-                    )}
+                    <LinearGradient
+                      colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.saveButtonGradient}
+                    >
+                      {isLoading ? (
+                        <ActivityIndicator color={colors.text.primary} />
+                      ) : (
+                        <Text style={styles.saveButtonText}>Save</Text>
+                      )}
+                    </LinearGradient>
                   </TouchableOpacity>
                 </View>
               </>
@@ -199,140 +227,175 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background.primary,
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    padding: 20,
+    padding: spacing.lg,
   },
+
+  // Profile Header
   profileHeader: {
     alignItems: 'center',
-    paddingVertical: 32,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    marginBottom: 24,
+    paddingVertical: spacing['2xl'],
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+    ...shadows.md,
   },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#3b5998',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.md,
+    ...shadows.glow,
   },
   avatarText: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#fff',
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
   },
   name: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#000',
-    marginBottom: 4,
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+    letterSpacing: -0.5,
   },
   email: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: typography.fontSize.sm,
+    color: colors.text.tertiary,
   },
+
+  // Section
   section: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    letterSpacing: -0.3,
   },
   editButton: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#3b5998',
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary.main,
   },
+
+  // Goals
   goalItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: colors.border.secondary,
   },
   goalLabel: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: typography.fontSize.md,
+    color: colors.text.tertiary,
   },
   goalValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
   },
+
+  // Input
   inputContainer: {
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 8,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.secondary,
+    marginBottom: spacing.sm,
+    letterSpacing: 0.3,
+  },
+  inputWrapper: {
+    backgroundColor: colors.background.elevated,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+    overflow: 'hidden',
   },
   input: {
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    fontSize: typography.fontSize.md,
+    color: colors.text.primary,
+    height: 48,
   },
+
+  // Buttons
   buttonRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
+    gap: spacing.md,
+    marginTop: spacing.sm,
   },
   cancelButton: {
-    backgroundColor: '#f5f5f5',
+    flex: 1,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: colors.border.primary,
+    height: 48,
   },
   cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.secondary,
   },
   saveButton: {
-    backgroundColor: '#3b5998',
+    flex: 1,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    ...shadows.md,
+  },
+  saveButtonGradient: {
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 48,
   },
   saveButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
   },
+
+  // Menu
   menuItem: {
-    paddingVertical: 16,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: colors.border.secondary,
   },
   menuItemText: {
-    fontSize: 16,
-    color: '#000',
+    fontSize: typography.fontSize.md,
+    color: colors.text.primary,
   },
   logoutText: {
-    color: '#F44336',
-    fontWeight: '600',
+    color: colors.status.error,
+    fontWeight: typography.fontWeight.semibold,
   },
 });

@@ -1,0 +1,442 @@
+/**
+ * Apple Identity Token Verification - Production Implementation
+ *
+ * INSTRUCTIONS:
+ * 1. Install dependencies:
+ *    npm install jsonwebtoken jwks-rsa
+ *    npm install --save-dev @types/jsonwebtoken @types/jwks-rsa
+ *
+ * 2. Add to server/.env:
+ *    APPLE_APP_ID=com.yourcompany.nutri
+ *    APPLE_TEAM_ID=YOUR_TEAM_ID
+ *
+ * 3. Replace the development token decoding in authService.ts
+ *    with this production-ready implementation
+ */
+
+import jwt from 'jsonwebtoken';
+import jwksClient from 'jwks-rsa';
+
+// ============================================================================
+// Type Definitions
+// ============================================================================
+
+/**
+ * Apple ID Token Payload
+ * Structure of the verified JWT from Apple
+ */
+export interface AppleTokenPayload extends jwt.JwtPayload {
+  /** Issuer - Always https://appleid.apple.com */
+  iss: string;
+
+  /** Audience - Your app's bundle identifier */
+  aud: string;
+
+  /** Expiration time (Unix timestamp) */
+  exp: number;
+
+  /** Issued at time (Unix timestamp) */
+  iat: number;
+
+  /** Subject - Apple user ID (unique, stable identifier) */
+  sub: string;
+
+  /** User's email (only provided on first authentication) */
+  email?: string;
+
+  /** Whether the email has been verified by Apple */
+  email_verified?: boolean;
+
+  /** Whether this is a private relay email */
+  is_private_email?: boolean;
+
+  /** Whether nonce is supported */
+  nonce_supported?: boolean;
+
+  /** Authentication time (Unix timestamp) */
+  auth_time?: number;
+
+  /** Nonce value if provided */
+  nonce?: string;
+}
+
+// ============================================================================
+// JWKS Client Configuration
+// ============================================================================
+
+/**
+ * Create JWKS client for fetching Apple's public keys
+ * Keys are cached for 24 hours to improve performance
+ */
+const appleJwksClient = jwksClient({
+  jwksUri: 'https://appleid.apple.com/auth/keys',
+  cache: true,
+  cacheMaxAge: 86400000, // 24 hours in milliseconds
+  rateLimit: true,
+  jwksRequestsPerMinute: 10,
+});
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Get signing key from Apple's JWKS endpoint
+ * Used by jwt.verify() to validate token signature
+ */
+function getAppleSigningKey(
+  header: jwt.JwtHeader,
+  callback: jwt.SigningKeyCallback
+): void {
+  if (!header.kid) {
+    callback(new Error('Token header missing kid (key ID)'));
+    return;
+  }
+
+  appleJwksClient.getSigningKey(header.kid, (err, key) => {
+    if (err) {
+      callback(err);
+      return;
+    }
+
+    if (!key) {
+      callback(new Error('Unable to retrieve signing key'));
+      return;
+    }
+
+    const signingKey = key.getPublicKey();
+    callback(null, signingKey);
+  });
+}
+
+/**
+ * Verify Apple identity token with Apple's servers
+ *
+ * @param identityToken - JWT token from Apple Sign In
+ * @returns Decoded and verified token payload
+ * @throws Error if token is invalid, expired, or verification fails
+ */
+export async function verifyAppleIdentityToken(
+  identityToken: string
+): Promise<AppleTokenPayload> {
+  return new Promise((resolve, reject) => {
+    const options: jwt.VerifyOptions = {
+      algorithms: ['RS256'],
+      audience: process.env.APPLE_APP_ID,
+      issuer: 'https://appleid.apple.com',
+      // Optional: Add clock tolerance if needed (in seconds)
+      clockTolerance: 60,
+    };
+
+    jwt.verify(
+      identityToken,
+      getAppleSigningKey,
+      options,
+      (err, decoded) => {
+        if (err) {
+          // Provide more specific error messages
+          if (err.name === 'TokenExpiredError') {
+            reject(new Error('Apple identity token has expired'));
+          } else if (err.name === 'JsonWebTokenError') {
+            reject(new Error('Invalid Apple identity token'));
+          } else if (err.name === 'NotBeforeError') {
+            reject(new Error('Apple identity token not yet valid'));
+          } else {
+            reject(new Error(`Token verification failed: ${err.message}`));
+          }
+          return;
+        }
+
+        if (!decoded || typeof decoded === 'string') {
+          reject(new Error('Invalid token payload'));
+          return;
+        }
+
+        resolve(decoded as AppleTokenPayload);
+      }
+    );
+  });
+}
+
+// ============================================================================
+// Usage in authService.ts
+// ============================================================================
+
+/**
+ * REPLACE THIS SECTION in authService.ts (lines ~232-256)
+ *
+ * OLD CODE (Development):
+ * ```typescript
+ * try {
+ *   const tokenParts = data.identityToken.split('.');
+ *   if (tokenParts.length !== 3) {
+ *     throw new Error('Invalid identity token format');
+ *   }
+ *   const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString('utf8'));
+ *   appleId = payload.sub;
+ *   email = payload.email || data.user?.email;
+ * } catch (error) {
+ *   throw new Error('Failed to decode Apple identity token');
+ * }
+ * ```
+ *
+ * NEW CODE (Production):
+ */
+
+// Import at the top of authService.ts
+// import { verifyAppleIdentityToken, AppleTokenPayload } from './appleTokenVerification';
+
+async function appleSignInProduction(data: {
+  identityToken: string;
+  authorizationCode: string;
+  user?: {
+    email?: string;
+    name?: {
+      firstName?: string;
+      lastName?: string;
+    };
+  };
+}) {
+  let appleId: string;
+  let email: string | undefined;
+  let payload: AppleTokenPayload;
+
+  try {
+    // Verify token with Apple's servers (PRODUCTION)
+    payload = await verifyAppleIdentityToken(data.identityToken);
+
+    appleId = payload.sub;
+    email = payload.email || data.user?.email;
+
+    if (!appleId) {
+      throw new Error('Invalid identity token: missing user ID');
+    }
+
+    // Log token verification success (optional)
+    console.log('Apple token verified successfully', {
+      appleId: appleId.substring(0, 8) + '...', // Log partial ID only
+      hasEmail: !!email,
+      isPrivateEmail: payload.is_private_email,
+      emailVerified: payload.email_verified,
+    });
+
+  } catch (error) {
+    // Log verification failure
+    console.error('Apple token verification failed:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
+    });
+
+    throw new Error('Failed to verify Apple identity token');
+  }
+
+  // ... rest of the appleSignIn implementation remains the same
+}
+
+// ============================================================================
+// Environment Variables Validation
+// ============================================================================
+
+/**
+ * Validate required environment variables at startup
+ * Add this to server/src/config/env.ts or index.ts
+ */
+export function validateAppleAuthConfig(): void {
+  if (!process.env.APPLE_APP_ID) {
+    throw new Error('APPLE_APP_ID environment variable is required for Apple Sign In');
+  }
+
+  if (!process.env.APPLE_TEAM_ID) {
+    console.warn('APPLE_TEAM_ID not set - may be required for advanced features');
+  }
+
+  // Validate bundle ID format
+  const bundleIdRegex = /^[a-zA-Z0-9.-]+$/;
+  if (!bundleIdRegex.test(process.env.APPLE_APP_ID)) {
+    throw new Error('APPLE_APP_ID must be a valid bundle identifier');
+  }
+}
+
+// ============================================================================
+// Testing Utilities
+// ============================================================================
+
+/**
+ * Mock function for testing (use in test files only)
+ * DO NOT use in production
+ */
+export function createMockAppleToken(overrides?: Partial<AppleTokenPayload>): string {
+  const mockPayload: AppleTokenPayload = {
+    iss: 'https://appleid.apple.com',
+    aud: process.env.APPLE_APP_ID || 'com.test.app',
+    exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour from now
+    iat: Math.floor(Date.now() / 1000),
+    sub: 'mock-apple-user-id',
+    email: 'test@example.com',
+    email_verified: true,
+    is_private_email: false,
+    ...overrides,
+  };
+
+  // For testing only - in real tests, use proper JWT signing
+  return Buffer.from(JSON.stringify(mockPayload)).toString('base64');
+}
+
+// ============================================================================
+// Error Handling
+// ============================================================================
+
+/**
+ * Custom error class for Apple authentication errors
+ * Add this to server/src/types/errors.ts
+ */
+export class AppleAuthError extends Error {
+  constructor(
+    message: string,
+    public code:
+      | 'INVALID_TOKEN'
+      | 'EXPIRED_TOKEN'
+      | 'TOKEN_NOT_YET_VALID'
+      | 'EMAIL_REQUIRED'
+      | 'VERIFICATION_FAILED'
+      | 'SERVICE_ERROR',
+    public details?: unknown
+  ) {
+    super(message);
+    this.name = 'AppleAuthError';
+  }
+}
+
+/**
+ * Enhanced error handling for appleSignIn
+ */
+export function handleAppleAuthError(error: unknown): never {
+  if (error instanceof AppleAuthError) {
+    throw error;
+  }
+
+  if (error instanceof Error) {
+    if (error.message.includes('expired')) {
+      throw new AppleAuthError('Token has expired', 'EXPIRED_TOKEN', error);
+    }
+    if (error.message.includes('not yet valid')) {
+      throw new AppleAuthError('Token not yet valid', 'TOKEN_NOT_YET_VALID', error);
+    }
+    if (error.message.includes('invalid')) {
+      throw new AppleAuthError('Invalid token', 'INVALID_TOKEN', error);
+    }
+  }
+
+  throw new AppleAuthError('Apple authentication failed', 'SERVICE_ERROR', error);
+}
+
+// ============================================================================
+// Monitoring and Logging
+// ============================================================================
+
+/**
+ * Log Apple authentication metrics
+ * Integrate with your logging system (e.g., Winston, Pino, etc.)
+ */
+export function logAppleAuthAttempt(
+  success: boolean,
+  details: {
+    hasEmail: boolean;
+    isNewUser: boolean;
+    isPrivateEmail?: boolean;
+    duration: number;
+  }
+): void {
+  const logData = {
+    event: 'apple_auth_attempt',
+    success,
+    ...details,
+    timestamp: new Date().toISOString(),
+  };
+
+  if (success) {
+    console.log('Apple authentication succeeded', logData);
+  } else {
+    console.error('Apple authentication failed', logData);
+  }
+
+  // TODO: Send to monitoring service (e.g., Datadog, New Relic, etc.)
+}
+
+// ============================================================================
+// Rate Limiting Configuration
+// ============================================================================
+
+/**
+ * Rate limiter specifically for Apple Sign In
+ * Add to server/src/middleware/rateLimiter.ts
+ */
+export const appleAuthRateLimiter = {
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 attempts per window per IP
+  message: 'Too many Apple Sign In attempts, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: false, // Count all requests
+  skipFailedRequests: false,
+};
+
+// ============================================================================
+// Performance Monitoring
+// ============================================================================
+
+/**
+ * Measure token verification performance
+ */
+export async function verifyAppleIdentityTokenWithMetrics(
+  identityToken: string
+): Promise<{ payload: AppleTokenPayload; duration: number }> {
+  const startTime = Date.now();
+
+  try {
+    const payload = await verifyAppleIdentityToken(identityToken);
+    const duration = Date.now() - startTime;
+
+    // Log slow verifications (>1 second)
+    if (duration > 1000) {
+      console.warn('Slow Apple token verification', { duration });
+    }
+
+    return { payload, duration };
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error('Apple token verification failed', { duration, error });
+    throw error;
+  }
+}
+
+/**
+ * DEPLOYMENT NOTES:
+ *
+ * 1. Security:
+ *    - Never log full tokens or user IDs
+ *    - Always verify tokens server-side
+ *    - Use HTTPS in production
+ *
+ * 2. Performance:
+ *    - Keys are cached for 24 hours
+ *    - Monitor verification duration (<500ms typical)
+ *    - Consider implementing circuit breaker for Apple's JWKS endpoint
+ *
+ * 3. Error Handling:
+ *    - Distinguish between user errors and system errors
+ *    - Log all verification failures for monitoring
+ *    - Provide user-friendly error messages
+ *
+ * 4. Testing:
+ *    - Test with real Apple tokens in staging
+ *    - Mock token verification in unit tests
+ *    - Test expired token handling
+ *    - Test invalid token handling
+ *
+ * 5. Monitoring:
+ *    - Track verification success rate
+ *    - Alert on high failure rates
+ *    - Monitor verification duration
+ *    - Track new vs. returning users
+ */

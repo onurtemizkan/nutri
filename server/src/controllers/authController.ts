@@ -4,6 +4,7 @@ import { authService } from '../services/authService';
 import { AuthenticatedRequest, UpdateUserProfileInput } from '../types';
 import { requireAuth } from '../utils/authHelpers';
 import prisma from '../config/database';
+import { appleSignInSchema } from '../validation/schemas';
 
 const registerSchema = z.object({
   email: z.string().email('Invalid email format'),
@@ -184,6 +185,27 @@ export class AuthController {
 
       if (error instanceof Error) {
         res.status(400).json({ error: error.message });
+        return;
+      }
+
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  async appleSignIn(req: Request, res: Response): Promise<void> {
+    try {
+      const validatedData = appleSignInSchema.parse(req.body);
+      const result = await authService.appleSignIn(validatedData);
+
+      res.status(200).json(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors[0].message });
+        return;
+      }
+
+      if (error instanceof Error) {
+        res.status(401).json({ error: error.message });
         return;
       }
 

@@ -9,11 +9,14 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/lib/context/AuthContext';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
+import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
@@ -28,7 +31,6 @@ export default function SignInScreen() {
       return;
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       Alert.alert('Error', 'Please enter a valid email address');
@@ -40,10 +42,7 @@ export default function SignInScreen() {
       await login(email, password);
       router.replace('/(tabs)');
     } catch (error) {
-      Alert.alert(
-        'Sign In Failed',
-        getErrorMessage(error, 'Invalid email or password')
-      );
+      Alert.alert('Sign In Failed', getErrorMessage(error, 'Invalid email or password'));
     } finally {
       setIsLoading(false);
     }
@@ -55,26 +54,39 @@ export default function SignInScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <View style={styles.content}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to continue</Text>
+            <Text style={styles.subtitle}>Sign in to your account</Text>
           </View>
 
+          {/* Form */}
           <View style={styles.form}>
+            {/* Email Input */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="your@email.com"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                editable={!isLoading}
-              />
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="your@email.com"
+                  placeholderTextColor={colors.text.disabled}
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  editable={!isLoading}
+                  autoComplete="email"
+                />
+              </View>
             </View>
 
+            {/* Password Input */}
             <View style={styles.inputContainer}>
               <View style={styles.labelRow}>
                 <Text style={styles.label}>Password</Text>
@@ -84,28 +96,42 @@ export default function SignInScreen() {
                   </TouchableOpacity>
                 </Link>
               </View>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                editable={!isLoading}
-              />
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your password"
+                  placeholderTextColor={colors.text.disabled}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  editable={!isLoading}
+                  autoComplete="password"
+                />
+              </View>
             </View>
 
+            {/* Sign In Button */}
             <TouchableOpacity
               style={[styles.button, isLoading && styles.buttonDisabled]}
               onPress={handleSignIn}
               disabled={isLoading}
+              activeOpacity={0.8}
             >
-              {isLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Sign In</Text>
-              )}
+              <LinearGradient
+                colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.buttonGradient}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color={colors.text.primary} />
+                ) : (
+                  <Text style={styles.buttonText}>Sign In</Text>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
 
+            {/* Sign Up Link */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>Don't have an account? </Text>
               <Link href="/auth/signup" asChild>
@@ -115,7 +141,7 @@ export default function SignInScreen() {
               </Link>
             </View>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -124,87 +150,114 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background.primary,
   },
   keyboardView: {
     flex: 1,
   },
-  content: {
+  scrollView: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing['2xl'],
+    paddingBottom: spacing.xl,
+  },
+
+  // Header
   header: {
-    marginBottom: 40,
+    marginBottom: spacing['2xl'],
   },
   title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#000',
-    marginBottom: 8,
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: typography.fontSize.md,
+    color: colors.text.tertiary,
+    fontWeight: typography.fontWeight.medium,
   },
+
+  // Form
   form: {
-    flex: 1,
+    gap: spacing.lg,
   },
+
+  // Input
   inputContainer: {
-    marginBottom: 24,
+    gap: spacing.sm,
   },
   labelRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.secondary,
+    letterSpacing: 0.3,
   },
   forgotPasswordLink: {
-    fontSize: 14,
-    color: '#3b5998',
-    fontWeight: '600',
+    fontSize: typography.fontSize.sm,
+    color: colors.primary.main,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  inputWrapper: {
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+    overflow: 'hidden',
   },
   input: {
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    fontSize: typography.fontSize.md,
+    color: colors.text.primary,
+    height: 52,
   },
+
+  // Button
   button: {
-    backgroundColor: '#3b5998',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    marginTop: spacing.sm,
+    ...shadows.md,
   },
   buttonDisabled: {
-    backgroundColor: '#7a8fb8',
+    opacity: 0.7,
+  },
+  buttonGradient: {
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 52,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: colors.text.primary,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    letterSpacing: 0.5,
   },
+
+  // Footer
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 24,
+    marginTop: spacing.md,
   },
   footerText: {
-    color: '#666',
-    fontSize: 14,
+    color: colors.text.tertiary,
+    fontSize: typography.fontSize.sm,
   },
   link: {
-    color: '#3b5998',
-    fontSize: 14,
-    fontWeight: '600',
+    color: colors.primary.main,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
   },
 });

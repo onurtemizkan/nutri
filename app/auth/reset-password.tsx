@@ -13,8 +13,10 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { authApi } from '@/lib/api/auth';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
+import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 
 export default function ResetPasswordScreen() {
   const [token, setToken] = useState('');
@@ -116,7 +118,7 @@ export default function ResetPasswordScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#3b5998" />
+          <ActivityIndicator size="large" color={colors.primary.main} />
           <Text style={styles.loadingText}>Verifying reset token...</Text>
         </View>
       </SafeAreaView>
@@ -130,7 +132,12 @@ export default function ResetPasswordScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
         >
-          <View style={styles.content}>
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
             <View style={styles.header}>
               <Text style={styles.title}>Enter Reset Token</Text>
               <Text style={styles.subtitle}>
@@ -141,24 +148,39 @@ export default function ResetPasswordScreen() {
             <View style={styles.form}>
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Reset Token</Text>
-                <TextInput
-                  style={[styles.input, styles.tokenInput]}
-                  placeholder="Enter your reset token"
-                  value={token}
-                  onChangeText={setToken}
-                  autoCapitalize="none"
-                  editable={!isLoading}
-                  multiline
-                  numberOfLines={3}
-                />
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={[styles.input, styles.tokenInput]}
+                    placeholder="Enter your reset token"
+                    placeholderTextColor={colors.text.disabled}
+                    value={token}
+                    onChangeText={setToken}
+                    autoCapitalize="none"
+                    editable={!isLoading}
+                    multiline
+                    numberOfLines={3}
+                  />
+                </View>
               </View>
 
               <TouchableOpacity
                 style={[styles.button, isLoading && styles.buttonDisabled]}
                 onPress={handleVerifyToken}
                 disabled={isLoading}
+                activeOpacity={0.8}
               >
-                <Text style={styles.buttonText}>Verify Token</Text>
+                <LinearGradient
+                  colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.buttonGradient}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color={colors.text.primary} />
+                  ) : (
+                    <Text style={styles.buttonText}>Verify Token</Text>
+                  )}
+                </LinearGradient>
               </TouchableOpacity>
 
               <View style={styles.footer}>
@@ -171,7 +193,7 @@ export default function ResetPasswordScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-          </View>
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     );
@@ -183,63 +205,82 @@ export default function ResetPasswordScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <View style={styles.content}>
-            <View style={styles.header}>
-              <Text style={styles.title}>Reset Password</Text>
-              {userEmail && (
-                <Text style={styles.subtitle}>
-                  Create a new password for {userEmail}
-                </Text>
-              )}
-            </View>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.header}>
+            <Text style={styles.title}>Reset Password</Text>
+            {userEmail && (
+              <Text style={styles.subtitle}>
+                Create a new password for {userEmail}
+              </Text>
+            )}
+          </View>
 
-            <View style={styles.form}>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>New Password</Text>
+          <View style={styles.form}>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>New Password</Text>
+              <View style={styles.inputWrapper}>
                 <TextInput
                   style={styles.input}
                   placeholder="At least 6 characters"
+                  placeholderTextColor={colors.text.disabled}
                   value={newPassword}
                   onChangeText={setNewPassword}
                   secureTextEntry
                   editable={!isLoading}
+                  autoComplete="password-new"
                 />
               </View>
+            </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Confirm New Password</Text>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Confirm New Password</Text>
+              <View style={styles.inputWrapper}>
                 <TextInput
                   style={styles.input}
                   placeholder="Re-enter your password"
+                  placeholderTextColor={colors.text.disabled}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry
                   editable={!isLoading}
+                  autoComplete="password-new"
                 />
               </View>
+            </View>
 
-              <TouchableOpacity
-                style={[styles.button, isLoading && styles.buttonDisabled]}
-                onPress={handleResetPassword}
-                disabled={isLoading}
+            <TouchableOpacity
+              style={[styles.button, isLoading && styles.buttonDisabled]}
+              onPress={handleResetPassword}
+              disabled={isLoading}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.buttonGradient}
               >
                 {isLoading ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={colors.text.primary} />
                 ) : (
                   <Text style={styles.buttonText}>Reset Password</Text>
                 )}
-              </TouchableOpacity>
+              </LinearGradient>
+            </TouchableOpacity>
 
-              <View style={styles.footer}>
-                <Text style={styles.footerText}>Remember your password? </Text>
-                <TouchableOpacity
-                  onPress={() => router.push('/auth/signin')}
-                  disabled={isLoading}
-                >
-                  <Text style={styles.link}>Sign In</Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Remember your password? </Text>
+              <TouchableOpacity
+                onPress={() => router.push('/auth/signin')}
+                disabled={isLoading}
+              >
+                <Text style={styles.link}>Sign In</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </ScrollView>
@@ -251,7 +292,7 @@ export default function ResetPasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background.primary,
   },
   keyboardView: {
     flex: 1,
@@ -259,11 +300,11 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 24,
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing['2xl'],
+    paddingBottom: spacing.xl,
   },
   centerContainer: {
     flex: 1,
@@ -271,76 +312,101 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
+    marginTop: spacing.md,
+    fontSize: typography.fontSize.md,
+    color: colors.text.tertiary,
+    fontWeight: typography.fontWeight.medium,
   },
+
+  // Header
   header: {
-    marginBottom: 40,
+    marginBottom: spacing['2xl'],
   },
   title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#000',
-    marginBottom: 8,
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
-    lineHeight: 24,
+    fontSize: typography.fontSize.md,
+    color: colors.text.tertiary,
+    lineHeight: typography.lineHeight.relaxed * typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
   },
+
+  // Form
   form: {
-    flex: 1,
+    gap: spacing.lg,
   },
+
+  // Input
   inputContainer: {
-    marginBottom: 24,
+    gap: spacing.sm,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 8,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.secondary,
+    letterSpacing: 0.3,
+  },
+  inputWrapper: {
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+    overflow: 'hidden',
   },
   input: {
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    fontSize: typography.fontSize.md,
+    color: colors.text.primary,
+    height: 52,
   },
   tokenInput: {
-    minHeight: 80,
+    minHeight: 120,
     textAlignVertical: 'top',
+    height: 'auto',
   },
+
+  // Button
   button: {
-    backgroundColor: '#3b5998',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    marginTop: spacing.sm,
+    ...shadows.md,
   },
   buttonDisabled: {
-    backgroundColor: '#7a8fb8',
+    opacity: 0.7,
+  },
+  buttonGradient: {
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 52,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: colors.text.primary,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    letterSpacing: 0.5,
   },
+
+  // Footer
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 24,
+    marginTop: spacing.md,
   },
   footerText: {
-    color: '#666',
-    fontSize: 14,
+    color: colors.text.tertiary,
+    fontSize: typography.fontSize.sm,
   },
   link: {
-    color: '#3b5998',
-    fontSize: 14,
-    fontWeight: '600',
+    color: colors.primary.main,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
   },
 });

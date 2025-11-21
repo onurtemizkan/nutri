@@ -65,4 +65,24 @@ export const authApi = {
     const response = await api.post('/auth/verify-reset-token', { token });
     return response.data;
   },
+
+  async appleSignIn(data: {
+    identityToken: string;
+    authorizationCode: string;
+    user?: {
+      email?: string;
+      name?: {
+        firstName?: string;
+        lastName?: string;
+      };
+    };
+  }): Promise<AuthResponse> {
+    const response = await api.post<AuthResponse>('/auth/apple-signin', data);
+
+    if (response.data.token) {
+      await SecureStore.setItemAsync('authToken', response.data.token);
+    }
+
+    return response.data;
+  },
 };

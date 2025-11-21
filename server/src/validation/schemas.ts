@@ -259,3 +259,22 @@ export const resetPasswordSchema = z.object({
   token: nonEmptyStringSchema,
   newPassword: passwordSchema,
 });
+
+/**
+ * Apple Sign-In Schema
+ */
+export const appleSignInSchema = z.object({
+  identityToken: nonEmptyStringSchema,
+  authorizationCode: nonEmptyStringSchema,
+  user: z
+    .object({
+      email: emailSchema.optional(),
+      name: z
+        .object({
+          firstName: z.string().optional(),
+          lastName: z.string().optional(),
+        })
+        .optional(),
+    })
+    .optional(),
+});

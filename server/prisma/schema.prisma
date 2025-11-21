@@ -13,10 +13,13 @@ datasource db {
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
-  password  String
+  password  String?  // Optional for OAuth users (Apple, Google, etc.)
   name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // OAuth providers
+  appleId   String?  @unique
 
   // Password reset
   resetToken          String?
@@ -45,6 +48,7 @@ model User {
   mlProfile       UserMLProfile?
 
   @@index([email])
+  @@index([appleId])
   @@index([resetToken])
 }
 

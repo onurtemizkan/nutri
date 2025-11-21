@@ -9,11 +9,14 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { authApi } from '@/lib/api/auth';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
+import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -27,7 +30,6 @@ export default function ForgotPasswordScreen() {
       return;
     }
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       Alert.alert('Error', 'Please enter a valid email address');
@@ -48,22 +50,18 @@ export default function ForgotPasswordScreen() {
             {
               text: 'Copy Token',
               onPress: () => {
-                // You could copy to clipboard here
                 console.log('Token:', response.resetToken);
-              }
+              },
             },
             {
               text: 'Go to Reset',
-              onPress: () => router.push('/auth/reset-password')
-            }
+              onPress: () => router.push('/auth/reset-password'),
+            },
           ]
         );
       }
     } catch (error) {
-      Alert.alert(
-        'Error',
-        getErrorMessage(error, 'Failed to send reset email')
-      );
+      Alert.alert('Error', getErrorMessage(error, 'Failed to send reset email'));
     } finally {
       setIsLoading(false);
     }
@@ -72,27 +70,46 @@ export default function ForgotPasswordScreen() {
   if (emailSent) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.content}>
+        <View style={styles.successContent}>
           <View style={styles.successContainer}>
-            <Text style={styles.successEmoji}>✉️</Text>
+            {/* Success Icon */}
+            <View style={styles.successIconContainer}>
+              <LinearGradient colors={gradients.primary} style={styles.successIconGradient}>
+                <Text style={styles.successEmoji}>✉️</Text>
+              </LinearGradient>
+            </View>
+
+            {/* Success Message */}
             <Text style={styles.successTitle}>Check Your Email</Text>
             <Text style={styles.successMessage}>
               If an account exists for {email}, you will receive a password reset link shortly.
             </Text>
 
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => router.push('/auth/signin')}
-            >
-              <Text style={styles.buttonText}>Back to Sign In</Text>
-            </TouchableOpacity>
+            {/* Actions */}
+            <View style={styles.successActions}>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => router.push('/auth/signin')}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={gradients.primary}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.buttonGradient}
+                >
+                  <Text style={styles.buttonText}>Back to Sign In</Text>
+                </LinearGradient>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={() => setEmailSent(false)}
-            >
-              <Text style={styles.secondaryButtonText}>Try Another Email</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={() => setEmailSent(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.secondaryButtonText}>Try Another Email</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </SafeAreaView>
@@ -105,7 +122,13 @@ export default function ForgotPasswordScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <View style={styles.content}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Forgot Password?</Text>
             <Text style={styles.subtitle}>
@@ -113,31 +136,44 @@ export default function ForgotPasswordScreen() {
             </Text>
           </View>
 
+          {/* Form */}
           <View style={styles.form}>
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="your@email.com"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                editable={!isLoading}
-                autoFocus
-              />
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="your@email.com"
+                  placeholderTextColor={colors.text.disabled}
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  editable={!isLoading}
+                  autoFocus
+                  autoComplete="email"
+                />
+              </View>
             </View>
 
             <TouchableOpacity
               style={[styles.button, isLoading && styles.buttonDisabled]}
               onPress={handleForgotPassword}
               disabled={isLoading}
+              activeOpacity={0.8}
             >
-              {isLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Send Reset Link</Text>
-              )}
+              <LinearGradient
+                colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.buttonGradient}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color={colors.text.primary} />
+                ) : (
+                  <Text style={styles.buttonText}>Send Reset Link</Text>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
 
             <View style={styles.footer}>
@@ -149,7 +185,7 @@ export default function ForgotPasswordScreen() {
               </Link>
             </View>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -158,116 +194,166 @@ export default function ForgotPasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background.primary,
   },
   keyboardView: {
     flex: 1,
   },
-  content: {
+  scrollView: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing['2xl'],
+    paddingBottom: spacing.xl,
+  },
+
+  // Header
   header: {
-    marginBottom: 40,
+    marginBottom: spacing['2xl'],
   },
   title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#000',
-    marginBottom: 8,
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
-    lineHeight: 24,
+    fontSize: typography.fontSize.md,
+    color: colors.text.tertiary,
+    lineHeight: typography.lineHeight.relaxed * typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
   },
+
+  // Form
   form: {
-    flex: 1,
+    gap: spacing.lg,
   },
+
+  // Input
   inputContainer: {
-    marginBottom: 24,
+    gap: spacing.sm,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 8,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.secondary,
+    letterSpacing: 0.3,
+  },
+  inputWrapper: {
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+    overflow: 'hidden',
   },
   input: {
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    fontSize: typography.fontSize.md,
+    color: colors.text.primary,
+    height: 52,
   },
+
+  // Button
   button: {
-    backgroundColor: '#3b5998',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    marginTop: spacing.sm,
+    ...shadows.md,
   },
   buttonDisabled: {
-    backgroundColor: '#7a8fb8',
+    opacity: 0.7,
+  },
+  buttonGradient: {
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 52,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: colors.text.primary,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    letterSpacing: 0.5,
   },
+
+  // Secondary Button
   secondaryButton: {
     backgroundColor: 'transparent',
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
-    marginTop: 16,
-    borderWidth: 2,
-    borderColor: '#3b5998',
+    borderWidth: 1.5,
+    borderColor: colors.border.primary,
+    height: 52,
   },
   secondaryButtonText: {
-    color: '#3b5998',
-    fontSize: 16,
-    fontWeight: '600',
+    color: colors.text.primary,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    letterSpacing: 0.5,
   },
+
+  // Footer
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 24,
+    marginTop: spacing.md,
   },
   footerText: {
-    color: '#666',
-    fontSize: 14,
+    color: colors.text.tertiary,
+    fontSize: typography.fontSize.sm,
   },
   link: {
-    color: '#3b5998',
-    fontSize: 14,
-    fontWeight: '600',
+    color: colors.primary.main,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
   },
-  successContainer: {
+
+  // Success State
+  successContent: {
     flex: 1,
     justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  successContainer: {
     alignItems: 'center',
-    paddingHorizontal: 32,
+  },
+  successIconContainer: {
+    marginBottom: spacing.xl,
+  },
+  successIconGradient: {
+    width: 100,
+    height: 100,
+    borderRadius: borderRadius.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.glow,
   },
   successEmoji: {
-    fontSize: 64,
-    marginBottom: 24,
+    fontSize: 48,
   },
   successTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#000',
-    marginBottom: 12,
+    fontSize: typography.fontSize['3xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.md,
     textAlign: 'center',
+    letterSpacing: -0.5,
   },
   successMessage: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: typography.fontSize.md,
+    color: colors.text.tertiary,
     textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 40,
+    lineHeight: typography.lineHeight.relaxed * typography.fontSize.md,
+    marginBottom: spacing['2xl'],
+    paddingHorizontal: spacing.md,
+  },
+  successActions: {
+    width: '100%',
+    gap: spacing.md,
   },
 });

@@ -13,8 +13,10 @@ import {
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/lib/context/AuthContext';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
+import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 
 export default function SignUpScreen() {
   const [name, setName] = useState('');
@@ -31,7 +33,6 @@ export default function SignUpScreen() {
       return;
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       Alert.alert('Error', 'Please enter a valid email address');
@@ -48,7 +49,6 @@ export default function SignUpScreen() {
       return;
     }
 
-    // Additional password strength validation
     if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
       Alert.alert(
         'Weak Password',
@@ -62,10 +62,7 @@ export default function SignUpScreen() {
       await register(email, password, name);
       router.replace('/(tabs)');
     } catch (error) {
-      Alert.alert(
-        'Sign Up Failed',
-        getErrorMessage(error, 'Failed to create account')
-      );
+      Alert.alert('Sign Up Failed', getErrorMessage(error, 'Failed to create account'));
     } finally {
       setIsLoading(false);
     }
@@ -77,82 +74,118 @@ export default function SignUpScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <View style={styles.content}>
-            <View style={styles.header}>
-              <Text style={styles.title}>Create Account</Text>
-              <Text style={styles.subtitle}>Start tracking your nutrition</Text>
-            </View>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Start tracking your nutrition journey</Text>
+          </View>
 
-            <View style={styles.form}>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Name</Text>
+          {/* Form */}
+          <View style={styles.form}>
+            {/* Name Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Name</Text>
+              <View style={styles.inputWrapper}>
                 <TextInput
                   style={styles.input}
                   placeholder="Your name"
+                  placeholderTextColor={colors.text.disabled}
                   value={name}
                   onChangeText={setName}
                   editable={!isLoading}
+                  autoComplete="name"
                 />
               </View>
+            </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Email</Text>
+            {/* Email Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Email</Text>
+              <View style={styles.inputWrapper}>
                 <TextInput
                   style={styles.input}
                   placeholder="your@email.com"
+                  placeholderTextColor={colors.text.disabled}
                   value={email}
                   onChangeText={setEmail}
                   autoCapitalize="none"
                   keyboardType="email-address"
                   editable={!isLoading}
+                  autoComplete="email"
                 />
               </View>
+            </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Password</Text>
+            {/* Password Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Password</Text>
+              <View style={styles.inputWrapper}>
                 <TextInput
                   style={styles.input}
                   placeholder="At least 6 characters"
+                  placeholderTextColor={colors.text.disabled}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry
                   editable={!isLoading}
+                  autoComplete="password-new"
                 />
               </View>
+              <Text style={styles.hint}>Use letters and numbers for stronger security</Text>
+            </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Confirm Password</Text>
+            {/* Confirm Password Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Confirm Password</Text>
+              <View style={styles.inputWrapper}>
                 <TextInput
                   style={styles.input}
                   placeholder="Re-enter password"
+                  placeholderTextColor={colors.text.disabled}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry
                   editable={!isLoading}
+                  autoComplete="password-new"
                 />
               </View>
+            </View>
 
-              <TouchableOpacity
-                style={[styles.button, isLoading && styles.buttonDisabled]}
-                onPress={handleSignUp}
-                disabled={isLoading}
+            {/* Sign Up Button */}
+            <TouchableOpacity
+              style={[styles.button, isLoading && styles.buttonDisabled]}
+              onPress={handleSignUp}
+              disabled={isLoading}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.buttonGradient}
               >
                 {isLoading ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={colors.text.primary} />
                 ) : (
                   <Text style={styles.buttonText}>Create Account</Text>
                 )}
-              </TouchableOpacity>
+              </LinearGradient>
+            </TouchableOpacity>
 
-              <View style={styles.footer}>
-                <Text style={styles.footerText}>Already have an account? </Text>
-                <Link href="/auth/signin" asChild>
-                  <TouchableOpacity disabled={isLoading}>
-                    <Text style={styles.link}>Sign In</Text>
-                  </TouchableOpacity>
-                </Link>
-              </View>
+            {/* Sign In Link */}
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Already have an account? </Text>
+              <Link href="/auth/signin" asChild>
+                <TouchableOpacity disabled={isLoading}>
+                  <Text style={styles.link}>Sign In</Text>
+                </TouchableOpacity>
+              </Link>
             </View>
           </View>
         </ScrollView>
@@ -164,7 +197,7 @@ export default function SignUpScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background.primary,
   },
   keyboardView: {
     flex: 1,
@@ -172,73 +205,101 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 24,
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing['2xl'],
+    paddingBottom: spacing.xl,
   },
+
+  // Header
   header: {
-    marginBottom: 40,
+    marginBottom: spacing.xl,
   },
   title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#000',
-    marginBottom: 8,
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: typography.fontSize.md,
+    color: colors.text.tertiary,
+    fontWeight: typography.fontWeight.medium,
   },
+
+  // Form
   form: {
-    flex: 1,
+    gap: spacing.lg,
   },
+
+  // Input
   inputContainer: {
-    marginBottom: 20,
+    gap: spacing.sm,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 8,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.secondary,
+    letterSpacing: 0.3,
+  },
+  inputWrapper: {
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+    overflow: 'hidden',
   },
   input: {
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    fontSize: typography.fontSize.md,
+    color: colors.text.primary,
+    height: 52,
   },
+  hint: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.disabled,
+    marginTop: -spacing.xs,
+  },
+
+  // Button
   button: {
-    backgroundColor: '#3b5998',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    marginTop: spacing.sm,
+    ...shadows.md,
   },
   buttonDisabled: {
-    backgroundColor: '#7a8fb8',
+    opacity: 0.7,
+  },
+  buttonGradient: {
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 52,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: colors.text.primary,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    letterSpacing: 0.5,
   },
+
+  // Footer
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 24,
+    marginTop: spacing.md,
   },
   footerText: {
-    color: '#666',
-    fontSize: 14,
+    color: colors.text.tertiary,
+    fontSize: typography.fontSize.sm,
   },
   link: {
-    color: '#3b5998',
-    fontSize: 14,
-    fontWeight: '600',
+    color: colors.primary.main,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
   },
 });

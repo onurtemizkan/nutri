@@ -5,9 +5,11 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import { PortalProvider, PortalHost } from '@gorhom/portal';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/lib/context/AuthContext';
+import { AlertProvider } from '@/lib/components/CustomAlert';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -40,8 +42,15 @@ function RootLayoutNav() {
       <Stack.Screen
         name="add-meal"
         options={{
-          presentation: 'modal',
-          headerShown: false
+          headerShown: false,
+          animation: 'slide_from_bottom'
+        }}
+      />
+      <Stack.Screen
+        name="scan-food"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_bottom'
         }}
       />
       <Stack.Screen name="+not-found" />
@@ -66,11 +75,16 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <RootLayoutNav />
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </AuthProvider>
+    <PortalProvider>
+      <AlertProvider>
+        <AuthProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <RootLayoutNav />
+            <StatusBar style="light" />
+          </ThemeProvider>
+        </AuthProvider>
+      </AlertProvider>
+      <PortalHost name="alert-portal" />
+    </PortalProvider>
   );
 }
