@@ -42,7 +42,7 @@ class JWTHandler:
         Returns:
             Encoded JWT token string
         """
-        expires = datetime.now(UTC) + timedelta(
+        expires = datetime.now(timezone.utc) + timedelta(
             minutes=JWTHandler.ACCESS_TOKEN_EXPIRE_MINUTES
         )
 
@@ -51,8 +51,8 @@ class JWTHandler:
             "email": email,
             "type": JWTHandler.ACCESS_TOKEN_TYPE,
             "exp": expires,  # Expiration time
-            "iat": datetime.now(UTC),  # Issued at
-            "nbf": datetime.now(UTC),  # Not before
+            "iat": datetime.now(timezone.utc),  # Issued at
+            "nbf": datetime.now(timezone.utc),  # Not before
             "jti": secrets.token_urlsafe(16),  # Unique token ID
         }
 
@@ -78,7 +78,7 @@ class JWTHandler:
         Returns:
             Encoded JWT refresh token string
         """
-        expires = datetime.now(UTC) + timedelta(
+        expires = datetime.now(timezone.utc) + timedelta(
             days=JWTHandler.REFRESH_TOKEN_EXPIRE_DAYS
         )
 
@@ -87,8 +87,8 @@ class JWTHandler:
             "email": email,
             "type": JWTHandler.REFRESH_TOKEN_TYPE,
             "exp": expires,
-            "iat": datetime.now(UTC),
-            "nbf": datetime.now(UTC),
+            "iat": datetime.now(timezone.utc),
+            "nbf": datetime.now(timezone.utc),
             "jti": secrets.token_urlsafe(16),  # Unique token ID
         }
 
@@ -194,7 +194,7 @@ class JWTHandler:
             )
             exp_timestamp = payload.get("exp")
             if exp_timestamp:
-                return datetime.fromtimestamp(exp_timestamp, UTC)
+                return datetime.fromtimestamp(exp_timestamp, timezone.utc)
             return None
         except InvalidTokenError:
             return None
