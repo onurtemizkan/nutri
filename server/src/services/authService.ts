@@ -62,6 +62,11 @@ export class AuthService {
       throw new Error('Invalid email or password');
     }
 
+    // Check if user has a password (might be null for Apple Sign In users)
+    if (!user.password) {
+      throw new Error('This account uses Apple Sign In. Please sign in with Apple.');
+    }
+
     // Verify password
     const isPasswordValid = await bcrypt.compare(data.password, user.password);
 

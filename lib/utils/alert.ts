@@ -15,11 +15,11 @@
  */
 
 // This will be set by the AlertProvider
-let globalShowAlert: ((title: string, message?: string, buttons?: Array<{
+let globalShowAlert: ((title: string, message?: string, buttons?: {
   text: string;
   onPress?: () => void;
   style?: 'default' | 'cancel' | 'destructive';
-}>) => void) | null = null;
+}[]) => void) | null = null;
 
 export const setGlobalAlertHandler = (handler: typeof globalShowAlert) => {
   globalShowAlert = handler;
@@ -28,11 +28,11 @@ export const setGlobalAlertHandler = (handler: typeof globalShowAlert) => {
 export const showAlert = (
   title: string,
   message?: string,
-  buttons?: Array<{
+  buttons?: {
     text: string;
     onPress?: () => void;
     style?: 'default' | 'cancel' | 'destructive';
-  }>
+  }[]
 ) => {
   if (globalShowAlert) {
     globalShowAlert(title, message, buttons);

@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
-  Platform,
   Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';

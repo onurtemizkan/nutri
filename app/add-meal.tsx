@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { mealsApi } from '@/lib/api/meals';
 import { CreateMealInput } from '@/lib/types';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
-import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
+import { colors, gradients, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import { showAlert } from '@/lib/utils/alert';
 
 export default function AddMealScreen() {
