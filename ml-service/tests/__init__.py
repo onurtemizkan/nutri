@@ -1,5 +1,5 @@
 """
-End-to-End Tests for ML Engine
+Tests for ML Engine
 
 Tests cover:
 - Phase 1: Feature engineering, correlation analysis

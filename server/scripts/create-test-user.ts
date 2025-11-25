@@ -2,7 +2,7 @@
 
 /**
  * Create Test User Script
- * Creates the test user required for e2e tests if it doesn't exist
+ * Creates the test user required for integration tests if it doesn't exist
  */
 
 import { PrismaClient } from '@prisma/client';

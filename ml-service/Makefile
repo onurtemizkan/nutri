@@ -88,18 +88,6 @@ test-coverage: $(VENV_BIN)/activate ## Run tests with coverage report
 	@echo ""
 	@echo "$(GREEN)📊 Coverage report generated: htmlcov/index.html$(NC)"
 
-test-phase1: $(VENV_BIN)/activate ## Run Phase 1 tests (Feature Engineering)
-	@$(PYTHON_VENV) -m pytest tests/test_e2e_phase1.py -v --tb=short
-
-test-phase2: $(VENV_BIN)/activate ## Run Phase 2 tests (LSTM Training)
-	@$(PYTHON_VENV) -m pytest tests/test_e2e_phase2.py -v --tb=short
-
-test-phase3: $(VENV_BIN)/activate ## Run Phase 3 tests (Interpretability)
-	@$(PYTHON_VENV) -m pytest tests/test_e2e_phase3.py -v --tb=short
-
-test-pipeline: $(VENV_BIN)/activate ## Run Full Pipeline tests
-	@$(PYTHON_VENV) -m pytest tests/test_e2e_full_pipeline.py -v --tb=short
-
 test-fast: $(VENV_BIN)/activate ## Run tests (fast mode - stop on first failure)
 	@$(PYTHON_VENV) -m pytest tests/ -v --tb=line -x
 

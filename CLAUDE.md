@@ -469,3 +469,232 @@ git push origin feature/your-feature
 ## Task Master AI Instructions
 **Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
 @./.taskmaster/CLAUDE.md
+
+---
+
+## Claude Code Workflow Configuration
+
+This project is configured with an optimized Claude Code workflow for efficient development.
+
+### Quick Reference: Slash Commands
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `/dev` | Start all development services | `/dev`, `/dev stop`, `/dev status` |
+| `/test` | Smart test runner (auto-detects) | `/test`, `/test server`, `/test:watch` |
+| `/check` | Code quality checks | `/check`, `/check server`, `/check fix` |
+| `/db` | Database operations | `/db status`, `/db studio`, `/db generate` |
+| `/build` | Build services | `/build`, `/build server` |
+| `/status` | Check all service health | `/status` |
+| `/fix` | Auto-fix common issues | `/fix`, `/fix lint`, `/fix deps` |
+| `/impl` | Implementation helper | `/impl add user profile endpoint` |
+| `/log` | View service logs | `/log`, `/log server -f` |
+| `/api` | Test API endpoints | `/api health`, `/api GET /api/meals` |
+
+### Service-Aware Routing
+
+Claude Code automatically routes tasks based on file locations:
+
+| Path Pattern | Service | Test Command | Check Command |
+|--------------|---------|--------------|---------------|
+| `server/**/*.ts` | Backend API | `cd server && npm test` | `cd server && npm run build` |
+| `app/**/*.tsx`, `lib/**/*.ts` | Mobile | `npm test` | `npx tsc --noEmit` |
+| `ml-service/**/*.py` | ML Service | `cd ml-service && make test` | `cd ml-service && make typecheck` |
+| `prisma/schema.prisma` | Database | - | `npm run db:generate` |
+
+### Development Workflow
+
+#### Starting Development
+
+```bash
+# Option 1: Use slash command
+/dev
+
+# Option 2: Manual
+./scripts/start-all.sh
+```
+
+This starts:
+- PostgreSQL (port 5432)
+- Redis (port 6379)
+- Backend API (port 3000)
+
+#### Testing Flow
+
+```bash
+# Auto-detect what to test based on changes
+/test
+
+# Test specific service
+/test server    # Backend
+/test mobile    # Mobile app
+/test ml        # ML service
+
+# Watch mode
+/test server:watch
+
+# Coverage
+/test server:coverage
+```
+
+#### Code Quality
+
+```bash
+# Check everything
+/check
+
+# Auto-fix issues
+/check fix
+
+# Service-specific
+/check server
+/check mobile
+/check ml
+```
+
+### Implementation Workflow
+
+When implementing new features:
+
+1. **Use `/impl` command** to get guided implementation:
+   ```
+   /impl add meal history pagination
+   ```
+
+2. **Follow the stack order**:
+   - Database schema (Prisma) → `db:generate` → `db:push`
+   - Backend validation (Zod schemas)
+   - Backend service/controller
+   - Backend routes + tests
+   - Mobile API client updates
+   - Mobile UI components + tests
+
+3. **Verify with**:
+   ```
+   /check
+   /test
+   ```
+
+### Hooks
+
+The project has automated hooks:
+
+#### Post-Edit Hook
+After editing files, Claude provides hints:
+- `*.ts` in server → "Run `/check server`"
+- `schema.prisma` → "Run `/db generate`"
+- Test files → "Run `/test`"
+
+#### Pre-Bash Hook
+Validates commands before execution:
+- Blocks dangerous patterns (`rm -rf /`, etc.)
+- Warns about production database access
+- Warns about force flags
+
+### Intelligent Context Awareness
+
+Claude Code understands this project's patterns:
+
+1. **TypeScript Strict Mode**: Zero `any` types enforced
+2. **Validation**: All inputs use Zod schemas
+3. **Error Handling**: Use type guards (`isAxiosError`)
+4. **Constants**: No magic numbers (use `config/constants.ts`)
+5. **Testing**: Arrange-Act-Assert pattern with fixtures
+
+### Common Development Scenarios
+
+#### Adding a New API Endpoint
+
+```
+User: Add an endpoint to get meal statistics
+Claude: Uses /impl pattern:
+  1. Creates Zod schema in validation/schemas.ts
+  2. Creates controller method
+  3. Adds route
+  4. Writes tests
+  5. Runs /check and /test
+```
+
+#### Fixing a Bug
+
+```
+User: The meal calories aren't being saved correctly
+Claude:
+  1. Reads relevant files (controller, service)
+  2. Identifies issue
+  3. Fixes code
+  4. Runs /test server to verify
+  5. Provides summary
+```
+
+#### Database Schema Change
+
+```
+User: Add a 'notes' field to meals
+Claude:
+  1. Updates prisma/schema.prisma
+  2. Runs cd server && npm run db:generate
+  3. Runs cd server && npm run db:push
+  4. Updates Zod schema
+  5. Updates controller if needed
+  6. Runs /test server
+```
+
+### Performance Tips
+
+1. **Parallel Operations**: When possible, Claude runs independent tasks in parallel
+2. **Smart File Reading**: Uses Glob/Grep before reading full files
+3. **Incremental Testing**: Only runs tests for changed areas
+4. **Cached Context**: Remembers project structure within session
+
+### Troubleshooting
+
+#### Services Won't Start
+```
+/fix deps      # Reinstall dependencies
+/fix clean     # Clean build artifacts
+/dev           # Try starting again
+```
+
+#### TypeScript Errors
+```
+/db generate   # Regenerate Prisma client
+/check server  # Find remaining issues
+```
+
+#### Tests Failing
+```
+/status        # Check if services are running
+/test:verbose  # Get detailed error output
+```
+
+### Configuration Files
+
+```
+.claude/
+├── commands/          # Slash commands
+│   ├── dev.md        # Start development
+│   ├── test.md       # Smart testing
+│   ├── check.md      # Code quality
+│   ├── db.md         # Database ops
+│   ├── build.md      # Build services
+│   ├── status.md     # Service health
+│   ├── fix.md        # Auto-fix issues
+│   ├── impl.md       # Implementation helper
+│   ├── log.md        # View logs
+│   └── api.md        # API testing
+├── hooks/            # Automation hooks
+│   ├── nutri-post-edit.sh
+│   └── nutri-pre-bash.sh
+└── settings.json     # Claude Code settings
+```
+
+### Best Practices with Claude Code
+
+1. **Start sessions with `/status`** to verify services are running
+2. **Use `/impl` for new features** to get guided implementation
+3. **Run `/check` before committing** to catch issues early
+4. **Use `/test` liberally** - it's smart about what to test
+5. **Trust the hooks** - they provide helpful reminders
+6. **Ask for `/db` help** when working with schema changes
+
