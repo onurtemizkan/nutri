@@ -11,8 +11,7 @@
  * - RGB-D data export
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'expo-router';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -24,7 +23,7 @@ import {
   AppState,
   AppStateStatus,
 } from 'react-native';
-import { Camera, CameraView } from 'expo-camera';
+import { CameraView } from 'expo-camera';
 import LiDARModule from '@/lib/modules/LiDARModule';
 import type {
   RGBDFrame,
@@ -126,6 +125,7 @@ const ARFoodScanner: React.FC<ARFoodScannerProps> = ({
     }
 
     initializeScanner();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Cleanup on unmount
@@ -133,6 +133,7 @@ const ARFoodScanner: React.FC<ARFoodScannerProps> = ({
     return () => {
       cleanup();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle app state changes (interruptions)
@@ -165,6 +166,7 @@ const ARFoodScanner: React.FC<ARFoodScannerProps> = ({
     return () => {
       subscription.remove();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.isRecording, state.isScanning]);
 
   const initializeScanner = async () => {
@@ -278,7 +280,7 @@ const ARFoodScanner: React.FC<ARFoodScannerProps> = ({
       if (cameraRef.current && (cameraRef.current as any).takePictureAsync) {
         try {
           fakePhoto = await (cameraRef.current as any).takePictureAsync?.({ quality: 0.6, skipProcessing: true });
-        } catch (e) {
+        } catch {
           // ignore and use placeholder
         }
       }

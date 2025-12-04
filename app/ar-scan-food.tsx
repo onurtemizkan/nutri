@@ -80,6 +80,7 @@ export default function ARScanFoodScreen() {
         ]
       );
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [capturedFrames.length, currentSessionId]
   );
 
