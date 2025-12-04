@@ -465,3 +465,7 @@ git push origin feature/your-feature
 - Test infrastructure is comprehensive with fixtures and assertion helpers
 - Database schema supports 30+ health metric types and 17+ activity types
 - ML service implementation is in progress (Python FastAPI)
+
+## Task Master AI Instructions
+**Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
+@./.taskmaster/CLAUDE.md
