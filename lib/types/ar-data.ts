@@ -1,21 +1,66 @@
 /**
  * AR Data Types
- * 
+ *
  * Type definitions for RGB-D capture and AR food scanning.
  */
 
 /**
- * Single RGB-D frame captured from device
+ * Resolution dimensions
  */
-export interface RGBDFrame {
-  id: string;
-  timestamp: number;
-  rgbData: Uint8Array;
-  depthData: Float32Array;
-  confidenceData?: Uint8Array;
+export interface Resolution {
   width: number;
   height: number;
-  intrinsics?: CameraIntrinsics;
+}
+
+/**
+ * Depth range configuration
+ */
+export interface DepthRange {
+  min: number;
+  max: number;
+}
+
+/**
+ * Device capabilities for AR capture
+ */
+export interface DeviceCapabilities {
+  hasLiDAR: boolean;
+  supportsSceneDepth: boolean;
+  maxDepthResolution: Resolution;
+  maxRGBResolution?: Resolution;
+  depthRange: DepthRange;
+  frameRate: number;
+  sensorModel?: string;
+  recommendedCaptureMode?: CaptureMode;
+  maxDepthRange?: number;
+  hasARKit?: boolean;
+  supportedResolutions?: string[];
+  deviceModel?: string;
+}
+
+/**
+ * Depth buffer for storing depth data
+ */
+export interface DepthBuffer {
+  data: Float32Array;
+  width: number;
+  height: number;
+  format: 'float32' | 'uint16';
+  unit: 'meters' | 'millimeters';
+}
+
+/**
+ * Confidence map for depth quality
+ */
+export interface ConfidenceMap {
+  data: Uint8Array;
+  width: number;
+  height: number;
+  levels: {
+    low: number;
+    medium: number;
+    high: number;
+  };
 }
 
 /**
@@ -26,6 +71,79 @@ export interface CameraIntrinsics {
   fy: number;
   cx: number;
   cy: number;
+  focalLength?: { x: number; y: number };
+  principalPoint?: { x: number; y: number };
+  radialDistortion?: number[];
+  width?: number;
+  height?: number;
+  imageResolution?: Resolution;
+}
+
+/**
+ * Depth quality levels
+ */
+export type DepthQuality = 'low' | 'medium' | 'high';
+
+/**
+ * Capture mode
+ */
+export type CaptureMode = 'lidar' | 'ar_depth' | 'photo' | 'video';
+
+/**
+ * RGB image data
+ */
+export interface RGBImage {
+  uri: string;
+  width: number;
+  height: number;
+  format: 'jpeg' | 'png';
+}
+
+/**
+ * LiDAR capture data from native module
+ */
+export interface LiDARCapture {
+  depthBuffer: DepthBuffer;
+  confidenceMap?: ConfidenceMap;
+  intrinsics: CameraIntrinsics;
+  timestamp: number;
+  quality: DepthQuality;
+  depthQuality?: DepthQuality;
+}
+
+/**
+ * Single RGB-D frame captured from device
+ */
+export interface RGBDFrame {
+  // Core identifiers
+  id?: string;
+  frameId?: string;
+
+  // Timestamps
+  timestamp: number;
+
+  // Image data - support both formats
+  rgbData?: Uint8Array;
+  rgbImage?: RGBImage;
+
+  // Depth data - support both formats
+  depthData: Float32Array | LiDARCapture;
+
+  // Dimensions (for raw data format)
+  width?: number;
+  height?: number;
+
+  // Optional data
+  confidenceData?: Uint8Array;
+  intrinsics?: CameraIntrinsics;
+
+  // Metadata
+  metadata?: {
+    deviceModel?: string;
+    osVersion?: string;
+    captureMode?: CaptureMode;
+    [key: string]: unknown;
+  };
 }
 
 /**
@@ -36,25 +154,42 @@ export interface CaptureSession {
   startTime: number;
   endTime?: number;
   frames: RGBDFrame[];
-  deviceInfo: DeviceCapabilities;
+  deviceCapabilities?: DeviceCapabilities;
+  deviceInfo?: DeviceCapabilities;
   metadata?: Record<string, unknown>;
 }
 
 /**
- * Device capabilities for AR capture
+ * ML-ready processed data
  */
-export interface DeviceCapabilities {
-  hasLiDAR: boolean;
-  hasARKit: boolean;
-  maxDepthRange: number;
-  supportedResolutions: string[];
-  deviceModel: string;
+export interface MLReadyData {
+  sessionId: string;
+  format: string;
+  frameCount: number;
+  outputPath?: string;
+  frames?: ProcessedFrame[];
+  metadata: Record<string, unknown>;
+  version?: string;
+  rgbImages?: string[];
+  depthMaps?: string[];
+  confidenceMaps?: string[];
 }
 
 /**
- * Capture mode
+ * Exported ML data (alias for backward compatibility)
  */
-export type CaptureMode = 'photo' | 'video';
+export type MLExportData = MLReadyData;
+
+/**
+ * Processed frame for ML consumption
+ */
+export interface ProcessedFrame {
+  id: string;
+  rgbPath: string;
+  depthPath: string;
+  confidencePath?: string;
+  intrinsics: CameraIntrinsics;
+}
 
 /**
  * Export configuration for ML processing
@@ -68,15 +203,4 @@ export interface ExportConfig {
   compressRGB: boolean;
   rgbFormat: 'jpeg' | 'png';
   rgbQuality: number;
-}
-
-/**
- * Exported ML data
- */
-export interface MLExportData {
-  sessionId: string;
-  format: string;
-  frameCount: number;
-  outputPath: string;
-  metadata: Record<string, unknown>;
 }
