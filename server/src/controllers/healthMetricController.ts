@@ -1,5 +1,3 @@
-import { Response } from 'express';
-import { z } from 'zod';
 import { healthMetricService } from '../services/healthMetricService';
 import { AuthenticatedRequest } from '../types';
 import { requireAuth } from '../utils/authHelpers';
@@ -12,258 +10,164 @@ import {
   createHealthMetricSchema,
   bulkCreateHealthMetricsSchema,
 } from '../validation/schemas';
+import {
+  withErrorHandling,
+  ErrorHandlers,
+} from '../utils/controllerHelpers';
+import { HTTP_STATUS } from '../config/constants';
+import { parseOptionalDate, getDaysAgo, getEndOfDay } from '../utils/dateHelpers';
 
 export class HealthMetricController {
-  async createHealthMetric(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const userId = requireAuth(req, res);
-      if (!userId) return;
+  createHealthMetric = withErrorHandling<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
 
-      const validatedData = createHealthMetricSchema.parse(req.body);
+    const validatedData = createHealthMetricSchema.parse(req.body);
 
-      const metricData = {
-        ...validatedData,
-        recordedAt: new Date(validatedData.recordedAt),
-      };
+    const metricData = {
+      ...validatedData,
+      recordedAt: new Date(validatedData.recordedAt),
+    };
 
-      const metric = await healthMetricService.createHealthMetric(userId, metricData);
+    const metric = await healthMetricService.createHealthMetric(userId, metricData);
 
-      res.status(201).json(metric);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ error: error.errors[0].message });
-        return;
-      }
+    res.status(HTTP_STATUS.CREATED).json(metric);
+  });
 
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-        return;
-      }
+  createBulkHealthMetrics = withErrorHandling<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
 
-      res.status(500).json({ error: 'Internal server error' });
+    const validatedData = bulkCreateHealthMetricsSchema.parse(req.body);
+
+    const metricsData = validatedData.metrics.map((metric) => ({
+      ...metric,
+      recordedAt: new Date(metric.recordedAt),
+    }));
+
+    const result = await healthMetricService.createBulkHealthMetrics(userId, metricsData);
+
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
+
+  getHealthMetrics = withErrorHandling<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
+    const query = {
+      metricType: parseOptionalHealthMetricType(req.query.metricType),
+      startDate: parseOptionalDate(req.query.startDate as string | undefined),
+      endDate: parseOptionalDate(req.query.endDate as string | undefined),
+      source: parseOptionalHealthMetricSource(req.query.source),
+      limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
+    };
+
+    const metrics = await healthMetricService.getHealthMetrics(userId, query);
+
+    res.status(HTTP_STATUS.OK).json(metrics);
+  });
+
+  getHealthMetricById = ErrorHandlers.withNotFound<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
+    const metric = await healthMetricService.getHealthMetricById(userId, req.params.id);
+
+    res.status(HTTP_STATUS.OK).json(metric);
+  });
+
+  getLatestMetric = withErrorHandling<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
+    const metricType = parseHealthMetricType(req.params.metricType);
+
+    const metric = await healthMetricService.getLatestMetric(userId, metricType);
+
+    if (!metric) {
+      res.status(HTTP_STATUS.NOT_FOUND).json({ error: 'No metrics found for this type' });
+      return;
     }
-  }
 
-  async createBulkHealthMetrics(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const userId = requireAuth(req, res);
-      if (!userId) return;
+    res.status(HTTP_STATUS.OK).json(metric);
+  });
 
-      const validatedData = bulkCreateHealthMetricsSchema.parse(req.body);
+  getDailyAverage = withErrorHandling<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
 
-      const metricsData = validatedData.metrics.map((metric) => ({
-        ...metric,
-        recordedAt: new Date(metric.recordedAt),
-      }));
+    const metricType = parseHealthMetricType(req.params.metricType);
+    const date = parseOptionalDate(req.query.date as string | undefined);
 
-      const result = await healthMetricService.createBulkHealthMetrics(userId, metricsData);
+    const average = await healthMetricService.getDailyAverage(userId, metricType, date);
 
-      res.status(201).json(result);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ error: error.errors[0].message });
-        return;
-      }
-
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-        return;
-      }
-
-      res.status(500).json({ error: 'Internal server error' });
+    if (!average) {
+      res.status(HTTP_STATUS.NOT_FOUND).json({ error: 'No metrics found for this type and date' });
+      return;
     }
-  }
 
-  async getHealthMetrics(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const userId = requireAuth(req, res);
-      if (!userId) return;
+    res.status(HTTP_STATUS.OK).json(average);
+  });
 
-      const query = {
-        metricType: parseOptionalHealthMetricType(req.query.metricType),
-        startDate: req.query.startDate ? new Date(req.query.startDate as string) : undefined,
-        endDate: req.query.endDate ? new Date(req.query.endDate as string) : undefined,
-        source: parseOptionalHealthMetricSource(req.query.source),
-        limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
-      };
+  getWeeklyAverage = withErrorHandling<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
 
-      const metrics = await healthMetricService.getHealthMetrics(userId, query);
+    const metricType = parseHealthMetricType(req.params.metricType);
 
-      res.status(200).json(metrics);
-    } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-        return;
-      }
+    const average = await healthMetricService.getWeeklyAverage(userId, metricType);
 
-      res.status(500).json({ error: 'Internal server error' });
+    if (!average) {
+      res.status(HTTP_STATUS.NOT_FOUND).json({ error: 'No metrics found for this type' });
+      return;
     }
-  }
 
-  async getHealthMetricById(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const userId = requireAuth(req, res);
-      if (!userId) return;
+    res.status(HTTP_STATUS.OK).json(average);
+  });
 
-      const metric = await healthMetricService.getHealthMetricById(userId, req.params.id);
+  getTimeSeries = withErrorHandling<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
 
-      res.status(200).json(metric);
-    } catch (error) {
-      if (error instanceof Error) {
-        res.status(404).json({ error: error.message });
-        return;
-      }
+    const metricType = parseHealthMetricType(req.params.metricType);
+    const startDate = parseOptionalDate(req.query.startDate as string | undefined) || getDaysAgo(30);
+    const endDate = parseOptionalDate(req.query.endDate as string | undefined) || getEndOfDay();
 
-      res.status(500).json({ error: 'Internal server error' });
+    const timeSeries = await healthMetricService.getTimeSeries(
+      userId,
+      metricType,
+      startDate,
+      endDate
+    );
+
+    res.status(HTTP_STATUS.OK).json(timeSeries);
+  });
+
+  getMetricStats = withErrorHandling<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
+    const metricType = parseHealthMetricType(req.params.metricType);
+    const days = req.query.days ? parseInt(req.query.days as string) : 30;
+
+    const stats = await healthMetricService.getMetricStats(userId, metricType, days);
+
+    if (!stats) {
+      res.status(HTTP_STATUS.NOT_FOUND).json({ error: 'No metrics found for this type' });
+      return;
     }
-  }
 
-  async getLatestMetric(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const userId = requireAuth(req, res);
-      if (!userId) return;
+    res.status(HTTP_STATUS.OK).json(stats);
+  });
 
-      const metricType = parseHealthMetricType(req.params.metricType);
+  deleteHealthMetric = ErrorHandlers.withNotFound<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
 
-      const metric = await healthMetricService.getLatestMetric(userId, metricType);
+    const result = await healthMetricService.deleteHealthMetric(userId, req.params.id);
 
-      if (!metric) {
-        res.status(404).json({ error: 'No metrics found for this type' });
-        return;
-      }
-
-      res.status(200).json(metric);
-    } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-        return;
-      }
-
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
-
-  async getDailyAverage(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const userId = requireAuth(req, res);
-      if (!userId) return;
-
-      const metricType = parseHealthMetricType(req.params.metricType);
-      const date = req.query.date ? new Date(req.query.date as string) : undefined;
-
-      const average = await healthMetricService.getDailyAverage(userId, metricType, date);
-
-      if (!average) {
-        res.status(404).json({ error: 'No metrics found for this type and date' });
-        return;
-      }
-
-      res.status(200).json(average);
-    } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-        return;
-      }
-
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
-
-  async getWeeklyAverage(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const userId = requireAuth(req, res);
-      if (!userId) return;
-
-      const metricType = parseHealthMetricType(req.params.metricType);
-
-      const average = await healthMetricService.getWeeklyAverage(userId, metricType);
-
-      if (!average) {
-        res.status(404).json({ error: 'No metrics found for this type' });
-        return;
-      }
-
-      res.status(200).json(average);
-    } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-        return;
-      }
-
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
-
-  async getTimeSeries(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const userId = requireAuth(req, res);
-      if (!userId) return;
-
-      const metricType = parseHealthMetricType(req.params.metricType);
-      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : new Date();
-
-      const timeSeries = await healthMetricService.getTimeSeries(
-        userId,
-        metricType,
-        startDate,
-        endDate
-      );
-
-      res.status(200).json(timeSeries);
-    } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-        return;
-      }
-
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
-
-  async getMetricStats(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const userId = requireAuth(req, res);
-      if (!userId) return;
-
-      const metricType = parseHealthMetricType(req.params.metricType);
-      const days = req.query.days ? parseInt(req.query.days as string) : 30;
-
-      const stats = await healthMetricService.getMetricStats(userId, metricType, days);
-
-      if (!stats) {
-        res.status(404).json({ error: 'No metrics found for this type' });
-        return;
-      }
-
-      res.status(200).json(stats);
-    } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-        return;
-      }
-
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
-
-  async deleteHealthMetric(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const userId = requireAuth(req, res);
-      if (!userId) return;
-
-      const result = await healthMetricService.deleteHealthMetric(userId, req.params.id);
-
-      res.status(200).json(result);
-    } catch (error) {
-      if (error instanceof Error) {
-        res.status(404).json({ error: error.message });
-        return;
-      }
-
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 }
 
 export const healthMetricController = new HealthMetricController();

@@ -1,168 +1,99 @@
-import { Response } from 'express';
-import { z } from 'zod';
 import { mealService } from '../services/mealService';
 import { AuthenticatedRequest } from '../types';
 import { requireAuth } from '../utils/authHelpers';
 import { createMealSchema, updateMealSchema } from '../validation/schemas';
+import {
+  withErrorHandling,
+  ErrorHandlers,
+} from '../utils/controllerHelpers';
+import { HTTP_STATUS } from '../config/constants';
+import { parseOptionalDate } from '../utils/dateHelpers';
 
 export class MealController {
-  async createMeal(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const userId = requireAuth(req, res);
-      if (!userId) return;
+  createMeal = withErrorHandling<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
 
-      const validatedData = createMealSchema.parse(req.body);
+    const validatedData = createMealSchema.parse(req.body);
 
-      const mealData = {
-        ...validatedData,
-        consumedAt: validatedData.consumedAt
-          ? new Date(validatedData.consumedAt)
-          : undefined,
-      };
+    const mealData = {
+      ...validatedData,
+      consumedAt: validatedData.consumedAt
+        ? new Date(validatedData.consumedAt)
+        : undefined,
+    };
 
-      const meal = await mealService.createMeal(userId, mealData);
+    const meal = await mealService.createMeal(userId, mealData);
 
-      res.status(201).json(meal);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ error: error.errors[0].message });
-        return;
-      }
+    res.status(HTTP_STATUS.CREATED).json(meal);
+  });
 
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-        return;
-      }
+  getMeals = withErrorHandling<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
 
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
+    const date = parseOptionalDate(req.query.date as string | undefined);
 
-  async getMeals(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const userId = requireAuth(req, res);
-      if (!userId) return;
+    const meals = await mealService.getMeals(userId, date);
 
-      const date = req.query.date ? new Date(req.query.date as string) : undefined;
+    res.status(HTTP_STATUS.OK).json(meals);
+  });
 
-      const meals = await mealService.getMeals(userId, date);
+  getMealById = ErrorHandlers.withNotFound<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
 
-      res.status(200).json(meals);
-    } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-        return;
-      }
+    const meal = await mealService.getMealById(userId, req.params.id);
 
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
+    res.status(HTTP_STATUS.OK).json(meal);
+  });
 
-  async getMealById(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const userId = requireAuth(req, res);
-      if (!userId) return;
+  updateMeal = withErrorHandling<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
 
-      const meal = await mealService.getMealById(userId, req.params.id);
+    const validatedData = updateMealSchema.parse(req.body);
 
-      res.status(200).json(meal);
-    } catch (error) {
-      if (error instanceof Error) {
-        res.status(404).json({ error: error.message });
-        return;
-      }
+    const mealData = {
+      ...validatedData,
+      consumedAt: validatedData.consumedAt
+        ? new Date(validatedData.consumedAt)
+        : undefined,
+    };
 
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
+    const meal = await mealService.updateMeal(userId, req.params.id, mealData);
 
-  async updateMeal(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const userId = requireAuth(req, res);
-      if (!userId) return;
+    res.status(HTTP_STATUS.OK).json(meal);
+  });
 
-      const validatedData = updateMealSchema.parse(req.body);
+  deleteMeal = ErrorHandlers.withNotFound<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
 
-      const mealData = {
-        ...validatedData,
-        consumedAt: validatedData.consumedAt
-          ? new Date(validatedData.consumedAt)
-          : undefined,
-      };
+    const result = await mealService.deleteMeal(userId, req.params.id);
 
-      const meal = await mealService.updateMeal(userId, req.params.id, mealData);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-      res.status(200).json(meal);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ error: error.errors[0].message });
-        return;
-      }
+  getDailySummary = withErrorHandling<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
 
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-        return;
-      }
+    const date = parseOptionalDate(req.query.date as string | undefined);
 
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
+    const summary = await mealService.getDailySummary(userId, date);
 
-  async deleteMeal(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const userId = requireAuth(req, res);
-      if (!userId) return;
+    res.status(HTTP_STATUS.OK).json(summary);
+  });
 
-      const result = await mealService.deleteMeal(userId, req.params.id);
+  getWeeklySummary = withErrorHandling<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
 
-      res.status(200).json(result);
-    } catch (error) {
-      if (error instanceof Error) {
-        res.status(404).json({ error: error.message });
-        return;
-      }
+    const summary = await mealService.getWeeklySummary(userId);
 
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
-
-  async getDailySummary(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const userId = requireAuth(req, res);
-      if (!userId) return;
-
-      const date = req.query.date ? new Date(req.query.date as string) : undefined;
-
-      const summary = await mealService.getDailySummary(userId, date);
-
-      res.status(200).json(summary);
-    } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-        return;
-      }
-
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
-
-  async getWeeklySummary(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const userId = requireAuth(req, res);
-      if (!userId) return;
-
-      const summary = await mealService.getWeeklySummary(userId);
-
-      res.status(200).json(summary);
-    } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-        return;
-      }
-
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
+    res.status(HTTP_STATUS.OK).json(summary);
+  });
 }
 
 export const mealController = new MealController();

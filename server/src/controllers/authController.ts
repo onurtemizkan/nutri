@@ -5,6 +5,11 @@ import { AuthenticatedRequest, UpdateUserProfileInput } from '../types';
 import { requireAuth } from '../utils/authHelpers';
 import prisma from '../config/database';
 import { appleSignInSchema } from '../validation/schemas';
+import {
+  withErrorHandling,
+  ErrorHandlers,
+} from '../utils/controllerHelpers';
+import { HTTP_STATUS, USER_PROFILE_SELECT_FIELDS } from '../config/constants';
 
 const registerSchema = z.object({
   email: z.string().email('Invalid email format'),
@@ -31,187 +36,73 @@ const verifyTokenSchema = z.object({
 });
 
 export class AuthController {
-  async register(req: Request, res: Response): Promise<void> {
-    try {
-      const validatedData = registerSchema.parse(req.body);
-      const result = await authService.register(validatedData);
+  register = withErrorHandling(async (req: Request, res: Response) => {
+    const validatedData = registerSchema.parse(req.body);
+    const result = await authService.register(validatedData);
 
-      res.status(201).json(result);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ error: error.errors[0].message });
-        return;
-      }
+    res.status(HTTP_STATUS.CREATED).json(result);
+  });
 
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-        return;
-      }
+  login = ErrorHandlers.withUnauthorized(async (req: Request, res: Response) => {
+    const validatedData = loginSchema.parse(req.body);
+    const result = await authService.login(validatedData);
 
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async login(req: Request, res: Response): Promise<void> {
-    try {
-      const validatedData = loginSchema.parse(req.body);
-      const result = await authService.login(validatedData);
+  getProfile = ErrorHandlers.withNotFound<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
 
-      res.status(200).json(result);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ error: error.errors[0].message });
-        return;
-      }
+    const user = await authService.getUserProfile(userId);
+    res.status(HTTP_STATUS.OK).json(user);
+  });
 
-      if (error instanceof Error) {
-        res.status(401).json({ error: error.message });
-        return;
-      }
+  updateProfile = withErrorHandling<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
 
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
+    const data: UpdateUserProfileInput = req.body;
 
-  async getProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const userId = requireAuth(req, res);
-      if (!userId) return;
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data,
+      select: USER_PROFILE_SELECT_FIELDS,
+    });
 
-      const user = await authService.getUserProfile(userId);
-      res.status(200).json(user);
-    } catch (error) {
-      if (error instanceof Error) {
-        res.status(404).json({ error: error.message });
-        return;
-      }
+    res.status(HTTP_STATUS.OK).json(user);
+  });
 
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
+  forgotPassword = withErrorHandling(async (req: Request, res: Response) => {
+    const validatedData = forgotPasswordSchema.parse(req.body);
+    const result = await authService.requestPasswordReset(validatedData.email);
 
-  async updateProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
-    try {
-      const userId = requireAuth(req, res);
-      if (!userId) return;
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-      const data: UpdateUserProfileInput = req.body;
+  resetPassword = withErrorHandling(async (req: Request, res: Response) => {
+    const validatedData = resetPasswordSchema.parse(req.body);
+    const result = await authService.resetPassword(
+      validatedData.token,
+      validatedData.newPassword
+    );
 
-      const user = await prisma.user.update({
-        where: { id: userId },
-        data,
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          goalCalories: true,
-          goalProtein: true,
-          goalCarbs: true,
-          goalFat: true,
-          currentWeight: true,
-          goalWeight: true,
-          height: true,
-          activityLevel: true,
-        },
-      });
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-      res.status(200).json(user);
-    } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-        return;
-      }
+  verifyResetToken = withErrorHandling(async (req: Request, res: Response) => {
+    const validatedData = verifyTokenSchema.parse(req.body);
+    const result = await authService.verifyResetToken(validatedData.token);
 
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 
-  async forgotPassword(req: Request, res: Response): Promise<void> {
-    try {
-      const validatedData = forgotPasswordSchema.parse(req.body);
-      const result = await authService.requestPasswordReset(validatedData.email);
+  appleSignIn = withErrorHandling(async (req: Request, res: Response) => {
+    const validatedData = appleSignInSchema.parse(req.body);
+    const result = await authService.appleSignIn(validatedData);
 
-      res.status(200).json(result);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ error: error.errors[0].message });
-        return;
-      }
-
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-        return;
-      }
-
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
-
-  async resetPassword(req: Request, res: Response): Promise<void> {
-    try {
-      const validatedData = resetPasswordSchema.parse(req.body);
-      const result = await authService.resetPassword(
-        validatedData.token,
-        validatedData.newPassword
-      );
-
-      res.status(200).json(result);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ error: error.errors[0].message });
-        return;
-      }
-
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-        return;
-      }
-
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
-
-  async verifyResetToken(req: Request, res: Response): Promise<void> {
-    try {
-      const validatedData = verifyTokenSchema.parse(req.body);
-      const result = await authService.verifyResetToken(validatedData.token);
-
-      res.status(200).json(result);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ error: error.errors[0].message });
-        return;
-      }
-
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-        return;
-      }
-
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
-
-  async appleSignIn(req: Request, res: Response): Promise<void> {
-    try {
-      const validatedData = appleSignInSchema.parse(req.body);
-      const result = await authService.appleSignIn(validatedData);
-
-      res.status(200).json(result);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ error: error.errors[0].message });
-        return;
-      }
-
-      if (error instanceof Error) {
-        res.status(401).json({ error: error.message });
-        return;
-      }
-
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 }
 
 export const authController = new AuthController();

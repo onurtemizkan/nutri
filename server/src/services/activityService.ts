@@ -1,7 +1,8 @@
 import prisma from '../config/database';
 import { CreateActivityInput, UpdateActivityInput, GetActivitiesQuery, ActivityType } from '../types';
 import { Prisma } from '@prisma/client';
-import { DEFAULT_PAGE_LIMIT } from '../config/constants';
+import { DEFAULT_PAGE_LIMIT, WEEK_IN_DAYS } from '../config/constants';
+import { getDayBoundaries, getDaysAgo } from '../utils/dateHelpers';
 
 export class ActivityService {
   /**
@@ -149,13 +150,7 @@ export class ActivityService {
    * Get daily activity summary
    */
   async getDailySummary(userId: string, date?: Date) {
-    const targetDate = date || new Date();
-
-    const startOfDay = new Date(targetDate);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(targetDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    const { startOfDay, endOfDay } = getDayBoundaries(date);
 
     const activities = await prisma.activity.findMany({
       where: {
@@ -188,7 +183,7 @@ export class ActivityService {
     );
 
     return {
-      date: targetDate.toISOString().split('T')[0],
+      date: startOfDay.toISOString().split('T')[0],
       ...summary,
       activities,
     };
@@ -198,10 +193,7 @@ export class ActivityService {
    * Get weekly activity summary
    */
   async getWeeklySummary(userId: string) {
-    const today = new Date();
-    const sevenDaysAgo = new Date(today);
-    sevenDaysAgo.setDate(today.getDate() - 7);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
+    const sevenDaysAgo = getDaysAgo(WEEK_IN_DAYS);
 
     const activities = await prisma.activity.findMany({
       where: {
@@ -253,8 +245,7 @@ export class ActivityService {
    * Get activity statistics by type
    */
   async getActivityStatsByType(userId: string, activityType: ActivityType, days: number = 30) {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
+    const startDate = getDaysAgo(days);
 
     const activities = await prisma.activity.findMany({
       where: {
