@@ -67,13 +67,14 @@ export interface ConfidenceMap {
  * Camera intrinsic parameters
  */
 export interface CameraIntrinsics {
-  fx: number;
-  fy: number;
-  cx: number;
-  cy: number;
+  fx?: number;
+  fy?: number;
+  cx?: number;
+  cy?: number;
   focalLength?: { x: number; y: number };
   principalPoint?: { x: number; y: number };
   radialDistortion?: number[];
+  tangentialDistortion?: number[];
   width?: number;
   height?: number;
   imageResolution?: Resolution;
@@ -105,7 +106,8 @@ export interface RGBImage {
 export interface LiDARCapture {
   depthBuffer: DepthBuffer;
   confidenceMap?: ConfidenceMap;
-  intrinsics: CameraIntrinsics;
+  intrinsics?: CameraIntrinsics;
+  cameraIntrinsics?: CameraIntrinsics;
   timestamp: number;
   quality: DepthQuality;
   depthQuality?: DepthQuality;
@@ -160,6 +162,22 @@ export interface CaptureSession {
 }
 
 /**
+ * ML image/depth map metadata
+ */
+export interface MLImageMeta {
+  path: string;
+  width: number;
+  height: number;
+  channels: number;
+  dtype: string;
+  normalization?: {
+    min: number;
+    max: number;
+    method: string;
+  };
+}
+
+/**
  * ML-ready processed data
  */
 export interface MLReadyData {
@@ -170,9 +188,10 @@ export interface MLReadyData {
   frames?: ProcessedFrame[];
   metadata: Record<string, unknown>;
   version?: string;
-  rgbImages?: string[];
-  depthMaps?: string[];
-  confidenceMaps?: string[];
+  rgbImages?: (string | MLImageMeta)[];
+  depthMaps?: (string | MLImageMeta)[];
+  confidenceMaps?: (string | MLImageMeta)[];
+  annotations?: Record<string, unknown>;
 }
 
 /**
