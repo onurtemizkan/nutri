@@ -8,15 +8,17 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { mealsApi } from '@/lib/api/meals';
 import { CreateMealInput } from '@/lib/types';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
+import { colors, gradients, spacing, borderRadius, typography } from '@/lib/theme/colors';
+import { showAlert } from '@/lib/utils/alert';
 
 export default function AddMealScreen() {
   const params = useLocalSearchParams<{
@@ -64,7 +66,7 @@ export default function AddMealScreen() {
 
   const handleSaveMeal = async () => {
     if (!name || !calories || !protein || !carbs || !fat) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      showAlert('Error', 'Please fill in all required fields');
       return;
     }
 
@@ -83,14 +85,14 @@ export default function AddMealScreen() {
       };
 
       await mealsApi.createMeal(mealData);
-      Alert.alert('Success', 'Meal added successfully!', [
+      showAlert('Success', 'Meal added successfully!', [
         {
           text: 'OK',
           onPress: () => router.back(),
         },
       ]);
     } catch (error) {
-      Alert.alert('Error', getErrorMessage(error, 'Failed to add meal'));
+      showAlert('Error', getErrorMessage(error, 'Failed to add meal'));
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +114,7 @@ export default function AddMealScreen() {
             disabled={isLoading}
           >
             {isLoading ? (
-              <ActivityIndicator color="#3b5998" />
+              <ActivityIndicator color={colors.primary.main} />
             ) : (
               <Text style={styles.saveButton}>Save</Text>
             )}
@@ -128,20 +130,28 @@ export default function AddMealScreen() {
                 {mealTypes.map((type) => (
                   <TouchableOpacity
                     key={type}
-                    style={[
-                      styles.mealTypeButton,
-                      mealType === type && styles.mealTypeButtonActive,
-                    ]}
+                    style={styles.mealTypeButton}
                     onPress={() => setMealType(type)}
+                    activeOpacity={0.8}
                   >
-                    <Text
-                      style={[
-                        styles.mealTypeText,
-                        mealType === type && styles.mealTypeTextActive,
-                      ]}
-                    >
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </Text>
+                    {mealType === type ? (
+                      <LinearGradient
+                        colors={gradients.primary}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.mealTypeButtonGradient}
+                      >
+                        <Text style={styles.mealTypeTextActive}>
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </Text>
+                      </LinearGradient>
+                    ) : (
+                      <View style={styles.mealTypeButtonInactive}>
+                        <Text style={styles.mealTypeText}>
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </Text>
+                      </View>
+                    )}
                   </TouchableOpacity>
                 ))}
               </View>
@@ -152,20 +162,21 @@ export default function AddMealScreen() {
               style={styles.scanButton}
               onPress={() => router.push('/scan-food')}
               disabled={isLoading}
+              activeOpacity={0.8}
             >
-              <Ionicons name="camera" size={24} color="#3b5998" />
+              <Ionicons name="camera" size={24} color={colors.primary.main} />
               <View style={styles.scanButtonText}>
                 <Text style={styles.scanButtonTitle}>Scan Food with Camera</Text>
                 <Text style={styles.scanButtonSubtitle}>
                   Automatically estimate nutrition using AI
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#999" />
+              <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
             </TouchableOpacity>
 
             {params.fromScan === 'true' && (
               <View style={styles.scanBadge}>
-                <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                <Ionicons name="checkmark-circle" size={16} color={colors.status.success} />
                 <Text style={styles.scanBadgeText}>
                   Values from food scan - you can edit them
                 </Text>
@@ -175,13 +186,16 @@ export default function AddMealScreen() {
             {/* Meal Name */}
             <View style={styles.section}>
               <Text style={styles.label}>Meal Name *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g., Grilled Chicken Salad"
-                value={name}
-                onChangeText={setName}
-                editable={!isLoading}
-              />
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g., Grilled Chicken Salad"
+                  placeholderTextColor={colors.text.disabled}
+                  value={name}
+                  onChangeText={setName}
+                  editable={!isLoading}
+                />
+              </View>
             </View>
 
             {/* Nutrition Info */}
@@ -191,92 +205,113 @@ export default function AddMealScreen() {
               <View style={styles.row}>
                 <View style={styles.halfInput}>
                   <Text style={styles.label}>Calories *</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="0"
-                    value={calories}
-                    onChangeText={setCalories}
-                    keyboardType="numeric"
-                    editable={!isLoading}
-                  />
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="0"
+                      placeholderTextColor={colors.text.disabled}
+                      value={calories}
+                      onChangeText={setCalories}
+                      keyboardType="numeric"
+                      editable={!isLoading}
+                    />
+                  </View>
                 </View>
 
                 <View style={styles.halfInput}>
                   <Text style={styles.label}>Protein (g) *</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="0"
-                    value={protein}
-                    onChangeText={setProtein}
-                    keyboardType="numeric"
-                    editable={!isLoading}
-                  />
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="0"
+                      placeholderTextColor={colors.text.disabled}
+                      value={protein}
+                      onChangeText={setProtein}
+                      keyboardType="numeric"
+                      editable={!isLoading}
+                    />
+                  </View>
                 </View>
               </View>
 
               <View style={styles.row}>
                 <View style={styles.halfInput}>
                   <Text style={styles.label}>Carbs (g) *</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="0"
-                    value={carbs}
-                    onChangeText={setCarbs}
-                    keyboardType="numeric"
-                    editable={!isLoading}
-                  />
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="0"
+                      placeholderTextColor={colors.text.disabled}
+                      value={carbs}
+                      onChangeText={setCarbs}
+                      keyboardType="numeric"
+                      editable={!isLoading}
+                    />
+                  </View>
                 </View>
 
                 <View style={styles.halfInput}>
                   <Text style={styles.label}>Fat (g) *</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="0"
-                    value={fat}
-                    onChangeText={setFat}
-                    keyboardType="numeric"
-                    editable={!isLoading}
-                  />
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="0"
+                      placeholderTextColor={colors.text.disabled}
+                      value={fat}
+                      onChangeText={setFat}
+                      keyboardType="numeric"
+                      editable={!isLoading}
+                    />
+                  </View>
                 </View>
               </View>
 
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Fiber (g)</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="0"
-                  value={fiber}
-                  onChangeText={setFiber}
-                  keyboardType="numeric"
-                  editable={!isLoading}
-                />
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="0"
+                    placeholderTextColor={colors.text.disabled}
+                    value={fiber}
+                    onChangeText={setFiber}
+                    keyboardType="numeric"
+                    editable={!isLoading}
+                  />
+                </View>
               </View>
 
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Serving Size</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g., 1 plate, 200g"
-                  value={servingSize}
-                  onChangeText={setServingSize}
-                  editable={!isLoading}
-                />
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="e.g., 1 plate, 200g"
+                    placeholderTextColor={colors.text.disabled}
+                    value={servingSize}
+                    onChangeText={setServingSize}
+                    editable={!isLoading}
+                  />
+                </View>
               </View>
             </View>
 
             {/* Notes */}
             <View style={styles.section}>
               <Text style={styles.label}>Notes</Text>
-              <TextInput
-                style={[styles.input, styles.notesInput]}
-                placeholder="Add any additional notes..."
-                value={notes}
-                onChangeText={setNotes}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-                editable={!isLoading}
-              />
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={[styles.input, styles.notesInput]}
+                  placeholder="Add any additional notes..."
+                  placeholderTextColor={colors.text.disabled}
+                  value={notes}
+                  onChangeText={setNotes}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                  editable={!isLoading}
+                />
+              </View>
             </View>
           </View>
         </ScrollView>
@@ -288,139 +323,172 @@ export default function AddMealScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background.primary,
   },
   keyboardView: {
     flex: 1,
   },
+
+  // Header
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: colors.border.secondary,
+    backgroundColor: colors.background.secondary,
   },
   cancelButton: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: typography.fontSize.md,
+    color: colors.text.secondary,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
   },
   saveButton: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#3b5998',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary.main,
   },
+
+  // Content
   scrollView: {
     flex: 1,
   },
   content: {
-    padding: 20,
-    paddingBottom: 40,
+    padding: spacing.lg,
+    paddingBottom: spacing['3xl'],
   },
   section: {
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 16,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.md,
+    letterSpacing: -0.3,
   },
+
+  // Meal Type Selector
   mealTypeContainer: {
     flexDirection: 'row',
-    gap: 8,
+    gap: spacing.sm,
   },
   mealTypeButton: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: '#f5f5f5',
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+  },
+  mealTypeButtonGradient: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
     alignItems: 'center',
   },
-  mealTypeButtonActive: {
-    backgroundColor: '#3b5998',
+  mealTypeButtonInactive: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.background.tertiary,
+    alignItems: 'center',
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
   },
   mealTypeText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.tertiary,
   },
   mealTypeTextActive: {
-    color: '#fff',
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
   },
+
+  // Input
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 8,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.secondary,
+    marginBottom: spacing.sm,
+    letterSpacing: 0.3,
+  },
+  inputWrapper: {
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+    overflow: 'hidden',
   },
   input: {
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    fontSize: typography.fontSize.md,
+    color: colors.text.primary,
+    height: 48,
   },
   notesInput: {
     height: 100,
-    paddingTop: 14,
+    textAlignVertical: 'top',
+    paddingTop: spacing.md,
   },
   row: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
+    gap: spacing.md,
+    marginBottom: spacing.md,
   },
   halfInput: {
     flex: 1,
   },
   inputContainer: {
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
+
+  // Scan Button
   scanButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f4ff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
+    backgroundColor: colors.special.highlight,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#d0dbff',
+    borderColor: colors.border.focus,
   },
   scanButtonText: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: spacing.md,
   },
   scanButtonTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#3b5998',
-    marginBottom: 2,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary.main,
+    marginBottom: spacing.xs,
   },
   scanButtonSubtitle: {
-    fontSize: 12,
-    color: '#7890c4',
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
   },
+
+  // Scan Badge
   scanBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#e8f5e9',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
+    backgroundColor: colors.special.highlight,
+    padding: spacing.md,
+    borderRadius: borderRadius.sm,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.status.success,
   },
   scanBadgeText: {
-    fontSize: 13,
-    color: '#4CAF50',
-    marginLeft: 8,
-    fontWeight: '500',
+    fontSize: typography.fontSize.xs,
+    color: colors.status.success,
+    marginLeft: spacing.sm,
+    fontWeight: typography.fontWeight.medium,
   },
 });

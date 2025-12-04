@@ -10,9 +10,11 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { mealsApi } from '@/lib/api/meals';
 import { DailySummary, Meal } from '@/lib/types';
 import { useAuth } from '@/lib/context/AuthContext';
+import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 
 export default function HomeScreen() {
   const [summary, setSummary] = useState<DailySummary | null>(null);
@@ -61,7 +63,7 @@ export default function HomeScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3b5998" />
+          <ActivityIndicator size="large" color={colors.primary.main} />
         </View>
       </SafeAreaView>
     );
@@ -73,7 +75,12 @@ export default function HomeScreen() {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary.main}
+            colors={[colors.primary.main]}
+          />
         }
       >
         <View style={styles.content}>
@@ -91,15 +98,23 @@ export default function HomeScreen() {
 
           {/* Calorie Summary Card */}
           <View style={styles.summaryCard}>
-            <View style={styles.calorieRing}>
+            <LinearGradient
+              colors={gradients.primary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.calorieRing}
+            >
               <View style={styles.calorieContent}>
                 <Text style={styles.calorieValue}>{Math.round(summary?.totalCalories || 0)}</Text>
                 <Text style={styles.calorieLabel}>/ {summary?.goals?.goalCalories || 2000}</Text>
               </View>
-            </View>
+            </LinearGradient>
             <Text style={styles.calorieSubtext}>Calories</Text>
             <View style={styles.progressBar}>
-              <View
+              <LinearGradient
+                colors={gradients.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
                 style={[
                   styles.progressFill,
                   { width: `${Math.min(calorieProgress, 100)}%` }
@@ -114,12 +129,14 @@ export default function HomeScreen() {
               <Text style={styles.macroValue}>{Math.round(summary?.totalProtein || 0)}g</Text>
               <Text style={styles.macroLabel}>Protein</Text>
               <View style={styles.macroProgress}>
-                <View
+                <LinearGradient
+                  colors={gradients.success}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
                   style={[
                     styles.macroProgressFill,
                     {
                       width: `${Math.min(((summary?.totalProtein || 0) / (summary?.goals?.goalProtein || 1)) * 100, 100)}%`,
-                      backgroundColor: '#4CAF50'
                     }
                   ]}
                 />
@@ -130,12 +147,14 @@ export default function HomeScreen() {
               <Text style={styles.macroValue}>{Math.round(summary?.totalCarbs || 0)}g</Text>
               <Text style={styles.macroLabel}>Carbs</Text>
               <View style={styles.macroProgress}>
-                <View
+                <LinearGradient
+                  colors={gradients.accent}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
                   style={[
                     styles.macroProgressFill,
                     {
                       width: `${Math.min(((summary?.totalCarbs || 0) / (summary?.goals?.goalCarbs || 1)) * 100, 100)}%`,
-                      backgroundColor: '#FF9800'
                     }
                   ]}
                 />
@@ -146,12 +165,14 @@ export default function HomeScreen() {
               <Text style={styles.macroValue}>{Math.round(summary?.totalFat || 0)}g</Text>
               <Text style={styles.macroLabel}>Fat</Text>
               <View style={styles.macroProgress}>
-                <View
+                <LinearGradient
+                  colors={gradients.secondary}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
                   style={[
                     styles.macroProgressFill,
                     {
                       width: `${Math.min(((summary?.totalFat || 0) / (summary?.goals?.goalFat || 1)) * 100, 100)}%`,
-                      backgroundColor: '#F44336'
                     }
                   ]}
                 />
@@ -196,8 +217,16 @@ export default function HomeScreen() {
       <TouchableOpacity
         style={styles.fab}
         onPress={() => router.push('/add-meal')}
+        activeOpacity={0.8}
       >
-        <Text style={styles.fabText}>+</Text>
+        <LinearGradient
+          colors={gradients.primary}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.fabGradient}
+        >
+          <Text style={styles.fabText}>+</Text>
+        </LinearGradient>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -206,7 +235,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background.primary,
   },
   loadingContainer: {
     flex: 1,
@@ -217,187 +246,202 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 20,
+    padding: spacing.lg,
     paddingBottom: 100,
   },
+
+  // Header
   header: {
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   greeting: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#000',
-    marginBottom: 4,
+    fontSize: typography.fontSize['3xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+    letterSpacing: -0.5,
   },
   date: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: typography.fontSize.sm,
+    color: colors.text.tertiary,
+    fontWeight: typography.fontWeight.medium,
   },
+
+  // Summary Card
   summaryCard: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 24,
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
     alignItems: 'center',
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+    ...shadows.md,
   },
   calorieRing: {
     width: 140,
     height: 140,
     borderRadius: 70,
-    borderWidth: 12,
-    borderColor: '#3b5998',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md,
+    ...shadows.glow,
   },
   calorieContent: {
     alignItems: 'center',
+    backgroundColor: colors.background.tertiary,
+    width: 116,
+    height: 116,
+    borderRadius: 58,
+    justifyContent: 'center',
   },
   calorieValue: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: '#000',
+    fontSize: typography.fontSize['4xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
   },
   calorieLabel: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: typography.fontSize.md,
+    color: colors.text.tertiary,
   },
   calorieSubtext: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 12,
+    fontSize: typography.fontSize.md,
+    color: colors.text.secondary,
+    marginBottom: spacing.md,
+    fontWeight: typography.fontWeight.medium,
   },
   progressBar: {
     width: '100%',
     height: 6,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 3,
+    backgroundColor: colors.background.elevated,
+    borderRadius: borderRadius.xs,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#3b5998',
-    borderRadius: 3,
+    borderRadius: borderRadius.xs,
   },
+
+  // Macros
   macrosContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 24,
-    gap: 12,
+    marginBottom: spacing.xl,
+    gap: spacing.md,
   },
   macroCard: {
     flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+    ...shadows.sm,
   },
   macroValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#000',
-    marginBottom: 4,
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
   },
   macroLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 8,
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+    marginBottom: spacing.sm,
+    fontWeight: typography.fontWeight.semibold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   macroProgress: {
     width: '100%',
     height: 4,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 2,
+    backgroundColor: colors.background.elevated,
+    borderRadius: borderRadius.xs,
     overflow: 'hidden',
   },
   macroProgressFill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: borderRadius.xs,
   },
+
+  // Meals Section
   mealsSection: {
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   sectionTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#000',
-    marginBottom: 16,
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.md,
+    letterSpacing: -0.5,
   },
   mealTypeSection: {
-    marginBottom: 20,
+    marginBottom: spacing.lg,
   },
   mealTypeTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 12,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.secondary,
+    marginBottom: spacing.sm,
+    textTransform: 'capitalize',
   },
   mealCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 8,
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
   },
   mealInfo: {
     flex: 1,
   },
   mealName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 4,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
   },
   mealMacros: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
   },
   mealCalories: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#3b5998',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary.main,
   },
   noMeals: {
-    fontSize: 14,
-    color: '#999',
+    fontSize: typography.fontSize.sm,
+    color: colors.text.disabled,
     fontStyle: 'italic',
+    paddingVertical: spacing.sm,
   },
+
+  // FAB
   fab: {
     position: 'absolute',
-    bottom: 24,
-    right: 24,
+    bottom: spacing.xl,
+    right: spacing.xl,
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#3b5998',
+    overflow: 'hidden',
+    ...shadows.xl,
+  },
+  fabGradient: {
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
   fabText: {
     fontSize: 32,
-    color: '#fff',
-    fontWeight: '300',
+    color: colors.text.primary,
+    fontWeight: typography.fontWeight.regular,
   },
 });

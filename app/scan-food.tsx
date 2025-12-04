@@ -4,16 +4,20 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   Image,
+  Animated,
 } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { Ionicons } from '@expo/vector-icons';
 import { foodAnalysisApi } from '@/lib/api/food-analysis';
+import { showAlert } from '@/lib/utils/alert';
+import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import type {
   FoodScanResult,
   ARMeasurement,
@@ -29,6 +33,31 @@ export default function ScanFoodScreen() {
   const [showGuide, setShowGuide] = useState(true);
   const cameraRef = useRef<CameraView>(null);
   const router = useRouter();
+
+  // Pulsing animation for the analyzing spinner
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (isAnalyzing) {
+      // Start pulsing animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.2,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [isAnalyzing, pulseAnim]);
 
   // Hide guide after 3 seconds
   useEffect(() => {
@@ -57,7 +86,7 @@ export default function ScanFoodScreen() {
       });
 
       if (!photo) {
-        Alert.alert('Error', 'Failed to capture photo');
+        showAlert('Error', 'Failed to capture photo');
         return;
       }
 
@@ -71,7 +100,7 @@ export default function ScanFoodScreen() {
       setCapturedImage(manipulatedImage.uri);
     } catch (error) {
       console.error('Error capturing photo:', error);
-      Alert.alert('Error', 'Failed to capture photo. Please try again.');
+      showAlert('Error', 'Failed to capture photo. Please try again.');
     }
   };
 
@@ -99,7 +128,7 @@ export default function ScanFoodScreen() {
       setScanResult(result);
     } catch (error) {
       console.error('Food analysis error:', error);
-      Alert.alert(
+      showAlert(
         'Analysis Failed',
         'Could not analyze the food. Please ensure the ML service is running and try again.',
         [
@@ -126,7 +155,7 @@ export default function ScanFoodScreen() {
 
   const handleUseScan = () => {
     if (!scanResult || scanResult.foodItems.length === 0) {
-      Alert.alert('Error', 'No food items detected');
+      showAlert('Error', 'No food items detected');
       return;
     }
 
@@ -175,8 +204,16 @@ export default function ScanFoodScreen() {
         <TouchableOpacity
           style={styles.permissionButton}
           onPress={requestPermission}
+          activeOpacity={0.8}
         >
-          <Text style={styles.permissionButtonText}>Grant Permission</Text>
+          <LinearGradient
+            colors={gradients.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.permissionButtonGradient}
+          >
+            <Text style={styles.permissionButtonText}>Grant Permission</Text>
+          </LinearGradient>
         </TouchableOpacity>
       </View>
     );
@@ -198,10 +235,38 @@ export default function ScanFoodScreen() {
           <Image source={{ uri: capturedImage }} style={styles.previewImage} />
 
           {isAnalyzing && (
-            <View style={styles.analyzingOverlay}>
-              <ActivityIndicator size="large" color="#fff" />
-              <Text style={styles.analyzingText}>Analyzing food...</Text>
-            </View>
+            <BlurView intensity={80} tint="dark" style={styles.analyzingOverlay}>
+              <View style={styles.analyzingCard}>
+                <View style={styles.spinnerWrapper}>
+                  <Animated.View
+                    style={[
+                      styles.pulseCircle,
+                      {
+                        transform: [{ scale: pulseAnim }],
+                      },
+                    ]}
+                  >
+                    <LinearGradient
+                      colors={[colors.primary.main, colors.primary.light]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.pulseGradient}
+                    />
+                  </Animated.View>
+
+                  <View style={styles.spinnerContainer}>
+                    <ActivityIndicator size="large" color={colors.primary.main} />
+                  </View>
+                </View>
+
+                <View style={styles.analyzingTextContainer}>
+                  <Text style={styles.analyzingTitle}>Analyzing Food</Text>
+                  <Text style={styles.analyzingSubtext}>
+                    Using AI to identify nutrition...
+                  </Text>
+                </View>
+              </View>
+            </BlurView>
           )}
 
           {scanResult && (
@@ -267,8 +332,16 @@ export default function ScanFoodScreen() {
             <TouchableOpacity
               style={styles.analyzeButton}
               onPress={handleAnalyzeFood}
+              activeOpacity={0.8}
             >
-              <Text style={styles.analyzeButtonText}>Analyze Food</Text>
+              <LinearGradient
+                colors={gradients.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.analyzeButtonGradient}
+              >
+                <Text style={styles.analyzeButtonText}>Analyze Food</Text>
+              </LinearGradient>
             </TouchableOpacity>
           )}
 
@@ -276,8 +349,16 @@ export default function ScanFoodScreen() {
             <TouchableOpacity
               style={styles.analyzeButton}
               onPress={handleUseScan}
+              activeOpacity={0.8}
             >
-              <Text style={styles.analyzeButtonText}>Use This Scan</Text>
+              <LinearGradient
+                colors={gradients.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.analyzeButtonGradient}
+              >
+                <Text style={styles.analyzeButtonText}>Use This Scan</Text>
+              </LinearGradient>
             </TouchableOpacity>
           )}
         </View>
@@ -362,31 +443,34 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 20,
+    backgroundColor: colors.background.primary,
+    padding: spacing.xl,
   },
   permissionText: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginTop: 20,
-    marginBottom: 8,
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
   },
   permissionSubtext: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: typography.fontSize.sm,
+    color: colors.text.tertiary,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: spacing['2xl'],
   },
   permissionButton: {
-    backgroundColor: '#3b5998',
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+  },
+  permissionButtonGradient: {
+    paddingHorizontal: spacing['2xl'],
+    paddingVertical: spacing.md,
   },
   permissionButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: colors.text.primary,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
   },
   camera: {
     flex: 1,
@@ -465,25 +549,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#fff',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.background.secondary,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: colors.border.secondary,
   },
   headerButton: {
-    fontSize: 16,
-    color: '#3b5998',
-    fontWeight: '600',
+    fontSize: typography.fontSize.md,
+    color: colors.primary.main,
+    fontWeight: typography.fontWeight.semibold,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
   },
   previewContainer: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: colors.background.primary,
   },
   previewImage: {
     width: '100%',
@@ -492,59 +576,92 @@ const styles = StyleSheet.create({
   },
   analyzingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  analyzingText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 16,
+  analyzingCard: {
+    alignItems: 'center',
+  },
+  spinnerWrapper: {
+    width: 120,
+    height: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+  },
+  pulseCircle: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+    opacity: 0.2,
+  },
+  pulseGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 60,
+  },
+  spinnerContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  analyzingTextContainer: {
+    alignItems: 'center',
+  },
+  analyzingTitle: {
+    color: colors.text.primary,
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    marginBottom: spacing.xs,
+    letterSpacing: -0.5,
+  },
+  analyzingSubtext: {
+    color: colors.text.tertiary,
+    fontSize: typography.fontSize.sm,
+    textAlign: 'center',
   },
   resultsContainer: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    padding: 20,
+    backgroundColor: colors.background.primary,
+    padding: spacing.lg,
   },
   resultsTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 16,
-    color: '#000',
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    marginBottom: spacing.md,
+    color: colors.text.primary,
   },
   foodItem: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+    ...shadows.md,
   },
   foodItemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   foodName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
     flex: 1,
   },
   confidence: {
-    fontSize: 12,
-    color: '#3b5998',
-    fontWeight: '600',
+    fontSize: typography.fontSize.xs,
+    color: colors.primary.main,
+    fontWeight: typography.fontWeight.semibold,
   },
   portionSize: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
+    fontSize: typography.fontSize.sm,
+    color: colors.text.tertiary,
+    marginBottom: spacing.md,
   },
   nutritionGrid: {
     flexDirection: 'row',
@@ -554,47 +671,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   nutritionValue: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#000',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
   },
   nutritionLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+    marginTop: spacing.xs,
   },
   suggestions: {
-    marginTop: 16,
-    padding: 16,
-    backgroundColor: '#e8f4fd',
-    borderRadius: 12,
+    marginTop: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.special.highlight,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.focus,
   },
   suggestionsTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#3b5998',
-    marginBottom: 8,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary.main,
+    marginBottom: spacing.sm,
   },
   suggestionText: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 4,
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+    marginBottom: spacing.xs,
   },
   actionsContainer: {
-    padding: 20,
-    backgroundColor: '#fff',
+    padding: spacing.lg,
+    backgroundColor: colors.background.secondary,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: colors.border.secondary,
   },
   analyzeButton: {
-    backgroundColor: '#3b5998',
-    paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    ...shadows.md,
+  },
+  analyzeButtonGradient: {
+    paddingVertical: spacing.md,
     alignItems: 'center',
   },
   analyzeButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: colors.text.primary,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
   },
 });

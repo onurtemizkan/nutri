@@ -8,6 +8,17 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
+  appleSignIn: (data: {
+    identityToken: string;
+    authorizationCode: string;
+    user?: {
+      email?: string;
+      name?: {
+        firstName?: string;
+        lastName?: string;
+      };
+    };
+  }) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (data: Partial<User>) => Promise<void>;
 }
@@ -55,6 +66,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const appleSignIn = async (data: {
+    identityToken: string;
+    authorizationCode: string;
+    user?: {
+      email?: string;
+      name?: {
+        firstName?: string;
+        lastName?: string;
+      };
+    };
+  }) => {
+    try {
+      const response = await authApi.appleSignIn(data);
+      setUser(response.user);
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       await authApi.logout();
@@ -81,6 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user,
         login,
         register,
+        appleSignIn,
         logout,
         updateUser,
       }}

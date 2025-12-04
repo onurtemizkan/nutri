@@ -55,6 +55,10 @@ Returns server status and timestamp.
 ### Authentication (Public)
 - `POST /api/auth/register` - Create new user account
 - `POST /api/auth/login` - Login and receive JWT token
+- `POST /api/auth/apple-signin` - Sign in with Apple (OAuth)
+- `POST /api/auth/forgot-password` - Request password reset
+- `POST /api/auth/reset-password` - Reset password with token
+- `POST /api/auth/verify-reset-token` - Verify reset token
 
 ### User Profile (Protected)
 - `GET /api/auth/profile` - Get current user profile
@@ -191,6 +195,27 @@ curl -X POST http://localhost:3000/api/meals \
     "servingSize": "1 bowl"
   }'
 ```
+
+## Additional Documentation
+
+### Apple Sign In with Apple
+
+The app supports Sign in with Apple for iOS users. For production deployment:
+
+- **📋 Quick Checklist:** [`docs/APPLE_SIGN_IN_CHECKLIST.md`](docs/APPLE_SIGN_IN_CHECKLIST.md)
+- **📖 Full Documentation:** [`docs/APPLE_SIGN_IN_PRODUCTION.md`](docs/APPLE_SIGN_IN_PRODUCTION.md)
+- **💻 Code Example:** [`docs/APPLE_TOKEN_VERIFICATION.ts.example`](docs/APPLE_TOKEN_VERIFICATION.ts.example)
+
+**Current Status:** ✅ Development Complete | ⏳ Production Pending
+
+**Key Requirements for Production:**
+- Install `jsonwebtoken` and `jwks-rsa` packages
+- Implement server-side token verification
+- Configure Apple Developer account
+- Set `APPLE_APP_ID` environment variable
+- Run database migration: `npm run db:migrate -- --name add_apple_sign_in`
+
+See the documentation above for complete deployment instructions.
 
 ## License
 

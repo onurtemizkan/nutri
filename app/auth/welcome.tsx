@@ -1,34 +1,139 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Link } from 'expo-router';
+import { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Alert } from 'react-native';
+import { Link, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { useAuth } from '@/lib/context/AuthContext';
+import { getErrorMessage } from '@/lib/utils/errorHandling';
+import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 
 export default function WelcomeScreen() {
+  const [isLoading, setIsLoading] = useState(false);
+  const { appleSignIn } = useAuth();
+  const router = useRouter();
+
+  const handleAppleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      await appleSignIn({
+        identityToken: credential.identityToken || '',
+        authorizationCode: credential.authorizationCode || '',
+        user: {
+          email: credential.email || undefined,
+          name: credential.fullName
+            ? {
+                firstName: credential.fullName.givenName || undefined,
+                lastName: credential.fullName.familyName || undefined,
+              }
+            : undefined,
+        },
+      });
+
+      router.replace('/(tabs)');
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === 'ERR_REQUEST_CANCELED'
+      ) {
+        return;
+      }
+      Alert.alert('Apple Sign In Failed', getErrorMessage(error, 'Could not sign in with Apple'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={['#4c669f', '#3b5998', '#192f6a']}
-        style={styles.gradient}
-      >
+      <LinearGradient colors={gradients.dark} style={styles.gradient}>
         <View style={styles.content}>
+          {/* Header Section */}
           <View style={styles.header}>
-            <Text style={styles.emoji}>🍎</Text>
+            {/* Logo/Icon with gradient background */}
+            <View style={styles.logoContainer}>
+              <LinearGradient colors={gradients.primary} style={styles.logoGradient}>
+                <Text style={styles.logoEmoji}>🥗</Text>
+              </LinearGradient>
+            </View>
+
+            {/* Title */}
             <Text style={styles.title}>Nutri</Text>
-            <Text style={styles.subtitle}>Track your nutrition journey</Text>
+            <Text style={styles.subtitle}>Track, Analyze, Optimize</Text>
+
+            {/* Feature highlights */}
+            <View style={styles.features}>
+              <View style={styles.featureItem}>
+                <Text style={styles.featureDot}>•</Text>
+                <Text style={styles.featureText}>AI-powered insights</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <Text style={styles.featureDot}>•</Text>
+                <Text style={styles.featureText}>Health metric correlation</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <Text style={styles.featureDot}>•</Text>
+                <Text style={styles.featureText}>Personalized nutrition</Text>
+              </View>
+            </View>
           </View>
 
+          {/* Action Buttons */}
           <View style={styles.buttonContainer}>
+            {/* Apple Sign In Button */}
+            {Platform.OS === 'ios' && (
+              <>
+                <AppleAuthentication.AppleAuthenticationButton
+                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                  buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+                  cornerRadius={borderRadius.md}
+                  style={styles.appleButton}
+                  onPress={handleAppleSignIn}
+                  disabled={isLoading}
+                />
+
+                <View style={styles.divider}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>or continue with email</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+              </>
+            )}
+
+            {/* Sign In Button */}
             <Link href="/auth/signin" asChild>
-              <TouchableOpacity style={styles.primaryButton}>
-                <Text style={styles.primaryButtonText}>Sign In</Text>
+              <TouchableOpacity style={styles.primaryButton} disabled={isLoading}>
+                <LinearGradient
+                  colors={gradients.primary}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.primaryButtonGradient}
+                >
+                  <Text style={styles.primaryButtonText}>Sign In</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </Link>
 
+            {/* Create Account Button */}
             <Link href="/auth/signup" asChild>
-              <TouchableOpacity style={styles.secondaryButton}>
+              <TouchableOpacity style={styles.secondaryButton} disabled={isLoading}>
                 <Text style={styles.secondaryButtonText}>Create Account</Text>
               </TouchableOpacity>
             </Link>
+
+            {/* Footer text */}
+            <Text style={styles.footerText}>
+              By continuing, you agree to our Terms & Privacy Policy
+            </Text>
           </View>
         </View>
       </LinearGradient>
@@ -39,6 +144,7 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background.primary,
   },
   gradient: {
     flex: 1,
@@ -46,53 +152,133 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'space-between',
-    paddingHorizontal: 32,
-    paddingVertical: 60,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing['3xl'],
+    paddingBottom: spacing.xl,
   },
+
+  // Header
   header: {
     alignItems: 'center',
-    marginTop: 80,
+    marginTop: spacing['2xl'],
   },
-  emoji: {
-    fontSize: 80,
-    marginBottom: 24,
+  logoContainer: {
+    marginBottom: spacing.lg,
+  },
+  logoGradient: {
+    width: 100,
+    height: 100,
+    borderRadius: borderRadius.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.glow,
+  },
+  logoEmoji: {
+    fontSize: 48,
   },
   title: {
-    fontSize: 48,
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: 12,
+    fontSize: typography.fontSize['5xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+    letterSpacing: -1,
   },
   subtitle: {
-    fontSize: 18,
-    color: 'rgba(255, 255, 255, 0.9)',
-    textAlign: 'center',
+    fontSize: typography.fontSize.lg,
+    color: colors.text.secondary,
+    marginBottom: spacing.xl,
+    fontWeight: typography.fontWeight.medium,
   },
-  buttonContainer: {
-    gap: 16,
+
+  // Features
+  features: {
+    marginTop: spacing.md,
+    gap: spacing.sm,
   },
-  primaryButton: {
-    backgroundColor: '#fff',
-    paddingVertical: 16,
-    borderRadius: 12,
+  featureItem: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
+  },
+  featureDot: {
+    fontSize: typography.fontSize.lg,
+    color: colors.primary.main,
+  },
+  featureText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.tertiary,
+    fontWeight: typography.fontWeight.medium,
+  },
+
+  // Buttons
+  buttonContainer: {
+    gap: spacing.md,
+  },
+  appleButton: {
+    width: '100%',
+    height: 52,
+  },
+
+  // Primary Button (Gradient)
+  primaryButton: {
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    ...shadows.md,
+  },
+  primaryButtonGradient: {
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 52,
   },
   primaryButtonText: {
-    color: '#3b5998',
-    fontSize: 16,
-    fontWeight: '600',
+    color: colors.text.primary,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    letterSpacing: 0.5,
   },
+
+  // Secondary Button (Outlined)
   secondaryButton: {
     backgroundColor: 'transparent',
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#fff',
+    borderWidth: 1.5,
+    borderColor: colors.border.primary,
+    height: 52,
   },
   secondaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: colors.text.primary,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    letterSpacing: 0.5,
+  },
+
+  // Divider
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.xs,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border.secondary,
+  },
+  dividerText: {
+    marginHorizontal: spacing.md,
+    color: colors.text.tertiary,
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
+  },
+
+  // Footer
+  footerText: {
+    textAlign: 'center',
+    color: colors.text.disabled,
+    fontSize: typography.fontSize.xs,
+    marginTop: spacing.sm,
+    lineHeight: typography.lineHeight.relaxed * typography.fontSize.xs,
   },
 });
