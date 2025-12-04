@@ -1,0 +1,140 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 2,
+        "title": "Implement Real Food Classification ML Model",
+        "description": "Replace the mock food classifier in ml-service/app/services/food_analysis_service.py with a real CNN model (EfficientNet or ResNet) trained on food image datasets.",
+        "details": "1. Create a new module `ml-service/app/ml_models/food_classifier.py` with:\n   - Load pre-trained EfficientNet-B0 or ResNet-50 from torchvision\n   - Fine-tune on Food-101 dataset or custom food dataset\n   - Implement proper image preprocessing pipeline matching ImageNet stats\n   - Support for GPU inference if available (auto-detect CUDA)\n\n2. Update `food_analysis_service.py`:\n   - Replace `NUTRITION_DATABASE` with a proper food database (USDA FoodData Central API integration)\n   - Update `_classify_food()` to use real model inference instead of random selection\n   - Add model loading with caching to avoid reloading on each request\n   - Implement top-5 predictions with confidence scores\n\n3. Add model versioning:\n   - Store model checkpoints in `ml-service/models/food_classifier/`\n   - Add `model_version` field to responses\n   - Implement A/B testing capability by loading multiple model versions\n\n4. Extend nutrition database:\n   - Expand from current 6 items to 100+ common foods\n   - Structure: JSON file or SQLite database with USDA data\n   - Include serving size variations (small, medium, large)\n\nPseudo-code for classifier:\n```python\nclass FoodClassifier:\n    def __init__(self, model_path: str = None):\n        self.model = self._load_model(model_path)\n        self.classes = self._load_class_labels()\n    \n    def _load_model(self, path):\n        model = torchvision.models.efficientnet_b0(pretrained=True)\n        model.classifier[-1] = nn.Linear(1280, num_food_classes)\n        if path:\n            model.load_state_dict(torch.load(path))\n        model.eval()\n        return model\n    \n    async def classify(self, image: np.ndarray) -> List[Tuple[str, float]]:\n        tensor = self._preprocess(image)\n        with torch.no_grad():\n            outputs = self.model(tensor)\n            probs = torch.softmax(outputs, dim=1)\n        return self._get_top_k(probs, k=5)\n```",
+        "testStrategy": "1. Unit tests for model loading and inference\n2. Test classification accuracy on held-out test set (target >80% top-5)\n3. Integration test: POST /api/food/analyze with real food images\n4. Performance test: Inference time <3s per image\n5. Test model fallback when GPU not available",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Build Health Metrics Mobile UI Screens",
+        "description": "Create mobile screens for viewing and manually entering health metrics (RHR, HRV, sleep, recovery). Backend API is complete at /api/health-metrics.",
+        "details": "1. Create new screens in `app/` directory:\n   - `app/health/index.tsx` - Health metrics dashboard/list\n   - `app/health/[id].tsx` - Detail view for specific metric\n   - `app/health/add.tsx` - Manual entry form\n\n2. Health Dashboard (`app/health/index.tsx`):\n   - Display today's key metrics in cards (RHR, HRV, Sleep, Recovery)\n   - Time range selector: Today, Week, Month\n   - Pull-to-refresh functionality\n   - Navigate to detail view on tap\n\n3. Metric Detail View (`app/health/[id].tsx`):\n   - Line chart showing metric over time (use react-native-chart-kit or Victory Native)\n   - Statistics: avg, min, max, trend arrow\n   - Data source indicator (Apple Health, Fitbit, Manual)\n   - Date range filter\n\n4. Manual Entry Form (`app/health/add.tsx`):\n   - Metric type picker (dropdown with all HealthMetricType enum values)\n   - Value input with unit display (bpm, ms, hours, %)\n   - Date/time picker (defaults to now)\n   - Source set to 'MANUAL'\n   - Validation: min/max ranges per metric type\n\n5. Create API client in `lib/api/health-metrics.ts`:\n```typescript\nexport const healthMetricsApi = {\n  getAll: (params: { startDate?: string; endDate?: string; metricType?: string }) => \n    apiClient.get('/health-metrics', { params }),\n  getById: (id: string) => apiClient.get(`/health-metrics/${id}`),\n  create: (data: CreateHealthMetricInput) => apiClient.post('/health-metrics', data),\n  getDailySummary: (date: string) => apiClient.get(`/health-metrics/daily/${date}`),\n}\n```\n\n6. Add navigation:\n   - Add 'Health' tab to bottom navigation in `app/(tabs)/_layout.tsx`\n   - Use health heart icon from @expo/vector-icons",
+        "testStrategy": "1. Component tests for each screen using react-native-testing-library\n2. Test form validation for manual entry\n3. Test API integration with mock server\n4. Visual regression tests for chart rendering\n5. Test pull-to-refresh behavior\n6. Test empty state when no health data exists",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Build Activity Tracking Mobile UI Screens",
+        "description": "Create mobile screens for viewing and manually logging activities. Backend API is complete at /api/activities.",
+        "details": "1. Create new screens in `app/` directory:\n   - `app/activity/index.tsx` - Activity list/history\n   - `app/activity/[id].tsx` - Activity detail view\n   - `app/activity/add.tsx` - Manual activity entry form\n\n2. Activity List (`app/activity/index.tsx`):\n   - Weekly summary card: total minutes, calories, workout count\n   - Filter by activity type (All, Cardio, Strength, Flexibility)\n   - List of recent activities with icon, duration, calories\n   - Floating action button to add new activity\n   - Pull-to-refresh\n\n3. Activity Detail View (`app/activity/[id].tsx`):\n   - Display all activity fields: type, duration, intensity, calories\n   - Heart rate data if available (avg, max)\n   - Distance and steps for applicable activities\n   - Notes field\n   - Edit/Delete buttons\n\n4. Manual Entry Form (`app/activity/add.tsx`):\n   - Activity type picker (21 types from ActivityType enum)\n   - Intensity picker (Low, Moderate, High, Maximum)\n   - Duration input (hours:minutes picker)\n   - Date/time pickers for start time\n   - Optional fields: calories, heart rate, distance, notes\n   - Validation: duration > 0, end time > start time\n\n5. Create API client in `lib/api/activities.ts`:\n```typescript\nexport const activitiesApi = {\n  getAll: (params?: { activityType?: string; startDate?: string }) =>\n    apiClient.get('/activities', { params }),\n  getById: (id: string) => apiClient.get(`/activities/${id}`),\n  create: (data: CreateActivityInput) => apiClient.post('/activities', data),\n  update: (id: string, data: Partial<CreateActivityInput>) =>\n    apiClient.put(`/activities/${id}`, data),\n  delete: (id: string) => apiClient.delete(`/activities/${id}`),\n  getWeeklySummary: () => apiClient.get('/activities/weekly-summary'),\n}\n```\n\n6. Add activity icons mapping for different activity types",
+        "testStrategy": "1. Component tests for each screen\n2. Test form validation (duration, time constraints)\n3. Test activity type filtering\n4. Test CRUD operations with mock API\n5. Test weekly summary calculation display\n6. Test edit/delete flows with confirmation dialogs",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Implement Apple HealthKit Integration",
+        "description": "Enable automatic sync of health data from Apple HealthKit including RHR, HRV, sleep, and activity data.",
+        "details": "1. Install and configure expo-health-connect (or react-native-health for bare workflow):\n   - Add to package.json dependencies\n   - Configure app.json with NSHealthShareUsageDescription\n   - Request HealthKit permissions on iOS\n\n2. Create health sync service in `lib/services/healthkit.ts`:\n```typescript\nexport const healthKitService = {\n  requestPermissions: () => Promise<boolean>,\n  syncHealthMetrics: (startDate: Date, endDate: Date) => Promise<HealthMetric[]>,\n  syncActivities: (startDate: Date, endDate: Date) => Promise<Activity[]>,\n  setupBackgroundSync: () => void,\n}\n```\n\n3. Implement data fetching for each metric type:\n   - RHR: HKQuantityTypeIdentifierRestingHeartRate\n   - HRV: HKQuantityTypeIdentifierHeartRateVariabilitySDNN\n   - Sleep: HKCategoryTypeIdentifierSleepAnalysis\n   - Steps: HKQuantityTypeIdentifierStepCount\n   - Active calories: HKQuantityTypeIdentifierActiveEnergyBurned\n   - Workouts: HKWorkoutType\n\n4. Create sync flow:\n   - Initial sync: Fetch last 30 days of data on first connect\n   - Incremental sync: Fetch data since last sync timestamp\n   - Store lastSyncTimestamp in SecureStore\n   - Batch API calls to avoid overwhelming the server (50 items per request)\n\n5. Handle data deduplication:\n   - Use (userId, metricType, recordedAt, source) unique constraint\n   - Server handles conflicts via upsert\n\n6. Add sync UI in profile settings:\n   - Connect/Disconnect Apple Health button\n   - Last sync timestamp display\n   - Manual sync button\n   - Sync status indicator (syncing, synced, error)\n\n7. Handle background sync (future):\n   - Configure background fetch\n   - Sync when app becomes active\n   - Respect battery and data usage",
+        "testStrategy": "1. Mock HealthKit data for simulator testing\n2. Test permission request flow\n3. Test data transformation from HealthKit format to API format\n4. Test sync error handling and retry logic\n5. Test deduplication with existing data\n6. Test UI state updates during sync\n7. Manual testing on physical device with real HealthKit data",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Train and Deploy LSTM Models for Health Predictions",
+        "description": "Train LSTM models for RHR and HRV prediction using the existing model architecture in ml-service/app/ml_models/lstm.py and make them production-ready.",
+        "details": "1. Create training pipeline in `ml-service/app/services/model_training.py`:\n   - Already has TrainModelRequest/Response schemas\n   - Implement data loading from database\n   - Create training/validation split (80/20)\n   - Add early stopping with patience=10\n   - Save model checkpoints and metadata\n\n2. Training data preparation:\n   - Use FeatureEngineeringService to generate features\n   - Create sliding window sequences (30-day windows)\n   - Normalize features using StandardScaler (save scaler with model)\n   - Handle missing data: forward-fill then drop incomplete sequences\n\n3. Training configuration:\n   - RHR model: hidden_dim=128, num_layers=2, dropout=0.2\n   - HRV model: hidden_dim=128, num_layers=2, dropout=0.2\n   - Batch size: 32, learning rate: 0.001\n   - Use Adam optimizer, MSE loss\n   - Train for max 100 epochs with early stopping\n\n4. Model evaluation metrics:\n   - MAE (Mean Absolute Error)\n   - RMSE (Root Mean Square Error)\n   - R² score (>0.5 for production)\n   - MAPE (Mean Absolute Percentage Error, <15% for production)\n\n5. Update PredictionService in `ml-service/app/services/prediction.py`:\n   - Load trained model from disk\n   - Load corresponding scaler\n   - Prepare input sequence from recent features\n   - Run inference and denormalize output\n   - Calculate confidence intervals\n\n6. Model storage structure:\n```\nml-service/models/\n  {user_id}_{metric}_{timestamp}/\n    model.pt              # PyTorch model weights\n    scaler.pkl           # Feature scaler\n    metadata.pkl         # Training config and metrics\n```\n\n7. Add minimum data requirements:\n   - At least 30 days of health data\n   - At least 21 days of nutrition data\n   - Check requirements before training",
+        "testStrategy": "1. Unit tests for data preparation pipeline\n2. Test training with synthetic data (verify loss decreases)\n3. Test model save/load roundtrip\n4. Test prediction accuracy on held-out test set\n5. Integration test: full train -> predict flow\n6. Test minimum data requirement validation\n7. Test early stopping triggers correctly",
+        "priority": "high",
+        "dependencies": [
+          3,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Create Predictions Visualization Mobile UI",
+        "description": "Build mobile screens to display ML predictions (RHR, HRV forecasts) with confidence intervals and historical context.",
+        "details": "1. Create new screens:\n   - `app/predictions/index.tsx` - Predictions dashboard\n   - `app/predictions/[metric].tsx` - Detailed prediction view\n\n2. Predictions Dashboard (`app/predictions/index.tsx`):\n   - Card for each predictable metric (RHR, HRV)\n   - Display: predicted value, confidence score, direction indicator\n   - Comparison to 30-day average\n   - 'No prediction available' state if model not trained\n   - Pull-to-refresh to get latest predictions\n\n3. Detailed Prediction View (`app/predictions/[metric].tsx`):\n   - Chart showing:\n     - Historical values (last 30 days)\n     - Predicted value for tomorrow\n     - Confidence interval as shaded region\n   - Interpretation text (AI-generated explanation)\n   - Recommendation based on prediction\n   - Feature importance breakdown (what drove this prediction)\n\n4. Create API client in `lib/api/predictions.ts`:\n```typescript\nexport const predictionsApi = {\n  predict: (metric: string, targetDate: string) =>\n    apiClient.post('/api/predictions/predict', { metric, target_date: targetDate }),\n  batchPredict: (metrics: string[], targetDate: string) =>\n    apiClient.post('/api/predictions/batch-predict', { metrics, target_date: targetDate }),\n  listModels: () => apiClient.get('/api/predictions/models'),\n}\n```\n\n5. Chart implementation:\n   - Use Victory Native or react-native-chart-kit\n   - Line chart for historical + predicted\n   - Shaded area for confidence interval\n   - Animate prediction point\n\n6. Handle states:\n   - Loading: Show skeleton\n   - No model trained: Show CTA to collect more data\n   - Prediction available: Show full UI\n   - Error: Show error message with retry",
+        "testStrategy": "1. Component tests for dashboard and detail screens\n2. Test chart rendering with mock data\n3. Test loading/error/empty states\n4. Test confidence interval visualization\n5. Test API integration with mock responses\n6. Snapshot tests for consistent UI",
+        "priority": "medium",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Implement ML Insights Engine and Recommendations",
+        "description": "Build the insights generation system that analyzes correlations and generates personalized nutrition recommendations stored in MLInsight model.",
+        "details": "1. Create insights service in `ml-service/app/services/insights_engine.py`:\n```python\nclass InsightsEngine:\n    async def generate_insights(self, user_id: str) -> List[MLInsight]:\n        correlations = await self._get_significant_correlations(user_id)\n        predictions = await self._get_recent_predictions(user_id)\n        anomalies = await self._detect_anomalies(user_id)\n        \n        insights = []\n        insights.extend(self._correlation_insights(correlations))\n        insights.extend(self._prediction_insights(predictions))\n        insights.extend(self._anomaly_insights(anomalies))\n        insights.extend(self._goal_progress_insights(user_id))\n        \n        return self._prioritize_and_limit(insights, max_insights=5)\n```\n\n2. Insight types to implement:\n   - CORRELATION: 'Your protein intake correlates with better HRV (+0.65)'\n   - PREDICTION: 'Tomorrow's RHR is predicted higher than average'\n   - ANOMALY: 'Your sleep duration last night was unusually low'\n   - RECOMMENDATION: 'Try eating dinner earlier to improve sleep quality'\n   - GOAL_PROGRESS: 'You're 80% of the way to your protein goal this week'\n   - PATTERN_DETECTED: 'You tend to eat more carbs on weekends'\n\n3. Correlation-based recommendations:\n   - Use CorrelationEngineService to find significant correlations\n   - Filter by correlation strength (|r| > 0.5)\n   - Generate natural language recommendations\n   - Example: If protein ↔ HRV has r=0.7, recommend 'Increasing protein may improve your HRV'\n\n4. Anomaly detection:\n   - Z-score based detection (>2 std from 30-day mean)\n   - Detect unusual: meal timing, calorie intake, sleep duration\n   - Generate alerts for negative anomalies\n\n5. Create API endpoints in `ml-service/app/api/insights.py`:\n   - GET /api/insights - List user's active insights\n   - POST /api/insights/generate - Trigger insight generation\n   - PUT /api/insights/{id}/viewed - Mark as viewed\n   - PUT /api/insights/{id}/dismissed - Dismiss insight\n   - PUT /api/insights/{id}/feedback - Submit helpful/not helpful\n\n6. Store insights in database using MLInsight model (already defined in Prisma schema)",
+        "testStrategy": "1. Unit tests for each insight type generator\n2. Test insight prioritization logic\n3. Test anomaly detection thresholds\n4. Test natural language generation\n5. Integration test: end-to-end insight generation\n6. Test user feedback tracking\n7. Test insight expiration handling",
+        "priority": "medium",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Build Insights Feed Mobile UI",
+        "description": "Create mobile screens to display ML-generated insights, recommendations, and allow user feedback.",
+        "details": "1. Create new screens:\n   - `app/insights/index.tsx` - Insights feed/dashboard\n   - `app/insights/[id].tsx` - Detailed insight view\n\n2. Insights Feed (`app/insights/index.tsx`):\n   - List of insight cards sorted by priority and recency\n   - Card components per insight type:\n     - Correlation: Show correlation strength badge\n     - Prediction: Show predicted value and arrow\n     - Anomaly: Show warning indicator\n     - Recommendation: Show actionable tip\n   - Swipe to dismiss functionality\n   - Pull-to-refresh to generate new insights\n   - Empty state: 'Keep logging meals to unlock insights'\n\n3. Insight Card Design:\n```typescript\ninterface InsightCard {\n  icon: string;           // Based on insightType\n  title: string;          // From insight.title\n  description: string;    // Truncated insight.description\n  priority: 'high' | 'medium' | 'low'; // Color coding\n  correlation?: number;   // Show badge if correlation insight\n  timestamp: Date;        // When generated\n}\n```\n\n4. Detailed Insight View (`app/insights/[id].tsx`):\n   - Full description text\n   - Recommendation with call-to-action\n   - Supporting chart/data if applicable\n   - 'Was this helpful?' feedback buttons\n   - Share insight button (future)\n\n5. Create API client in `lib/api/insights.ts`:\n```typescript\nexport const insightsApi = {\n  getAll: () => apiClient.get('/api/insights'),\n  getById: (id: string) => apiClient.get(`/api/insights/${id}`),\n  markViewed: (id: string) => apiClient.put(`/api/insights/${id}/viewed`),\n  dismiss: (id: string) => apiClient.put(`/api/insights/${id}/dismissed`),\n  submitFeedback: (id: string, helpful: boolean) =>\n    apiClient.put(`/api/insights/${id}/feedback`, { helpful }),\n}\n```\n\n6. Add insights badge to tab bar showing unread count",
+        "testStrategy": "1. Component tests for insight cards\n2. Test swipe-to-dismiss interaction\n3. Test feedback submission flow\n4. Test empty and loading states\n5. Test priority-based sorting\n6. Visual regression tests for card styles",
+        "priority": "medium",
+        "dependencies": [
+          8
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Implement AR Portion Size Measurement",
+        "description": "Add AR capability to measure food portion dimensions and improve nutrition estimation accuracy.",
+        "details": "1. Install AR dependencies:\n   - expo-three (already installed - three.js is in dependencies)\n   - expo-gl (already installed)\n   - @react-three/fiber for React Native\n\n2. Create AR measurement component in `lib/components/ARPortionMeasure.tsx`:\n   - Initialize AR session with plane detection\n   - Render measurement guides on detected surfaces\n   - Allow user to place measurement points\n   - Calculate bounding box dimensions (width, height, depth)\n   - Return dimensions in centimeters\n\n3. Update food scanning flow (`app/scan-food.tsx`):\n   - Add 'Measure with AR' button after capturing photo\n   - Launch AR measurement overlay\n   - Pass dimensions to food analysis API\n   - Update `mockMeasurements` with real AR data\n\n4. AR measurement flow:\n   1. User captures food photo\n   2. User taps 'Measure Portion'\n   3. AR view opens with plane detection\n   4. User taps to place corner points (4 points for bounding box)\n   5. App calculates volume and converts to portion weight\n   6. Dimensions sent to /api/food/analyze\n\n5. Dimension to weight conversion (in food_analysis_service.py):\n   - Already implemented in `_estimate_portion_from_dimensions()`\n   - Uses food density estimates\n   - Returns estimated weight in grams\n\n6. Calibration feature:\n   - Include reference object option (credit card, hand)\n   - Use known dimensions to calibrate scale\n   - Improve accuracy for subsequent measurements\n\n7. Fallback handling:\n   - If AR not supported (older devices), show manual size picker\n   - Options: Small, Medium, Large with example photos",
+        "testStrategy": "1. Unit tests for dimension calculation\n2. Test AR component mounting/unmounting\n3. Test plane detection callbacks\n4. Integration test with mock AR data\n5. Test fallback to manual size picker\n6. Manual testing on physical device with AR support\n7. Test calibration accuracy with known objects",
+        "priority": "low",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Generate OpenAPI Documentation and Polish Production Readiness",
+        "description": "Add comprehensive API documentation, perform security audit, and optimize performance for production deployment.",
+        "details": "1. Generate OpenAPI/Swagger documentation:\n   - Backend (Express): Add swagger-jsdoc and swagger-ui-express\n   - ML Service (FastAPI): Already has built-in docs at /docs\n   - Document all endpoints with request/response schemas\n   - Add authentication requirements\n   - Include example requests and responses\n\n2. Express API documentation setup:\n```javascript\nimport swaggerJsdoc from 'swagger-jsdoc';\nimport swaggerUi from 'swagger-ui-express';\n\nconst options = {\n  definition: {\n    openapi: '3.0.0',\n    info: { title: 'Nutri API', version: '1.0.0' },\n    servers: [{ url: '/api' }],\n    components: {\n      securitySchemes: {\n        bearerAuth: { type: 'http', scheme: 'bearer' }\n      }\n    }\n  },\n  apis: ['./src/routes/*.ts'],\n};\n\napp.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerJsdoc(options)));\n```\n\n3. Performance optimization:\n   - Add database query logging to identify slow queries\n   - Implement connection pooling for PostgreSQL\n   - Add Redis caching for frequently accessed data (user profile, daily summary)\n   - Compress API responses with compression middleware\n   - Optimize Prisma queries with select/include\n\n4. Security audit checklist:\n   - Review all authentication flows\n   - Verify rate limiting is effective\n   - Check for SQL injection (Prisma handles this)\n   - Verify XSS prevention in sanitize middleware\n   - Review CORS configuration\n   - Ensure sensitive data not logged\n   - Check JWT secret rotation capability\n\n5. Production configuration:\n   - Environment variable validation on startup\n   - Health check endpoints for load balancers\n   - Graceful shutdown handling\n   - Error tracking integration (Sentry ready)\n   - Logging configuration (structured JSON logs)\n\n6. Mobile app optimization:\n   - Review bundle size\n   - Implement proper loading states\n   - Add offline detection and handling\n   - Optimize image handling\n\n7. Create deployment documentation:\n   - Docker setup for backend and ML service\n   - Environment variables reference\n   - Database migration guide\n   - Monitoring recommendations",
+        "testStrategy": "1. Validate OpenAPI spec with swagger-cli validate\n2. Load testing with k6 or artillery (100 concurrent users)\n3. Security scan with npm audit and OWASP ZAP\n4. Test rate limiting triggers correctly\n5. Test graceful shutdown\n6. Verify logging output format\n7. Test health check endpoints\n8. Performance benchmark for critical endpoints",
+        "priority": "low",
+        "dependencies": [
+          2,
+          3,
+          4,
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-12-04T14:06:23.390Z",
+      "updated": "2025-12-04T14:14:54.202Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
