@@ -78,10 +78,22 @@ async def analyze_food(
                 import json
 
                 dims_dict = json.loads(dimensions)
+            except json.JSONDecodeError as e:
+                logger.error(f"Invalid JSON in dimensions: {str(e)}")
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid dimensions format: must be valid JSON"
+                )
+
+            # Validate dimensions values with Pydantic
+            try:
                 dimensions_obj = DimensionsInput(**dims_dict)
             except Exception as e:
-                logger.warning(f"Error parsing dimensions: {str(e)}")
-                # Continue without dimensions
+                logger.error(f"Invalid dimensions values: {str(e)}")
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Invalid dimensions values: {str(e)}"
+                )
 
         # Analyze food
         food_items, measurement_quality, processing_time = (

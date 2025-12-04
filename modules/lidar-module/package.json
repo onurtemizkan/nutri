@@ -1,0 +1,19 @@
+{
+  "name": "lidar-module",
+  "version": "1.0.0",
+  "description": "Native iOS LiDAR module for ARKit Scene Depth API access",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"No tests for native module\""
+  },
+  "keywords": [
+    "expo",
+    "lidar",
+    "arkit",
+    "ios",
+    "depth",
+    "ar"
+  ],
+  "author": "Nutri App",
+  "license": "MIT"
+}

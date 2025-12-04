@@ -5,7 +5,7 @@ Manages blacklisted tokens in Redis for logout functionality.
 Tokens are blacklisted when users logout to prevent reuse.
 """
 
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from typing import Optional
 import logging
 

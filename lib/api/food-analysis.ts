@@ -1,10 +1,25 @@
 import axios, { AxiosError } from 'axios';
+import * as FileSystem from 'expo-file-system';
 import {
   FoodAnalysisRequest,
   FoodAnalysisResponse,
   FoodAnalysisErrorResponse,
   MLServiceConfig,
 } from '@/lib/types/food-analysis';
+
+/**
+ * Custom error class for Food Analysis errors
+ */
+export class FoodAnalysisError extends Error {
+  constructor(
+    message: string,
+    public readonly error: FoodAnalysisErrorResponse['error'],
+    public readonly retryable: boolean
+  ) {
+    super(message);
+    this.name = 'FoodAnalysisError';
+  }
+}
 
 // ML Service configuration
 const ML_SERVICE_URL = __DEV__
@@ -38,13 +53,14 @@ class FoodAnalysisAPI {
     request: FoodAnalysisRequest
   ): Promise<FoodAnalysisResponse> {
     try {
+      // Read image file as base64
+      const imageBase64 = await FileSystem.readAsStringAsync(request.imageUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
       // Create form data
       const formData = new FormData();
-      formData.append('image', {
-        uri: request.imageUri,
-        type: 'image/jpeg',
-        name: 'food.jpg',
-      } as unknown as Blob);
+      formData.append('image', imageBase64);
 
       // Add measurements if available
       if (request.measurements) {
@@ -145,13 +161,33 @@ class FoodAnalysisAPI {
     }
   ): Promise<{ data: T }> {
     let lastError: Error | null = null;
+    const url = `${this.baseUrl}${endpoint}`;
 
     for (let attempt = 0; attempt < this.maxRetries; attempt++) {
       try {
-        const response = await axios({
-          ...config,
-          url: `${this.baseUrl}${endpoint}`,
-        });
+        let response;
+        const axiosConfig = {
+          headers: config.headers,
+          timeout: config.timeout,
+          params: config.params,
+        };
+
+        // Use specific axios methods based on HTTP method
+        if (config.method === 'POST') {
+          response = await axios.post(url, config.data, axiosConfig);
+        } else if (config.method === 'GET') {
+          response = await axios.get(url, axiosConfig);
+        } else if (config.method === 'PUT') {
+          response = await axios.put(url, config.data, axiosConfig);
+        } else if (config.method === 'DELETE') {
+          response = await axios.delete(url, axiosConfig);
+        } else {
+          // Fallback to generic axios call
+          response = await axios({
+            ...config,
+            url,
+          });
+        }
 
         return { data: response.data as T };
       } catch (error) {
@@ -180,57 +216,64 @@ class FoodAnalysisAPI {
   /**
    * Handle API errors
    */
-  private handleError(error: unknown): FoodAnalysisErrorResponse {
-    if (axios.isAxiosError(error)) {
+  private handleError(error: unknown): FoodAnalysisError {
+    // Check if it's an axios error (works with both real axios and mocked errors)
+    const isAxios = axios.isAxiosError(error) || (error && typeof error === 'object' && 'isAxiosError' in error);
+
+    if (isAxios) {
       const axiosError = error as AxiosError;
 
+      // Timeout errors
       if (axiosError.code === 'ECONNABORTED') {
-        return {
-          error: 'timeout',
-          message: 'Food analysis request timed out. Please try again.',
-          retryable: true,
-        };
+        return new FoodAnalysisError(
+          'Food analysis request timed out. Please try again.',
+          'timeout',
+          true
+        );
       }
 
+      // Network errors
       if (axiosError.code === 'ERR_NETWORK') {
-        return {
-          error: 'network-error',
-          message:
-            'Network error. Please check your connection and try again.',
-          retryable: true,
-        };
+        return new FoodAnalysisError(
+          'Network error. Please check your connection and try again.',
+          'network-error',
+          true
+        );
       }
 
+      // Permission errors (401/403)
       if (axiosError.response?.status === 403 || axiosError.response?.status === 401) {
-        return {
-          error: 'permission-denied',
-          message: 'Permission denied. Please check your credentials.',
-          retryable: false,
-        };
+        return new FoodAnalysisError(
+          'Permission denied. Please check your credentials.',
+          'permission-denied',
+          false
+        );
       }
 
+      // Invalid image (400)
       if (axiosError.response?.status === 400) {
-        return {
-          error: 'invalid-image',
-          message: 'Invalid image. Please try taking a clearer photo.',
-          retryable: false,
-        };
+        return new FoodAnalysisError(
+          'Invalid image. Please try taking a clearer photo.',
+          'invalid-image',
+          false
+        );
       }
 
+      // Server errors (5xx)
       if (axiosError.response?.status && axiosError.response.status >= 500) {
-        return {
-          error: 'analysis-failed',
-          message: 'Food analysis failed. Please try again later.',
-          retryable: true,
-        };
+        return new FoodAnalysisError(
+          'Food analysis failed. Please try again later.',
+          'analysis-failed',
+          true
+        );
       }
     }
 
-    return {
-      error: 'unknown',
-      message: 'An unexpected error occurred. Please try again.',
-      retryable: true,
-    };
+    return new FoodAnalysisError(
+      'An unexpected error occurred. Please try again.',
+      'unknown',
+      true
+    );
   }
 }
 

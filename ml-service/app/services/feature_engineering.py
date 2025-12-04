@@ -5,7 +5,7 @@ Transforms raw data (meals, activities, health metrics) into ML-ready features.
 Implements 50+ features across 5 categories: nutrition, activity, health, temporal, interaction.
 """
 
-from datetime import date, datetime, timedelta, UTC
+from datetime import date, datetime, timedelta, timezone
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np

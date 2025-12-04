@@ -8,6 +8,7 @@ python-multipart==0.0.6
 # Database
 sqlalchemy==2.0.25
 asyncpg==0.29.0
+aiosqlite==0.19.0
 psycopg2-binary==2.9.9
 alembic==1.13.1
 
@@ -26,9 +27,9 @@ statsmodels==0.14.1
 prophet==1.1.5  # Facebook Prophet for time series forecasting
 
 # Deep Learning - PyTorch (IN-HOUSE LSTM MODELS)
-torch==2.9.1  # LSTM neural networks for RHR/HRV prediction (native M1/M2/M3 support)
-torchvision==0.24.1  # PyTorch vision utilities
-torchaudio==2.9.1  # PyTorch audio utilities
+torch==2.4.1  # LSTM neural networks for RHR/HRV prediction (native M1/M2/M3 support)
+torchvision==0.19.1  # PyTorch vision utilities
+torchaudio==2.4.1  # PyTorch audio utilities
 
 # Model Interpretability (Phase 3)
 shap==0.44.1  # SHAP explanations for feature importance
@@ -52,8 +53,10 @@ cloudpickle==3.0.0
 # Utilities
 python-dotenv==1.0.0
 python-jose[cryptography]==3.3.0
+PyJWT==2.8.0
 passlib[bcrypt]==1.7.4
 httpx==0.26.0
+email-validator==2.1.0
 
 # Monitoring & Logging
 prometheus-client==0.19.0

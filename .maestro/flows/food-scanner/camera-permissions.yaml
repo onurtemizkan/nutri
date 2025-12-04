@@ -1,0 +1,53 @@
+appId: com.nutri.app
+---
+# Food Scanner: Camera Permission Flow
+# Tests permission request and handling
+
+- launchApp:
+    clearState: true
+    permissions:
+      camera: denied
+
+- assertVisible: "Home"
+
+# Navigate to Scan Food
+- tapOn: "Add Meal"
+- tapOn: "Scan Food with Camera"
+
+# Should show permission request
+- assertVisible: "Camera Permission Required"
+
+# Tap to request permission
+- tapOn: "Grant Permission"
+
+# Should show iOS permission dialog
+- assertVisible: "Allow"
+- tapOn: "Allow"
+
+# Should now show camera view
+- assertVisible: "Take Photo"
+
+---
+# Test case: Permission denied
+- launchApp:
+    clearState: true
+    permissions:
+      camera: denied
+
+- tapOn: "Add Meal"
+- tapOn: "Scan Food with Camera"
+- assertVisible: "Camera Permission Required"
+
+# User denies permission
+- tapOn: "Grant Permission"
+- assertVisible: "Don't Allow"
+- tapOn: "Don't Allow"
+
+# Should show error message
+- assertVisible: "Camera access denied"
+- assertVisible: "Open Settings"
+
+# Can navigate back
+- tapOn:
+    point: "5%,5%"  # Back button
+- assertVisible: "Add Meal"

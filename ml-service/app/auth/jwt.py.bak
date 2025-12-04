@@ -194,7 +194,7 @@ class JWTHandler:
             )
             exp_timestamp = payload.get("exp")
             if exp_timestamp:
-                return datetime.fromtimestamp(exp_timestamp, timezone.utc)
+                return datetime.fromtimestamp(exp_timestamp, UTC)
             return None
         except InvalidTokenError:
             return None

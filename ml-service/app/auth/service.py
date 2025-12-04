@@ -4,7 +4,7 @@ Authentication Service
 Business logic for user authentication, registration, and token management.
 """
 
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select

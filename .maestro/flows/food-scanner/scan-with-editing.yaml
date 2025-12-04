@@ -1,0 +1,173 @@
+appId: com.nutri.app
+---
+# Food Scanner: Scan with Manual Editing Flow
+# Tests using scan results as a starting point and editing manually
+
+- launchApp:
+    clearState: true
+
+- assertVisible: "Home"
+
+# Navigate to scan
+- tapOn: "Add Meal"
+- tapOn: "Scan Food with Camera"
+
+# Grant permission
+- runFlow:
+    when:
+      visible: "Allow"
+    commands:
+      - tapOn: "Allow"
+
+# Take and analyze photo
+- tapOn: "Take Photo"
+- tapOn: "Analyze Food"
+- waitForAnimationToEnd:
+    timeout: 10000
+
+# View results
+- assertVisible: "Analysis Results"
+
+# Use results as starting point
+- tapOn: "Use These Results"
+- assertVisible: "Add Meal"
+
+# Edit the name
+- tapOn:
+    id: "name-input"
+- clearTextField
+- inputText: "Grilled Chicken Salad"
+
+# Edit calories
+- tapOn:
+    id: "calories-input"
+- clearTextField
+- inputText: "350"
+
+# Edit protein
+- scrollUntilVisible:
+    element:
+      id: "protein-input"
+    direction: DOWN
+- tapOn:
+    id: "protein-input"
+- clearTextField
+- inputText: "30"
+
+# Edit carbs
+- tapOn:
+    id: "carbs-input"
+- clearTextField
+- inputText: "20"
+
+# Edit fat
+- tapOn:
+    id: "fat-input"
+- clearTextField
+- inputText: "15"
+
+# Add notes
+- scrollUntilVisible:
+    element:
+      id: "notes-input"
+    direction: DOWN
+- tapOn:
+    id: "notes-input"
+- inputText: "Lunch at office cafeteria"
+
+# Save
+- scrollUntilVisible:
+    element: "Save Meal"
+    direction: DOWN
+- tapOn: "Save Meal"
+
+# Verify saved
+- assertVisible: "Home"
+- assertVisible: "Today's Meals"
+
+---
+# Test case 2: Use alternative suggestion
+- launchApp:
+    clearState: true
+
+- tapOn: "Add Meal"
+- tapOn: "Scan Food with Camera"
+
+# Grant permission
+- runFlow:
+    when:
+      visible: "Allow"
+    commands:
+      - tapOn: "Allow"
+
+- tapOn: "Take Photo"
+- tapOn: "Analyze Food"
+- waitForAnimationToEnd:
+    timeout: 10000
+
+# View alternatives
+- runFlow:
+    when:
+      visible: "Alternatives"
+    commands:
+      # Expand alternatives
+      - tapOn: "Alternatives"
+
+      # Select first alternative
+      - tapOn:
+          index: 1
+
+      # Should update values
+      - assertVisible: "Use These Results"
+
+      # Use updated values
+      - tapOn: "Use These Results"
+      - assertVisible: "Add Meal"
+
+      # Save meal
+      - scrollUntilVisible:
+          element: "Save Meal"
+          direction: DOWN
+      - tapOn: "Save Meal"
+
+---
+# Test case 3: Discard results and enter manually
+- launchApp:
+    clearState: true
+
+- tapOn: "Add Meal"
+- tapOn: "Scan Food with Camera"
+
+# Grant permission
+- runFlow:
+    when:
+      visible: "Allow"
+    commands:
+      - tapOn: "Allow"
+
+- tapOn: "Take Photo"
+- tapOn: "Analyze Food"
+- waitForAnimationToEnd:
+    timeout: 10000
+
+# Don't like the results, go back
+- tapOn:
+    point: "5%,5%"  # Back button
+
+# Should be back at Add Meal (empty)
+- assertVisible: "Add Meal"
+
+# Enter data manually instead
+- tapOn:
+    id: "name-input"
+- inputText: "Custom Meal"
+- tapOn:
+    id: "calories-input"
+- inputText: "400"
+
+# Save
+- scrollUntilVisible:
+    element: "Save Meal"
+    direction: DOWN
+- tapOn: "Save Meal"
+- assertVisible: "Home"

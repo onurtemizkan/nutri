@@ -12,11 +12,15 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.nutri",
       "bitcode": false,
+      "simulator": {
+        "deviceName": "iPhone 17 Pro"
+      },
       "infoPlist": {
         "NSCameraUsageDescription": "Nutri needs camera access to scan and analyze your food for automatic nutrition tracking.",
         "NSPhotoLibraryUsageDescription": "Nutri needs photo library access to save food images for your meal history.",
         "NSPhotoLibraryAddUsageDescription": "Nutri would like to save food photos to your photo library.",
-        "NSMicrophoneUsageDescription": "Microphone access is required for video recording features."
+        "NSMicrophoneUsageDescription": "Microphone access is required for video recording features.",
+        "NSLocationWhenInUseUsageDescription": "Nutri uses ARKit for 3D food scanning, which requires location services for AR features."
       }
     },
     "android": {

@@ -5,21 +5,41 @@ import { Platform } from 'react-native';
 
 /**
  * Get the appropriate API URL based on the environment and platform
+ *
+ * Configuration priority:
+ * 1. Custom API URL from expo config (app.config.js extra.apiUrl)
+ * 2. Environment-specific defaults (production vs development)
+ * 3. Platform-specific development defaults (iOS/Android/Web)
  */
 function getApiBaseUrl(): string {
-  if (!__DEV__) {
-    // Production
-    return 'https://your-production-api.com/api';
-  }
-
-  // Development environment
-  // Check for custom API URL in app.json/app.config.js extra config
+  // Check for custom API URL in app.config.js extra config (highest priority)
+  // This allows overriding in both dev and production
   const customApiUrl = Constants.expoConfig?.extra?.apiUrl;
-  if (customApiUrl) {
+  if (customApiUrl && typeof customApiUrl === 'string' && customApiUrl.trim() !== '') {
     return customApiUrl;
   }
 
-  // Default development URLs based on platform
+  // Production environment
+  if (!__DEV__) {
+    // Read production API URL from expo config
+    const productionApiUrl = Constants.expoConfig?.extra?.productionApiUrl;
+    if (productionApiUrl && typeof productionApiUrl === 'string' && productionApiUrl.trim() !== '') {
+      return productionApiUrl;
+    }
+
+    // Fail safely with a clear error message if production URL is not configured
+    console.error(
+      '🚨 Production API URL not configured!\n' +
+      'Please set "extra.productionApiUrl" in app.config.js:\n' +
+      '  extra: {\n' +
+      '    productionApiUrl: "https://api.yourapp.com/api"\n' +
+      '  }'
+    );
+    // Return a placeholder that will fail with a clear error
+    return 'https://api-url-not-configured.invalid/api';
+  }
+
+  // Development environment - platform-specific defaults
   if (Platform.OS === 'ios') {
     // iOS Simulator can use localhost
     return 'http://localhost:3000/api';
@@ -30,8 +50,8 @@ function getApiBaseUrl(): string {
     return 'http://localhost:3000/api';
   }
 
-  // Fallback for physical devices - CHANGE THIS to your local IP
-  // Run `./scripts/start-all.sh` to see your local IP
+  // Fallback for physical devices - use localhost (user should configure apiUrl)
+  // Run `./scripts/start-all.sh` to see your local IP and configure in app.config.js
   return 'http://localhost:3000/api';
 }
 

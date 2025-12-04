@@ -5,7 +5,7 @@ Analyzes statistical correlations between nutrition/activity features and health
 Implements Pearson, Spearman, Kendall correlations with lag analysis for time-delayed effects.
 """
 
-from datetime import date, datetime, timedelta, UTC
+from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional, Tuple
 
 import numpy as np

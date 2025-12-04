@@ -240,7 +240,7 @@ class FoodAnalysisService:
             food_class: Food category
 
         Returns:
-            Estimated weight in grams
+            Estimated weight in grams (always > 0)
         """
         # Calculate volume in cm³
         volume_cm3 = dimensions.width * dimensions.height * dimensions.depth
@@ -263,6 +263,14 @@ class FoodAnalysisService:
 
         # Calculate weight
         weight_grams = volume_cm3 * density * shape_factor
+
+        # Apply minimum weight floor (1g) to prevent schema violations
+        # Even tiny items should have some weight
+        weight_grams = max(weight_grams, 1.0)
+
+        # Apply maximum weight cap (5000g = 5kg) for reasonable food portions
+        # Extremely large measurements are likely errors or non-food items
+        weight_grams = min(weight_grams, 5000.0)
 
         logger.info(
             f"Estimated portion: {weight_grams:.1f}g "
@@ -317,20 +325,45 @@ class FoodAnalysisService:
         Returns:
             Quality rating: "high", "medium", or "low"
         """
-        # Simple heuristic based on dimension ratios
+        # Multi-factor heuristic for measurement quality
         # In production, use AR confidence scores and plane detection quality
 
         max_dim = max(dimensions.width, dimensions.height, dimensions.depth)
         min_dim = min(dimensions.width, dimensions.height, dimensions.depth)
         ratio = max_dim / min_dim if min_dim > 0 else 0
 
-        # If dimensions are very disproportionate, quality is lower
+        # Factor 1: Dimension ratio (proportions)
+        ratio_quality = "high"
         if ratio > 10:
-            return "low"
+            ratio_quality = "low"
         elif ratio > 5:
-            return "medium"
-        else:
-            return "high"
+            ratio_quality = "medium"
+
+        # Factor 2: Absolute size (extremely large objects are suspicious)
+        # Food items typically < 30cm in any dimension
+        size_quality = "high"
+        if max_dim > 50:  # Unrealistically large for food
+            size_quality = "low"
+        elif max_dim > 30:  # Unusually large
+            size_quality = "medium"
+
+        # Factor 3: Very small items (< 1cm) are hard to measure accurately
+        if min_dim < 1.0:
+            size_quality = "low" if size_quality != "low" else "low"
+
+        # Combined quality: take the worse of the two factors
+        quality_levels = {"high": 3, "medium": 2, "low": 1}
+        final_level = min(
+            quality_levels[ratio_quality],
+            quality_levels[size_quality]
+        )
+
+        # Convert back to quality string
+        for quality, level in quality_levels.items():
+            if level == final_level:
+                return quality
+
+        return "medium"  # Fallback
 
     async def search_nutrition_db(self, query: str) -> List[dict]:
         """
