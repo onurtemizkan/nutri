@@ -1,7 +1,8 @@
 import prisma from '../config/database';
 import { CreateHealthMetricInput, GetHealthMetricsQuery, HealthMetricType } from '../types';
 import { Prisma } from '@prisma/client';
-import { DEFAULT_PAGE_LIMIT } from '../config/constants';
+import { DEFAULT_PAGE_LIMIT, WEEK_IN_DAYS } from '../config/constants';
+import { getDayBoundaries, getDaysAgo } from '../utils/dateHelpers';
 
 export class HealthMetricService {
   /**
@@ -121,13 +122,7 @@ export class HealthMetricService {
    * Get daily average for a specific metric type
    */
   async getDailyAverage(userId: string, metricType: HealthMetricType, date?: Date) {
-    const targetDate = date || new Date();
-
-    const startOfDay = new Date(targetDate);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(targetDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    const { startOfDay, endOfDay } = getDayBoundaries(date);
 
     const metrics = await prisma.healthMetric.findMany({
       where: {
@@ -147,7 +142,7 @@ export class HealthMetricService {
     const average = metrics.reduce((sum, m) => sum + m.value, 0) / metrics.length;
 
     return {
-      date: targetDate.toISOString().split('T')[0],
+      date: startOfDay.toISOString().split('T')[0],
       metricType,
       average,
       count: metrics.length,
@@ -160,9 +155,7 @@ export class HealthMetricService {
    */
   async getWeeklyAverage(userId: string, metricType: HealthMetricType) {
     const today = new Date();
-    const sevenDaysAgo = new Date(today);
-    sevenDaysAgo.setDate(today.getDate() - 7);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
+    const sevenDaysAgo = getDaysAgo(WEEK_IN_DAYS);
 
     const metrics = await prisma.healthMetric.findMany({
       where: {
@@ -250,8 +243,7 @@ export class HealthMetricService {
    * Get summary statistics for a metric type
    */
   async getMetricStats(userId: string, metricType: HealthMetricType, days: number = 30) {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
+    const startDate = getDaysAgo(days);
 
     const metrics = await prisma.healthMetric.findMany({
       where: {

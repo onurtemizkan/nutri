@@ -1,5 +1,5 @@
 """
-Test Fixtures for E2E Testing
+Test Fixtures for Integration Testing
 
 Realistic test data representing:
 - User: John (athlete tracking RHR and HRV)

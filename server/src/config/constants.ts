@@ -138,3 +138,53 @@ export const DATE_FORMATS = {
   DISPLAY_DATE: 'MMM DD, YYYY',
   DISPLAY_DATETIME: 'MMM DD, YYYY HH:mm',
 } as const;
+
+// ============================================================================
+// DATABASE SELECT FIELDS
+// ============================================================================
+
+/**
+ * Standard user fields to select (excludes password and sensitive data)
+ * Use this constant to ensure consistent user data shape across the app
+ */
+export const USER_SELECT_FIELDS = {
+  id: true,
+  email: true,
+  name: true,
+  goalCalories: true,
+  goalProtein: true,
+  goalCarbs: true,
+  goalFat: true,
+  currentWeight: true,
+  goalWeight: true,
+  height: true,
+  activityLevel: true,
+  createdAt: true,
+} as const;
+
+/**
+ * User fields for goal-only queries (lighter payload)
+ */
+export const USER_GOALS_SELECT_FIELDS = {
+  goalCalories: true,
+  goalProtein: true,
+  goalCarbs: true,
+  goalFat: true,
+} as const;
+
+/**
+ * User fields for profile display (excludes createdAt)
+ */
+export const USER_PROFILE_SELECT_FIELDS = {
+  id: true,
+  email: true,
+  name: true,
+  goalCalories: true,
+  goalProtein: true,
+  goalCarbs: true,
+  goalFat: true,
+  currentWeight: true,
+  goalWeight: true,
+  height: true,
+  activityLevel: true,
+} as const;

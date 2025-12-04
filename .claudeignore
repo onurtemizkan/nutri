@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# IDE and editor
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs and test outputs
+logs/
+*.log
+test_output.log
+test_results.log
+htmlcov/
+.coverage
+coverage/
+
+# Environment files (sensitive)
+.env
+.env.local
+.env.production
+
+# Expo/React Native
+.expo/
+ios/Pods/
+android/.gradle/
+android/build/
+ios/build/
+
+# Docker volumes (large)
+postgres_data/
+redis_data/
+
+# Large binary files
+*.pth
+*.pkl
+*.model
+models/*.pth
+
+# Generated files
+prisma/migrations/*/migration_lock.toml
+
+# Session/progress files (temporary documentation)
+*_SUMMARY.md
+*_COMPLETE.md
+*_PROGRESS.md
+*_FIXES*.md
+AR_*.md
+CODE_REVIEW.md

@@ -1,5 +1,7 @@
 import prisma from '../config/database';
+import { USER_GOALS_SELECT_FIELDS, WEEK_IN_DAYS } from '../config/constants';
 import { CreateMealInput, UpdateMealInput } from '../types';
+import { getDayBoundaries, getDaysAgo } from '../utils/dateHelpers';
 
 export class MealService {
   async createMeal(userId: string, data: CreateMealInput) {
@@ -30,14 +32,7 @@ export class MealService {
    * @returns Array of meals for the specified day
    */
   async getMeals(userId: string, date?: Date) {
-    // Default to today if no date is provided (common use case for nutrition tracking)
-    const targetDate = date || new Date();
-
-    const startOfDay = new Date(targetDate);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(targetDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    const { startOfDay, endOfDay } = getDayBoundaries(date);
 
     const meals = await prisma.meal.findMany({
       where: {
@@ -120,12 +115,7 @@ export class MealService {
     // Get user goals
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        goalCalories: true,
-        goalProtein: true,
-        goalCarbs: true,
-        goalFat: true,
-      },
+      select: USER_GOALS_SELECT_FIELDS,
     });
 
     return {
@@ -136,10 +126,7 @@ export class MealService {
   }
 
   async getWeeklySummary(userId: string) {
-    const today = new Date();
-    const sevenDaysAgo = new Date(today);
-    sevenDaysAgo.setDate(today.getDate() - 7);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
+    const sevenDaysAgo = getDaysAgo(WEEK_IN_DAYS);
 
     const meals = await prisma.meal.findMany({
       where: {
@@ -161,10 +148,10 @@ export class MealService {
     const mealCount = meals.length;
 
     // Calculate daily averages (over 7 days)
-    const averageDailyCalories = totalCalories / 7;
-    const averageDailyProtein = totalProtein / 7;
-    const averageDailyCarbs = totalCarbs / 7;
-    const averageDailyFat = totalFat / 7;
+    const averageDailyCalories = totalCalories / WEEK_IN_DAYS;
+    const averageDailyProtein = totalProtein / WEEK_IN_DAYS;
+    const averageDailyCarbs = totalCarbs / WEEK_IN_DAYS;
+    const averageDailyFat = totalFat / WEEK_IN_DAYS;
 
     return {
       totalCalories,

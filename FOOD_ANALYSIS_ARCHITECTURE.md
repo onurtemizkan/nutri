@@ -440,13 +440,6 @@ def scale_nutrition(base_nutrition: dict, base_portion: float,
 - API endpoint testing
 - Error handling and fallbacks
 
-### E2E Tests (Maestro)
-
-- Complete user flow from scan to save
-- Permission handling
-- Offline mode
-- Error scenarios
-
 ## Future Enhancements
 
 1. **Multi-Food Detection**: Detect multiple items in one photo
@@ -497,7 +490,7 @@ def scale_nutrition(base_nutrition: dict, base_portion: float,
 
 ### Week 7-8: Polish & Testing
 - UI/UX refinement
-- E2E testing
+- Integration testing
 - Performance optimization
 - Bug fixes and edge cases
 
