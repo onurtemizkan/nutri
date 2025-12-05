@@ -8,6 +8,7 @@ module.exports = {
     '/server/',
     '/.expo/',
     '/dist/',
+    'test-utils\\.ts$',
   ],
   collectCoverageFrom: [
     'app/**/*.{ts,tsx}',

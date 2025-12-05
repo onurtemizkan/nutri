@@ -4,12 +4,14 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import 'react-native-reanimated';
 import { PortalProvider, PortalHost } from '@gorhom/portal';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/lib/context/AuthContext';
 import { AlertProvider } from '@/lib/components/CustomAlert';
+import { healthKitService } from '@/lib/services/healthkit';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -53,6 +55,13 @@ function RootLayoutNav() {
           animation: 'slide_from_bottom'
         }}
       />
+      <Stack.Screen
+        name="health-settings"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right'
+        }}
+      />
       <Stack.Screen name="+not-found" />
     </Stack>
   );
@@ -69,6 +78,52 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [loaded]);
+
+  // HealthKit test on startup (iOS only)
+  useEffect(() => {
+    async function testHealthKit() {
+      if (Platform.OS !== 'ios') {
+        console.log('🏥 HealthKit: Not available (not iOS)');
+        return;
+      }
+
+      console.log('🏥 HealthKit: Testing availability...');
+
+      try {
+        const isAvailable = await healthKitService.isAvailable();
+        console.log('🏥 HealthKit: Available =', isAvailable);
+
+        if (isAvailable) {
+          const status = await healthKitService.getStatus();
+          console.log('🏥 HealthKit: Status =', JSON.stringify(status, null, 2));
+
+          // Try requesting permissions
+          console.log('🏥 HealthKit: Requesting permissions...');
+          const permResult = await healthKitService.requestPermissions();
+          console.log('🏥 HealthKit: Permission result =', JSON.stringify(permResult, null, 2));
+
+          if (permResult.success) {
+            console.log('🏥 HealthKit: ✅ Successfully connected!');
+            // Try to get today's activity as a test
+            try {
+              const activity = await healthKitService.getTodayActivity();
+              console.log('🏥 HealthKit: Today activity =', JSON.stringify(activity, null, 2));
+            } catch (actError) {
+              console.log('🏥 HealthKit: Activity fetch error (expected in simulator):', actError);
+            }
+          } else {
+            console.log('🏥 HealthKit: ❌ Permission denied:', permResult.error);
+          }
+        } else {
+          console.log('🏥 HealthKit: ❌ Not available on this device');
+        }
+      } catch (error) {
+        console.log('🏥 HealthKit: Error during test:', error);
+      }
+    }
+
+    testHealthKit();
+  }, []);
 
   if (!loaded) {
     return null;

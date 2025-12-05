@@ -19,7 +19,7 @@ module.exports = {
     icon: './assets/images/icon.png',
     scheme: 'myapp',
     userInterfaceStyle: 'automatic',
-    newArchEnabled: true,
+    newArchEnabled: false, // Disabled because react-native-health doesn't support New Architecture
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.anonymous.nutri',
@@ -38,6 +38,14 @@ module.exports = {
           'Microphone access is required for video recording features.',
         NSLocationWhenInUseUsageDescription:
           'Nutri uses ARKit for 3D food scanning, which requires location services for AR features.',
+        NSHealthShareUsageDescription:
+          'Nutri needs access to your health data to track your activity, sleep, and heart rate for personalized nutrition recommendations.',
+        NSHealthUpdateUsageDescription:
+          'Nutri needs permission to save nutrition data to Apple Health.',
+      },
+      entitlements: {
+        'com.apple.developer.healthkit': true,
+        'com.apple.developer.healthkit.access': [],
       },
     },
     android: {
@@ -77,6 +85,16 @@ module.exports = {
         {
           photosPermission:
             'Nutri needs access to your photos to save food images.',
+        },
+      ],
+      [
+        'react-native-health',
+        {
+          isClinicalDataEnabled: false,
+          healthSharePermission:
+            'Nutri needs to read your health data (heart rate, HRV, sleep, activity) to provide personalized nutrition insights and track how your diet affects your health metrics.',
+          healthUpdatePermission:
+            'Nutri would like to save nutrition and health data to Apple Health to keep your health records in sync.',
         },
       ],
     ],

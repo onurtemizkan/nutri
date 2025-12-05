@@ -7,9 +7,11 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/lib/context/AuthContext';
 import { useRouter } from 'expo-router';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
@@ -210,6 +212,34 @@ export default function ProfileScreen() {
             )}
           </View>
 
+          {/* Health Integration */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Health Integration</Text>
+
+            <TouchableOpacity
+              style={styles.menuItemWithArrow}
+              onPress={() => router.push('/health-settings')}
+              accessibilityLabel="Open health settings"
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={styles.menuItemIcon}>
+                  <Ionicons
+                    name="heart"
+                    size={20}
+                    color={Platform.OS === 'ios' ? '#FF2D55' : colors.text.tertiary}
+                  />
+                </View>
+                <View>
+                  <Text style={styles.menuItemText}>Apple Health</Text>
+                  <Text style={styles.menuItemSubtext}>
+                    {Platform.OS === 'ios' ? 'Sync health metrics' : 'iOS only'}
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+            </TouchableOpacity>
+          </View>
+
           {/* Account */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Account</Text>
@@ -390,9 +420,35 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border.secondary,
   },
+  menuItemWithArrow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.secondary,
+  },
+  menuItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  menuItemIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.background.elevated,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
   menuItemText: {
     fontSize: typography.fontSize.md,
     color: colors.text.primary,
+  },
+  menuItemSubtext: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+    marginTop: 2,
   },
   logoutText: {
     color: colors.status.error,

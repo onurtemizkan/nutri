@@ -1,6 +1,6 @@
 /**
  * AR Data Types
- * 
+ *
  * Type definitions for RGB-D capture and AR food scanning.
  */
 

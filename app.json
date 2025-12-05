@@ -58,6 +58,14 @@
         {
           "photosPermission": "Nutri needs access to your photos to save food images."
         }
+      ],
+      [
+        "react-native-health",
+        {
+          "isClinicalDataEnabled": false,
+          "healthSharePermission": "Nutri needs to read your health data (heart rate, HRV, sleep, activity) to provide personalized nutrition insights and track how your diet affects your health metrics.",
+          "healthUpdatePermission": "Nutri would like to save nutrition and health data to Apple Health to keep your health records in sync."
+        }
       ]
     ],
     "experiments": {
