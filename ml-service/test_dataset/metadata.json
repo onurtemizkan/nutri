@@ -1,0 +1,2126 @@
+[
+  {
+    "filename": "wikimedia_pizza_001_fa61630c.jpg",
+    "label": "pizza",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a3/Eq_it-na_pizza-margherita_sep2005_sml.jpg",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_pizza_002_0f040e0e.jpg",
+    "label": "pizza",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d3/Supreme_pizza.jpg",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_pizza_004_783ae065.jpg",
+    "label": "pizza",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/91/Pizza-3007395.jpg",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_hamburger_001_da001d51.jpg",
+    "label": "hamburger",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/4d/Cheeseburger.jpg",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_hamburger_002_43df8b94.jpg",
+    "label": "hamburger",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/62/NCI_Visuals_Food_Hamburger.jpg",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_hamburger_003_48d66143.jpg",
+    "label": "hamburger",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/0b/RedDot_Burger.jpg",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_hot_dog_001_885b75d8.jpg",
+    "label": "hot_dog",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/b1/Hot_dog_with_mustard.png",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_hot_dog_002_1c4053a3.jpg",
+    "label": "hot_dog",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/fb/Hotdog_-_Evan_Swigart.jpg",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_sushi_001_7dea3016.jpg",
+    "label": "sushi",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/60/Sushi_platter.jpg",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_tacos_001_ed4276a3.jpg",
+    "label": "tacos",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/73/001_Tacos_de_carnitas%2C_carne_asada_y_al_pastor.jpg",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_tacos_003_a135d078.jpg",
+    "label": "tacos",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/3a/NCI_Visuals_Food_Taco.jpg",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_french_fries_001_86d8e3f2.jpg",
+    "label": "french_fries",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/83/French_Fries.JPG",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_donuts_001_9ee4e125.jpg",
+    "label": "donuts",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a5/Glazed-Donut.jpg",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_pancakes_001_a338a9ec.jpg",
+    "label": "pancakes",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/43/Blueberry_pancakes_%283%29.jpg",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_ramen_001_4a9270a1.jpg",
+    "label": "ramen",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/ec/Shoyu_ramen%2C_at_Kasukabe_Station_%282014.05.05%29_1.jpg",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_pad_thai_001_2301d020.jpg",
+    "label": "pad_thai",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/39/Phat_Thai_kung_Chang_Khien_street_stall.jpg",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_cheesecake_001_5c35c897.jpg",
+    "label": "cheesecake",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/ea/Baked_cheesecake_with_raspberries_and_blueberries.jpg",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_bibimbap_001_709434d8.jpg",
+    "label": "bibimbap",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/44/Dolsot-bibimbap.jpg",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_pho_001_3e6ce0f6.jpg",
+    "label": "pho",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/53/Pho-Beef-Noodles-2008.jpg",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_apple_pie_001_5bc77133.jpg",
+    "label": "apple_pie",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/4b/Apple_pie.jpg",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_baklava_001_53b4a088.jpg",
+    "label": "baklava",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/c7/Baklava%281%29.png",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_poutine_001_d080f4b0.jpg",
+    "label": "poutine",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/6c/Poutine.JPG",
+    "success": true
+  },
+  {
+    "filename": "wikimedia_spaghetti_carbonara_001_f4caa6b8.jpg",
+    "label": "spaghetti_carbonara",
+    "source": "wikimedia",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/33/Espaguetis_carbonara.jpg",
+    "success": true
+  },
+  {
+    "filename": "unsplash_pizza_001_9db2d08f.jpg",
+    "label": "pizza",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_pizza_002_d90fd9f2.jpg",
+    "label": "pizza",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_pizza_003_951da56d.jpg",
+    "label": "pizza",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_pizza_004_34f37e09.jpg",
+    "label": "pizza",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_hamburger_001_78e59f50.jpg",
+    "label": "hamburger",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_hamburger_002_dbe613a7.jpg",
+    "label": "hamburger",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1550547660-d9450f859349?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_hamburger_003_65b1e861.jpg",
+    "label": "hamburger",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_hamburger_004_2eae52eb.jpg",
+    "label": "hamburger",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1551782450-17144efb9c50?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_sushi_001_cf43c2dd.jpg",
+    "label": "sushi",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_sushi_002_f656a5ff.jpg",
+    "label": "sushi",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1553621042-f6e147245754?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_sushi_003_e96e29be.jpg",
+    "label": "sushi",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_sushi_004_249d3699.jpg",
+    "label": "sushi",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_tacos_001_95549f42.jpg",
+    "label": "tacos",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_tacos_002_49892c7b.jpg",
+    "label": "tacos",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_tacos_003_0aba921d.jpg",
+    "label": "tacos",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1599974579688-8dbdd335c77f?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_ramen_002_dd304f8a.jpg",
+    "label": "ramen",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_ramen_003_f0b244e2.jpg",
+    "label": "ramen",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1591814468924-caf88d1232e1?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_ice_cream_001_61a90191.jpg",
+    "label": "ice_cream",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_ice_cream_002_1b5b0517.jpg",
+    "label": "ice_cream",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_ice_cream_003_37892ef0.jpg",
+    "label": "ice_cream",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1570197788417-0e82375c9371?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_donuts_001_e8ce1f77.jpg",
+    "label": "donuts",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1551024601-bec78aea704b?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_donuts_002_81c2b679.jpg",
+    "label": "donuts",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1533910534207-90f31029a78e?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_donuts_003_04294a15.jpg",
+    "label": "donuts",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1527515545081-5db817172677?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_pancakes_001_cca1c0d1.jpg",
+    "label": "pancakes",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_pancakes_002_d25480bc.jpg",
+    "label": "pancakes",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1528207776546-365bb710ee93?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_waffles_001_d54b0827.jpg",
+    "label": "waffles",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1562376552-0d160a2f238d?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_waffles_002_cc4fdd50.jpg",
+    "label": "waffles",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1568051243851-f9b136146e97?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_steak_001_28ef88da.jpg",
+    "label": "steak",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1600891964092-4316c288032e?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_french_fries_001_a16b9627.jpg",
+    "label": "french_fries",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_french_fries_002_57f0964b.jpg",
+    "label": "french_fries",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1576107232684-1279f390859f?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_salad_001_6e10d01f.jpg",
+    "label": "salad",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_salad_002_7f335a89.jpg",
+    "label": "salad",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_salad_003_c70987c7.jpg",
+    "label": "salad",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1547496502-affa22d38842?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_pasta_001_4736be8c.jpg",
+    "label": "pasta",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_pasta_002_6ed0f88d.jpg",
+    "label": "pasta",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_pasta_003_8308ef25.jpg",
+    "label": "pasta",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_soup_001_961110eb.jpg",
+    "label": "soup",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_soup_002_c14ef43d.jpg",
+    "label": "soup",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1603105037880-880cd4edfb0d?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_sandwich_001_1ee42433.jpg",
+    "label": "sandwich",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_sandwich_002_6070d0b9.jpg",
+    "label": "sandwich",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1553909489-cd47e0907980?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_fried_rice_001_3195ef5e.jpg",
+    "label": "fried_rice",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_chicken_wings_001_eecea1b4.jpg",
+    "label": "chicken_wings",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1527477396000-e27163b481c2?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_chicken_wings_002_59f3836d.jpg",
+    "label": "chicken_wings",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1608039755401-742074f0548d?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_nachos_001_cdd587a5.jpg",
+    "label": "nachos",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_grilled_salmon_001_2a2fcfcb.jpg",
+    "label": "grilled_salmon",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_grilled_salmon_002_08b044b0.jpg",
+    "label": "grilled_salmon",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_cheesecake_002_be2e96c7.jpg",
+    "label": "cheesecake",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1578775887804-699de7086ff9?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_chocolate_cake_001_7c59fb59.jpg",
+    "label": "chocolate_cake",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_chocolate_cake_002_ca63b469.jpg",
+    "label": "chocolate_cake",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_tiramisu_001_3e465ffb.jpg",
+    "label": "tiramisu",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_croissant_001_f387e8a4.jpg",
+    "label": "croissant",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_croissant_002_3cb05a73.jpg",
+    "label": "croissant",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1549903072-7e6e0bedb7fb?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_french_toast_001_0a9f2695.jpg",
+    "label": "french_toast",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_hummus_001_45a3b4fb.jpg",
+    "label": "hummus",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1577805947697-89e18249d767?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_bruschetta_001_1b13e389.jpg",
+    "label": "bruschetta",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_dumplings_001_f2318dcf.jpg",
+    "label": "dumplings",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_dumplings_002_1cc74110.jpg",
+    "label": "dumplings",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_pad_thai_001_5c99b845.jpg",
+    "label": "pad_thai",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_pho_001_62e3ef69.jpg",
+    "label": "pho",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_bibimbap_001_4767c59f.jpg",
+    "label": "bibimbap",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1553163147-622ab57be1c7?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_curry_001_14a3ec7d.jpg",
+    "label": "curry",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_curry_002_b51abe5f.jpg",
+    "label": "curry",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_paella_001_33ae7cc3.jpg",
+    "label": "paella",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1534080564583-6be75777b70a?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_risotto_001_e23a162c.jpg",
+    "label": "risotto",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_lasagna_001_1c4b5f38.jpg",
+    "label": "lasagna",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_macaroni_and_cheese_001_af8adf30.jpg",
+    "label": "macaroni_and_cheese",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1543339494-b4cd4f7ba686?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_macarons_001_b1471ef5.jpg",
+    "label": "macarons",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1569864358642-9d1684040f43?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_macarons_002_8e6812ce.jpg",
+    "label": "macarons",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1558326567-98ae2405596b?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_hot_dog_002_9b4fd3c3.jpg",
+    "label": "hot_dog",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1619740455993-9e612b1af08a?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_fish_and_chips_001_081b43f1.jpg",
+    "label": "fish_and_chips",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1579208030886-b937da0925dc?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_onion_rings_001_96b86730.jpg",
+    "label": "onion_rings",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1639024471283-03518883512d?w=640",
+    "success": true
+  },
+  {
+    "filename": "unsplash_baklava_001_6921af09.jpg",
+    "label": "baklava",
+    "source": "unsplash",
+    "source_url": "https://images.unsplash.com/photo-1598110750624-207050c4f28c?w=640",
+    "success": true
+  },
+  {
+    "filename": "pixabay_pizza_002_c6590e12.jpg",
+    "label": "pizza",
+    "source": "pixabay",
+    "source_url": "https://cdn.pixabay.com/photo/2017/12/09/08/18/pizza-3007395_640.jpg",
+    "success": true
+  },
+  {
+    "filename": "pixabay_hamburger_002_a191fb54.jpg",
+    "label": "hamburger",
+    "source": "pixabay",
+    "source_url": "https://cdn.pixabay.com/photo/2016/03/05/19/02/hamburger-1238246_640.jpg",
+    "success": true
+  },
+  {
+    "filename": "pixabay_hamburger_003_cf4139b8.jpg",
+    "label": "hamburger",
+    "source": "pixabay",
+    "source_url": "https://cdn.pixabay.com/photo/2014/10/23/18/05/burger-500054_640.jpg",
+    "success": true
+  },
+  {
+    "filename": "pixabay_pancakes_002_be152b90.jpg",
+    "label": "pancakes",
+    "source": "pixabay",
+    "source_url": "https://cdn.pixabay.com/photo/2017/05/07/08/56/pancakes-2291908_640.jpg",
+    "success": true
+  },
+  {
+    "filename": "pixabay_steak_002_dae929e4.jpg",
+    "label": "steak",
+    "source": "pixabay",
+    "source_url": "https://cdn.pixabay.com/photo/2016/01/22/02/13/meat-1155132_640.jpg",
+    "success": true
+  },
+  {
+    "filename": "pixabay_grilled_salmon_001_31085319.jpg",
+    "label": "grilled_salmon",
+    "source": "pixabay",
+    "source_url": "https://cdn.pixabay.com/photo/2014/11/05/15/57/salmon-518032_640.jpg",
+    "success": true
+  },
+  {
+    "filename": "pixabay_chocolate_cake_001_2dc8f937.jpg",
+    "label": "chocolate_cake",
+    "source": "pixabay",
+    "source_url": "https://cdn.pixabay.com/photo/2014/11/28/08/03/brownie-548591_640.jpg",
+    "success": true
+  },
+  {
+    "filename": "pixabay_chocolate_cake_002_5663bf20.jpg",
+    "label": "chocolate_cake",
+    "source": "pixabay",
+    "source_url": "https://cdn.pixabay.com/photo/2017/01/11/11/33/cake-1971556_640.jpg",
+    "success": true
+  },
+  {
+    "filename": "pixabay_croissant_002_4f1c6cc8.jpg",
+    "label": "croissant",
+    "source": "pixabay",
+    "source_url": "https://cdn.pixabay.com/photo/2016/03/27/21/59/bread-1284438_640.jpg",
+    "success": true
+  },
+  {
+    "filename": "pixabay_hummus_001_d90c025b.jpg",
+    "label": "hummus",
+    "source": "pixabay",
+    "source_url": "https://cdn.pixabay.com/photo/2016/09/06/14/24/hummus-1649231_640.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_hamburger_001_4b669525.jpg",
+    "label": "hamburger",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/burger/burger66.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_hamburger_002_56671888.jpg",
+    "label": "hamburger",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/burger/burger70.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_hamburger_003_15c9bd2f.jpg",
+    "label": "hamburger",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/burger/burger83.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_hamburger_004_f7266734.jpg",
+    "label": "hamburger",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/burger/burger14.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_hamburger_005_21a0de1a.jpg",
+    "label": "hamburger",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/burger/burger69.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_hamburger_006_c10ecf55.jpg",
+    "label": "hamburger",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/burger/burger53.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_hamburger_007_e4e0badd.jpg",
+    "label": "hamburger",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/burger/burger9.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_hamburger_008_822cfd33.jpg",
+    "label": "hamburger",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/burger/burger42.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_hamburger_009_9f4c96e2.jpg",
+    "label": "hamburger",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/burger/burger51.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_hamburger_010_ae6dbdd0.jpg",
+    "label": "hamburger",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/burger/burger22.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_hamburger_011_b1e9040d.jpg",
+    "label": "hamburger",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/burger/burger82.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_hamburger_012_d29a3c20.jpg",
+    "label": "hamburger",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/burger/burger62.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_hamburger_013_d417f23b.jpg",
+    "label": "hamburger",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/burger/burger44.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_hamburger_014_61289fbd.jpg",
+    "label": "hamburger",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/burger/burger74.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_hamburger_015_b1e9040d.jpg",
+    "label": "hamburger",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/burger/burger82.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_pizza_001_bc979a10.jpg",
+    "label": "pizza",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pizza/pizza36.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_pizza_002_c465531d.jpg",
+    "label": "pizza",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pizza/pizza72.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_pizza_003_1d1a0ca8.jpg",
+    "label": "pizza",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pizza/pizza69.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_pizza_004_7cd784c6.jpg",
+    "label": "pizza",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pizza/pizza75.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_pizza_005_5e347e71.jpg",
+    "label": "pizza",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pizza/pizza38.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_pizza_006_03a22e15.jpg",
+    "label": "pizza",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pizza/pizza56.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_pizza_007_eda3526d.jpg",
+    "label": "pizza",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pizza/pizza85.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_pizza_008_f4f02cfe.jpg",
+    "label": "pizza",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pizza/pizza33.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_pizza_009_1480345b.jpg",
+    "label": "pizza",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pizza/pizza94.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_pizza_010_ce6da28d.jpg",
+    "label": "pizza",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pizza/pizza67.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_pizza_011_5e32dd01.jpg",
+    "label": "pizza",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pizza/pizza68.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_pizza_012_8fc25b74.jpg",
+    "label": "pizza",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pizza/pizza59.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_pizza_013_03ebf086.jpg",
+    "label": "pizza",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pizza/pizza22.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_pizza_014_33be107e.jpg",
+    "label": "pizza",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pizza/pizza24.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_pizza_015_5bbf0eac.jpg",
+    "label": "pizza",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pizza/pizza17.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_fried_rice_011_cbb7944f.jpg",
+    "label": "fried_rice",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/biryani/biryani68.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_fried_rice_012_6ad93cbe.jpg",
+    "label": "fried_rice",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/biryani/biryani76.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_fried_rice_014_1fa0140a.jpg",
+    "label": "fried_rice",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/biryani/biryani17.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_crepes_001_f2b16994.jpg",
+    "label": "crepes",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/dosa/dosa47.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_crepes_002_3ecd0059.jpg",
+    "label": "crepes",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/dosa/dosa54.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_crepes_003_48015691.jpg",
+    "label": "crepes",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/dosa/dosa2.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_crepes_004_310c986f.jpg",
+    "label": "crepes",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/dosa/dosa26.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_crepes_005_5809c256.jpg",
+    "label": "crepes",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/dosa/dosa13.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_crepes_006_118ee72f.jpg",
+    "label": "crepes",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/dosa/dosa62.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_crepes_007_80930ded.jpg",
+    "label": "crepes",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/dosa/dosa67.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_crepes_008_e7281609.jpg",
+    "label": "crepes",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/dosa/dosa42.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_crepes_009_79edb614.jpg",
+    "label": "crepes",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/dosa/dosa49.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_crepes_010_5ae21670.jpg",
+    "label": "crepes",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/dosa/dosa1.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_crepes_011_ad56754a.jpg",
+    "label": "crepes",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/dosa/dosa19.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_crepes_012_7edf4544.jpg",
+    "label": "crepes",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/dosa/dosa6.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_crepes_013_62bfeec3.jpg",
+    "label": "crepes",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/dosa/dosa60.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_crepes_014_be2de373.jpg",
+    "label": "crepes",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/dosa/dosa35.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_crepes_015_62bfeec3.jpg",
+    "label": "crepes",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/dosa/dosa60.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_dumplings_002_8898bb63.jpg",
+    "label": "dumplings",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/idly/idly49.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_dumplings_004_914632f4.jpg",
+    "label": "dumplings",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/idly/idly47.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_dumplings_007_0e0b81f3.jpg",
+    "label": "dumplings",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/idly/idly74.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_dumplings_008_9d260060.jpg",
+    "label": "dumplings",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/idly/idly29.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_dumplings_010_7a54c568.jpg",
+    "label": "dumplings",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/idly/idly51.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_dumplings_011_ed5f92a9.jpg",
+    "label": "dumplings",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/idly/idly33.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_dumplings_012_897892af.jpg",
+    "label": "dumplings",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/idly/idly61.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_dumplings_013_e467a63c.jpg",
+    "label": "dumplings",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/idly/idly56.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_dumplings_014_90719982.jpg",
+    "label": "dumplings",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/idly/idly11.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_spaghetti_bolognese_001_2369f5d7.jpg",
+    "label": "spaghetti_bolognese",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pasta/pasta6.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_spaghetti_bolognese_002_b0308335.jpg",
+    "label": "spaghetti_bolognese",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pasta/pasta5.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_spaghetti_bolognese_003_acac5e80.jpg",
+    "label": "spaghetti_bolognese",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pasta/pasta7.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_spaghetti_bolognese_004_813cea31.jpg",
+    "label": "spaghetti_bolognese",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pasta/pasta30.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_spaghetti_bolognese_005_acac5e80.jpg",
+    "label": "spaghetti_bolognese",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pasta/pasta7.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_spaghetti_bolognese_006_2c220ddb.jpg",
+    "label": "spaghetti_bolognese",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pasta/pasta29.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_spaghetti_bolognese_007_6b5e1762.jpg",
+    "label": "spaghetti_bolognese",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pasta/pasta19.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_spaghetti_bolognese_009_6b5e1762.jpg",
+    "label": "spaghetti_bolognese",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pasta/pasta19.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_spaghetti_bolognese_014_09b041bf.jpg",
+    "label": "spaghetti_bolognese",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pasta/pasta12.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_spaghetti_bolognese_015_02fb7a29.jpg",
+    "label": "spaghetti_bolognese",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/pasta/pasta23.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_fried_rice_001_bbefab02.jpg",
+    "label": "fried_rice",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/rice/rice19.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_fried_rice_002_075985be.jpg",
+    "label": "fried_rice",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/rice/rice20.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_fried_rice_003_298ee268.jpg",
+    "label": "fried_rice",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/rice/rice23.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_fried_rice_004_4df0b83b.jpg",
+    "label": "fried_rice",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/rice/rice11.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_fried_rice_006_6913087b.jpg",
+    "label": "fried_rice",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/rice/rice17.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_fried_rice_007_1aea831a.jpg",
+    "label": "fried_rice",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/rice/rice14.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_fried_rice_009_cb5a3e77.jpg",
+    "label": "fried_rice",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/rice/rice7.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_fried_rice_010_df5730da.jpg",
+    "label": "fried_rice",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/rice/rice9.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_fried_rice_011_306d969c.jpg",
+    "label": "fried_rice",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/rice/rice18.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_fried_rice_012_1aea831a.jpg",
+    "label": "fried_rice",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/rice/rice14.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_fried_rice_013_6644771e.jpg",
+    "label": "fried_rice",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/rice/rice2.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_fried_rice_014_6bcb96ce.jpg",
+    "label": "fried_rice",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/rice/rice10.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_fried_rice_015_315b322c.jpg",
+    "label": "fried_rice",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/rice/rice34.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_samosa_001_7da60738.jpg",
+    "label": "samosa",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/samosa/samosa13.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_samosa_002_58da2015.jpg",
+    "label": "samosa",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/samosa/samosa5.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_samosa_003_a3d39c23.jpg",
+    "label": "samosa",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/samosa/samosa17.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_samosa_004_92f6fdb5.jpg",
+    "label": "samosa",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/samosa/samosa12.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_samosa_005_92f6fdb5.jpg",
+    "label": "samosa",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/samosa/samosa12.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_samosa_006_dd358208.jpg",
+    "label": "samosa",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/samosa/samosa3.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_samosa_007_0596a635.jpg",
+    "label": "samosa",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/samosa/samosa9.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_samosa_008_8fa0b3d8.jpg",
+    "label": "samosa",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/samosa/samosa22.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_samosa_009_0d6059f7.jpg",
+    "label": "samosa",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/samosa/samosa14.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_samosa_010_8fa0b3d8.jpg",
+    "label": "samosa",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/samosa/samosa22.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_samosa_011_af0e9def.jpg",
+    "label": "samosa",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/samosa/samosa19.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_samosa_012_499427f1.jpg",
+    "label": "samosa",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/samosa/samosa8.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_samosa_013_a3d39c23.jpg",
+    "label": "samosa",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/samosa/samosa17.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_samosa_014_d8fb32ff.jpg",
+    "label": "samosa",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/samosa/samosa1.jpg",
+    "success": true
+  },
+  {
+    "filename": "foodish_samosa_015_c8996e9e.jpg",
+    "label": "samosa",
+    "source": "foodish",
+    "source_url": "https://foodish-api.com/images/samosa/samosa7.jpg",
+    "success": true
+  },
+  {
+    "filename": "mealdb_tacos_3a4286c5.jpg",
+    "label": "tacos",
+    "source": "themealdb",
+    "source_url": "https://www.themealdb.com/images/media/meals/uvuyxu1503067369.jpg",
+    "meal_name": "Cajun spiced fish tacos",
+    "success": true
+  },
+  {
+    "filename": "mealdb_clam_chowder_7cb0c12a.jpg",
+    "label": "clam_chowder",
+    "source": "themealdb",
+    "source_url": "https://www.themealdb.com/images/media/meals/kggfo91763288633.jpg",
+    "meal_name": "Chorizo & chickpea soup",
+    "success": true
+  },
+  {
+    "filename": "mealdb_fried_rice_0eb8a083.jpg",
+    "label": "fried_rice",
+    "source": "themealdb",
+    "source_url": "https://www.themealdb.com/images/media/meals/zg2b9l1760524940.jpg",
+    "meal_name": "Syrian Rice with Meat",
+    "success": true
+  },
+  {
+    "filename": "mealdb_fish_and_chips_fe076e12.jpg",
+    "label": "fish_and_chips",
+    "source": "themealdb",
+    "source_url": "https://www.themealdb.com/images/media/meals/yx8j1i1763484612.jpg",
+    "meal_name": "Thai-style steamed fish",
+    "success": true
+  },
+  {
+    "filename": "mealdb_grilled_salmon_8ddd9c6c.jpg",
+    "label": "grilled_salmon",
+    "source": "themealdb",
+    "source_url": "https://www.themealdb.com/images/media/meals/1548772327.jpg",
+    "meal_name": "Baked salmon with fennel & tomatoes",
+    "success": true
+  },
+  {
+    "filename": "mealdb_steak_82e79a1d.jpg",
+    "label": "steak",
+    "source": "themealdb",
+    "source_url": "https://www.themealdb.com/images/media/meals/kyuxew1763479470.jpg",
+    "meal_name": "Thai beef stir-fry",
+    "success": true
+  },
+  {
+    "filename": "mealdb_steak_b9ce0713.jpg",
+    "label": "steak",
+    "source": "themealdb",
+    "source_url": "https://www.themealdb.com/images/media/meals/xwutvy1511555540.jpg",
+    "meal_name": "Minced Beef Pie",
+    "success": true
+  },
+  {
+    "filename": "themealdb_churros_001_3824db73.jpg",
+    "label": "churros",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/nxnny61763250596.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_churros_002_96ba7b1f.jpg",
+    "label": "churros",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/erzs951763296201.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_eggs_benedict_001_8672b2d3.jpg",
+    "label": "eggs_benedict",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/1550440197.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_omelette_001_fd1bc880.jpg",
+    "label": "omelette",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/hqaejl1695738653.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_omelette_002_973ac08c.jpg",
+    "label": "omelette",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/yvpuuy1511797244.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_omelette_003_9c0b92e7.jpg",
+    "label": "omelette",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/qwtrtp1511799242.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_omelette_004_67b95a8b.jpg",
+    "label": "omelette",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/0y6uvc1763258983.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_paella_001_62c7a400.jpg",
+    "label": "paella",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/9bl20p1763248192.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_paella_002_715e553d.jpg",
+    "label": "paella",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/1520081754.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_risotto_001_b33e975e.jpg",
+    "label": "risotto",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/xxrxux1503070723.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_lasagna_001_2990666a.jpg",
+    "label": "lasagna",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/rvxxuy1468312893.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_creme_brulee_001_68c6422b.jpg",
+    "label": "creme_brulee",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/uryqru1511798039.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_pad_thai_001_d1d6f244.jpg",
+    "label": "pad_thai",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/rg9ze01763479093.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_pho_001_60d58fba.jpg",
+    "label": "pho",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/pbzcrx1763765096.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_baklava_001_6e1801aa.jpg",
+    "label": "baklava",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/ytme8t1764111401.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_poutine_001_4eeaeedd.jpg",
+    "label": "poutine",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/uuyrrx1487327597.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_soup_001_826ccd36.jpg",
+    "label": "soup",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/x2fw9e1560460636.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_soup_002_bc34b169.jpg",
+    "label": "soup",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/sqpqtp1515365614.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_soup_003_553bed07.jpg",
+    "label": "soup",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/1529446137.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_soup_004_7a9324d5.jpg",
+    "label": "soup",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/xxtsvx1511814083.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_soup_005_7a938c71.jpg",
+    "label": "soup",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/7n8su21699013057.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_soup_006_61ace56e.jpg",
+    "label": "soup",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/xvrrux1511783685.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_soup_007_80a51feb.jpg",
+    "label": "soup",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/1529445893.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_soup_008_9c02c148.jpg",
+    "label": "soup",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/1brbso1763585098.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_sandwich_001_d0d11e25.jpg",
+    "label": "sandwich",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/j80gmw1764372176.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_sandwich_002_54dd4402.jpg",
+    "label": "sandwich",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/xr0n4r1576788363.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_sandwich_003_84e63d07.jpg",
+    "label": "sandwich",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/sbx7n71587673021.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_sandwich_004_87a3d199.jpg",
+    "label": "sandwich",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/xutquv1505330523.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_sandwich_005_65ab6a8d.jpg",
+    "label": "sandwich",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/ae6clc1760524712.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_chicken_wings_001_132eafb4.jpg",
+    "label": "chicken_wings",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/4hzyvq1763792564.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_hummus_001_6c581293.jpg",
+    "label": "hummus",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/gpon5u1763801180.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_hummus_002_afcf8230.jpg",
+    "label": "hummus",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/zub3s91764110535.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_curry_001_e5a0d073.jpg",
+    "label": "curry",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/sstssx1487349585.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_curry_002_da232c4b.jpg",
+    "label": "curry",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/qqlwv91763501559.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_curry_003_ff4ca570.jpg",
+    "label": "curry",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/sywrsu1511463066.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_curry_004_707ec16b.jpg",
+    "label": "curry",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/lqampv1762325397.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_curry_005_d136b126.jpg",
+    "label": "curry",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/vwrpps1503068729.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_curry_006_aa1ba9e4.jpg",
+    "label": "curry",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/tvttqv1504640475.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_curry_007_371f3dd3.jpg",
+    "label": "curry",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/yxsurp1511304301.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_curry_008_abec8494.jpg",
+    "label": "curry",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/uc9qp11764796575.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_clam_chowder_001_3cdf0e19.jpg",
+    "label": "clam_chowder",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/rvtvuw1511190488.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_cheesecake_001_eee80f14.jpg",
+    "label": "cheesecake",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/swttys1511385853.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_salad_001_713a7603.jpg",
+    "label": "salad",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/zry07j1763779321.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_salad_002_5506071d.jpg",
+    "label": "salad",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/fqpqml1764359125.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_salad_003_944b3592.jpg",
+    "label": "salad",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/z458v91763817681.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_salad_004_d38f8d5f.jpg",
+    "label": "salad",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/1549542994.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_salad_005_33eb0588.jpg",
+    "label": "salad",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/g7jomp1763763994.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_salad_006_cef4bde5.jpg",
+    "label": "salad",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/4xcfai1763765676.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_salad_007_70ce8b8a.jpg",
+    "label": "salad",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/6cskio1763338156.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_salad_008_53412ade.jpg",
+    "label": "salad",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/6g3rso1763486069.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_pasta_001_b3d8dee8.jpg",
+    "label": "pasta",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/wvqpwt1468339226.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_pasta_001_72a493be.jpg",
+    "label": "pasta",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/5fu4ew1760524857.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_pasta_002_f62a327c.jpg",
+    "label": "pasta",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/sutysw1468247559.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_pasta_003_e48597c8.jpg",
+    "label": "pasta",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/llcbn01574260722.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_pasta_004_524919e4.jpg",
+    "label": "pasta",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/vpcqn01763335688.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_croissant_001_34354564.jpg",
+    "label": "croissant",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/7mxnzz1593350801.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_ice_cream_001_197421f9.jpg",
+    "label": "ice_cream",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/1xscby1764790242.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_ice_cream_002_c8231f58.jpg",
+    "label": "ice_cream",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/s9qyzd1764790772.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_fried_rice_001_89d11848.jpg",
+    "label": "fried_rice",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/hblwvg1763478203.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_dumplings_001_070c7a2f.jpg",
+    "label": "dumplings",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/sfahy01763752319.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_dumplings_002_010e50e7.jpg",
+    "label": "dumplings",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/tsdbcq1764795636.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_dumplings_004_4b2bc4fc.jpg",
+    "label": "dumplings",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/hhm7xy1763075871.jpg",
+    "success": true
+  },
+  {
+    "filename": "themealdb_baklava_001_930638ad.jpg",
+    "label": "baklava",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/ytme8t1764111401.jpg",
+    "success": true,
+    "validated": true,
+    "validation_notes": "Correct with high confidence (99.7%)"
+  },
+  {
+    "filename": "themealdb_chicken_curry_001_b69aa727.jpg",
+    "label": "chicken_curry",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/vwrpps1503068729.jpg",
+    "success": true,
+    "validated": true,
+    "validation_notes": "Correct with high confidence (99.6%)"
+  },
+  {
+    "filename": "themealdb_chicken_curry_002_dd16f3da.jpg",
+    "label": "chicken_curry",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/yxsurp1511304301.jpg",
+    "success": true,
+    "validated": true,
+    "validation_notes": "Correct with high confidence (94.0%)"
+  },
+  {
+    "filename": "themealdb_chicken_curry_003_7fbfabfc.jpg",
+    "label": "chicken_curry",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/0dhtwr1763371444.jpg",
+    "success": true,
+    "validated": true,
+    "validation_notes": "Correct with high confidence (99.5%)"
+  },
+  {
+    "filename": "themealdb_churros_001_55c58c3c.jpg",
+    "label": "churros",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/nxnny61763250596.jpg",
+    "success": true,
+    "validated": true,
+    "validation_notes": "Correct with high confidence (99.7%)"
+  },
+  {
+    "filename": "themealdb_churros_002_4c4063c3.jpg",
+    "label": "churros",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/erzs951763296201.jpg",
+    "success": true,
+    "validated": true,
+    "validation_notes": "Correct with high confidence (99.4%)"
+  },
+  {
+    "filename": "themealdb_clam_chowder_001_c656bf88.jpg",
+    "label": "clam_chowder",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/rvtvuw1511190488.jpg",
+    "success": true,
+    "validated": true,
+    "validation_notes": "Correct with high confidence (98.4%)"
+  },
+  {
+    "filename": "themealdb_falafel_001_e075a7b8.jpg",
+    "label": "falafel",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/u5e9qq1763795441.jpg",
+    "success": true,
+    "validated": true,
+    "validation_notes": "Correct with high confidence (99.6%)"
+  },
+  {
+    "filename": "themealdb_falafel_002_29754eb0.jpg",
+    "label": "falafel",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/ae6clc1760524712.jpg",
+    "success": true,
+    "validated": true,
+    "validation_notes": "Correct with high confidence (99.4%)"
+  },
+  {
+    "filename": "themealdb_hummus_001_9ae8a974.jpg",
+    "label": "hummus",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/gpon5u1763801180.jpg",
+    "success": true,
+    "validated": true,
+    "validation_notes": "Correct with high confidence (99.7%)"
+  },
+  {
+    "filename": "themealdb_hummus_002_9f26f091.jpg",
+    "label": "hummus",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/zub3s91764110535.jpg",
+    "success": true,
+    "validated": true,
+    "validation_notes": "Correct with high confidence (93.9%)"
+  },
+  {
+    "filename": "themealdb_pad_thai_001_ce3fdfbc.jpg",
+    "label": "pad_thai",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/rg9ze01763479093.jpg",
+    "success": true,
+    "validated": true,
+    "validation_notes": "Correct with high confidence (99.7%)"
+  },
+  {
+    "filename": "themealdb_paella_001_dacfa908.jpg",
+    "label": "paella",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/9bl20p1763248192.jpg",
+    "success": true,
+    "validated": true,
+    "validation_notes": "Correct with high confidence (99.7%)"
+  },
+  {
+    "filename": "themealdb_paella_002_6367593a.jpg",
+    "label": "paella",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/1520081754.jpg",
+    "success": true,
+    "validated": true,
+    "validation_notes": "Correct with high confidence (96.2%)"
+  },
+  {
+    "filename": "themealdb_pho_001_34e8e952.jpg",
+    "label": "pho",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/pbzcrx1763765096.jpg",
+    "success": true,
+    "validated": true,
+    "validation_notes": "Correct with high confidence (99.6%)"
+  },
+  {
+    "filename": "themealdb_risotto_001_db4f3a3f.jpg",
+    "label": "risotto",
+    "source": "themealdb",
+    "url": "https://www.themealdb.com/images/media/meals/xxrxux1503070723.jpg",
+    "success": true,
+    "validated": true,
+    "validation_notes": "Correct with high confidence (98.1%)"
+  },
+  {
+    "filename": "pexels_multi_dish_plate_001_f7525576.jpg",
+    "label": "multi_dish_plate",
+    "source": "pexels",
+    "source_url": "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?w=800",
+    "description": "Plate with salad and grilled chicken",
+    "multi_dish": true,
+    "success": true
+  },
+  {
+    "filename": "pexels_multi_dish_plate_002_7e9aaf7b.jpg",
+    "label": "multi_dish_plate",
+    "source": "pexels",
+    "source_url": "https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?w=800",
+    "description": "Healthy meal with rice, chicken, and vegetables",
+    "multi_dish": true,
+    "success": true
+  },
+  {
+    "filename": "pexels_multi_dish_plate_003_54675ada.jpg",
+    "label": "multi_dish_plate",
+    "source": "pexels",
+    "source_url": "https://images.pexels.com/photos/2116094/pexels-photo-2116094.jpeg?w=800",
+    "description": "Breakfast plate with eggs, bacon, and toast",
+    "multi_dish": true,
+    "success": true
+  },
+  {
+    "filename": "pexels_multi_dish_plate_004_54a84de1.jpg",
+    "label": "multi_dish_plate",
+    "source": "pexels",
+    "source_url": "https://images.pexels.com/photos/1410235/pexels-photo-1410235.jpeg?w=800",
+    "description": "Vegetable and meat platter",
+    "multi_dish": true,
+    "success": true
+  },
+  {
+    "filename": "pexels_multi_dish_bowls_001_fd90ddd3.jpg",
+    "label": "multi_dish_bowls",
+    "source": "pexels",
+    "source_url": "https://images.pexels.com/photos/1640774/pexels-photo-1640774.jpeg?w=800",
+    "description": "Multiple food bowls",
+    "multi_dish": true,
+    "success": true
+  },
+  {
+    "filename": "pexels_multi_dish_bowls_002_599539b7.jpg",
+    "label": "multi_dish_bowls",
+    "source": "pexels",
+    "source_url": "https://images.pexels.com/photos/5966431/pexels-photo-5966431.jpeg?w=800",
+    "description": "Asian meal with multiple dishes",
+    "multi_dish": true,
+    "success": true
+  },
+  {
+    "filename": "pexels_multi_dish_bowls_003_bfdc0464.jpg",
+    "label": "multi_dish_bowls",
+    "source": "pexels",
+    "source_url": "https://images.pexels.com/photos/3186654/pexels-photo-3186654.jpeg?w=800",
+    "description": "Multiple food items on table",
+    "multi_dish": true,
+    "success": true
+  },
+  {
+    "filename": "pexels_multi_dish_mealprep_001_94067b4e.jpg",
+    "label": "multi_dish_mealprep",
+    "source": "pexels",
+    "source_url": "https://images.pexels.com/photos/8844888/pexels-photo-8844888.jpeg?w=800",
+    "description": "Meal prep containers",
+    "multi_dish": true,
+    "success": true
+  },
+  {
+    "filename": "pexels_multi_dish_buffet_001_b0384ddb.jpg",
+    "label": "multi_dish_buffet",
+    "source": "pexels",
+    "source_url": "https://images.pexels.com/photos/5718025/pexels-photo-5718025.jpeg?w=800",
+    "description": "Multiple dishes on table",
+    "multi_dish": true,
+    "success": true
+  },
+  {
+    "filename": "pexels_multi_dish_buffet_002_39c9a71e.jpg",
+    "label": "multi_dish_buffet",
+    "source": "pexels",
+    "source_url": "https://images.pexels.com/photos/4551975/pexels-photo-4551975.jpeg?w=800",
+    "description": "Breakfast spread with multiple items",
+    "multi_dish": true,
+    "success": true
+  }
+]

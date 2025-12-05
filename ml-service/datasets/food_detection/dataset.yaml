@@ -1,0 +1,6 @@
+names:
+  0: food
+nc: 1
+path: /Users/onurtemizkan/Projects/nutri/ml-service/datasets/food_detection
+train: images/train
+val: images/val

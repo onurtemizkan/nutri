@@ -9,15 +9,15 @@ ENV/
 env/
 .venv/
 
-# ML/Training data (too large for git)
-datasets/
-results/
-test_dataset/
+# ML/Training runs (temp files, can be regenerated)
 runs/
-*.pt
-*.pth
-*.onnx
-*.mlmodel
+
+# Pretrained base models (downloaded from HuggingFace/Ultralytics)
+yolov8n.pt
+yolov8s.pt
+yolov8m.pt
+
+# Keep datasets, results, and trained models for sharing
 
 # IDE
 .idea/

@@ -1,0 +1,8 @@
+# Food Detection Dataset (Full - 344 images)
+path: /Users/onurtemizkan/Projects/nutri/ml-service/datasets/food_detection_full
+train: images/train
+val: images/val
+
+# Class
+nc: 1
+names: ['food']
