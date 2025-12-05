@@ -13,6 +13,7 @@
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "dev:start": "./scripts/start-all.sh",
     "dev:stop": "./scripts/stop-all.sh",
+    "dev:full": "./scripts/start-full.sh",
     "services:start": "./scripts/start-dev.sh",
     "services:stop": "./scripts/stop-dev.sh"
   },
@@ -48,12 +49,13 @@
     "react-dom": "18.3.1",
     "react-native": "0.76.5",
     "react-native-gesture-handler": "~2.20.2",
+    "react-native-health": "^1.19.0",
     "react-native-reanimated": "~3.16.1",
     "react-native-safe-area-context": "4.12.0",
     "react-native-screens": "~4.4.0",
+    "react-native-svg": "15.8.0",
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
-    "react-native-svg": "15.8.0",
     "task-master-ai": "^0.37.0",
     "three": "^0.170.0"
   },
