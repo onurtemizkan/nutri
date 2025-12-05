@@ -33,6 +33,7 @@ Thumbs.db
 *.log
 *.txt
 !requirements.txt
+!datasets/**/*.txt
 
 # Temp files
 *.tmp
