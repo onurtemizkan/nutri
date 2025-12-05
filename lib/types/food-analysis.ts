@@ -1,5 +1,31 @@
 // Food Analysis Types for AR-powered food scanning
 
+// Cooking method enum - must match ML service CookingMethod
+export type CookingMethod =
+  | 'raw'
+  | 'cooked'
+  | 'boiled'
+  | 'steamed'
+  | 'grilled'
+  | 'fried'
+  | 'baked'
+  | 'roasted'
+  | 'sauteed'
+  | 'poached';
+
+export const COOKING_METHODS: CookingMethod[] = [
+  'raw',
+  'cooked',
+  'boiled',
+  'steamed',
+  'grilled',
+  'fried',
+  'baked',
+  'roasted',
+  'sauteed',
+  'poached',
+];
+
 export interface ARMeasurement {
   width: number; // cm
   height: number; // cm
@@ -13,6 +39,7 @@ export interface ARMeasurement {
 export interface FoodAnalysisRequest {
   imageUri: string;
   measurements?: ARMeasurement;
+  cookingMethod?: CookingMethod;
   userId?: string;
 }
 
@@ -25,6 +52,8 @@ export interface NutritionInfo {
   sugar?: number; // grams
   sodium?: number; // mg
   saturatedFat?: number; // grams
+  lysine?: number; // mg - essential amino acid
+  arginine?: number; // mg - conditionally essential amino acid
 }
 
 export interface FoodItem {

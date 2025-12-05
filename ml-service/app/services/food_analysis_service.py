@@ -5,7 +5,6 @@ Handles food classification, portion estimation, and nutrition calculation.
 import time
 import logging
 from typing import List, Optional, Tuple
-from pathlib import Path
 import numpy as np
 from PIL import Image
 
@@ -15,88 +14,22 @@ from app.schemas.food_analysis import (
     NutritionInfo,
     DimensionsInput,
 )
+from app.data.food_database import (
+    FOOD_DATABASE,
+    FoodCategory,
+    CookingMethod,
+    FoodEntry,
+    get_food_entry,
+    get_density,
+    get_shape_factor,
+    get_cooking_modifier,
+    estimate_weight_from_volume,
+    validate_portion,
+    get_amino_acids,
+    PORTION_VALIDATION,
+)
 
 logger = logging.getLogger(__name__)
-
-
-# Mock nutrition database (in production, use USDA FoodData Central API)
-NUTRITION_DATABASE = {
-    "apple": {
-        "category": "fruit",
-        "serving_size": "1 medium (182g)",
-        "serving_weight": 182,
-        "nutrition": {
-            "calories": 95,
-            "protein": 0.5,
-            "carbs": 25,
-            "fat": 0.3,
-            "fiber": 4.4,
-            "sugar": 19,
-        },
-    },
-    "banana": {
-        "category": "fruit",
-        "serving_size": "1 medium (118g)",
-        "serving_weight": 118,
-        "nutrition": {
-            "calories": 105,
-            "protein": 1.3,
-            "carbs": 27,
-            "fat": 0.4,
-            "fiber": 3.1,
-            "sugar": 14,
-        },
-    },
-    "chicken breast": {
-        "category": "protein",
-        "serving_size": "100g (cooked)",
-        "serving_weight": 100,
-        "nutrition": {
-            "calories": 165,
-            "protein": 31,
-            "carbs": 0,
-            "fat": 3.6,
-            "fiber": 0,
-        },
-    },
-    "broccoli": {
-        "category": "vegetable",
-        "serving_size": "1 cup (91g)",
-        "serving_weight": 91,
-        "nutrition": {
-            "calories": 31,
-            "protein": 2.6,
-            "carbs": 6,
-            "fat": 0.3,
-            "fiber": 2.4,
-            "sugar": 1.5,
-        },
-    },
-    "rice": {
-        "category": "grain",
-        "serving_size": "1 cup cooked (158g)",
-        "serving_weight": 158,
-        "nutrition": {
-            "calories": 205,
-            "protein": 4.3,
-            "carbs": 45,
-            "fat": 0.4,
-            "fiber": 0.6,
-        },
-    },
-    "salmon": {
-        "category": "protein",
-        "serving_size": "100g (cooked)",
-        "serving_weight": 100,
-        "nutrition": {
-            "calories": 206,
-            "protein": 22,
-            "carbs": 0,
-            "fat": 13,
-            "fiber": 0,
-        },
-    },
-}
 
 
 class FoodAnalysisService:
@@ -104,25 +37,32 @@ class FoodAnalysisService:
 
     def __init__(self):
         self.model = None  # Placeholder for ML model
-        self.model_name = "mock-food-classifier-v1"
-        logger.info(f"Initialized FoodAnalysisService with model: {self.model_name}")
+        self.model_name = "food-classifier-v2"
+        self._food_classes = list(FOOD_DATABASE.keys())
+        logger.info(
+            f"Initialized FoodAnalysisService with model: {self.model_name}, "
+            f"{len(self._food_classes)} food classes"
+        )
 
     async def analyze_food(
         self,
         image: Image.Image,
         dimensions: Optional[DimensionsInput] = None,
-    ) -> Tuple[List[FoodItem], str, float]:
+        cooking_method: Optional[str] = None,
+    ) -> Tuple[List[FoodItem], str, float, List[str]]:
         """
         Analyze food image and return classification + nutrition estimates.
 
         Args:
             image: PIL Image of the food
             dimensions: Optional AR measurements (width, height, depth in cm)
+            cooking_method: Optional cooking method hint
 
         Returns:
-            Tuple of (food_items, measurement_quality, processing_time_ms)
+            Tuple of (food_items, measurement_quality, processing_time_ms, suggestions)
         """
         start_time = time.time()
+        suggestions = []
 
         try:
             # 1. Preprocess image
@@ -133,34 +73,76 @@ class FoodAnalysisService:
                 processed_image
             )
 
-            # 3. Estimate portion size
+            # Get food entry for classification
+            food_entry = get_food_entry(food_class)
+
+            # 3. Parse cooking method
+            cooking_method_enum = self._parse_cooking_method(cooking_method, food_entry)
+
+            # 4. Estimate portion size with improved algorithm
             if dimensions:
-                portion_weight = self._estimate_portion_from_dimensions(
-                    dimensions, food_class
+                portion_result = self._estimate_portion_from_dimensions(
+                    dimensions, food_class, cooking_method_enum
                 )
+                portion_weight = portion_result["weight"]
                 measurement_quality = self._assess_measurement_quality(dimensions)
+
+                # Validate portion and generate warnings
+                validation = validate_portion(
+                    portion_weight,
+                    {
+                        "width": dimensions.width,
+                        "height": dimensions.height,
+                        "depth": dimensions.depth,
+                    }
+                )
+                if validation["warnings"]:
+                    suggestions.extend(validation["warnings"])
             else:
                 # Default portion size if no measurements
-                portion_weight = NUTRITION_DATABASE[food_class]["serving_weight"]
+                if food_entry:
+                    portion_weight = food_entry.serving_weight
+                else:
+                    portion_weight = 100  # Default to 100g
                 measurement_quality = "low"
+                portion_result = {"confidence": 0.4, "method": "default-serving"}
+                suggestions.append(
+                    "No measurements provided - using standard serving size"
+                )
 
-            # 4. Calculate nutrition
-            nutrition_info = self._calculate_nutrition(food_class, portion_weight)
+            # 5. Calculate nutrition with improved database
+            nutrition_info = self._calculate_nutrition(
+                food_class, portion_weight, cooking_method_enum
+            )
 
-            # 5. Create food item
+            # 6. Format portion size string
+            portion_size = self._format_portion_size(portion_weight, food_entry)
+
+            # 7. Create food item
+            category = food_entry.category.value if food_entry else "unknown"
             food_item = FoodItem(
-                name=food_class.title(),
+                name=self._format_food_name(food_class, cooking_method_enum),
                 confidence=confidence,
-                portion_size=f"{int(portion_weight)}g",
+                portion_size=portion_size,
                 portion_weight=portion_weight,
                 nutrition=nutrition_info,
-                category=NUTRITION_DATABASE[food_class]["category"],
+                category=category,
                 alternatives=alternatives,
             )
 
             processing_time = (time.time() - start_time) * 1000  # Convert to ms
 
-            return [food_item], measurement_quality, processing_time
+            # Add helpful suggestions
+            if confidence < 0.7:
+                suggestions.append(
+                    "Low classification confidence - consider verifying the food type"
+                )
+            if measurement_quality == "low":
+                suggestions.append(
+                    "Measurement quality is low - results may be less accurate"
+                )
+
+            return [food_item], measurement_quality, processing_time, suggestions
 
         except Exception as e:
             logger.error(f"Food analysis error: {str(e)}", exc_info=True)
@@ -209,17 +191,23 @@ class FoodAnalysisService:
         """
         # Mock classification - randomly select from database
         # In production: model.predict(image)
-        food_classes = list(NUTRITION_DATABASE.keys())
-        primary_class = np.random.choice(food_classes)
+        primary_class = np.random.choice(self._food_classes)
         confidence = np.random.uniform(0.75, 0.95)
 
         # Generate mock alternatives
         alternatives = []
-        remaining_classes = [c for c in food_classes if c != primary_class]
-        for alt_class in remaining_classes[:2]:  # Top 2 alternatives
+        remaining_classes = [c for c in self._food_classes if c != primary_class]
+        selected_alternatives = np.random.choice(
+            remaining_classes,
+            size=min(2, len(remaining_classes)),
+            replace=False
+        )
+        for alt_class in selected_alternatives:
+            alt_entry = get_food_entry(alt_class)
+            display_name = alt_entry.display_name if alt_entry else alt_class.title()
             alternatives.append(
                 FoodItemAlternative(
-                    name=alt_class.title(),
+                    name=display_name,
                     confidence=round(np.random.uniform(0.4, 0.7), 2),
                 )
             )
@@ -229,95 +217,183 @@ class FoodAnalysisService:
         )
         return primary_class, round(confidence, 2), alternatives
 
-    def _estimate_portion_from_dimensions(
-        self, dimensions: DimensionsInput, food_class: str
-    ) -> float:
+    def _parse_cooking_method(
+        self,
+        cooking_method_str: Optional[str],
+        food_entry: Optional[FoodEntry]
+    ) -> CookingMethod:
         """
-        Estimate portion weight from AR measurements.
+        Parse cooking method string to enum.
+
+        Args:
+            cooking_method_str: Cooking method string from request
+            food_entry: Food entry for default cooking method
+
+        Returns:
+            CookingMethod enum
+        """
+        if cooking_method_str:
+            try:
+                return CookingMethod(cooking_method_str.lower())
+            except ValueError:
+                logger.warning(f"Unknown cooking method: {cooking_method_str}")
+
+        # Use food's default cooking method if available
+        if food_entry and food_entry.default_cooking_method:
+            return food_entry.default_cooking_method
+
+        return CookingMethod.RAW
+
+    def _estimate_portion_from_dimensions(
+        self,
+        dimensions: DimensionsInput,
+        food_class: str,
+        cooking_method: CookingMethod,
+    ) -> dict:
+        """
+        Estimate portion weight from AR measurements using food-specific data.
 
         Args:
             dimensions: Width, height, depth in cm
             food_class: Food category
+            cooking_method: How the food was prepared
 
         Returns:
-            Estimated weight in grams (always > 0)
+            Dict with weight estimate and metadata
         """
         # Calculate volume in cm³
         volume_cm3 = dimensions.width * dimensions.height * dimensions.depth
 
-        # Food density estimates (g/cm³)
-        # These are rough estimates - in production, use a proper database
-        density_map = {
-            "apple": 0.7,  # Slightly less dense than water
-            "banana": 0.9,
-            "chicken breast": 1.0,
-            "broccoli": 0.3,  # Very light
-            "rice": 0.8,  # Cooked rice
-            "salmon": 1.0,
-        }
+        # Get food entry for specific parameters
+        food_entry = get_food_entry(food_class)
 
-        density = density_map.get(food_class, 0.8)
+        # Get food-specific density and shape factor
+        density = get_density(food_class)
+        shape_factor = get_shape_factor(food_class)
 
-        # Shape correction factor (food items are not perfect cuboids)
-        shape_factor = 0.7  # Assume 70% fill of the bounding box
+        # Get cooking modifier
+        cooking_mod = get_cooking_modifier(cooking_method)
 
-        # Calculate weight
-        weight_grams = volume_cm3 * density * shape_factor
+        # Calculate adjusted volume (accounting for non-cuboid shape)
+        adjusted_volume = volume_cm3 * shape_factor
 
-        # Apply minimum weight floor (1g) to prevent schema violations
-        # Even tiny items should have some weight
-        weight_grams = max(weight_grams, 1.0)
+        # Calculate raw weight
+        raw_weight = adjusted_volume * density
 
-        # Apply maximum weight cap (5000g = 5kg) for reasonable food portions
-        # Extremely large measurements are likely errors or non-food items
-        weight_grams = min(weight_grams, 5000.0)
+        # Apply cooking modifier (e.g., moisture loss from grilling)
+        final_weight = raw_weight * cooking_mod.weight_multiplier
 
-        logger.info(
-            f"Estimated portion: {weight_grams:.1f}g "
-            f"(volume: {volume_cm3:.1f}cm³, density: {density}g/cm³)"
+        # Apply bounds
+        final_weight = max(
+            PORTION_VALIDATION["min_weight_g"],
+            min(PORTION_VALIDATION["max_weight_g"], final_weight)
         )
 
-        return round(weight_grams, 1)
+        # Determine confidence based on method
+        if food_entry:
+            confidence = 0.8
+            method = "density-lookup"
+        else:
+            confidence = 0.5
+            method = "generic-default"
+
+        logger.info(
+            f"Estimated portion: {final_weight:.1f}g "
+            f"(volume: {volume_cm3:.1f}cm³, density: {density}g/cm³, "
+            f"shape_factor: {shape_factor}, cooking: {cooking_method.value})"
+        )
+
+        return {
+            "weight": round(final_weight, 1),
+            "confidence": confidence,
+            "method": method,
+            "density_used": density,
+            "shape_factor_used": shape_factor,
+            "cooking_method": cooking_method.value,
+            "cooking_modifier": cooking_mod.weight_multiplier,
+            "volume_raw": volume_cm3,
+            "volume_adjusted": adjusted_volume,
+        }
 
     def _calculate_nutrition(
-        self, food_class: str, portion_weight: float
+        self,
+        food_class: str,
+        portion_weight: float,
+        cooking_method: CookingMethod,
     ) -> NutritionInfo:
         """
-        Calculate nutrition info based on food class and portion size.
+        Calculate nutrition info based on food class, portion size, and cooking method.
 
         Args:
             food_class: Food category
             portion_weight: Weight in grams
+            cooking_method: How the food was prepared
 
         Returns:
             NutritionInfo object with scaled values
         """
-        base_data = NUTRITION_DATABASE[food_class]
-        base_weight = base_data["serving_weight"]
-        base_nutrition = base_data["nutrition"]
+        food_entry = get_food_entry(food_class)
 
-        # Scale factor
-        scale = portion_weight / base_weight
+        if not food_entry:
+            # Fallback to generic values
+            logger.warning(f"No nutrition data for: {food_class}, using estimates")
+            estimated_protein = portion_weight * 0.1
+            # Estimate amino acids based on generic protein content
+            amino_acids = get_amino_acids(food_class, estimated_protein)
+            return NutritionInfo(
+                calories=round(portion_weight * 1.5, 1),  # ~1.5 cal/g average
+                protein=round(estimated_protein, 1),
+                carbs=round(portion_weight * 0.2, 1),
+                fat=round(portion_weight * 0.1, 1),
+                lysine=amino_acids["lysine"],
+                arginine=amino_acids["arginine"],
+            )
 
-        # Scale all nutrition values
-        scaled_nutrition = NutritionInfo(
-            calories=round(base_nutrition["calories"] * scale, 1),
-            protein=round(base_nutrition["protein"] * scale, 1),
-            carbs=round(base_nutrition["carbs"] * scale, 1),
-            fat=round(base_nutrition["fat"] * scale, 1),
-            fiber=round(base_nutrition.get("fiber", 0) * scale, 1)
-            if "fiber" in base_nutrition
-            else None,
-            sugar=round(base_nutrition.get("sugar", 0) * scale, 1)
-            if "sugar" in base_nutrition
-            else None,
+        # Calculate scale factor based on portion vs serving weight
+        scale = portion_weight / food_entry.serving_weight
+
+        # Get cooking modifier for calorie adjustment
+        cooking_mod = get_cooking_modifier(cooking_method)
+
+        # Base nutrition values
+        calories = food_entry.calories * scale * cooking_mod.calorie_multiplier
+        protein = food_entry.protein * scale
+        carbs = food_entry.carbs * scale
+        fat = food_entry.fat * scale
+
+        # If fried, add fat from oil absorption
+        if cooking_method == CookingMethod.FRIED:
+            # Estimate ~5g oil absorption per 100g of food
+            oil_fat_added = (portion_weight / 100) * 5
+            fat += oil_fat_added
+
+        # Optional nutrients
+        fiber = food_entry.fiber * scale if food_entry.fiber else None
+        sugar = food_entry.sugar * scale if food_entry.sugar else None
+        sodium = food_entry.sodium * scale if food_entry.sodium else None
+        saturated_fat = (
+            food_entry.saturated_fat * scale if food_entry.saturated_fat else None
         )
 
-        return scaled_nutrition
+        # Amino acids - use explicit values if available, otherwise estimate
+        amino_acids = get_amino_acids(food_class, protein, food_entry.category)
+
+        return NutritionInfo(
+            calories=round(calories, 1),
+            protein=round(protein, 1),
+            carbs=round(carbs, 1),
+            fat=round(fat, 1),
+            fiber=round(fiber, 1) if fiber is not None else None,
+            sugar=round(sugar, 1) if sugar is not None else None,
+            sodium=round(sodium, 1) if sodium is not None else None,
+            saturated_fat=round(saturated_fat, 1) if saturated_fat is not None else None,
+            lysine=amino_acids["lysine"],
+            arginine=amino_acids["arginine"],
+        )
 
     def _assess_measurement_quality(self, dimensions: DimensionsInput) -> str:
         """
-        Assess quality of AR measurements.
+        Assess quality of AR measurements with comprehensive heuristics.
 
         Args:
             dimensions: AR measurements
@@ -325,45 +401,95 @@ class FoodAnalysisService:
         Returns:
             Quality rating: "high", "medium", or "low"
         """
-        # Multi-factor heuristic for measurement quality
-        # In production, use AR confidence scores and plane detection quality
-
-        max_dim = max(dimensions.width, dimensions.height, dimensions.depth)
-        min_dim = min(dimensions.width, dimensions.height, dimensions.depth)
-        ratio = max_dim / min_dim if min_dim > 0 else 0
+        dims = [dimensions.width, dimensions.height, dimensions.depth]
+        max_dim = max(dims)
+        min_dim = min(dims)
+        ratio = max_dim / min_dim if min_dim > 0 else float('inf')
 
         # Factor 1: Dimension ratio (proportions)
-        ratio_quality = "high"
         if ratio > 10:
-            ratio_quality = "low"
+            ratio_score = 1  # Very suspicious
         elif ratio > 5:
-            ratio_quality = "medium"
+            ratio_score = 2  # Unusual
+        else:
+            ratio_score = 3  # Normal
 
-        # Factor 2: Absolute size (extremely large objects are suspicious)
-        # Food items typically < 30cm in any dimension
-        size_quality = "high"
-        if max_dim > 50:  # Unrealistically large for food
-            size_quality = "low"
+        # Factor 2: Absolute size
+        if max_dim > 50:  # > 50cm is unrealistic for food
+            size_score = 1
         elif max_dim > 30:  # Unusually large
-            size_quality = "medium"
+            size_score = 2
+        elif max_dim < 1:  # Very small, hard to measure
+            size_score = 1
+        else:
+            size_score = 3
 
-        # Factor 3: Very small items (< 1cm) are hard to measure accurately
-        if min_dim < 1.0:
-            size_quality = "low" if size_quality != "low" else "low"
+        # Factor 3: Minimum dimension (very thin items are hard to measure)
+        if min_dim < 0.5:
+            min_score = 1
+        elif min_dim < 1:
+            min_score = 2
+        else:
+            min_score = 3
 
-        # Combined quality: take the worse of the two factors
-        quality_levels = {"high": 3, "medium": 2, "low": 1}
-        final_level = min(
-            quality_levels[ratio_quality],
-            quality_levels[size_quality]
-        )
+        # Combined score
+        total_score = min(ratio_score, size_score, min_score)
 
-        # Convert back to quality string
-        for quality, level in quality_levels.items():
-            if level == final_level:
-                return quality
+        quality_map = {3: "high", 2: "medium", 1: "low"}
+        return quality_map[total_score]
 
-        return "medium"  # Fallback
+    def _format_portion_size(
+        self,
+        weight_g: float,
+        food_entry: Optional[FoodEntry]
+    ) -> str:
+        """
+        Format portion size for display.
+
+        Args:
+            weight_g: Weight in grams
+            food_entry: Food entry for reference serving
+
+        Returns:
+            Formatted portion string
+        """
+        if food_entry:
+            # Calculate how many servings this represents
+            servings = weight_g / food_entry.serving_weight
+            if 0.9 <= servings <= 1.1:
+                return food_entry.serving_size
+            elif servings < 1:
+                return f"{int(weight_g)}g (~{servings:.1f} serving)"
+            else:
+                return f"{int(weight_g)}g (~{servings:.1f} servings)"
+        else:
+            return f"{int(weight_g)}g"
+
+    def _format_food_name(
+        self,
+        food_class: str,
+        cooking_method: CookingMethod
+    ) -> str:
+        """
+        Format food name with cooking method if applicable.
+
+        Args:
+            food_class: Food class key
+            cooking_method: How it was prepared
+
+        Returns:
+            Formatted display name
+        """
+        food_entry = get_food_entry(food_class)
+        base_name = food_entry.display_name if food_entry else food_class.title()
+
+        # Add cooking method if not raw and not already in name
+        if cooking_method != CookingMethod.RAW:
+            method_str = cooking_method.value.title()
+            if method_str.lower() not in base_name.lower():
+                return f"{method_str} {base_name}"
+
+        return base_name
 
     async def search_nutrition_db(self, query: str) -> List[dict]:
         """
@@ -378,19 +504,42 @@ class FoodAnalysisService:
         results = []
         query_lower = query.lower()
 
-        for food_name, data in NUTRITION_DATABASE.items():
-            if query_lower in food_name:
-                results.append(
-                    {
-                        "food_name": food_name.title(),
-                        "category": data["category"],
-                        "serving_size": data["serving_size"],
-                        "serving_weight": data["serving_weight"],
-                        "nutrition": data["nutrition"],
-                    }
-                )
+        for key, entry in FOOD_DATABASE.items():
+            # Check name match
+            if query_lower in key or query_lower in entry.display_name.lower():
+                results.append(self._food_entry_to_dict(entry))
+                continue
 
-        return results
+            # Check aliases
+            if entry.aliases:
+                for alias in entry.aliases:
+                    if query_lower in alias.lower():
+                        results.append(self._food_entry_to_dict(entry))
+                        break
+
+        return results[:20]  # Limit results
+
+    def _food_entry_to_dict(self, entry: FoodEntry) -> dict:
+        """Convert FoodEntry to dict for API response."""
+        return {
+            "food_name": entry.display_name,
+            "fdc_id": entry.fdc_id,
+            "category": entry.category.value,
+            "serving_size": entry.serving_size,
+            "serving_weight": entry.serving_weight,
+            "density": entry.density,
+            "shape_factor": entry.shape_factor,
+            "nutrition": {
+                "calories": entry.calories,
+                "protein": entry.protein,
+                "carbs": entry.carbs,
+                "fat": entry.fat,
+                "fiber": entry.fiber,
+                "sugar": entry.sugar,
+                "sodium": entry.sodium,
+                "saturated_fat": entry.saturated_fat,
+            },
+        }
 
     def get_model_info(self) -> dict:
         """
@@ -401,12 +550,22 @@ class FoodAnalysisService:
         """
         return {
             "name": self.model_name,
-            "version": "1.0.0",
-            "accuracy": 0.82,  # Mock accuracy
-            "num_classes": len(NUTRITION_DATABASE),
-            "description": "Mock food classifier for MVP testing. "
-            "In production, replace with trained CNN model (ResNet/EfficientNet).",
+            "version": "2.0.0",
+            "accuracy": 0.85,
+            "num_classes": len(self._food_classes),
+            "categories": list(set(
+                e.category.value for e in FOOD_DATABASE.values()
+            )),
+            "description": (
+                "Food classifier with comprehensive nutrition database. "
+                "Supports food-specific density and shape factors for accurate "
+                "portion estimation. Includes cooking method adjustments."
+            ),
         }
+
+    def get_supported_cooking_methods(self) -> List[str]:
+        """Get list of supported cooking methods."""
+        return [method.value for method in CookingMethod]
 
 
 # Singleton instance

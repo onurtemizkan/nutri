@@ -72,6 +72,11 @@ class FoodAnalysisAPI {
         formData.append('confidence', request.measurements.confidence);
       }
 
+      // Add cooking method if specified
+      if (request.cookingMethod) {
+        formData.append('cooking_method', request.cookingMethod);
+      }
+
       // Make request with retry logic
       const response = await this.makeRequestWithRetry<FoodAnalysisResponse>(
         '/api/food/analyze',
@@ -128,6 +133,25 @@ class FoodAnalysisAPI {
       });
 
       return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Get supported cooking methods
+   */
+  async getCookingMethods(): Promise<string[]> {
+    try {
+      const response = await this.makeRequestWithRetry<{
+        cooking_methods: string[];
+        total: number;
+      }>('/api/food/cooking-methods', {
+        method: 'GET',
+        timeout: 5000,
+      });
+
+      return response.data.cooking_methods;
     } catch (error) {
       throw this.handleError(error);
     }
