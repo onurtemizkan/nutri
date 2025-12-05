@@ -1,10 +1,14 @@
 """
 Food Analysis API endpoints.
 Handles food scanning, classification, and nutrition estimation.
+
+Supports:
+- Single-dish analysis (/analyze)
+- Multi-dish analysis with bounding boxes (/analyze/multi)
 """
 import logging
 from typing import Optional
-from fastapi import APIRouter, File, UploadFile, Form, HTTPException
+from fastapi import APIRouter, File, UploadFile, Form, Query, HTTPException
 from fastapi.responses import JSONResponse
 from PIL import Image
 import io
@@ -16,7 +20,9 @@ from app.schemas.food_analysis import (
     ModelInfo,
     DimensionsInput,
 )
+from app.schemas.multi_dish import MultiDishAnalysisResponse
 from app.services.food_analysis_service import food_analysis_service
+from app.services.multi_dish_service import get_multi_dish_service
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +123,130 @@ async def analyze_food(
         raise HTTPException(
             status_code=500,
             detail=f"Food analysis failed: {str(e)}",
+        )
+
+
+@router.post("/analyze/multi", response_model=MultiDishAnalysisResponse)
+async def analyze_multi_dish(
+    image: UploadFile = File(..., description="Food image (JPEG/PNG, max 10MB)"),
+    min_confidence: float = Query(
+        0.15,
+        ge=0,
+        le=1,
+        description="Minimum detection confidence threshold (0-1)"
+    ),
+    max_dishes: int = Query(
+        10,
+        ge=1,
+        le=20,
+        description="Maximum number of dishes to detect"
+    ),
+):
+    """
+    Analyze food image for **multiple dishes** with bounding boxes.
+
+    This endpoint detects and classifies multiple food items in a single image,
+    returning bounding boxes for each detected dish along with nutrition estimates.
+
+    **Use Cases:**
+    - Plates with multiple food items (main + sides)
+    - Food trays or buffet-style meals
+    - Meal prep containers with compartments
+    - Any image with more than one distinct food item
+
+    **Pipeline:**
+    1. Object detection using OWL-ViT (zero-shot, text-prompted)
+    2. Each detected region is cropped and classified
+    3. Nutrition is estimated for each dish
+    4. Results aggregated with total nutrition
+
+    **Parameters:**
+    - **image**: Food photo (JPEG or PNG, max 10MB)
+    - **min_confidence**: Minimum detection confidence (default: 0.15)
+    - **max_dishes**: Maximum dishes to return (default: 10, max: 20)
+
+    **Returns:**
+    - List of detected dishes with:
+      - Bounding box (normalized 0-1 and pixel coordinates)
+      - Classification with confidence
+      - Nutrition estimates
+      - Alternative classifications
+    - Aggregated total nutrition
+    - Detection quality assessment
+    - Processing time and model info
+
+    **Example Response:**
+    ```json
+    {
+      "dishes": [
+        {
+          "dish_id": 1,
+          "name": "Grilled Chicken",
+          "confidence": 0.92,
+          "bbox": {"x1": 0.1, "y1": 0.2, "x2": 0.5, "y2": 0.7, ...},
+          "nutrition": {"calories": 165, "protein": 31, ...},
+          ...
+        },
+        {
+          "dish_id": 2,
+          "name": "Caesar Salad",
+          "confidence": 0.87,
+          "bbox": {"x1": 0.55, "y1": 0.1, "x2": 0.95, "y2": 0.5, ...},
+          ...
+        }
+      ],
+      "dish_count": 2,
+      "total_nutrition": {"calories": 315, "protein": 38, ...},
+      ...
+    }
+    ```
+
+    **Future Features:**
+    - LIDAR depth map for accurate volume/portion estimation
+    - Fine-tuned object detector for better food detection
+    """
+    try:
+        # Validate file size (10MB limit)
+        contents = await image.read()
+        if len(contents) > 10 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="Image file too large (max 10MB)")
+
+        # Validate file type
+        if image.content_type not in ["image/jpeg", "image/png", "image/jpg"]:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid image format. Only JPEG and PNG are supported.",
+            )
+
+        # Load image
+        try:
+            pil_image = Image.open(io.BytesIO(contents))
+        except Exception as e:
+            logger.error(f"Error loading image: {str(e)}")
+            raise HTTPException(status_code=400, detail="Invalid or corrupted image file")
+
+        # Get multi-dish service and analyze
+        service = get_multi_dish_service()
+        result = await service.analyze(
+            image=pil_image,
+            min_confidence=min_confidence,
+            max_dishes=max_dishes,
+        )
+
+        logger.info(
+            f"Multi-dish analysis: {result.dish_count} dishes detected, "
+            f"{result.processing_time_ms:.1f}ms"
+        )
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Multi-dish analysis error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Multi-dish analysis failed: {str(e)}",
         )
 
 

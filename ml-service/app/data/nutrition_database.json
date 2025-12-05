@@ -1,0 +1,1606 @@
+{
+  "_metadata": {
+    "version": "1.0.0",
+    "source": "USDA FoodData Central estimates",
+    "last_updated": "2024-01-15",
+    "notes": "Nutrition values per standard serving. Densities are approximate for volume estimation."
+  },
+  "foods": {
+    "apple_pie": {
+      "category": "dessert",
+      "serving_size": "1 slice (125g)",
+      "serving_weight": 125,
+      "density": 0.65,
+      "nutrition": {
+        "calories": 296,
+        "protein": 2.4,
+        "carbs": 43,
+        "fat": 14,
+        "fiber": 1.9,
+        "sugar": 23
+      }
+    },
+    "baby_back_ribs": {
+      "category": "protein",
+      "serving_size": "3 ribs (200g)",
+      "serving_weight": 200,
+      "density": 0.95,
+      "nutrition": {
+        "calories": 540,
+        "protein": 33,
+        "carbs": 12,
+        "fat": 40,
+        "fiber": 0,
+        "sugar": 10
+      }
+    },
+    "baklava": {
+      "category": "dessert",
+      "serving_size": "1 piece (78g)",
+      "serving_weight": 78,
+      "density": 0.8,
+      "nutrition": {
+        "calories": 334,
+        "protein": 5,
+        "carbs": 29,
+        "fat": 23,
+        "fiber": 2,
+        "sugar": 18
+      }
+    },
+    "beef_carpaccio": {
+      "category": "protein",
+      "serving_size": "100g",
+      "serving_weight": 100,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 121,
+        "protein": 22,
+        "carbs": 0,
+        "fat": 3.5,
+        "fiber": 0,
+        "sugar": 0
+      }
+    },
+    "beef_tartare": {
+      "category": "protein",
+      "serving_size": "150g",
+      "serving_weight": 150,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 245,
+        "protein": 25,
+        "carbs": 2,
+        "fat": 15,
+        "fiber": 0,
+        "sugar": 1
+      }
+    },
+    "beet_salad": {
+      "category": "vegetable",
+      "serving_size": "1 cup (170g)",
+      "serving_weight": 170,
+      "density": 0.5,
+      "nutrition": {
+        "calories": 120,
+        "protein": 3,
+        "carbs": 15,
+        "fat": 6,
+        "fiber": 3,
+        "sugar": 10
+      }
+    },
+    "beignets": {
+      "category": "dessert",
+      "serving_size": "3 pieces (90g)",
+      "serving_weight": 90,
+      "density": 0.35,
+      "nutrition": {
+        "calories": 340,
+        "protein": 5,
+        "carbs": 42,
+        "fat": 17,
+        "fiber": 1,
+        "sugar": 15
+      }
+    },
+    "bibimbap": {
+      "category": "grain",
+      "serving_size": "1 bowl (450g)",
+      "serving_weight": 450,
+      "density": 0.7,
+      "nutrition": {
+        "calories": 560,
+        "protein": 25,
+        "carbs": 75,
+        "fat": 18,
+        "fiber": 5,
+        "sugar": 8
+      }
+    },
+    "bread_pudding": {
+      "category": "dessert",
+      "serving_size": "1 serving (150g)",
+      "serving_weight": 150,
+      "density": 0.7,
+      "nutrition": {
+        "calories": 320,
+        "protein": 8,
+        "carbs": 45,
+        "fat": 12,
+        "fiber": 1,
+        "sugar": 25
+      }
+    },
+    "breakfast_burrito": {
+      "category": "grain",
+      "serving_size": "1 burrito (250g)",
+      "serving_weight": 250,
+      "density": 0.85,
+      "nutrition": {
+        "calories": 450,
+        "protein": 20,
+        "carbs": 45,
+        "fat": 22,
+        "fiber": 3,
+        "sugar": 3
+      }
+    },
+    "bruschetta": {
+      "category": "appetizer",
+      "serving_size": "2 pieces (100g)",
+      "serving_weight": 100,
+      "density": 0.6,
+      "nutrition": {
+        "calories": 185,
+        "protein": 5,
+        "carbs": 24,
+        "fat": 8,
+        "fiber": 2,
+        "sugar": 3
+      }
+    },
+    "caesar_salad": {
+      "category": "vegetable",
+      "serving_size": "1 bowl (300g)",
+      "serving_weight": 300,
+      "density": 0.35,
+      "nutrition": {
+        "calories": 360,
+        "protein": 10,
+        "carbs": 18,
+        "fat": 28,
+        "fiber": 3,
+        "sugar": 3
+      }
+    },
+    "cannoli": {
+      "category": "dessert",
+      "serving_size": "1 piece (100g)",
+      "serving_weight": 100,
+      "density": 0.7,
+      "nutrition": {
+        "calories": 370,
+        "protein": 8,
+        "carbs": 42,
+        "fat": 19,
+        "fiber": 1,
+        "sugar": 25
+      }
+    },
+    "caprese_salad": {
+      "category": "vegetable",
+      "serving_size": "1 serving (200g)",
+      "serving_weight": 200,
+      "density": 0.8,
+      "nutrition": {
+        "calories": 280,
+        "protein": 14,
+        "carbs": 6,
+        "fat": 22,
+        "fiber": 1,
+        "sugar": 4
+      }
+    },
+    "carrot_cake": {
+      "category": "dessert",
+      "serving_size": "1 slice (130g)",
+      "serving_weight": 130,
+      "density": 0.6,
+      "nutrition": {
+        "calories": 415,
+        "protein": 5,
+        "carbs": 52,
+        "fat": 22,
+        "fiber": 2,
+        "sugar": 35
+      }
+    },
+    "ceviche": {
+      "category": "protein",
+      "serving_size": "1 cup (200g)",
+      "serving_weight": 200,
+      "density": 0.9,
+      "nutrition": {
+        "calories": 180,
+        "protein": 26,
+        "carbs": 10,
+        "fat": 4,
+        "fiber": 1,
+        "sugar": 3
+      }
+    },
+    "cheesecake": {
+      "category": "dessert",
+      "serving_size": "1 slice (125g)",
+      "serving_weight": 125,
+      "density": 0.9,
+      "nutrition": {
+        "calories": 401,
+        "protein": 7,
+        "carbs": 28,
+        "fat": 30,
+        "fiber": 0.3,
+        "sugar": 22
+      }
+    },
+    "cheese_plate": {
+      "category": "dairy",
+      "serving_size": "100g assorted",
+      "serving_weight": 100,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 380,
+        "protein": 24,
+        "carbs": 2,
+        "fat": 31,
+        "fiber": 0,
+        "sugar": 1
+      }
+    },
+    "chicken_curry": {
+      "category": "protein",
+      "serving_size": "1 cup (250g)",
+      "serving_weight": 250,
+      "density": 0.9,
+      "nutrition": {
+        "calories": 340,
+        "protein": 28,
+        "carbs": 12,
+        "fat": 20,
+        "fiber": 3,
+        "sugar": 5
+      }
+    },
+    "chicken_quesadilla": {
+      "category": "grain",
+      "serving_size": "1 quesadilla (200g)",
+      "serving_weight": 200,
+      "density": 0.8,
+      "nutrition": {
+        "calories": 520,
+        "protein": 28,
+        "carbs": 38,
+        "fat": 28,
+        "fiber": 2,
+        "sugar": 2
+      }
+    },
+    "chicken_wings": {
+      "category": "protein",
+      "serving_size": "6 wings (180g)",
+      "serving_weight": 180,
+      "density": 0.85,
+      "nutrition": {
+        "calories": 430,
+        "protein": 36,
+        "carbs": 0,
+        "fat": 32,
+        "fiber": 0,
+        "sugar": 0
+      }
+    },
+    "chocolate_cake": {
+      "category": "dessert",
+      "serving_size": "1 slice (125g)",
+      "serving_weight": 125,
+      "density": 0.65,
+      "nutrition": {
+        "calories": 424,
+        "protein": 5,
+        "carbs": 52,
+        "fat": 23,
+        "fiber": 2,
+        "sugar": 38
+      }
+    },
+    "chocolate_mousse": {
+      "category": "dessert",
+      "serving_size": "1/2 cup (100g)",
+      "serving_weight": 100,
+      "density": 0.5,
+      "nutrition": {
+        "calories": 285,
+        "protein": 5,
+        "carbs": 25,
+        "fat": 19,
+        "fiber": 1,
+        "sugar": 22
+      }
+    },
+    "churros": {
+      "category": "dessert",
+      "serving_size": "3 pieces (90g)",
+      "serving_weight": 90,
+      "density": 0.4,
+      "nutrition": {
+        "calories": 340,
+        "protein": 4,
+        "carbs": 40,
+        "fat": 18,
+        "fiber": 1,
+        "sugar": 16
+      }
+    },
+    "clam_chowder": {
+      "category": "soup",
+      "serving_size": "1 cup (250ml)",
+      "serving_weight": 250,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 190,
+        "protein": 9,
+        "carbs": 18,
+        "fat": 10,
+        "fiber": 1,
+        "sugar": 2
+      }
+    },
+    "club_sandwich": {
+      "category": "grain",
+      "serving_size": "1 sandwich (300g)",
+      "serving_weight": 300,
+      "density": 0.5,
+      "nutrition": {
+        "calories": 640,
+        "protein": 35,
+        "carbs": 48,
+        "fat": 35,
+        "fiber": 3,
+        "sugar": 6
+      }
+    },
+    "crab_cakes": {
+      "category": "protein",
+      "serving_size": "2 cakes (160g)",
+      "serving_weight": 160,
+      "density": 0.9,
+      "nutrition": {
+        "calories": 340,
+        "protein": 24,
+        "carbs": 16,
+        "fat": 20,
+        "fiber": 1,
+        "sugar": 2
+      }
+    },
+    "creme_brulee": {
+      "category": "dessert",
+      "serving_size": "1 ramekin (150g)",
+      "serving_weight": 150,
+      "density": 0.95,
+      "nutrition": {
+        "calories": 400,
+        "protein": 6,
+        "carbs": 32,
+        "fat": 28,
+        "fiber": 0,
+        "sugar": 28
+      }
+    },
+    "croque_madame": {
+      "category": "grain",
+      "serving_size": "1 sandwich (250g)",
+      "serving_weight": 250,
+      "density": 0.75,
+      "nutrition": {
+        "calories": 620,
+        "protein": 32,
+        "carbs": 38,
+        "fat": 38,
+        "fiber": 2,
+        "sugar": 4
+      }
+    },
+    "cup_cakes": {
+      "category": "dessert",
+      "serving_size": "1 cupcake (65g)",
+      "serving_weight": 65,
+      "density": 0.45,
+      "nutrition": {
+        "calories": 260,
+        "protein": 2,
+        "carbs": 38,
+        "fat": 12,
+        "fiber": 0.5,
+        "sugar": 26
+      }
+    },
+    "deviled_eggs": {
+      "category": "protein",
+      "serving_size": "4 halves (100g)",
+      "serving_weight": 100,
+      "density": 0.95,
+      "nutrition": {
+        "calories": 200,
+        "protein": 10,
+        "carbs": 2,
+        "fat": 17,
+        "fiber": 0,
+        "sugar": 1
+      }
+    },
+    "donuts": {
+      "category": "dessert",
+      "serving_size": "1 donut (55g)",
+      "serving_weight": 55,
+      "density": 0.35,
+      "nutrition": {
+        "calories": 195,
+        "protein": 2,
+        "carbs": 22,
+        "fat": 11,
+        "fiber": 0.5,
+        "sugar": 10
+      }
+    },
+    "dumplings": {
+      "category": "grain",
+      "serving_size": "6 dumplings (180g)",
+      "serving_weight": 180,
+      "density": 0.9,
+      "nutrition": {
+        "calories": 320,
+        "protein": 12,
+        "carbs": 42,
+        "fat": 12,
+        "fiber": 2,
+        "sugar": 2
+      }
+    },
+    "edamame": {
+      "category": "vegetable",
+      "serving_size": "1 cup shelled (150g)",
+      "serving_weight": 150,
+      "density": 0.7,
+      "nutrition": {
+        "calories": 188,
+        "protein": 18,
+        "carbs": 14,
+        "fat": 8,
+        "fiber": 8,
+        "sugar": 3
+      }
+    },
+    "eggs_benedict": {
+      "category": "protein",
+      "serving_size": "1 serving (280g)",
+      "serving_weight": 280,
+      "density": 0.8,
+      "nutrition": {
+        "calories": 560,
+        "protein": 24,
+        "carbs": 28,
+        "fat": 40,
+        "fiber": 1,
+        "sugar": 2
+      }
+    },
+    "escargots": {
+      "category": "protein",
+      "serving_size": "6 pieces (120g)",
+      "serving_weight": 120,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 220,
+        "protein": 18,
+        "carbs": 4,
+        "fat": 14,
+        "fiber": 0,
+        "sugar": 0
+      }
+    },
+    "falafel": {
+      "category": "protein",
+      "serving_size": "4 pieces (140g)",
+      "serving_weight": 140,
+      "density": 0.7,
+      "nutrition": {
+        "calories": 340,
+        "protein": 13,
+        "carbs": 32,
+        "fat": 18,
+        "fiber": 5,
+        "sugar": 2
+      }
+    },
+    "filet_mignon": {
+      "category": "protein",
+      "serving_size": "6 oz (170g)",
+      "serving_weight": 170,
+      "density": 1.05,
+      "nutrition": {
+        "calories": 360,
+        "protein": 45,
+        "carbs": 0,
+        "fat": 19,
+        "fiber": 0,
+        "sugar": 0
+      }
+    },
+    "fish_and_chips": {
+      "category": "protein",
+      "serving_size": "1 serving (350g)",
+      "serving_weight": 350,
+      "density": 0.6,
+      "nutrition": {
+        "calories": 840,
+        "protein": 32,
+        "carbs": 72,
+        "fat": 48,
+        "fiber": 5,
+        "sugar": 2
+      }
+    },
+    "foie_gras": {
+      "category": "protein",
+      "serving_size": "2 oz (60g)",
+      "serving_weight": 60,
+      "density": 1.1,
+      "nutrition": {
+        "calories": 260,
+        "protein": 7,
+        "carbs": 3,
+        "fat": 25,
+        "fiber": 0,
+        "sugar": 0
+      }
+    },
+    "french_fries": {
+      "category": "vegetable",
+      "serving_size": "medium (130g)",
+      "serving_weight": 130,
+      "density": 0.4,
+      "nutrition": {
+        "calories": 365,
+        "protein": 4,
+        "carbs": 48,
+        "fat": 17,
+        "fiber": 4,
+        "sugar": 0
+      }
+    },
+    "french_onion_soup": {
+      "category": "soup",
+      "serving_size": "1 bowl (350ml)",
+      "serving_weight": 350,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 260,
+        "protein": 12,
+        "carbs": 22,
+        "fat": 14,
+        "fiber": 2,
+        "sugar": 6
+      }
+    },
+    "french_toast": {
+      "category": "grain",
+      "serving_size": "2 slices (180g)",
+      "serving_weight": 180,
+      "density": 0.55,
+      "nutrition": {
+        "calories": 360,
+        "protein": 12,
+        "carbs": 42,
+        "fat": 16,
+        "fiber": 2,
+        "sugar": 12
+      }
+    },
+    "fried_calamari": {
+      "category": "protein",
+      "serving_size": "1 cup (150g)",
+      "serving_weight": 150,
+      "density": 0.6,
+      "nutrition": {
+        "calories": 310,
+        "protein": 18,
+        "carbs": 20,
+        "fat": 18,
+        "fiber": 1,
+        "sugar": 1
+      }
+    },
+    "fried_rice": {
+      "category": "grain",
+      "serving_size": "1 cup (200g)",
+      "serving_weight": 200,
+      "density": 0.75,
+      "nutrition": {
+        "calories": 340,
+        "protein": 10,
+        "carbs": 52,
+        "fat": 10,
+        "fiber": 2,
+        "sugar": 2
+      }
+    },
+    "frozen_yogurt": {
+      "category": "dessert",
+      "serving_size": "1/2 cup (100g)",
+      "serving_weight": 100,
+      "density": 0.6,
+      "nutrition": {
+        "calories": 127,
+        "protein": 3,
+        "carbs": 24,
+        "fat": 2,
+        "fiber": 0,
+        "sugar": 20
+      }
+    },
+    "garlic_bread": {
+      "category": "grain",
+      "serving_size": "2 slices (80g)",
+      "serving_weight": 80,
+      "density": 0.4,
+      "nutrition": {
+        "calories": 260,
+        "protein": 5,
+        "carbs": 30,
+        "fat": 14,
+        "fiber": 1,
+        "sugar": 2
+      }
+    },
+    "gnocchi": {
+      "category": "grain",
+      "serving_size": "1 cup (180g)",
+      "serving_weight": 180,
+      "density": 0.9,
+      "nutrition": {
+        "calories": 250,
+        "protein": 6,
+        "carbs": 52,
+        "fat": 2,
+        "fiber": 2,
+        "sugar": 1
+      }
+    },
+    "greek_salad": {
+      "category": "vegetable",
+      "serving_size": "1 bowl (280g)",
+      "serving_weight": 280,
+      "density": 0.5,
+      "nutrition": {
+        "calories": 260,
+        "protein": 8,
+        "carbs": 12,
+        "fat": 20,
+        "fiber": 3,
+        "sugar": 6
+      }
+    },
+    "grilled_cheese_sandwich": {
+      "category": "grain",
+      "serving_size": "1 sandwich (150g)",
+      "serving_weight": 150,
+      "density": 0.55,
+      "nutrition": {
+        "calories": 440,
+        "protein": 16,
+        "carbs": 32,
+        "fat": 28,
+        "fiber": 2,
+        "sugar": 4
+      }
+    },
+    "grilled_salmon": {
+      "category": "protein",
+      "serving_size": "6 oz fillet (170g)",
+      "serving_weight": 170,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 350,
+        "protein": 40,
+        "carbs": 0,
+        "fat": 20,
+        "fiber": 0,
+        "sugar": 0
+      }
+    },
+    "guacamole": {
+      "category": "vegetable",
+      "serving_size": "1/4 cup (60g)",
+      "serving_weight": 60,
+      "density": 0.9,
+      "nutrition": {
+        "calories": 90,
+        "protein": 1,
+        "carbs": 5,
+        "fat": 8,
+        "fiber": 4,
+        "sugar": 0.5
+      }
+    },
+    "gyoza": {
+      "category": "grain",
+      "serving_size": "6 pieces (150g)",
+      "serving_weight": 150,
+      "density": 0.85,
+      "nutrition": {
+        "calories": 280,
+        "protein": 11,
+        "carbs": 32,
+        "fat": 12,
+        "fiber": 1,
+        "sugar": 2
+      }
+    },
+    "hamburger": {
+      "category": "grain",
+      "serving_size": "1 burger (250g)",
+      "serving_weight": 250,
+      "density": 0.7,
+      "nutrition": {
+        "calories": 540,
+        "protein": 30,
+        "carbs": 40,
+        "fat": 30,
+        "fiber": 2,
+        "sugar": 8
+      }
+    },
+    "hot_and_sour_soup": {
+      "category": "soup",
+      "serving_size": "1 cup (250ml)",
+      "serving_weight": 250,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 95,
+        "protein": 6,
+        "carbs": 10,
+        "fat": 4,
+        "fiber": 1,
+        "sugar": 2
+      }
+    },
+    "hot_dog": {
+      "category": "protein",
+      "serving_size": "1 hot dog with bun (150g)",
+      "serving_weight": 150,
+      "density": 0.65,
+      "nutrition": {
+        "calories": 320,
+        "protein": 11,
+        "carbs": 26,
+        "fat": 20,
+        "fiber": 1,
+        "sugar": 4
+      }
+    },
+    "huevos_rancheros": {
+      "category": "protein",
+      "serving_size": "1 serving (300g)",
+      "serving_weight": 300,
+      "density": 0.8,
+      "nutrition": {
+        "calories": 420,
+        "protein": 18,
+        "carbs": 38,
+        "fat": 22,
+        "fiber": 6,
+        "sugar": 4
+      }
+    },
+    "hummus": {
+      "category": "vegetable",
+      "serving_size": "1/4 cup (60g)",
+      "serving_weight": 60,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 106,
+        "protein": 3,
+        "carbs": 10,
+        "fat": 6,
+        "fiber": 2,
+        "sugar": 0
+      }
+    },
+    "ice_cream": {
+      "category": "dessert",
+      "serving_size": "1/2 cup (100g)",
+      "serving_weight": 100,
+      "density": 0.55,
+      "nutrition": {
+        "calories": 207,
+        "protein": 4,
+        "carbs": 24,
+        "fat": 11,
+        "fiber": 0.5,
+        "sugar": 21
+      }
+    },
+    "lasagna": {
+      "category": "grain",
+      "serving_size": "1 piece (350g)",
+      "serving_weight": 350,
+      "density": 0.85,
+      "nutrition": {
+        "calories": 560,
+        "protein": 28,
+        "carbs": 48,
+        "fat": 28,
+        "fiber": 4,
+        "sugar": 8
+      }
+    },
+    "lobster_bisque": {
+      "category": "soup",
+      "serving_size": "1 cup (250ml)",
+      "serving_weight": 250,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 270,
+        "protein": 12,
+        "carbs": 14,
+        "fat": 18,
+        "fiber": 0,
+        "sugar": 4
+      }
+    },
+    "lobster_roll_sandwich": {
+      "category": "protein",
+      "serving_size": "1 roll (200g)",
+      "serving_weight": 200,
+      "density": 0.65,
+      "nutrition": {
+        "calories": 440,
+        "protein": 26,
+        "carbs": 32,
+        "fat": 24,
+        "fiber": 1,
+        "sugar": 4
+      }
+    },
+    "macaroni_and_cheese": {
+      "category": "grain",
+      "serving_size": "1 cup (200g)",
+      "serving_weight": 200,
+      "density": 0.8,
+      "nutrition": {
+        "calories": 410,
+        "protein": 15,
+        "carbs": 45,
+        "fat": 19,
+        "fiber": 2,
+        "sugar": 6
+      }
+    },
+    "macarons": {
+      "category": "dessert",
+      "serving_size": "3 pieces (45g)",
+      "serving_weight": 45,
+      "density": 0.35,
+      "nutrition": {
+        "calories": 180,
+        "protein": 2,
+        "carbs": 28,
+        "fat": 7,
+        "fiber": 0,
+        "sugar": 24
+      }
+    },
+    "miso_soup": {
+      "category": "soup",
+      "serving_size": "1 cup (250ml)",
+      "serving_weight": 250,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 40,
+        "protein": 3,
+        "carbs": 5,
+        "fat": 1,
+        "fiber": 1,
+        "sugar": 1
+      }
+    },
+    "mussels": {
+      "category": "protein",
+      "serving_size": "1 lb in shell (454g)",
+      "serving_weight": 454,
+      "density": 0.9,
+      "nutrition": {
+        "calories": 290,
+        "protein": 40,
+        "carbs": 12,
+        "fat": 8,
+        "fiber": 0,
+        "sugar": 0
+      }
+    },
+    "nachos": {
+      "category": "grain",
+      "serving_size": "1 serving (250g)",
+      "serving_weight": 250,
+      "density": 0.45,
+      "nutrition": {
+        "calories": 620,
+        "protein": 16,
+        "carbs": 56,
+        "fat": 38,
+        "fiber": 6,
+        "sugar": 4
+      }
+    },
+    "omelette": {
+      "category": "protein",
+      "serving_size": "3 egg omelette (180g)",
+      "serving_weight": 180,
+      "density": 0.85,
+      "nutrition": {
+        "calories": 320,
+        "protein": 21,
+        "carbs": 2,
+        "fat": 25,
+        "fiber": 0,
+        "sugar": 1
+      }
+    },
+    "onion_rings": {
+      "category": "vegetable",
+      "serving_size": "8 rings (120g)",
+      "serving_weight": 120,
+      "density": 0.35,
+      "nutrition": {
+        "calories": 340,
+        "protein": 4,
+        "carbs": 40,
+        "fat": 18,
+        "fiber": 2,
+        "sugar": 5
+      }
+    },
+    "oysters": {
+      "category": "protein",
+      "serving_size": "6 raw oysters (100g)",
+      "serving_weight": 100,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 68,
+        "protein": 7,
+        "carbs": 4,
+        "fat": 2,
+        "fiber": 0,
+        "sugar": 0
+      }
+    },
+    "pad_thai": {
+      "category": "grain",
+      "serving_size": "1 plate (350g)",
+      "serving_weight": 350,
+      "density": 0.7,
+      "nutrition": {
+        "calories": 540,
+        "protein": 22,
+        "carbs": 68,
+        "fat": 20,
+        "fiber": 3,
+        "sugar": 12
+      }
+    },
+    "paella": {
+      "category": "grain",
+      "serving_size": "1 serving (350g)",
+      "serving_weight": 350,
+      "density": 0.8,
+      "nutrition": {
+        "calories": 480,
+        "protein": 28,
+        "carbs": 55,
+        "fat": 16,
+        "fiber": 3,
+        "sugar": 4
+      }
+    },
+    "pancakes": {
+      "category": "grain",
+      "serving_size": "3 pancakes (200g)",
+      "serving_weight": 200,
+      "density": 0.5,
+      "nutrition": {
+        "calories": 460,
+        "protein": 10,
+        "carbs": 68,
+        "fat": 16,
+        "fiber": 2,
+        "sugar": 18
+      }
+    },
+    "panna_cotta": {
+      "category": "dessert",
+      "serving_size": "1 serving (120g)",
+      "serving_weight": 120,
+      "density": 0.95,
+      "nutrition": {
+        "calories": 280,
+        "protein": 4,
+        "carbs": 22,
+        "fat": 20,
+        "fiber": 0,
+        "sugar": 18
+      }
+    },
+    "peking_duck": {
+      "category": "protein",
+      "serving_size": "1 serving (200g)",
+      "serving_weight": 200,
+      "density": 0.9,
+      "nutrition": {
+        "calories": 540,
+        "protein": 32,
+        "carbs": 8,
+        "fat": 42,
+        "fiber": 0,
+        "sugar": 6
+      }
+    },
+    "pho": {
+      "category": "soup",
+      "serving_size": "1 bowl (500ml)",
+      "serving_weight": 500,
+      "density": 0.95,
+      "nutrition": {
+        "calories": 380,
+        "protein": 28,
+        "carbs": 45,
+        "fat": 8,
+        "fiber": 2,
+        "sugar": 4
+      }
+    },
+    "pizza": {
+      "category": "grain",
+      "serving_size": "2 slices (200g)",
+      "serving_weight": 200,
+      "density": 0.6,
+      "nutrition": {
+        "calories": 540,
+        "protein": 22,
+        "carbs": 58,
+        "fat": 24,
+        "fiber": 4,
+        "sugar": 6
+      }
+    },
+    "pork_chop": {
+      "category": "protein",
+      "serving_size": "1 chop bone-in (200g)",
+      "serving_weight": 200,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 340,
+        "protein": 40,
+        "carbs": 0,
+        "fat": 19,
+        "fiber": 0,
+        "sugar": 0
+      }
+    },
+    "poutine": {
+      "category": "grain",
+      "serving_size": "1 serving (400g)",
+      "serving_weight": 400,
+      "density": 0.65,
+      "nutrition": {
+        "calories": 740,
+        "protein": 22,
+        "carbs": 72,
+        "fat": 42,
+        "fiber": 6,
+        "sugar": 4
+      }
+    },
+    "prime_rib": {
+      "category": "protein",
+      "serving_size": "8 oz (230g)",
+      "serving_weight": 230,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 620,
+        "protein": 48,
+        "carbs": 0,
+        "fat": 48,
+        "fiber": 0,
+        "sugar": 0
+      }
+    },
+    "pulled_pork_sandwich": {
+      "category": "grain",
+      "serving_size": "1 sandwich (280g)",
+      "serving_weight": 280,
+      "density": 0.65,
+      "nutrition": {
+        "calories": 580,
+        "protein": 34,
+        "carbs": 48,
+        "fat": 28,
+        "fiber": 2,
+        "sugar": 14
+      }
+    },
+    "ramen": {
+      "category": "soup",
+      "serving_size": "1 bowl (550ml)",
+      "serving_weight": 550,
+      "density": 0.9,
+      "nutrition": {
+        "calories": 480,
+        "protein": 22,
+        "carbs": 58,
+        "fat": 18,
+        "fiber": 3,
+        "sugar": 4
+      }
+    },
+    "ravioli": {
+      "category": "grain",
+      "serving_size": "1 cup (200g)",
+      "serving_weight": 200,
+      "density": 0.9,
+      "nutrition": {
+        "calories": 340,
+        "protein": 14,
+        "carbs": 42,
+        "fat": 12,
+        "fiber": 2,
+        "sugar": 4
+      }
+    },
+    "red_velvet_cake": {
+      "category": "dessert",
+      "serving_size": "1 slice (125g)",
+      "serving_weight": 125,
+      "density": 0.55,
+      "nutrition": {
+        "calories": 400,
+        "protein": 4,
+        "carbs": 50,
+        "fat": 21,
+        "fiber": 1,
+        "sugar": 38
+      }
+    },
+    "risotto": {
+      "category": "grain",
+      "serving_size": "1 cup (250g)",
+      "serving_weight": 250,
+      "density": 0.85,
+      "nutrition": {
+        "calories": 380,
+        "protein": 10,
+        "carbs": 52,
+        "fat": 14,
+        "fiber": 2,
+        "sugar": 2
+      }
+    },
+    "samosa": {
+      "category": "grain",
+      "serving_size": "2 pieces (140g)",
+      "serving_weight": 140,
+      "density": 0.7,
+      "nutrition": {
+        "calories": 320,
+        "protein": 6,
+        "carbs": 36,
+        "fat": 18,
+        "fiber": 3,
+        "sugar": 2
+      }
+    },
+    "sashimi": {
+      "category": "protein",
+      "serving_size": "6 pieces (120g)",
+      "serving_weight": 120,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 145,
+        "protein": 30,
+        "carbs": 0,
+        "fat": 3,
+        "fiber": 0,
+        "sugar": 0
+      }
+    },
+    "scallops": {
+      "category": "protein",
+      "serving_size": "6 large (150g)",
+      "serving_weight": 150,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 170,
+        "protein": 32,
+        "carbs": 5,
+        "fat": 2,
+        "fiber": 0,
+        "sugar": 0
+      }
+    },
+    "seaweed_salad": {
+      "category": "vegetable",
+      "serving_size": "1 cup (100g)",
+      "serving_weight": 100,
+      "density": 0.4,
+      "nutrition": {
+        "calories": 70,
+        "protein": 2,
+        "carbs": 8,
+        "fat": 4,
+        "fiber": 1,
+        "sugar": 4
+      }
+    },
+    "shrimp_and_grits": {
+      "category": "protein",
+      "serving_size": "1 serving (350g)",
+      "serving_weight": 350,
+      "density": 0.85,
+      "nutrition": {
+        "calories": 480,
+        "protein": 28,
+        "carbs": 38,
+        "fat": 24,
+        "fiber": 2,
+        "sugar": 3
+      }
+    },
+    "spaghetti_bolognese": {
+      "category": "grain",
+      "serving_size": "1 plate (400g)",
+      "serving_weight": 400,
+      "density": 0.8,
+      "nutrition": {
+        "calories": 520,
+        "protein": 26,
+        "carbs": 62,
+        "fat": 18,
+        "fiber": 4,
+        "sugar": 8
+      }
+    },
+    "spaghetti_carbonara": {
+      "category": "grain",
+      "serving_size": "1 plate (350g)",
+      "serving_weight": 350,
+      "density": 0.8,
+      "nutrition": {
+        "calories": 580,
+        "protein": 24,
+        "carbs": 58,
+        "fat": 28,
+        "fiber": 3,
+        "sugar": 4
+      }
+    },
+    "spring_rolls": {
+      "category": "appetizer",
+      "serving_size": "3 rolls (120g)",
+      "serving_weight": 120,
+      "density": 0.6,
+      "nutrition": {
+        "calories": 260,
+        "protein": 6,
+        "carbs": 30,
+        "fat": 14,
+        "fiber": 2,
+        "sugar": 3
+      }
+    },
+    "steak": {
+      "category": "protein",
+      "serving_size": "8 oz ribeye (230g)",
+      "serving_weight": 230,
+      "density": 1.05,
+      "nutrition": {
+        "calories": 560,
+        "protein": 50,
+        "carbs": 0,
+        "fat": 40,
+        "fiber": 0,
+        "sugar": 0
+      }
+    },
+    "strawberry_shortcake": {
+      "category": "dessert",
+      "serving_size": "1 slice (150g)",
+      "serving_weight": 150,
+      "density": 0.45,
+      "nutrition": {
+        "calories": 320,
+        "protein": 4,
+        "carbs": 42,
+        "fat": 15,
+        "fiber": 2,
+        "sugar": 28
+      }
+    },
+    "sushi": {
+      "category": "grain",
+      "serving_size": "8 pieces (200g)",
+      "serving_weight": 200,
+      "density": 0.95,
+      "nutrition": {
+        "calories": 320,
+        "protein": 14,
+        "carbs": 48,
+        "fat": 8,
+        "fiber": 2,
+        "sugar": 6
+      }
+    },
+    "tacos": {
+      "category": "grain",
+      "serving_size": "2 tacos (200g)",
+      "serving_weight": 200,
+      "density": 0.65,
+      "nutrition": {
+        "calories": 380,
+        "protein": 18,
+        "carbs": 34,
+        "fat": 20,
+        "fiber": 4,
+        "sugar": 4
+      }
+    },
+    "takoyaki": {
+      "category": "appetizer",
+      "serving_size": "6 pieces (180g)",
+      "serving_weight": 180,
+      "density": 0.8,
+      "nutrition": {
+        "calories": 320,
+        "protein": 12,
+        "carbs": 38,
+        "fat": 14,
+        "fiber": 1,
+        "sugar": 4
+      }
+    },
+    "tiramisu": {
+      "category": "dessert",
+      "serving_size": "1 slice (140g)",
+      "serving_weight": 140,
+      "density": 0.7,
+      "nutrition": {
+        "calories": 380,
+        "protein": 6,
+        "carbs": 35,
+        "fat": 24,
+        "fiber": 0,
+        "sugar": 26
+      }
+    },
+    "tuna_tartare": {
+      "category": "protein",
+      "serving_size": "150g",
+      "serving_weight": 150,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 180,
+        "protein": 32,
+        "carbs": 2,
+        "fat": 5,
+        "fiber": 0,
+        "sugar": 1
+      }
+    },
+    "waffles": {
+      "category": "grain",
+      "serving_size": "2 waffles (150g)",
+      "serving_weight": 150,
+      "density": 0.4,
+      "nutrition": {
+        "calories": 380,
+        "protein": 8,
+        "carbs": 48,
+        "fat": 18,
+        "fiber": 2,
+        "sugar": 8
+      }
+    },
+    "apple": {
+      "category": "fruit",
+      "serving_size": "1 medium (182g)",
+      "serving_weight": 182,
+      "density": 0.7,
+      "nutrition": {
+        "calories": 95,
+        "protein": 0.5,
+        "carbs": 25,
+        "fat": 0.3,
+        "fiber": 4.4,
+        "sugar": 19
+      }
+    },
+    "banana": {
+      "category": "fruit",
+      "serving_size": "1 medium (118g)",
+      "serving_weight": 118,
+      "density": 0.9,
+      "nutrition": {
+        "calories": 105,
+        "protein": 1.3,
+        "carbs": 27,
+        "fat": 0.4,
+        "fiber": 3.1,
+        "sugar": 14
+      }
+    },
+    "chicken_breast": {
+      "category": "protein",
+      "serving_size": "100g (cooked)",
+      "serving_weight": 100,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 165,
+        "protein": 31,
+        "carbs": 0,
+        "fat": 3.6,
+        "fiber": 0,
+        "sugar": 0
+      }
+    },
+    "broccoli": {
+      "category": "vegetable",
+      "serving_size": "1 cup (91g)",
+      "serving_weight": 91,
+      "density": 0.3,
+      "nutrition": {
+        "calories": 31,
+        "protein": 2.6,
+        "carbs": 6,
+        "fat": 0.3,
+        "fiber": 2.4,
+        "sugar": 1.5
+      }
+    },
+    "rice": {
+      "category": "grain",
+      "serving_size": "1 cup cooked (158g)",
+      "serving_weight": 158,
+      "density": 0.8,
+      "nutrition": {
+        "calories": 205,
+        "protein": 4.3,
+        "carbs": 45,
+        "fat": 0.4,
+        "fiber": 0.6,
+        "sugar": 0
+      }
+    },
+    "salmon": {
+      "category": "protein",
+      "serving_size": "100g (cooked)",
+      "serving_weight": 100,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 206,
+        "protein": 22,
+        "carbs": 0,
+        "fat": 13,
+        "fiber": 0,
+        "sugar": 0
+      }
+    },
+    "orange": {
+      "category": "fruit",
+      "serving_size": "1 medium (131g)",
+      "serving_weight": 131,
+      "density": 0.75,
+      "nutrition": {
+        "calories": 62,
+        "protein": 1.2,
+        "carbs": 15,
+        "fat": 0.2,
+        "fiber": 3.1,
+        "sugar": 12
+      }
+    },
+    "avocado": {
+      "category": "fruit",
+      "serving_size": "1/2 avocado (100g)",
+      "serving_weight": 100,
+      "density": 0.9,
+      "nutrition": {
+        "calories": 160,
+        "protein": 2,
+        "carbs": 9,
+        "fat": 15,
+        "fiber": 7,
+        "sugar": 0.7
+      }
+    },
+    "egg": {
+      "category": "protein",
+      "serving_size": "1 large (50g)",
+      "serving_weight": 50,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 78,
+        "protein": 6,
+        "carbs": 0.6,
+        "fat": 5,
+        "fiber": 0,
+        "sugar": 0.6
+      }
+    },
+    "toast": {
+      "category": "grain",
+      "serving_size": "1 slice (30g)",
+      "serving_weight": 30,
+      "density": 0.35,
+      "nutrition": {
+        "calories": 80,
+        "protein": 3,
+        "carbs": 15,
+        "fat": 1,
+        "fiber": 1,
+        "sugar": 1.5
+      }
+    },
+    "yogurt": {
+      "category": "dairy",
+      "serving_size": "1 cup (245g)",
+      "serving_weight": 245,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 150,
+        "protein": 8,
+        "carbs": 17,
+        "fat": 5,
+        "fiber": 0,
+        "sugar": 17
+      }
+    },
+    "oatmeal": {
+      "category": "grain",
+      "serving_size": "1 cup cooked (234g)",
+      "serving_weight": 234,
+      "density": 0.85,
+      "nutrition": {
+        "calories": 158,
+        "protein": 6,
+        "carbs": 27,
+        "fat": 3,
+        "fiber": 4,
+        "sugar": 1
+      }
+    },
+    "coffee": {
+      "category": "beverage",
+      "serving_size": "1 cup (240ml)",
+      "serving_weight": 240,
+      "density": 1.0,
+      "nutrition": {
+        "calories": 2,
+        "protein": 0.3,
+        "carbs": 0,
+        "fat": 0,
+        "fiber": 0,
+        "sugar": 0
+      }
+    }
+  }
+}

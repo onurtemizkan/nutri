@@ -3,7 +3,7 @@ fastapi==0.109.0
 uvicorn[standard]==0.27.0
 pydantic==2.5.3
 pydantic-settings==2.1.0
-python-multipart==0.0.6
+python-multipart==0.0.20
 
 # Database
 sqlalchemy==2.0.25
@@ -34,6 +34,14 @@ torchaudio==2.9.1  # PyTorch audio utilities
 shap==0.44.1  # SHAP explanations for feature importance
 lime==0.2.0.1  # Local Interpretable Model-agnostic Explanations
 captum==0.7.0  # PyTorch model interpretability (for attention)
+
+# Hugging Face (Food Classification & Multi-Dish Detection)
+transformers>=4.37.0  # Pre-trained models (OWL-ViT for detection, DeiT for classification)
+accelerate>=1.0.0  # Hardware acceleration for transformers
+safetensors>=0.4.0  # Fast tensor serialization
+
+# Object Detection (Multi-Dish Detection Phase 2)
+# ultralytics>=8.0.0  # YOLOv8 - uncomment when fine-tuning on food dataset
 
 # Hyperparameter Optimization (Phase 3)
 optuna==3.5.0  # Bayesian hyperparameter optimization
