@@ -20,6 +20,7 @@ describe('AR Data Type Structures', () => {
     it('should define LiDAR capability correctly', () => {
       const capabilities: DeviceCapabilities = {
         hasLiDAR: true,
+        hasARKit: true,
         supportsSceneDepth: true,
         maxDepthResolution: { width: 256, height: 192 },
         maxRGBResolution: { width: 1920, height: 1440 },
@@ -36,6 +37,7 @@ describe('AR Data Type Structures', () => {
     it('should define non-LiDAR fallback capabilities', () => {
       const capabilities: DeviceCapabilities = {
         hasLiDAR: false,
+        hasARKit: true,
         supportsSceneDepth: true,
         maxDepthResolution: { width: 640, height: 480 },
         maxRGBResolution: { width: 1920, height: 1080 },
@@ -258,6 +260,7 @@ describe('AR Data Type Structures', () => {
         frames: [],
         deviceCapabilities: {
           hasLiDAR: true,
+          hasARKit: true,
           supportsSceneDepth: true,
           maxDepthResolution: { width: 256, height: 192 },
           maxRGBResolution: { width: 1920, height: 1440 },
@@ -274,7 +277,7 @@ describe('AR Data Type Structures', () => {
       expect(session.sessionId).toBe('session_123');
       expect(session.deviceCapabilities.hasLiDAR).toBe(true);
       expect(session.frames).toHaveLength(0);
-      expect(session.metadata.captureType).toBe('single_frame');
+      expect(session.metadata?.captureType).toBe('single_frame');
     });
   });
 

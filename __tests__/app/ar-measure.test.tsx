@@ -84,9 +84,11 @@ describe('ARMeasureScreen', () => {
     mockGetDeviceCapabilities.mockResolvedValue({
       hasLiDAR: true,
       hasARKit: true,
-      maxDepthRange: 5,
-      supportedResolutions: ['640x480', '1280x720'],
-      deviceModel: 'iPhone 15 Pro',
+      supportsSceneDepth: true,
+      maxDepthResolution: { width: 256, height: 192 },
+      maxRGBResolution: { width: 1920, height: 1440 },
+      depthRange: { min: 0.3, max: 5.0 },
+      frameRate: 60,
     });
   });
 
@@ -127,9 +129,11 @@ describe('ARMeasureScreen', () => {
       mockGetDeviceCapabilities.mockResolvedValue({
         hasLiDAR: false,
         hasARKit: false,
-        maxDepthRange: 0,
-        supportedResolutions: [],
-        deviceModel: 'iPhone 12',
+        supportsSceneDepth: false,
+        maxDepthResolution: { width: 0, height: 0 },
+        maxRGBResolution: { width: 1920, height: 1080 },
+        depthRange: { min: 0, max: 0 },
+        frameRate: 0,
       });
 
       const { getByText } = render(<ARMeasureScreen />);
@@ -162,9 +166,11 @@ describe('ARMeasureScreen', () => {
       mockGetDeviceCapabilities.mockResolvedValue({
         hasLiDAR: false,
         hasARKit: false,
-        maxDepthRange: 0,
-        supportedResolutions: [],
-        deviceModel: 'iPhone SE',
+        supportsSceneDepth: false,
+        maxDepthResolution: { width: 0, height: 0 },
+        maxRGBResolution: { width: 1920, height: 1080 },
+        depthRange: { min: 0, max: 0 },
+        frameRate: 0,
       });
     });
 
@@ -213,9 +219,11 @@ describe('ARMeasureScreen', () => {
       mockGetDeviceCapabilities.mockResolvedValue({
         hasLiDAR: false,
         hasARKit: true,
-        maxDepthRange: 3,
-        supportedResolutions: ['640x480'],
-        deviceModel: 'iPhone 14',
+        supportsSceneDepth: true,
+        maxDepthResolution: { width: 256, height: 192 },
+        maxRGBResolution: { width: 1920, height: 1080 },
+        depthRange: { min: 0.3, max: 3.0 },
+        frameRate: 30,
       });
 
       const { getByText } = render(<ARMeasureScreen />);
@@ -235,9 +243,11 @@ describe('ARMeasureScreen', () => {
       mockGetDeviceCapabilities.mockResolvedValue({
         hasLiDAR: false,
         hasARKit: false,
-        maxDepthRange: 0,
-        supportedResolutions: [],
-        deviceModel: 'iPhone SE',
+        supportsSceneDepth: false,
+        maxDepthResolution: { width: 0, height: 0 },
+        maxRGBResolution: { width: 1920, height: 1080 },
+        depthRange: { min: 0, max: 0 },
+        frameRate: 0,
       });
     });
 
@@ -318,9 +328,11 @@ describe('ARMeasureScreen', () => {
       mockGetDeviceCapabilities.mockResolvedValue({
         hasLiDAR: false,
         hasARKit: false,
-        maxDepthRange: 0,
-        supportedResolutions: [],
-        deviceModel: 'iPhone SE',
+        supportsSceneDepth: false,
+        maxDepthResolution: { width: 0, height: 0 },
+        maxRGBResolution: { width: 1920, height: 1080 },
+        depthRange: { min: 0, max: 0 },
+        frameRate: 0,
       });
     });
 
@@ -410,9 +422,11 @@ describe('ARMeasureScreen', () => {
       mockGetDeviceCapabilities.mockResolvedValue({
         hasLiDAR: false,
         hasARKit: false,
-        maxDepthRange: 0,
-        supportedResolutions: [],
-        deviceModel: 'iPhone SE',
+        supportsSceneDepth: false,
+        maxDepthResolution: { width: 0, height: 0 },
+        maxRGBResolution: { width: 1920, height: 1080 },
+        depthRange: { min: 0, max: 0 },
+        frameRate: 0,
       });
     });
 
