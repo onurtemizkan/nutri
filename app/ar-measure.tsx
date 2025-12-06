@@ -133,7 +133,7 @@ export default function ARMeasureScreen() {
     setTimeout(() => {
       // Dispatch event with measurement data
       // This can be picked up by the calling screen
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
         window.dispatchEvent(
           new CustomEvent('ar-measurement-complete', { detail: measurement })
         );
