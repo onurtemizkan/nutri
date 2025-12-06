@@ -1,4 +1,7 @@
 // Shared types between client and server
+
+// Re-export supplement types
+export * from './supplements';
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 export type ActivityLevel =
   | 'sedentary'

@@ -200,3 +200,96 @@ export interface GetActivitiesQuery {
   source?: ActivitySource;
   limit?: number;
 }
+
+// ============================================================================
+// SUPPLEMENT TYPES
+// ============================================================================
+
+export type SupplementCategory =
+  | 'AMINO_ACID'
+  | 'VITAMIN'
+  | 'MINERAL'
+  | 'PERFORMANCE'
+  | 'HERBAL'
+  | 'PROTEIN'
+  | 'FATTY_ACID'
+  | 'PROBIOTIC'
+  | 'OTHER';
+
+export type ScheduleType =
+  | 'ONE_TIME'
+  | 'DAILY'
+  | 'DAILY_MULTIPLE'
+  | 'WEEKLY'
+  | 'INTERVAL';
+
+export type SupplementSource = 'SCHEDULED' | 'MANUAL' | 'QUICK_LOG';
+
+export type DayOfWeek =
+  | 'monday'
+  | 'tuesday'
+  | 'wednesday'
+  | 'thursday'
+  | 'friday'
+  | 'saturday'
+  | 'sunday';
+
+export interface WeeklySchedule {
+  [key: string]: string[]; // e.g., { "monday": ["08:00", "20:00"], "wednesday": ["08:00"] }
+}
+
+export interface CreateUserSupplementInput {
+  supplementId: string;
+  dosage: string;
+  unit: string;
+  scheduleType: ScheduleType;
+  scheduleTimes?: string[]; // For DAILY_MULTIPLE: ["08:00", "20:00"]
+  weeklySchedule?: WeeklySchedule; // For WEEKLY
+  intervalDays?: number; // For INTERVAL
+  startDate: Date;
+  endDate?: Date;
+  notes?: string;
+}
+
+export interface UpdateUserSupplementInput {
+  dosage?: string;
+  unit?: string;
+  scheduleType?: ScheduleType;
+  scheduleTimes?: string[];
+  weeklySchedule?: WeeklySchedule;
+  intervalDays?: number;
+  startDate?: Date;
+  endDate?: Date | null;
+  isActive?: boolean;
+  notes?: string | null;
+}
+
+export interface CreateSupplementLogInput {
+  userSupplementId?: string;
+  supplementId: string;
+  dosage: string;
+  unit: string;
+  takenAt: Date;
+  scheduledFor?: Date;
+  source: SupplementSource;
+  notes?: string;
+}
+
+export interface UpdateSupplementLogInput {
+  dosage?: string;
+  unit?: string;
+  takenAt?: Date;
+  notes?: string | null;
+}
+
+export interface GetSupplementsQuery {
+  category?: SupplementCategory;
+  search?: string;
+}
+
+export interface GetSupplementLogsQuery {
+  startDate?: Date;
+  endDate?: Date;
+  supplementId?: string;
+  userSupplementId?: string;
+}

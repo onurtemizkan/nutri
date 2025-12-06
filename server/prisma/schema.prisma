@@ -47,6 +47,10 @@ model User {
   mlInsights      MLInsight[]
   mlProfile       UserMLProfile?
 
+  // Supplement Relations
+  userSupplements UserSupplement[]
+  supplementLogs  SupplementLog[]
+
   @@index([email])
   @@index([appleId])
   @@index([resetToken])
@@ -416,4 +420,126 @@ enum InsightPriority {
   MEDIUM
   HIGH
   CRITICAL
+}
+
+// ============================================================================
+// SUPPLEMENT TRACKING ENUMS
+// ============================================================================
+
+enum SupplementCategory {
+  AMINO_ACID
+  VITAMIN
+  MINERAL
+  PERFORMANCE
+  HERBAL
+  PROTEIN
+  FATTY_ACID
+  PROBIOTIC
+  OTHER
+}
+
+enum ScheduleType {
+  ONE_TIME
+  DAILY
+  DAILY_MULTIPLE
+  WEEKLY
+  INTERVAL
+}
+
+enum SupplementSource {
+  SCHEDULED
+  MANUAL
+  QUICK_LOG
+}
+
+// ============================================================================
+// SUPPLEMENT TRACKING MODELS
+// ============================================================================
+
+// Master list of supplements (system-defined)
+model Supplement {
+  id              String              @id @default(cuid())
+  name            String              @unique
+  category        SupplementCategory
+  description     String?
+  defaultDosage   String?             // e.g., "5g", "1000mg"
+  defaultUnit     String?             // e.g., "g", "mg", "IU", "capsule"
+  metadata        Json?               // Additional info: benefits, warnings, interactions
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  userSupplements UserSupplement[]
+  logs            SupplementLog[]
+
+  @@index([name])
+  @@index([category])
+}
+
+// User's configured supplement schedules
+model UserSupplement {
+  id              String              @id @default(cuid())
+  userId          String
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  supplementId    String
+  supplement      Supplement          @relation(fields: [supplementId], references: [id], onDelete: Restrict)
+
+  // Dosage
+  dosage          String              // e.g., "5", "1000"
+  unit            String              // e.g., "g", "mg", "IU"
+
+  // Schedule configuration
+  scheduleType    ScheduleType
+  scheduleTimes   Json?               // For DAILY_MULTIPLE: ["08:00", "20:00"]
+  weeklySchedule  Json?               // For WEEKLY: {"monday": ["08:00"], "wednesday": ["08:00"]}
+  intervalDays    Int?                // For INTERVAL: every N days
+
+  // Duration
+  startDate       DateTime            @default(now())
+  endDate         DateTime?           // null = ongoing
+
+  // Status
+  isActive        Boolean             @default(true)
+  notes           String?
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  logs            SupplementLog[]
+
+  @@index([userId, isActive])
+  @@index([userId, supplementId])
+  @@index([supplementId])
+}
+
+// Actual supplement consumption logs
+model SupplementLog {
+  id                String              @id @default(cuid())
+  userId            String
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userSupplementId  String?             // null for one-time/quick logs
+  userSupplement    UserSupplement?     @relation(fields: [userSupplementId], references: [id], onDelete: SetNull)
+  supplementId      String
+  supplement        Supplement          @relation(fields: [supplementId], references: [id], onDelete: Restrict)
+
+  // Dosage taken
+  dosage            String
+  unit              String
+
+  // Timing
+  takenAt           DateTime
+  scheduledFor      DateTime?           // If this was a scheduled dose
+
+  // Source
+  source            SupplementSource    @default(MANUAL)
+
+  // Notes
+  notes             String?
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([userId, takenAt])
+  @@index([userId, supplementId, takenAt])
+  @@index([userSupplementId])
 }

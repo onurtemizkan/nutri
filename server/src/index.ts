@@ -6,6 +6,9 @@ import authRoutes from './routes/authRoutes';
 import mealRoutes from './routes/mealRoutes';
 import healthMetricRoutes from './routes/healthMetricRoutes';
 import activityRoutes from './routes/activityRoutes';
+import supplementRoutes from './routes/supplementRoutes';
+import userSupplementRoutes from './routes/userSupplementRoutes';
+import supplementLogRoutes from './routes/supplementLogRoutes';
 
 const app = express();
 
@@ -24,6 +27,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/meals', mealRoutes);
 app.use('/api/health-metrics', healthMetricRoutes);
 app.use('/api/activities', activityRoutes);
+app.use('/api/supplements', supplementRoutes);
+app.use('/api/user-supplements', userSupplementRoutes);
+app.use('/api/supplement-logs', supplementLogRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

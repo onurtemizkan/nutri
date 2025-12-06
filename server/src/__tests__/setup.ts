@@ -8,7 +8,20 @@
  * - Configures global test lifecycle hooks
  */
 
-import { PrismaClient, Activity, HealthMetric, ActivityType, ActivityIntensity, HealthMetricType } from '@prisma/client';
+import {
+  PrismaClient,
+  Activity,
+  HealthMetric,
+  ActivityType,
+  ActivityIntensity,
+  HealthMetricType,
+  Supplement,
+  UserSupplement,
+  SupplementLog,
+  SupplementCategory,
+  ScheduleType,
+  SupplementSource,
+} from '@prisma/client';
 
 // Set test environment variables before any imports
 process.env.NODE_ENV = 'test';
@@ -36,6 +49,9 @@ export async function cleanDatabase() {
   // Delete in reverse order of dependencies to avoid foreign key constraints
   // Using $transaction to ensure atomicity
   await prisma.$transaction([
+    prisma.supplementLog.deleteMany(),
+    prisma.userSupplement.deleteMany(),
+    prisma.supplement.deleteMany(),
     prisma.healthMetric.deleteMany(),
     prisma.activity.deleteMany(),
     prisma.meal.deleteMany(),
@@ -296,4 +312,134 @@ export function assertHealthMetricStructure(metric: unknown): void {
   expect(metric).toHaveProperty('recordedAt');
   expect(metric).toHaveProperty('unit');
   expect(metric).toHaveProperty('source');
+}
+
+// ============================================================================
+// Supplement Test Utilities
+// ============================================================================
+
+/**
+ * Create a test supplement
+ */
+export async function createTestSupplement(overrides?: Partial<{
+  name: string;
+  category: SupplementCategory;
+  description: string;
+  defaultDosage: string;
+  defaultUnit: string;
+}>): Promise<Supplement> {
+  const defaultSupplement = {
+    name: `Test Supplement ${Date.now()}`,
+    category: SupplementCategory.AMINO_ACID,
+    description: 'Test supplement description',
+    defaultDosage: '5',
+    defaultUnit: 'g',
+    ...overrides,
+  };
+
+  return prisma.supplement.create({
+    data: defaultSupplement,
+  });
+}
+
+/**
+ * Create a test user supplement (schedule)
+ */
+export async function createTestUserSupplement(
+  userId: string,
+  supplementId: string,
+  overrides?: Partial<{
+    dosage: string;
+    unit: string;
+    scheduleType: ScheduleType;
+    scheduleTimes: string[];
+    weeklySchedule: Record<string, string[]>;
+    intervalDays: number;
+    startDate: Date;
+    endDate: Date;
+    isActive: boolean;
+    notes: string;
+  }>
+): Promise<UserSupplement> {
+  const defaultUserSupplement = {
+    userId,
+    supplementId,
+    dosage: '5',
+    unit: 'g',
+    scheduleType: ScheduleType.DAILY,
+    startDate: new Date(),
+    isActive: true,
+    ...overrides,
+  };
+
+  return prisma.userSupplement.create({
+    data: defaultUserSupplement,
+  });
+}
+
+/**
+ * Create a test supplement log
+ */
+export async function createTestSupplementLog(
+  userId: string,
+  supplementId: string,
+  overrides?: Partial<{
+    userSupplementId: string;
+    dosage: string;
+    unit: string;
+    takenAt: Date;
+    scheduledFor: Date;
+    source: SupplementSource;
+    notes: string;
+  }>
+): Promise<SupplementLog> {
+  const defaultLog = {
+    userId,
+    supplementId,
+    dosage: '5',
+    unit: 'g',
+    takenAt: new Date(),
+    source: SupplementSource.MANUAL,
+    ...overrides,
+  };
+
+  return prisma.supplementLog.create({
+    data: defaultLog,
+  });
+}
+
+/**
+ * Assert that response has supplement data structure
+ */
+export function assertSupplementStructure(supplement: unknown): void {
+  expect(supplement).toHaveProperty('id');
+  expect(supplement).toHaveProperty('name');
+  expect(supplement).toHaveProperty('category');
+}
+
+/**
+ * Assert that response has user supplement data structure
+ */
+export function assertUserSupplementStructure(userSupplement: unknown): void {
+  expect(userSupplement).toHaveProperty('id');
+  expect(userSupplement).toHaveProperty('userId');
+  expect(userSupplement).toHaveProperty('supplementId');
+  expect(userSupplement).toHaveProperty('dosage');
+  expect(userSupplement).toHaveProperty('unit');
+  expect(userSupplement).toHaveProperty('scheduleType');
+  expect(userSupplement).toHaveProperty('startDate');
+  expect(userSupplement).toHaveProperty('isActive');
+}
+
+/**
+ * Assert that response has supplement log data structure
+ */
+export function assertSupplementLogStructure(log: unknown): void {
+  expect(log).toHaveProperty('id');
+  expect(log).toHaveProperty('userId');
+  expect(log).toHaveProperty('supplementId');
+  expect(log).toHaveProperty('dosage');
+  expect(log).toHaveProperty('unit');
+  expect(log).toHaveProperty('takenAt');
+  expect(log).toHaveProperty('source');
 }

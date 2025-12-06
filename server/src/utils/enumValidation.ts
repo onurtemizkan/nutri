@@ -1,4 +1,11 @@
-import { HealthMetricType, ActivityType, ActivityIntensity } from '@prisma/client';
+import {
+  HealthMetricType,
+  ActivityType,
+  ActivityIntensity,
+  SupplementCategory,
+  ScheduleType,
+  SupplementSource,
+} from '@prisma/client';
 
 /**
  * Type-safe enum validation utilities
@@ -150,4 +157,88 @@ export function parseOptionalActivitySource(value: unknown): ActivitySource | un
     return undefined;
   }
   return parseActivitySource(value);
+}
+
+/**
+ * Validates and parses a SupplementCategory from a string
+ * @throws Error if value is not a valid SupplementCategory
+ */
+export function parseSupplementCategory(value: unknown): SupplementCategory {
+  if (typeof value !== 'string') {
+    throw new Error('Supplement category must be a string');
+  }
+
+  const upperValue = value.toUpperCase();
+  const validValues = Object.values(SupplementCategory);
+
+  if (!validValues.includes(upperValue as SupplementCategory)) {
+    throw new Error(
+      `Invalid supplement category: ${value}. Must be one of: ${validValues.join(', ')}`
+    );
+  }
+
+  return upperValue as SupplementCategory;
+}
+
+/**
+ * Validates and parses a ScheduleType from a string
+ * @throws Error if value is not a valid ScheduleType
+ */
+export function parseScheduleType(value: unknown): ScheduleType {
+  if (typeof value !== 'string') {
+    throw new Error('Schedule type must be a string');
+  }
+
+  const upperValue = value.toUpperCase();
+  const validValues = Object.values(ScheduleType);
+
+  if (!validValues.includes(upperValue as ScheduleType)) {
+    throw new Error(
+      `Invalid schedule type: ${value}. Must be one of: ${validValues.join(', ')}`
+    );
+  }
+
+  return upperValue as ScheduleType;
+}
+
+/**
+ * Validates and parses a SupplementSource from a string
+ * @throws Error if value is not a valid SupplementSource
+ */
+export function parseSupplementSource(value: unknown): SupplementSource {
+  if (typeof value !== 'string') {
+    throw new Error('Supplement source must be a string');
+  }
+
+  const upperValue = value.toUpperCase();
+  const validValues = Object.values(SupplementSource);
+
+  if (!validValues.includes(upperValue as SupplementSource)) {
+    throw new Error(
+      `Invalid supplement source: ${value}. Must be one of: ${validValues.join(', ')}`
+    );
+  }
+
+  return upperValue as SupplementSource;
+}
+
+export function parseOptionalSupplementCategory(value: unknown): SupplementCategory | undefined {
+  if (value === null || value === undefined || value === '') {
+    return undefined;
+  }
+  return parseSupplementCategory(value);
+}
+
+export function parseOptionalScheduleType(value: unknown): ScheduleType | undefined {
+  if (value === null || value === undefined || value === '') {
+    return undefined;
+  }
+  return parseScheduleType(value);
+}
+
+export function parseOptionalSupplementSource(value: unknown): SupplementSource | undefined {
+  if (value === null || value === undefined || value === '') {
+    return undefined;
+  }
+  return parseSupplementSource(value);
 }
