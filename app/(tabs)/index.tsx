@@ -70,7 +70,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="home-screen">
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -97,7 +97,7 @@ export default function HomeScreen() {
           </View>
 
           {/* Calorie Summary Card */}
-          <View style={styles.summaryCard}>
+          <View style={styles.summaryCard} testID="home-calorie-summary">
             <LinearGradient
               colors={gradients.primary}
               start={{ x: 0, y: 0 }}
@@ -124,7 +124,7 @@ export default function HomeScreen() {
           </View>
 
           {/* Macros */}
-          <View style={styles.macrosContainer}>
+          <View style={styles.macrosContainer} testID="home-macros-container">
             <View style={styles.macroCard}>
               <Text style={styles.macroValue}>{Math.round(summary?.totalProtein || 0)}g</Text>
               <Text style={styles.macroLabel}>Protein</Text>
@@ -181,7 +181,7 @@ export default function HomeScreen() {
           </View>
 
           {/* Today's Meals */}
-          <View style={styles.mealsSection}>
+          <View style={styles.mealsSection} testID="home-meals-section">
             <Text style={styles.sectionTitle}>Today's Meals</Text>
 
             {['breakfast', 'lunch', 'dinner', 'snack'].map((mealType) => {
@@ -218,6 +218,7 @@ export default function HomeScreen() {
         style={styles.fab}
         onPress={() => router.push('/add-meal')}
         activeOpacity={0.8}
+        testID="home-add-meal-fab"
       >
         <LinearGradient
           colors={gradients.primary}

@@ -1,0 +1,151 @@
+# Auth Error Path E2E Tests
+# Tests error handling and edge cases in authentication flows
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Sign In with Wrong Password
+- launchApp:
+    clearState: true
+
+- assertVisible:
+    id: "welcome-screen"
+- tapOn:
+    id: "welcome-signin-button"
+- assertVisible:
+    id: "signin-screen"
+
+# Enter valid email but wrong password
+- tapOn:
+    id: "signin-email-input"
+- inputText: ${TEST_USER_EMAIL}
+
+- tapOn:
+    id: "signin-password-input"
+- inputText: "wrongpassword123"
+
+- tapOn:
+    id: "signin-submit-button"
+
+# Should stay on sign in screen (login failed)
+- assertVisible:
+    id: "signin-screen"
+
+---
+
+# Test: Sign In with Non-existent Account
+- launchApp:
+    clearState: true
+
+- assertVisible:
+    id: "welcome-screen"
+- tapOn:
+    id: "welcome-signin-button"
+- assertVisible:
+    id: "signin-screen"
+
+# Enter non-existent email
+- tapOn:
+    id: "signin-email-input"
+- inputText: "nonexistent@example.com"
+
+- tapOn:
+    id: "signin-password-input"
+- inputText: "somepassword123"
+
+- tapOn:
+    id: "signin-submit-button"
+
+# Should stay on sign in screen
+- assertVisible:
+    id: "signin-screen"
+
+---
+
+# Test: Sign Up with Existing Email
+# Note: This requires the test user to already exist
+- launchApp:
+    clearState: true
+
+- assertVisible:
+    id: "welcome-screen"
+- tapOn:
+    id: "welcome-signup-button"
+- assertVisible:
+    id: "signup-screen"
+
+# Try to sign up with existing email
+- tapOn:
+    id: "signup-name-input"
+- inputText: "Duplicate User"
+
+- tapOn:
+    id: "signup-email-input"
+- inputText: ${TEST_USER_EMAIL}
+
+- tapOn:
+    id: "signup-password-input"
+- inputText: ${TEST_USER_PASSWORD}
+
+- tapOn:
+    id: "signup-confirm-password-input"
+- inputText: ${TEST_USER_PASSWORD}
+
+- tapOn:
+    id: "signup-submit-button"
+
+# Should stay on sign up screen (email already exists)
+- assertVisible:
+    id: "signup-screen"
+
+---
+
+# Test: Password Reset with Invalid Token
+- launchApp:
+    clearState: true
+    arguments:
+      resetToken: "invalid-token-12345"
+
+# With invalid token, should eventually show error or token entry
+- assertVisible:
+    id: "reset-password-token-screen"
+    optional: true
+
+- assertVisible:
+    id: "reset-password-screen"
+    optional: true
+
+---
+
+# Test: Rapid Form Submission (Spam Protection)
+- launchApp:
+    clearState: true
+
+- assertVisible:
+    id: "welcome-screen"
+- tapOn:
+    id: "welcome-signin-button"
+- assertVisible:
+    id: "signin-screen"
+
+# Enter credentials
+- tapOn:
+    id: "signin-email-input"
+- inputText: ${TEST_USER_EMAIL}
+
+- tapOn:
+    id: "signin-password-input"
+- inputText: "wrongpassword"
+
+# Rapid taps should not cause issues
+- tapOn:
+    id: "signin-submit-button"
+- tapOn:
+    id: "signin-submit-button"
+- tapOn:
+    id: "signin-submit-button"
+
+# App should still be responsive
+- assertVisible:
+    id: "signin-screen"

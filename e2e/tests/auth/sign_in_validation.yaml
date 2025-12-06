@@ -1,0 +1,97 @@
+# Sign In Validation E2E Tests
+# Tests error handling and form validation for sign in
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Empty Fields Validation
+- launchApp:
+    clearState: true
+
+# Navigate to sign in
+- assertVisible:
+    id: "welcome-screen"
+- tapOn:
+    id: "welcome-signin-button"
+- assertVisible:
+    id: "signin-screen"
+
+# Try to submit without entering anything
+- tapOn:
+    id: "signin-submit-button"
+
+# Should show error alert (stay on same screen)
+- assertVisible:
+    id: "signin-screen"
+
+---
+
+# Test: Invalid Email Format
+- launchApp:
+    clearState: true
+
+- assertVisible:
+    id: "welcome-screen"
+- tapOn:
+    id: "welcome-signin-button"
+- assertVisible:
+    id: "signin-screen"
+
+# Enter invalid email
+- tapOn:
+    id: "signin-email-input"
+- inputText: "invalid-email"
+
+- tapOn:
+    id: "signin-password-input"
+- inputText: "password123"
+
+- tapOn:
+    id: "signin-submit-button"
+
+# Should stay on sign in screen
+- assertVisible:
+    id: "signin-screen"
+
+---
+
+# Test: Navigation to Sign Up
+- launchApp:
+    clearState: true
+
+- assertVisible:
+    id: "welcome-screen"
+- tapOn:
+    id: "welcome-signin-button"
+- assertVisible:
+    id: "signin-screen"
+
+# Tap sign up link
+- tapOn:
+    id: "signin-signup-link"
+
+# Should navigate to sign up screen
+- assertVisible:
+    id: "signup-screen"
+
+---
+
+# Test: Navigation to Forgot Password
+- launchApp:
+    clearState: true
+
+- assertVisible:
+    id: "welcome-screen"
+- tapOn:
+    id: "welcome-signin-button"
+- assertVisible:
+    id: "signin-screen"
+
+# Tap forgot password link
+- tapOn:
+    id: "signin-forgot-password-link"
+
+# Should navigate to forgot password screen
+- assertVisible:
+    id: "forgot-password-screen"

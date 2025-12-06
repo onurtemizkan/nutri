@@ -69,7 +69,7 @@ export default function ForgotPasswordScreen() {
 
   if (emailSent) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} testID="forgot-password-success-screen">
         <View style={styles.successContent}>
           <View style={styles.successContainer}>
             {/* Success Icon */}
@@ -91,6 +91,7 @@ export default function ForgotPasswordScreen() {
                 style={styles.button}
                 onPress={() => router.push('/auth/signin')}
                 activeOpacity={0.8}
+                testID="forgot-password-back-to-signin-button"
               >
                 <LinearGradient
                   colors={gradients.primary}
@@ -106,6 +107,7 @@ export default function ForgotPasswordScreen() {
                 style={styles.secondaryButton}
                 onPress={() => setEmailSent(false)}
                 activeOpacity={0.8}
+                testID="forgot-password-try-another-email-button"
               >
                 <Text style={styles.secondaryButtonText}>Try Another Email</Text>
               </TouchableOpacity>
@@ -117,7 +119,7 @@ export default function ForgotPasswordScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="forgot-password-screen">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -152,6 +154,7 @@ export default function ForgotPasswordScreen() {
                   editable={!isLoading}
                   autoFocus
                   autoComplete="email"
+                  testID="forgot-password-email-input"
                 />
               </View>
             </View>
@@ -161,6 +164,7 @@ export default function ForgotPasswordScreen() {
               onPress={handleForgotPassword}
               disabled={isLoading}
               activeOpacity={0.8}
+              testID="forgot-password-submit-button"
             >
               <LinearGradient
                 colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
@@ -179,7 +183,7 @@ export default function ForgotPasswordScreen() {
             <View style={styles.footer}>
               <Text style={styles.footerText}>Remember your password? </Text>
               <Link href="/auth/signin" asChild>
-                <TouchableOpacity disabled={isLoading}>
+                <TouchableOpacity disabled={isLoading} testID="forgot-password-signin-link">
                   <Text style={styles.link}>Sign In</Text>
                 </TouchableOpacity>
               </Link>

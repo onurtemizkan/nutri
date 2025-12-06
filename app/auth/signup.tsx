@@ -69,7 +69,7 @@ export default function SignUpScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="signup-screen">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -100,6 +100,7 @@ export default function SignUpScreen() {
                   onChangeText={setName}
                   editable={!isLoading}
                   autoComplete="name"
+                  testID="signup-name-input"
                 />
               </View>
             </View>
@@ -118,6 +119,7 @@ export default function SignUpScreen() {
                   keyboardType="email-address"
                   editable={!isLoading}
                   autoComplete="email"
+                  testID="signup-email-input"
                 />
               </View>
             </View>
@@ -135,6 +137,7 @@ export default function SignUpScreen() {
                   secureTextEntry
                   editable={!isLoading}
                   autoComplete="password-new"
+                  testID="signup-password-input"
                 />
               </View>
               <Text style={styles.hint}>Use letters and numbers for stronger security</Text>
@@ -153,6 +156,7 @@ export default function SignUpScreen() {
                   secureTextEntry
                   editable={!isLoading}
                   autoComplete="password-new"
+                  testID="signup-confirm-password-input"
                 />
               </View>
             </View>
@@ -163,6 +167,7 @@ export default function SignUpScreen() {
               onPress={handleSignUp}
               disabled={isLoading}
               activeOpacity={0.8}
+              testID="signup-submit-button"
             >
               <LinearGradient
                 colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
@@ -182,7 +187,7 @@ export default function SignUpScreen() {
             <View style={styles.footer}>
               <Text style={styles.footerText}>Already have an account? </Text>
               <Link href="/auth/signin" asChild>
-                <TouchableOpacity disabled={isLoading}>
+                <TouchableOpacity disabled={isLoading} testID="signup-signin-link">
                   <Text style={styles.link}>Sign In</Text>
                 </TouchableOpacity>
               </Link>

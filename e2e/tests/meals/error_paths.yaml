@@ -1,0 +1,194 @@
+# Meal Error Path E2E Tests
+# Tests error handling and edge cases in meal tracking
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Add Meal with Partial Required Fields
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Open add meal screen
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Fill only name and calories (missing protein, carbs, fat)
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: "Incomplete Meal"
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: "500"
+
+# Try to save
+- tapOn:
+    id: "add-meal-save-button"
+
+# Should stay on add meal screen (validation error)
+- assertVisible:
+    id: "add-meal-screen"
+
+---
+
+# Test: Add Meal with Invalid Numeric Values
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Open add meal screen
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Fill with text in numeric fields
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: "Test Meal"
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: "abc"
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: "xyz"
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: "10"
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: "5"
+
+# Try to save
+- tapOn:
+    id: "add-meal-save-button"
+
+# Should stay on add meal screen or show error
+- assertVisible:
+    id: "add-meal-screen"
+
+---
+
+# Test: Add Meal with Zero Values
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Open add meal screen
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Fill with zero values
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: "Zero Calorie Meal"
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: "0"
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: "0"
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: "0"
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: "0"
+
+# Try to save
+- tapOn:
+    id: "add-meal-save-button"
+
+# This might be allowed or not - test the behavior
+- assertVisible:
+    id: "add-meal-screen"
+    optional: true
+
+- assertVisible:
+    id: "home-screen"
+    optional: true
+
+---
+
+# Test: Add Meal with Very Large Values
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Open add meal screen
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Fill with large values
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: "Large Meal"
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: "99999"
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: "9999"
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: "9999"
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: "9999"
+
+# Try to save - should handle gracefully
+- tapOn:
+    id: "add-meal-save-button"
+
+# App should not crash, either accept or show error
+- assertVisible:
+    id: "add-meal-screen"
+    optional: true
+
+- assertVisible:
+    id: "home-screen"
+    optional: true

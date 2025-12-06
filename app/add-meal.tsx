@@ -99,19 +99,20 @@ export default function AddMealScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="add-meal-screen">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={() => router.back()} testID="add-meal-cancel-button">
             <Text style={styles.cancelButton}>Cancel</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Add Meal</Text>
           <TouchableOpacity
             onPress={handleSaveMeal}
             disabled={isLoading}
+            testID="add-meal-save-button"
           >
             {isLoading ? (
               <ActivityIndicator color={colors.primary.main} />
@@ -163,6 +164,7 @@ export default function AddMealScreen() {
               onPress={() => router.push('/scan-food')}
               disabled={isLoading}
               activeOpacity={0.8}
+              testID="add-meal-scan-food-button"
             >
               <Ionicons name="camera" size={24} color={colors.primary.main} />
               <View style={styles.scanButtonText}>
@@ -194,6 +196,7 @@ export default function AddMealScreen() {
                   value={name}
                   onChangeText={setName}
                   editable={!isLoading}
+                  testID="add-meal-name-input"
                 />
               </View>
             </View>
@@ -214,6 +217,7 @@ export default function AddMealScreen() {
                       onChangeText={setCalories}
                       keyboardType="numeric"
                       editable={!isLoading}
+                      testID="add-meal-calories-input"
                     />
                   </View>
                 </View>
@@ -229,6 +233,7 @@ export default function AddMealScreen() {
                       onChangeText={setProtein}
                       keyboardType="numeric"
                       editable={!isLoading}
+                      testID="add-meal-protein-input"
                     />
                   </View>
                 </View>
@@ -246,6 +251,7 @@ export default function AddMealScreen() {
                       onChangeText={setCarbs}
                       keyboardType="numeric"
                       editable={!isLoading}
+                      testID="add-meal-carbs-input"
                     />
                   </View>
                 </View>
@@ -261,6 +267,7 @@ export default function AddMealScreen() {
                       onChangeText={setFat}
                       keyboardType="numeric"
                       editable={!isLoading}
+                      testID="add-meal-fat-input"
                     />
                   </View>
                 </View>

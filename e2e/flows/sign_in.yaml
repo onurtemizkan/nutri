@@ -1,0 +1,38 @@
+# Reusable flow: Sign in with email and password
+# Usage: runFlow with env vars EMAIL and PASSWORD
+#
+# Example:
+#   - runFlow:
+#       file: flows/sign_in.yaml
+#       env:
+#         EMAIL: test@example.com
+#         PASSWORD: password123
+
+appId: host.exp.Exponent
+
+---
+
+# Wait for sign in screen to be visible
+- assertVisible:
+    id: "signin-screen"
+    optional: true
+- assertVisible:
+    text: "Welcome Back"
+
+# Enter email
+- tapOn:
+    id: "signin-email-input"
+- inputText: ${EMAIL}
+
+# Enter password
+- tapOn:
+    id: "signin-password-input"
+- inputText: ${PASSWORD}
+
+# Tap sign in button
+- tapOn:
+    id: "signin-submit-button"
+
+# Wait for navigation to home (indicating successful login)
+- assertVisible:
+    id: "home-screen"

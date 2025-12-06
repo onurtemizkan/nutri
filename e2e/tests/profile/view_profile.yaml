@@ -1,0 +1,63 @@
+# View Profile E2E Tests
+# Tests viewing profile information
+
+appId: host.exp.Exponent
+
+---
+
+# Test: View Profile Screen
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to profile
+- tapOn:
+    id: "tab-profile"
+
+# Verify profile screen elements
+- assertVisible:
+    id: "profile-screen"
+
+- assertVisible:
+    id: "profile-header"
+
+- assertVisible:
+    id: "profile-edit-goals-button"
+
+- assertVisible:
+    id: "health-integration-button"
+
+- assertVisible:
+    id: "profile-logout-button"
+
+---
+
+# Test: Navigate to Health Settings from Profile
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to profile
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Tap health integration
+- tapOn:
+    id: "health-integration-button"
+
+# Verify health settings screen
+- assertVisible:
+    id: "health-settings-screen"

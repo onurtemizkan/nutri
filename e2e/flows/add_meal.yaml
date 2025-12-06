@@ -1,0 +1,79 @@
+# Reusable flow: Add a meal with provided data
+# Usage: runFlow with env vars MEAL_NAME, CALORIES, PROTEIN, CARBS, FAT
+#
+# Optional env vars: MEAL_TYPE (breakfast|lunch|dinner|snack), FIBER, SERVING_SIZE
+#
+# Example:
+#   - runFlow:
+#       file: flows/add_meal.yaml
+#       env:
+#         MEAL_NAME: Grilled Chicken
+#         MEAL_TYPE: lunch
+#         CALORIES: 350
+#         PROTEIN: 35
+#         CARBS: 10
+#         FAT: 15
+
+appId: host.exp.Exponent
+
+---
+
+# Ensure we're on add meal screen
+- assertVisible:
+    id: "add-meal-screen"
+
+# Select meal type if provided (default is lunch)
+- runFlow:
+    when:
+      visible:
+        id: "meal-type-${MEAL_TYPE:-lunch}"
+    commands:
+      - tapOn:
+          id: "meal-type-${MEAL_TYPE:-lunch}"
+
+# Enter meal name
+- tapOn:
+    id: "meal-name-input"
+- inputText: ${MEAL_NAME}
+
+# Enter calories
+- tapOn:
+    id: "meal-calories-input"
+- inputText: ${CALORIES}
+
+# Enter protein
+- tapOn:
+    id: "meal-protein-input"
+- inputText: ${PROTEIN}
+
+# Enter carbs
+- tapOn:
+    id: "meal-carbs-input"
+- inputText: ${CARBS}
+
+# Enter fat
+- tapOn:
+    id: "meal-fat-input"
+- inputText: ${FAT}
+
+# Optionally enter fiber if provided
+- runFlow:
+    when:
+      env:
+        FIBER: ".*"
+    commands:
+      - tapOn:
+          id: "meal-fiber-input"
+      - inputText: ${FIBER}
+
+# Tap save button
+- tapOn:
+    id: "meal-save-button"
+
+# Wait for success alert
+- assertVisible:
+    text: "Success"
+
+# Dismiss alert
+- tapOn:
+    text: "OK"

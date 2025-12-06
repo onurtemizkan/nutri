@@ -1,0 +1,68 @@
+# Session Persistence E2E Tests
+# Tests that user sessions are maintained correctly
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Session Persists After App Restart
+- launchApp:
+    clearState: true
+
+# Sign in
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Background and foreground the app
+- stopApp
+- launchApp
+
+# Should still be on home screen (session persisted)
+- assertVisible:
+    id: "home-screen"
+
+---
+
+# Test: Session Cleared After Logout
+- launchApp:
+    clearState: true
+
+# Sign in
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Logout
+- runFlow: ../../flows/logout.yaml
+
+# Verify on welcome screen
+- assertVisible:
+    id: "welcome-screen"
+
+# Restart app
+- stopApp
+- launchApp
+
+# Should still be on welcome screen (session cleared)
+- assertVisible:
+    id: "welcome-screen"
+
+---
+
+# Test: Fresh Install Shows Welcome
+- launchApp:
+    clearState: true
+
+# First launch should show welcome
+- assertVisible:
+    id: "welcome-screen"
+
+# Verify sign in and sign up buttons are visible
+- assertVisible:
+    id: "welcome-signin-button"
+
+- assertVisible:
+    id: "welcome-signup-button"

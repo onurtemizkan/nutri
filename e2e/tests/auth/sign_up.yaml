@@ -1,0 +1,48 @@
+# Sign Up E2E Tests
+# Tests the complete registration flow
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Successful Sign Up
+- launchApp:
+    clearState: true
+
+# Wait for welcome screen
+- assertVisible:
+    id: "welcome-screen"
+
+# Navigate to sign up
+- tapOn:
+    id: "welcome-signup-button"
+
+# Verify sign up screen is visible
+- assertVisible:
+    id: "signup-screen"
+
+# Fill in registration form
+- tapOn:
+    id: "signup-name-input"
+- inputText: ${TEST_USER_NAME}
+
+- tapOn:
+    id: "signup-email-input"
+# Use unique email for each test run
+- inputText: "e2e-test-${timestamp}@nutri.local"
+
+- tapOn:
+    id: "signup-password-input"
+- inputText: ${TEST_USER_PASSWORD}
+
+- tapOn:
+    id: "signup-confirm-password-input"
+- inputText: ${TEST_USER_PASSWORD}
+
+# Submit form
+- tapOn:
+    id: "signup-submit-button"
+
+# Verify navigation to home screen (successful registration)
+- assertVisible:
+    id: "home-screen"

@@ -236,13 +236,14 @@ export default function HealthSettingsScreen() {
   const isIOS = Platform.OS === 'ios';
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="health-settings-screen">
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
           accessibilityLabel="Go back"
+          testID="health-settings-back-button"
         >
           <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
@@ -288,6 +289,7 @@ export default function HealthSettingsScreen() {
                 onPress={handleConnect}
                 disabled={isLoading}
                 accessibilityLabel="Connect to Apple Health"
+                testID="health-settings-connect-button"
               >
                 <Ionicons name="add-circle" size={20} color={colors.text.primary} />
                 <Text style={styles.connectButtonText}>Connect Apple Health</Text>
@@ -345,6 +347,7 @@ export default function HealthSettingsScreen() {
                     onPress={handleSync}
                     disabled={isSyncing}
                     accessibilityLabel="Sync health data"
+                    testID="health-settings-sync-button"
                   >
                     {isSyncing ? (
                       <ActivityIndicator color={colors.text.primary} />
@@ -361,6 +364,7 @@ export default function HealthSettingsScreen() {
                     onPress={handleFullResync}
                     disabled={isSyncing}
                     accessibilityLabel="Full resync"
+                    testID="health-settings-resync-button"
                   >
                     <Text style={styles.resyncButtonText}>Full Resync</Text>
                   </TouchableOpacity>
@@ -371,6 +375,7 @@ export default function HealthSettingsScreen() {
                   style={styles.disconnectButton}
                   onPress={handleDisconnect}
                   accessibilityLabel="Disconnect Apple Health"
+                  testID="health-settings-disconnect-button"
                 >
                   <Text style={styles.disconnectButtonText}>Disconnect</Text>
                 </TouchableOpacity>

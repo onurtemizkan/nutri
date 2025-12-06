@@ -54,9 +54,9 @@ export default function WelcomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="welcome-screen">
       <LinearGradient colors={gradients.dark} style={styles.gradient}>
-        <View style={styles.content}>
+        <View style={styles.content} testID="welcome-content">
           {/* Header Section */}
           <View style={styles.header}>
             {/* Logo/Icon with gradient background */}
@@ -112,7 +112,7 @@ export default function WelcomeScreen() {
 
             {/* Sign In Button */}
             <Link href="/auth/signin" asChild>
-              <TouchableOpacity style={styles.primaryButton} disabled={isLoading}>
+              <TouchableOpacity style={styles.primaryButton} disabled={isLoading} testID="welcome-signin-button">
                 <LinearGradient
                   colors={gradients.primary}
                   start={{ x: 0, y: 0 }}
@@ -126,7 +126,7 @@ export default function WelcomeScreen() {
 
             {/* Create Account Button */}
             <Link href="/auth/signup" asChild>
-              <TouchableOpacity style={styles.secondaryButton} disabled={isLoading}>
+              <TouchableOpacity style={styles.secondaryButton} disabled={isLoading} testID="welcome-signup-button">
                 <Text style={styles.secondaryButtonText}>Create Account</Text>
               </TouchableOpacity>
             </Link>

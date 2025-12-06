@@ -1,0 +1,78 @@
+# Logout E2E Tests
+# Tests the logout flow
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Logout Flow
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to profile
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Scroll down to find logout button if needed
+- scrollUntilVisible:
+    element:
+      id: "profile-logout-button"
+    direction: DOWN
+
+# Tap logout
+- tapOn:
+    id: "profile-logout-button"
+
+# Confirm logout in alert
+- tapOn:
+    text: "Logout"
+
+# Should navigate to welcome screen
+- assertVisible:
+    id: "welcome-screen"
+
+---
+
+# Test: Cancel Logout
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to profile
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Scroll down to find logout button if needed
+- scrollUntilVisible:
+    element:
+      id: "profile-logout-button"
+    direction: DOWN
+
+# Tap logout
+- tapOn:
+    id: "profile-logout-button"
+
+# Cancel logout in alert
+- tapOn:
+    text: "Cancel"
+
+# Should stay on profile screen
+- assertVisible:
+    id: "profile-screen"

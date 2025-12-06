@@ -1,0 +1,77 @@
+# Home Navigation E2E Tests
+# Tests navigation between tabs and screens from home
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Navigate to Profile Tab
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Tap profile tab
+- tapOn:
+    id: "tab-profile"
+
+# Verify profile screen
+- assertVisible:
+    id: "profile-screen"
+
+---
+
+# Test: Navigate Back to Home Tab
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Go to profile
+- tapOn:
+    id: "tab-profile"
+- assertVisible:
+    id: "profile-screen"
+
+# Go back to home
+- tapOn:
+    id: "tab-home"
+
+# Verify home screen
+- assertVisible:
+    id: "home-screen"
+
+---
+
+# Test: Navigate to Add Meal and Back
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Open add meal
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Cancel and go back
+- tapOn:
+    id: "add-meal-cancel-button"
+
+# Should be back on home
+- assertVisible:
+    id: "home-screen"

@@ -1,0 +1,32 @@
+# Reusable flow: Logout from the app
+# Assumes user is on any authenticated screen
+
+appId: host.exp.Exponent
+
+---
+
+# Navigate to profile tab
+- tapOn:
+    id: "tab-profile"
+
+# Wait for profile screen
+- assertVisible:
+    id: "profile-screen"
+
+# Scroll down to find logout button
+- scrollUntilVisible:
+    element:
+      id: "logout-button"
+    direction: DOWN
+
+# Tap logout button
+- tapOn:
+    id: "logout-button"
+
+# Confirm logout in alert
+- tapOn:
+    text: "Logout"
+
+# Verify we're back at welcome screen
+- assertVisible:
+    id: "welcome-screen"
