@@ -1,0 +1,44 @@
+{
+  "build": {
+    "preview": {
+      "ios": {
+        "resourceClass": "default",
+        "buildType": "simulator"
+      }
+    },
+    "preview2": {
+      "ios": {
+        "resourceClass": "default",
+        "buildType": "simulator"
+      }
+    },
+    "preview3": {
+      "ios": {
+        "resourceClass": "default",
+        "buildType": "simulator"
+      }
+    },
+    "production": {
+      "ios": {
+        "resourceClass": "default"
+      }
+    },
+    "development": {
+      "ios": {
+        "resourceClass": "default",
+        "buildType": "simulator",
+        "distribution": "simulator"
+      }
+    },
+    "devicebuild": {
+      "ios": {
+        "resourceClass": "default",
+        "buildType": "client",
+        "distribution": "internal"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

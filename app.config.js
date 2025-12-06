@@ -9,6 +9,7 @@
 // Note: In production builds, these should be set in your CI/CD pipeline
 const API_URL = process.env.API_URL;
 const PRODUCTION_API_URL = process.env.PRODUCTION_API_URL;
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL;
 
 module.exports = {
   expo: {
@@ -19,14 +20,11 @@ module.exports = {
     icon: './assets/images/icon.png',
     scheme: 'myapp',
     userInterfaceStyle: 'automatic',
-    newArchEnabled: false, // Disabled because react-native-health doesn't support New Architecture
+    newArchEnabled: true, // Required by react-native-reanimated and other modern dependencies
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.anonymous.nutri',
       bitcode: false,
-      simulator: {
-        deviceName: 'iPhone 17 Pro',
-      },
       infoPlist: {
         NSCameraUsageDescription:
           'Nutri needs camera access to scan and analyze your food for automatic nutrition tracking.',
@@ -119,6 +117,8 @@ module.exports = {
       apiUrl: API_URL || undefined,
       // Production API URL (only used in production builds when apiUrl is not set)
       productionApiUrl: PRODUCTION_API_URL || undefined,
+      // ML Service URL (for food analysis)
+      mlServiceUrl: ML_SERVICE_URL || undefined,
       // EAS configuration
       eas: {
         projectId: 'your-project-id', // Replace with your EAS project ID
