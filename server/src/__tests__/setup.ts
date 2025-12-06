@@ -11,7 +11,7 @@
 import { PrismaClient, Activity, HealthMetric, ActivityType, ActivityIntensity, HealthMetricType } from '@prisma/client';
 
 // Set test environment variables before any imports
-process.env.NODE_ENV = 'test';
+(process.env as { NODE_ENV: string }).NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-secret-key-min-32-chars-long-for-testing!!!';
 process.env.PORT = '3001'; // Different port to avoid conflicts
 

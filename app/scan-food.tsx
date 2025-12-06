@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Image,
   Animated,
+  Platform,
 } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
@@ -18,6 +19,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { foodAnalysisApi } from '@/lib/api/food-analysis';
 import { showAlert } from '@/lib/utils/alert';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
+import LiDARModule from '@/lib/modules/LiDARModule';
+import {
+  estimateWeightFromMeasurement,
+  formatWeight,
+  formatDimensions,
+} from '@/lib/utils/portion-estimation';
 import type {
   FoodScanResult,
   ARMeasurement,
@@ -31,8 +38,42 @@ export default function ScanFoodScreen() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [scanResult, setScanResult] = useState<FoodScanResult | null>(null);
   const [showGuide, setShowGuide] = useState(true);
+  const [arMeasurement, setArMeasurement] = useState<ARMeasurement | null>(null);
+  const [hasARSupport, setHasARSupport] = useState(false);
   const cameraRef = useRef<CameraView>(null);
   const router = useRouter();
+
+  // Check AR support on mount
+  useEffect(() => {
+    async function checkARSupport() {
+      if (Platform.OS !== 'ios') return;
+
+      try {
+        if (LiDARModule && (LiDARModule as any).isAvailable) {
+          const capabilities = await LiDARModule.getDeviceCapabilities();
+          setHasARSupport(capabilities.hasARKit || capabilities.hasLiDAR);
+        }
+      } catch (error) {
+        console.log('AR support check failed:', error);
+      }
+    }
+
+    checkARSupport();
+  }, []);
+
+  // Listen for AR measurement results from the ar-measure screen
+  useEffect(() => {
+    const handleMeasurement = (event: CustomEvent<ARMeasurement>) => {
+      setArMeasurement(event.detail);
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('ar-measurement-complete', handleMeasurement as EventListener);
+      return () => {
+        window.removeEventListener('ar-measurement-complete', handleMeasurement as EventListener);
+      };
+    }
+  }, []);
 
   // Pulsing animation for the analyzing spinner
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -104,19 +145,23 @@ export default function ScanFoodScreen() {
     }
   };
 
+  const handleMeasurePortion = useCallback(() => {
+    router.push('/ar-measure' as any);
+  }, [router]);
+
   const handleAnalyzeFood = async () => {
     if (!capturedImage) return;
 
     setIsAnalyzing(true);
 
     try {
-      // TODO: In Phase 2, add AR measurements here
-      const mockMeasurements: ARMeasurement | undefined = undefined;
+      // Use AR measurement if available, otherwise undefined
+      const measurements: ARMeasurement | undefined = arMeasurement || undefined;
 
       // Call ML service
       const response = await foodAnalysisApi.analyzeFood({
         imageUri: capturedImage,
-        measurements: mockMeasurements,
+        measurements,
       });
 
       const result: FoodScanResult = {
@@ -151,6 +196,7 @@ export default function ScanFoodScreen() {
   const handleRetake = () => {
     setCapturedImage(null);
     setScanResult(null);
+    setArMeasurement(null);
   };
 
   const handleUseScan = () => {
@@ -328,21 +374,75 @@ export default function ScanFoodScreen() {
         </View>
 
         <View style={styles.actionsContainer}>
+          {/* AR Measurement display */}
+          {arMeasurement && !scanResult && (
+            <View style={styles.measurementInfo}>
+              <View style={styles.measurementHeader}>
+                <Ionicons name="resize-outline" size={20} color={colors.status.success} />
+                <Text style={styles.measurementTitle}>Portion Measured</Text>
+              </View>
+              <Text style={styles.measurementDimensions}>
+                {formatDimensions(arMeasurement.width, arMeasurement.height, arMeasurement.depth)}
+              </Text>
+              <Text style={styles.measurementConfidence}>
+                {arMeasurement.confidence} confidence
+                {arMeasurement.planeDetected ? ' • Surface detected' : ''}
+              </Text>
+            </View>
+          )}
+
           {!isAnalyzing && !scanResult && (
-            <TouchableOpacity
-              style={styles.analyzeButton}
-              onPress={handleAnalyzeFood}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={gradients.primary}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.analyzeButtonGradient}
+            <>
+              {/* Measure Portion button - only show on iOS with AR support */}
+              {Platform.OS === 'ios' && hasARSupport && !arMeasurement && (
+                <TouchableOpacity
+                  style={styles.measureButton}
+                  onPress={handleMeasurePortion}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.measureButtonContent}>
+                    <Ionicons name="cube-outline" size={24} color={colors.primary.main} />
+                    <View style={styles.measureButtonText}>
+                      <Text style={styles.measureButtonTitle}>Measure Portion Size</Text>
+                      <Text style={styles.measureButtonSubtitle}>
+                        Use AR to get accurate dimensions
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+                  </View>
+                </TouchableOpacity>
+              )}
+
+              {/* Re-measure button if already measured */}
+              {arMeasurement && (
+                <TouchableOpacity
+                  style={styles.remeasureButton}
+                  onPress={handleMeasurePortion}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="refresh-outline" size={18} color={colors.text.secondary} />
+                  <Text style={styles.remeasureButtonText}>Re-measure</Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Analyze button */}
+              <TouchableOpacity
+                style={styles.analyzeButton}
+                onPress={handleAnalyzeFood}
+                activeOpacity={0.8}
               >
-                <Text style={styles.analyzeButtonText}>Analyze Food</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+                <LinearGradient
+                  colors={gradients.primary}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.analyzeButtonGradient}
+                >
+                  <Text style={styles.analyzeButtonText}>
+                    {arMeasurement ? 'Analyze with Measurements' : 'Analyze Food'}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </>
           )}
 
           {scanResult && (
@@ -718,5 +818,72 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.semibold,
+  },
+  measurementInfo: {
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.status.success,
+  },
+  measurementHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  measurementTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.status.success,
+  },
+  measurementDimensions: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
+  measurementConfidence: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+  },
+  measureButton: {
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+  },
+  measureButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  measureButtonText: {
+    flex: 1,
+  },
+  measureButtonTitle: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  measureButtonSubtitle: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+    marginTop: spacing.xs,
+  },
+  remeasureButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  remeasureButtonText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
   },
 });

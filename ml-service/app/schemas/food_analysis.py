@@ -29,6 +29,8 @@ class NutritionInfo(BaseModel):
     sugar: Optional[float] = Field(None, ge=0)  # grams
     sodium: Optional[float] = Field(None, ge=0)  # mg
     saturated_fat: Optional[float] = Field(None, ge=0)  # grams
+    lysine: Optional[float] = Field(None, ge=0)  # mg - essential amino acid
+    arginine: Optional[float] = Field(None, ge=0)  # mg - conditionally essential amino acid
 
 
 class FoodItemAlternative(BaseModel):

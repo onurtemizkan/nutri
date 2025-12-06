@@ -92,14 +92,15 @@ export default function WelcomeScreen() {
             {/* Apple Sign In Button */}
             {Platform.OS === 'ios' && (
               <>
-                <AppleAuthentication.AppleAuthenticationButton
-                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-                  buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
-                  cornerRadius={borderRadius.md}
-                  style={styles.appleButton}
-                  onPress={handleAppleSignIn}
-                  disabled={isLoading}
-                />
+                <View pointerEvents={isLoading ? 'none' : 'auto'} style={{ opacity: isLoading ? 0.6 : 1 }}>
+                  <AppleAuthentication.AppleAuthenticationButton
+                    buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                    buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+                    cornerRadius={borderRadius.md}
+                    style={styles.appleButton}
+                    onPress={handleAppleSignIn}
+                  />
+                </View>
 
                 <View style={styles.divider}>
                   <View style={styles.dividerLine} />
