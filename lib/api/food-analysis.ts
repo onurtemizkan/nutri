@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import * as FileSystem from 'expo-file-system';
+import Constants from 'expo-constants';
 import {
   FoodAnalysisRequest,
   FoodAnalysisResponse,
@@ -22,9 +23,18 @@ export class FoodAnalysisError extends Error {
 }
 
 // ML Service configuration
-const ML_SERVICE_URL = __DEV__
-  ? 'http://localhost:8000' // Development - ML service running locally
-  : 'https://your-ml-service.com'; // Production
+// For physical devices: Set ML_SERVICE_URL=http://192.168.1.69:8000 npx expo start
+// For simulator: Automatically uses localhost:8000
+let ML_SERVICE_URL = 'http://localhost:8000'; // Default for simulator
+
+// Check if ML_SERVICE_URL is set in environment variables (via app.config.js)
+if (Constants.expoConfig?.extra?.mlServiceUrl) {
+  ML_SERVICE_URL = Constants.expoConfig.extra.mlServiceUrl;
+} else if (__DEV__) {
+  // For development on physical device, try to use machine IP
+  // This can be overridden with ML_SERVICE_URL environment variable
+  ML_SERVICE_URL = 'http://localhost:8000';
+}
 
 const config: MLServiceConfig = {
   baseUrl: ML_SERVICE_URL,

@@ -1,32 +1,27 @@
 /**
  * Health Metrics API Client
- * Interfaces with the backend health metrics endpoints
+ * Unified API functions for health metrics including HealthKit sync and UI operations
  */
 
 import api from './client';
 import {
+  HealthMetric,
+  CreateHealthMetricInput,
+  HealthMetricStats,
+  TimeSeriesDataPoint,
+  HealthMetricType,
+  HealthMetricSource,
+  AverageResponse,
+} from '../types/health-metrics';
+
+// Re-export for HealthKit integration compatibility
+import {
   ProcessedHealthMetric,
   BulkHealthMetricsRequest,
   BulkHealthMetricsResponse,
-  HealthMetricType,
 } from '@/lib/types/healthkit';
 
-/**
- * Health metric from the API
- */
-export interface HealthMetric {
-  id: string;
-  userId: string;
-  metricType: HealthMetricType;
-  value: number;
-  unit: string;
-  recordedAt: string;
-  source: string;
-  sourceId?: string;
-  metadata?: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
-}
+export type { HealthMetric, CreateHealthMetricInput, HealthMetricStats, TimeSeriesDataPoint };
 
 /**
  * Query parameters for fetching health metrics
@@ -35,139 +30,202 @@ export interface GetHealthMetricsParams {
   metricType?: HealthMetricType;
   startDate?: string;
   endDate?: string;
-  source?: string;
+  source?: HealthMetricSource | string;
   limit?: number;
   offset?: number;
 }
 
 /**
- * Metric statistics response
- */
-export interface MetricStats {
-  count: number;
-  min: number;
-  max: number;
-  avg: number;
-  latest: number;
-  latestDate: string;
-}
-
-/**
- * Time series data point
- */
-export interface TimeSeriesPoint {
-  recordedAt: string;
-  value: number;
-}
-
-/**
- * Health Metrics API
+ * Health Metrics API client
  */
 export const healthMetricsApi = {
   /**
-   * Get all health metrics for the user with optional filters
+   * Create a new health metric
+   * POST /health-metrics
    */
-  getAll: async (params?: GetHealthMetricsParams): Promise<HealthMetric[]> => {
-    const response = await api.get('/health-metrics', { params });
-    return response.data.healthMetrics || response.data;
-  },
-
-  /**
-   * Get a single health metric by ID
-   */
-  getById: async (id: string): Promise<HealthMetric> => {
-    const response = await api.get(`/health-metrics/${id}`);
-    return response.data;
-  },
-
-  /**
-   * Create a single health metric
-   */
-  create: async (data: ProcessedHealthMetric): Promise<HealthMetric> => {
-    const response = await api.post('/health-metrics', data);
+  async create(data: CreateHealthMetricInput | ProcessedHealthMetric): Promise<HealthMetric> {
+    const response = await api.post<HealthMetric>('/health-metrics', data);
     return response.data;
   },
 
   /**
    * Create multiple health metrics in bulk
    * The server handles deduplication via upsert
+   * POST /health-metrics/bulk
    */
-  createBulk: async (
-    metrics: ProcessedHealthMetric[]
-  ): Promise<BulkHealthMetricsResponse> => {
-    const request: BulkHealthMetricsRequest = { metrics };
+  async createBulk(
+    metrics: (CreateHealthMetricInput | ProcessedHealthMetric)[]
+  ): Promise<BulkHealthMetricsResponse> {
+    const request: BulkHealthMetricsRequest = { metrics: metrics as ProcessedHealthMetric[] };
     const response = await api.post('/health-metrics/bulk', request);
     return response.data;
   },
 
   /**
-   * Get the latest metric of a specific type
+   * Get all health metrics with optional filters
+   * GET /health-metrics
    */
-  getLatest: async (metricType: HealthMetricType): Promise<HealthMetric | null> => {
+  async getAll(params?: GetHealthMetricsParams): Promise<HealthMetric[]> {
+    const response = await api.get('/health-metrics', { params });
+    return response.data.healthMetrics || response.data;
+  },
+
+  /**
+   * Get a health metric by ID
+   * GET /health-metrics/:id
+   */
+  async getById(id: string): Promise<HealthMetric> {
+    const response = await api.get<HealthMetric>(`/health-metrics/${id}`);
+    return response.data;
+  },
+
+  /**
+   * Get the latest value for a specific metric type
+   * GET /health-metrics/latest/:metricType
+   */
+  async getLatest(metricType: HealthMetricType): Promise<HealthMetric | null> {
     try {
-      const response = await api.get(`/health-metrics/latest/${metricType}`);
+      const response = await api.get<HealthMetric>(`/health-metrics/latest/${metricType}`);
       return response.data;
     } catch (error) {
-      // Return null if no metric found
-      return null;
+      // Return null if no metrics found (404)
+      if (isNotFoundError(error)) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get time series data for charts
+   * GET /health-metrics/timeseries/:metricType
+   */
+  async getTimeSeries(
+    metricType: HealthMetricType,
+    startDate?: string,
+    endDate?: string,
+    limit?: number
+  ): Promise<TimeSeriesDataPoint[]> {
+    const params: Record<string, string | number> = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (limit) params.limit = limit;
+
+    const response = await api.get(`/health-metrics/timeseries/${metricType}`, { params });
+    return response.data.data || response.data;
+  },
+
+  /**
+   * Get statistics (avg, min, max, trend) for a metric type
+   * GET /health-metrics/stats/:metricType
+   */
+  async getStats(metricType: HealthMetricType, days?: number): Promise<HealthMetricStats | null> {
+    try {
+      const params: Record<string, number> = {};
+      if (days) params.days = days;
+
+      const response = await api.get<HealthMetricStats>(
+        `/health-metrics/stats/${metricType}`,
+        { params }
+      );
+      return response.data;
+    } catch (error) {
+      // Return null if no metrics found (404)
+      if (isNotFoundError(error)) {
+        return null;
+      }
+      throw error;
     }
   },
 
   /**
    * Get daily average for a metric type
+   * GET /health-metrics/average/daily/:metricType
    */
-  getDailyAverage: async (
-    metricType: HealthMetricType,
-    date?: string
-  ): Promise<{ average: number; count: number }> => {
-    const params = date ? { date } : undefined;
-    const response = await api.get(`/health-metrics/average/daily/${metricType}`, {
-      params,
-    });
-    return response.data;
+  async getDailyAverage(metricType: HealthMetricType, date?: string): Promise<AverageResponse | null> {
+    try {
+      const params: Record<string, string> = {};
+      if (date) params.date = date;
+
+      const response = await api.get<AverageResponse>(
+        `/health-metrics/average/daily/${metricType}`,
+        { params }
+      );
+      return response.data;
+    } catch (error) {
+      // Return null if no metrics found (404)
+      if (isNotFoundError(error)) {
+        return null;
+      }
+      throw error;
+    }
   },
 
   /**
    * Get weekly average for a metric type
+   * GET /health-metrics/average/weekly/:metricType
    */
-  getWeeklyAverage: async (
-    metricType: HealthMetricType
-  ): Promise<{ average: number; count: number }> => {
-    const response = await api.get(`/health-metrics/average/weekly/${metricType}`);
-    return response.data;
-  },
-
-  /**
-   * Get time series data for a metric
-   */
-  getTimeSeries: async (
-    metricType: HealthMetricType,
-    params?: { startDate?: string; endDate?: string; limit?: number }
-  ): Promise<TimeSeriesPoint[]> => {
-    const response = await api.get(`/health-metrics/timeseries/${metricType}`, {
-      params,
-    });
-    return response.data.data || response.data;
-  },
-
-  /**
-   * Get statistics for a metric type
-   */
-  getStats: async (metricType: HealthMetricType): Promise<MetricStats> => {
-    const response = await api.get(`/health-metrics/stats/${metricType}`);
-    return response.data;
+  async getWeeklyAverage(metricType: HealthMetricType): Promise<AverageResponse | null> {
+    try {
+      const response = await api.get<AverageResponse>(
+        `/health-metrics/average/weekly/${metricType}`
+      );
+      return response.data;
+    } catch (error) {
+      // Return null if no metrics found (404)
+      if (isNotFoundError(error)) {
+        return null;
+      }
+      throw error;
+    }
   },
 
   /**
    * Delete a health metric
+   * DELETE /health-metrics/:id
    */
-  delete: async (id: string): Promise<void> => {
+  async delete(id: string): Promise<void> {
     await api.delete(`/health-metrics/${id}`);
+  },
+
+  /**
+   * Get dashboard data for key metrics (RHR, HRV, Sleep, Recovery)
+   * Fetches latest values and stats for dashboard display
+   */
+  async getDashboardData(metricTypes: HealthMetricType[]): Promise<
+    Record<HealthMetricType, { latest: HealthMetric | null; stats: HealthMetricStats | null }>
+  > {
+    const results: Record<HealthMetricType, { latest: HealthMetric | null; stats: HealthMetricStats | null }> = {} as Record<HealthMetricType, { latest: HealthMetric | null; stats: HealthMetricStats | null }>;
+
+    // Fetch all metrics in parallel
+    await Promise.all(
+      metricTypes.map(async (metricType) => {
+        const [latest, stats] = await Promise.all([
+          this.getLatest(metricType),
+          this.getStats(metricType, 30),
+        ]);
+        results[metricType] = { latest, stats };
+      })
+    );
+
+    return results;
   },
 };
 
 /**
+ * Helper to check if an error is a 404 Not Found
+ */
+function isNotFoundError(error: unknown): boolean {
+  if (error && typeof error === 'object' && 'response' in error) {
+    const response = (error as { response?: { status?: number } }).response;
+    return response?.status === 404;
+  }
+  return false;
+}
+
+/**
  * Chunk array into smaller arrays
+ * Used for batch uploads with API limits
  */
 export function chunkArray<T>(array: T[], size: number): T[][] {
   const chunks: T[][] = [];
@@ -180,6 +238,7 @@ export function chunkArray<T>(array: T[], size: number): T[][] {
 /**
  * Upload health metrics in batches
  * Splits large arrays into chunks of 50 for API limits
+ * Used primarily by HealthKit sync
  */
 export async function uploadHealthMetricsInBatches(
   metrics: ProcessedHealthMetric[],
@@ -229,3 +288,5 @@ export async function uploadHealthMetricsInBatches(
     errors,
   };
 }
+
+export default healthMetricsApi;

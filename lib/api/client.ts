@@ -41,7 +41,7 @@ function getApiBaseUrl(): string {
 
   // Development environment - platform-specific defaults
   if (Platform.OS === 'ios') {
-    // iOS Simulator can use localhost
+    // iOS Simulator - localhost works directly
     return 'http://localhost:3000/api';
   } else if (Platform.OS === 'android') {
     // Android Emulator needs special IP (10.0.2.2 maps to host's localhost)
