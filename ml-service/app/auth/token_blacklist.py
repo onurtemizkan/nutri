@@ -6,7 +6,6 @@ Tokens are blacklisted when users logout to prevent reuse.
 """
 
 from datetime import datetime, timezone
-from typing import Optional
 import logging
 
 from app.redis_client import redis_client
@@ -42,7 +41,7 @@ class TokenBlacklist:
                 ttl = 7 * 24 * 60 * 60
             else:
                 # Calculate TTL from current time to expiry
-                now = datetime.now(UTC)
+                now = datetime.now(timezone.utc)
                 if expiry <= now:
                     # Token already expired, no need to blacklist
                     return True
@@ -112,9 +111,7 @@ class TokenBlacklist:
 
             # Scan in batches to avoid blocking
             while True:
-                cursor, keys = await redis_client.scan(
-                    cursor, match=pattern, count=100
-                )
+                cursor, keys = await redis_client.scan(cursor, match=pattern, count=100)
 
                 # Check each key's value to see if it matches user_id
                 for key in keys:

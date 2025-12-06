@@ -17,9 +17,7 @@ class RegisterRequest(BaseModel):
         ...,
         description="User's password (validated by service layer)",
     )
-    name: str = Field(
-        ..., min_length=2, max_length=100, description="User's full name"
-    )
+    name: str = Field(..., min_length=2, max_length=100, description="User's full name")
 
     @field_validator("name")
     @classmethod

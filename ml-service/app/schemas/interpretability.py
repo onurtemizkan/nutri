@@ -10,7 +10,7 @@ Phase 3 features:
 
 from datetime import date
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -20,6 +20,7 @@ from app.schemas.predictions import PredictionMetric
 # ============================================================================
 # Feature Importance
 # ============================================================================
+
 
 class ImportanceMethod(str, Enum):
     """Methods for calculating feature importance."""
@@ -34,12 +35,18 @@ class FeatureImportance(BaseModel):
     """Single feature importance score."""
 
     feature_name: str = Field(..., description="Feature name")
-    feature_category: str = Field(..., description="Category (nutrition, activity, etc.)")
-    importance_score: float = Field(..., description="Importance score (SHAP value or similar)")
+    feature_category: str = Field(
+        ..., description="Category (nutrition, activity, etc.)"
+    )
+    importance_score: float = Field(
+        ..., description="Importance score (SHAP value or similar)"
+    )
     rank: int = Field(..., description="Rank (1 = most important)")
 
     # For SHAP
-    shap_value: Optional[float] = Field(None, description="SHAP value (positive = increases prediction)")
+    shap_value: Optional[float] = Field(
+        None, description="SHAP value (positive = increases prediction)"
+    )
     base_value: Optional[float] = Field(None, description="Baseline prediction value")
 
     # For human understanding
@@ -47,7 +54,9 @@ class FeatureImportance(BaseModel):
     impact_magnitude: str = Field(..., description="strong/moderate/weak")
 
     # Actual feature value
-    feature_value: Optional[float] = Field(None, description="Actual feature value used")
+    feature_value: Optional[float] = Field(
+        None, description="Actual feature value used"
+    )
 
 
 class FeatureImportanceRequest(BaseModel):
@@ -58,15 +67,11 @@ class FeatureImportanceRequest(BaseModel):
     target_date: date = Field(..., description="Date of prediction to explain")
 
     method: ImportanceMethod = Field(
-        default=ImportanceMethod.SHAP,
-        description="Explanation method"
+        default=ImportanceMethod.SHAP, description="Explanation method"
     )
 
     top_k: int = Field(
-        default=10,
-        ge=1,
-        le=51,
-        description="Number of top features to return (1-51)"
+        default=10, ge=1, le=51, description="Number of top features to return (1-51)"
     )
 
 
@@ -91,8 +96,12 @@ class FeatureImportanceResponse(BaseModel):
     summary: str = Field(..., description="Natural language summary of top drivers")
 
     # Top features by category
-    top_nutrition_features: List[str] = Field(default=[], description="Top nutrition drivers")
-    top_activity_features: List[str] = Field(default=[], description="Top activity drivers")
+    top_nutrition_features: List[str] = Field(
+        default=[], description="Top nutrition drivers"
+    )
+    top_activity_features: List[str] = Field(
+        default=[], description="Top activity drivers"
+    )
     top_health_features: List[str] = Field(default=[], description="Top health drivers")
 
 
@@ -100,13 +109,20 @@ class FeatureImportanceResponse(BaseModel):
 # Attention Weights
 # ============================================================================
 
+
 class AttentionWeight(BaseModel):
     """Attention weight for a specific time step (day)."""
 
-    day_offset: int = Field(..., description="Days before prediction (0 = yesterday, 29 = 30 days ago)")
+    day_offset: int = Field(
+        ..., description="Days before prediction (0 = yesterday, 29 = 30 days ago)"
+    )
     day_date: date = Field(..., description="Actual date")
-    attention_score: float = Field(..., ge=0, le=1, description="Attention weight (0-1)")
-    importance_rank: int = Field(..., description="Rank by importance (1 = most important)")
+    attention_score: float = Field(
+        ..., ge=0, le=1, description="Attention weight (0-1)"
+    )
+    importance_rank: int = Field(
+        ..., description="Rank by importance (1 = most important)"
+    )
 
 
 class AttentionWeightsRequest(BaseModel):
@@ -143,19 +159,26 @@ class AttentionWeightsResponse(BaseModel):
 # What-If Scenarios (Counterfactuals)
 # ============================================================================
 
+
 class WhatIfChange(BaseModel):
     """A hypothetical change to test."""
 
-    feature_name: str = Field(..., description="Feature to modify (e.g., 'nutrition_protein_daily')")
+    feature_name: str = Field(
+        ..., description="Feature to modify (e.g., 'nutrition_protein_daily')"
+    )
     current_value: float = Field(..., description="Current value")
     new_value: float = Field(..., description="New hypothetical value")
-    change_description: str = Field(..., description="Human-readable change (e.g., '+50g protein')")
+    change_description: str = Field(
+        ..., description="Human-readable change (e.g., '+50g protein')"
+    )
 
 
 class WhatIfScenario(BaseModel):
     """A what-if scenario with multiple feature changes."""
 
-    scenario_name: str = Field(..., description="Scenario name (e.g., 'High Protein Day')")
+    scenario_name: str = Field(
+        ..., description="Scenario name (e.g., 'High Protein Day')"
+    )
     changes: List[WhatIfChange] = Field(
         ..., min_length=1, max_length=10, description="Features to change (1-10)"
     )
@@ -174,8 +197,7 @@ class WhatIfRequest(BaseModel):
 
     # Include baseline prediction
     include_baseline: bool = Field(
-        default=True,
-        description="Include current prediction as baseline"
+        default=True, description="Include current prediction as baseline"
     )
 
 
@@ -188,16 +210,15 @@ class WhatIfResult(BaseModel):
     change_from_baseline: float = Field(
         ..., description="Difference from baseline prediction"
     )
-    percent_change: float = Field(
-        ..., description="Percentage change from baseline"
-    )
+    percent_change: float = Field(..., description="Percentage change from baseline")
 
-    confidence_score: float = Field(..., ge=0, le=1, description="Confidence in this prediction")
+    confidence_score: float = Field(
+        ..., ge=0, le=1, description="Confidence in this prediction"
+    )
 
     # Which changes had the biggest impact
     biggest_drivers: List[str] = Field(
-        default=[],
-        description="Features that drove the change most"
+        default=[], description="Features that drove the change most"
     )
 
 
@@ -209,7 +230,9 @@ class WhatIfResponse(BaseModel):
     target_date: date
 
     # Baseline prediction
-    baseline_prediction: float = Field(..., description="Current prediction (no changes)")
+    baseline_prediction: float = Field(
+        ..., description="Current prediction (no changes)"
+    )
     baseline_confidence: float = Field(..., description="Baseline confidence")
 
     # Scenario results
@@ -231,6 +254,7 @@ class WhatIfResponse(BaseModel):
 # Counterfactual Explanations
 # ============================================================================
 
+
 class CounterfactualTarget(str, Enum):
     """Target for counterfactual generation."""
 
@@ -248,24 +272,22 @@ class CounterfactualRequest(BaseModel):
 
     target_type: CounterfactualTarget = Field(
         default=CounterfactualTarget.IMPROVE,
-        description="What kind of counterfactual to generate"
+        description="What kind of counterfactual to generate",
     )
 
     target_value: Optional[float] = Field(
-        None,
-        description="Target value (required if target_type='target_value')"
+        None, description="Target value (required if target_type='target_value')"
     )
 
     max_changes: int = Field(
         default=3,
         ge=1,
         le=10,
-        description="Maximum number of features to change (1-10)"
+        description="Maximum number of features to change (1-10)",
     )
 
     allowed_features: Optional[List[str]] = Field(
-        None,
-        description="Restrict changes to these features (None = all features)"
+        None, description="Restrict changes to these features (None = all features)"
     )
 
 
@@ -276,7 +298,9 @@ class CounterfactualChange(BaseModel):
     current_value: float
     suggested_value: float
     change_amount: float
-    change_description: str = Field(..., description="Human-readable (e.g., '+20g protein')")
+    change_description: str = Field(
+        ..., description="Human-readable (e.g., '+20g protein')"
+    )
 
 
 class CounterfactualExplanation(BaseModel):
@@ -312,8 +336,7 @@ class CounterfactualResponse(BaseModel):
 
     # Alternative counterfactuals
     alternatives: List[CounterfactualExplanation] = Field(
-        default=[],
-        description="Alternative ways to achieve similar results"
+        default=[], description="Alternative ways to achieve similar results"
     )
 
 
@@ -321,13 +344,16 @@ class CounterfactualResponse(BaseModel):
 # Global Feature Importance (Across All Predictions)
 # ============================================================================
 
+
 class GlobalFeatureImportance(BaseModel):
     """Global feature importance across all training data."""
 
     feature_name: str
     feature_category: str
 
-    mean_importance: float = Field(..., description="Average importance across all samples")
+    mean_importance: float = Field(
+        ..., description="Average importance across all samples"
+    )
     std_importance: float = Field(..., description="Standard deviation of importance")
 
     rank: int = Field(..., description="Global rank (1 = most important)")
@@ -341,15 +367,11 @@ class GlobalImportanceRequest(BaseModel):
     model_id: str = Field(..., description="Model to analyze")
 
     method: ImportanceMethod = Field(
-        default=ImportanceMethod.SHAP,
-        description="Method to use"
+        default=ImportanceMethod.SHAP, description="Method to use"
     )
 
     top_k: int = Field(
-        default=20,
-        ge=1,
-        le=51,
-        description="Number of top features (1-51)"
+        default=20, ge=1, le=51, description="Number of top features (1-51)"
     )
 
 
@@ -364,11 +386,13 @@ class GlobalImportanceResponse(BaseModel):
         ..., description="Ranked global feature importances"
     )
 
-    summary: str = Field(
-        ..., description="Natural language summary of key drivers"
-    )
+    summary: str = Field(..., description="Natural language summary of key drivers")
 
     # Category summaries
-    nutrition_importance: float = Field(..., description="Overall nutrition importance (0-1)")
-    activity_importance: float = Field(..., description="Overall activity importance (0-1)")
+    nutrition_importance: float = Field(
+        ..., description="Overall nutrition importance (0-1)"
+    )
+    activity_importance: float = Field(
+        ..., description="Overall activity importance (0-1)"
+    )
     health_importance: float = Field(..., description="Overall health importance (0-1)")

@@ -134,7 +134,7 @@ format-check: $(VENV_BIN)/activate ## Check code formatting
 	@$(PYTHON_VENV) -m black --check app/ tests/
 
 typecheck: $(VENV_BIN)/activate ## Run type checker
-	@$(PYTHON_VENV) -m mypy app/
+	@$(PYTHON_VENV) -m mypy app/ --config-file mypy.ini
 
 # ============================================================================
 # Docker Commands

@@ -76,8 +76,7 @@ async def engineer_features(
 
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Error engineering features: {str(e)}"
+            status_code=500, detail=f"Error engineering features: {str(e)}"
         )
 
 
@@ -119,8 +118,7 @@ async def get_features(
 
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Error fetching features: {str(e)}"
+            status_code=500, detail=f"Error fetching features: {str(e)}"
         )
 
 
@@ -184,8 +182,7 @@ async def get_features_summary(
 
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Error fetching feature summary: {str(e)}"
+            status_code=500, detail=f"Error fetching feature summary: {str(e)}"
         )
 
 
@@ -223,11 +220,10 @@ async def invalidate_feature_cache(
             "user_id": user_id,
             "invalidated": True,
             "keys_deleted": count,
-            "message": "Feature cache cleared successfully"
+            "message": "Feature cache cleared successfully",
         }
 
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Error invalidating cache: {str(e)}"
+            status_code=500, detail=f"Error invalidating cache: {str(e)}"
         )

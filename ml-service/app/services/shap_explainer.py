@@ -138,12 +138,10 @@ class SHAPExplainerService:
             )
         else:
             # Fallback to simpler methods
-            shap_values = self._calculate_permutation_importance(
-                model, X_input, device
-            )
+            shap_values = self._calculate_permutation_importance(model, X_input, device)
             base_value = 0.0
 
-        print(f"✅ SHAP values calculated")
+        print("✅ SHAP values calculated")
 
         # Step 5: Rank features by importance
         print("\n📊 Step 5: Ranking features by importance...")
@@ -210,7 +208,7 @@ class SHAPExplainerService:
             GlobalImportanceResponse with global feature importances
         """
         print(f"\n{'='*70}")
-        print(f"🌍 Calculating global feature importance")
+        print("🌍 Calculating global feature importance")
         print(f"   Model: {request.model_id}")
         print(f"   Method: {request.method.value}")
         print(f"{'='*70}\n")
@@ -240,7 +238,7 @@ class SHAPExplainerService:
         # TODO: Compute actual SHAP values on validation set
         global_importances = []
 
-        for i, feature_name in enumerate(feature_names[:request.top_k]):
+        for i, feature_name in enumerate(feature_names[: request.top_k]):
             category = self._get_feature_category(feature_name)
 
             global_importance = GlobalFeatureImportance(
@@ -262,9 +260,7 @@ class SHAPExplainerService:
             gi.rank = i + 1
 
         # Generate summary
-        summary = self._generate_global_summary(
-            metadata["metric"], global_importances
-        )
+        summary = self._generate_global_summary(metadata["metric"], global_importances)
 
         # Calculate category importances
         category_scores = self._calculate_category_importance(global_importances)
@@ -433,8 +429,16 @@ class SHAPExplainerService:
         avg_feature_values = np.mean(feature_values, axis=0)
 
         for i, feature_name in enumerate(feature_names):
-            shap_value = float(shap_values[i].item()) if hasattr(shap_values[i], 'item') else float(shap_values[i])
-            feature_value = float(avg_feature_values[i].item()) if hasattr(avg_feature_values[i], 'item') else float(avg_feature_values[i])
+            shap_value = (
+                float(shap_values[i].item())
+                if hasattr(shap_values[i], "item")
+                else float(shap_values[i])
+            )
+            feature_value = (
+                float(avg_feature_values[i].item())
+                if hasattr(avg_feature_values[i], "item")
+                else float(avg_feature_values[i])
+            )
 
             # Determine impact direction
             if shap_value > 0:
@@ -507,14 +511,20 @@ class SHAPExplainerService:
         feature_descriptions = []
         for fi in top_3:
             # Clean feature name
-            clean_name = fi.feature_name.replace("_", " ").replace("nutrition ", "").replace("activity ", "")
+            clean_name = (
+                fi.feature_name.replace("_", " ")
+                .replace("nutrition ", "")
+                .replace("activity ", "")
+            )
 
             if fi.impact_direction == "positive":
                 direction = "increasing"
             else:
                 direction = "decreasing"
 
-            feature_descriptions.append(f"{clean_name} ({direction} your {metric.value.lower()})")
+            feature_descriptions.append(
+                f"{clean_name} ({direction} your {metric.value.lower()})"
+            )
 
         summary = (
             f"The top 3 drivers of your {metric.value.lower()} prediction are: "
@@ -528,7 +538,7 @@ class SHAPExplainerService:
         self, feature_importances: List[FeatureImportance]
     ) -> Dict[str, List[str]]:
         """Group top features by category."""
-        by_category = {
+        by_category: Dict[str, List[str]] = {
             "nutrition": [],
             "activity": [],
             "health": [],
@@ -611,9 +621,7 @@ class SHAPExplainerService:
 
         # Load model
         model = HealthMetricLSTM(config)
-        model.load_state_dict(
-            torch.load(model_dir / "model.pt", map_location="cpu")
-        )
+        model.load_state_dict(torch.load(model_dir / "model.pt", map_location="cpu"))
 
         # Load scalers
         with open(model_dir / "scaler.pkl", "rb") as f:

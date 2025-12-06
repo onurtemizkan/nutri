@@ -9,11 +9,10 @@ Handles:
 5. Model persistence and versioning
 """
 
-import os
 import pickle
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import torch
 import torch.nn as nn
@@ -25,8 +24,6 @@ from app.schemas.predictions import (
     TrainModelRequest,
     TrainModelResponse,
     TrainingMetrics,
-    PredictionMetric,
-    ModelArchitecture,
 )
 from app.services.data_preparation import DataPreparationService
 
@@ -48,9 +45,7 @@ class ModelTrainingService:
     # Main Training Entry Point
     # ========================================================================
 
-    async def train_model(
-        self, request: TrainModelRequest
-    ) -> TrainModelResponse:
+    async def train_model(self, request: TrainModelRequest) -> TrainModelResponse:
         """
         Train a PyTorch LSTM model for health metric prediction.
 
@@ -91,7 +86,7 @@ class ModelTrainingService:
         feature_names = training_data["feature_names"]
         num_features = training_data["num_features"]
 
-        print(f"✅ Data prepared:")
+        print("✅ Data prepared:")
         print(f"   - Training samples: {len(X_train)}")
         print(f"   - Validation samples: {len(X_val)}")
         print(f"   - Features: {num_features}")
@@ -112,7 +107,7 @@ class ModelTrainingService:
         device = torch.device(config.device)
         model = model.to(device)
 
-        print(f"✅ Model initialized:")
+        print("✅ Model initialized:")
         print(f"   - Architecture: {request.architecture.value}")
         print(f"   - Hidden dim: {config.hidden_dim}")
         print(f"   - Layers: {config.num_layers}")
@@ -143,7 +138,7 @@ class ModelTrainingService:
             device=device,
         )
 
-        print(f"✅ Evaluation complete:")
+        print("✅ Evaluation complete:")
         print(f"   - MAE: {eval_metrics['mae']:.4f}")
         print(f"   - RMSE: {eval_metrics['rmse']:.4f}")
         print(f"   - R² Score: {eval_metrics['r2_score']:.4f}")
@@ -165,15 +160,13 @@ class ModelTrainingService:
             eval_metrics=eval_metrics,
         )
 
-        print(f"✅ Model saved:")
+        print("✅ Model saved:")
         print(f"   - Model ID: {model_id}")
         print(f"   - Path: {model_artifacts['model_path']}")
         print(f"   - Size: {model_artifacts['model_size_mb']:.2f} MB")
 
         # Step 6: Quality assessment
-        is_production_ready, quality_issues = self._assess_model_quality(
-            eval_metrics
-        )
+        is_production_ready, quality_issues = self._assess_model_quality(eval_metrics)
 
         if is_production_ready:
             print("\n✅ Model is production-ready!")
@@ -422,7 +415,10 @@ class ModelTrainingService:
 
         # MAPE (Mean Absolute Percentage Error) - avoid division by zero
         epsilon = 1e-10  # Small constant to avoid division by zero
-        mape = np.mean(np.abs((y_val_real - predictions_real) / (y_val_real + epsilon))) * 100
+        mape = (
+            np.mean(np.abs((y_val_real - predictions_real) / (y_val_real + epsilon)))
+            * 100
+        )
 
         return {
             "mae": mae,
@@ -527,9 +523,7 @@ class ModelTrainingService:
     # Quality Assessment
     # ========================================================================
 
-    def _assess_model_quality(
-        self, eval_metrics: Dict
-    ) -> tuple[bool, List[str]]:
+    def _assess_model_quality(self, eval_metrics: Dict) -> tuple[bool, List[str]]:
         """
         Assess if model is production-ready.
 
@@ -559,9 +553,7 @@ class ModelTrainingService:
 
         # Negative R² is very bad
         if eval_metrics["r2_score"] < 0:
-            issues.append(
-                "Negative R² - model performs worse than predicting the mean"
-            )
+            issues.append("Negative R² - model performs worse than predicting the mean")
 
         is_production_ready = len(issues) == 0
 

@@ -8,10 +8,8 @@ Tests the comprehensive food database including:
 - Portion validation
 - Weight estimation from volume
 """
-import pytest
 from app.data.food_database import (
     FOOD_DATABASE,
-    COOKING_MODIFIERS,
     PORTION_VALIDATION,
     AMINO_ACID_PROTEIN_RATIOS,
     FoodCategory,
@@ -57,9 +55,9 @@ class TestFoodDatabase:
         for key, entry in FOOD_DATABASE.items():
             # Most foods have density 0.02 - 2.0 g/cm³
             # (popcorn is very light: 0.05)
-            assert 0.02 <= entry.density <= 3.0, (
-                f"Unrealistic density {entry.density} for {key}"
-            )
+            assert (
+                0.02 <= entry.density <= 3.0
+            ), f"Unrealistic density {entry.density} for {key}"
 
     def test_nutrition_values_consistent(self):
         """Macros should roughly sum to expected caloric range."""
@@ -70,9 +68,9 @@ class TestFoodDatabase:
             # Allow 30% variance due to fiber, water, etc.
             if entry.calories > 0:
                 ratio = entry.calories / expected_cal if expected_cal > 0 else 1
-                assert 0.5 <= ratio <= 2.0, (
-                    f"Calories mismatch for {key}: {entry.calories} vs {expected_cal}"
-                )
+                assert (
+                    0.5 <= ratio <= 2.0
+                ), f"Calories mismatch for {key}: {entry.calories} vs {expected_cal}"
 
     def test_categories_coverage(self):
         """Database should cover multiple food categories."""
@@ -112,8 +110,7 @@ class TestGetFoodEntry:
         """Should find foods by alias."""
         # Check if we have any foods with aliases
         foods_with_aliases = [
-            entry for entry in FOOD_DATABASE.values()
-            if entry.aliases
+            entry for entry in FOOD_DATABASE.values() if entry.aliases
         ]
         if foods_with_aliases:
             test_entry = foods_with_aliases[0]
@@ -207,10 +204,7 @@ class TestEstimateWeightFromVolume:
         """Should estimate weight correctly for known foods."""
         # 125 cm³ (5x5x5 cube equivalent) of apple
         volume = 5 * 5 * 5  # 125 cm³
-        result = estimate_weight_from_volume(
-            volume_cm3=volume,
-            food_name="apple"
-        )
+        result = estimate_weight_from_volume(volume_cm3=volume, food_name="apple")
 
         assert "weight" in result
         assert "density_used" in result
@@ -223,12 +217,12 @@ class TestEstimateWeightFromVolume:
         raw_result = estimate_weight_from_volume(
             volume_cm3=volume,
             food_name="chicken_breast",
-            cooking_method=CookingMethod.RAW
+            cooking_method=CookingMethod.RAW,
         )
         grilled_result = estimate_weight_from_volume(
             volume_cm3=volume,
             food_name="chicken_breast",
-            cooking_method=CookingMethod.GRILLED
+            cooking_method=CookingMethod.GRILLED,
         )
 
         # Grilled should be lighter due to moisture loss
@@ -238,8 +232,7 @@ class TestEstimateWeightFromVolume:
         """Unknown food should use default values."""
         volume = 5 * 5 * 5  # 125 cm³
         result = estimate_weight_from_volume(
-            volume_cm3=volume,
-            food_name="unknown_food_xyz"
+            volume_cm3=volume, food_name="unknown_food_xyz"
         )
 
         assert result["weight"] > 0
@@ -250,15 +243,18 @@ class TestEstimateWeightFromVolume:
         """Result should include calculation metadata."""
         volume = 10 * 8 * 5  # 400 cm³
         result = estimate_weight_from_volume(
-            volume_cm3=volume,
-            food_name="rice",
-            cooking_method=CookingMethod.COOKED
+            volume_cm3=volume, food_name="rice", cooking_method=CookingMethod.COOKED
         )
 
         expected_keys = [
-            "weight", "volume_raw", "volume_adjusted",
-            "density_used", "shape_factor_used",
-            "cooking_modifier", "confidence", "method"
+            "weight",
+            "volume_raw",
+            "volume_adjusted",
+            "density_used",
+            "shape_factor_used",
+            "cooking_modifier",
+            "confidence",
+            "method",
         ]
         for key in expected_keys:
             assert key in result, f"Missing key: {key}"
@@ -276,7 +272,9 @@ class TestValidatePortion:
     def test_too_heavy_portion(self):
         """Very heavy portion should have warning."""
         result = validate_portion(6000, {"width": 30, "height": 30, "depth": 30})
-        assert "weight" in str(result["warnings"]).lower() or len(result["warnings"]) > 0
+        assert (
+            "weight" in str(result["warnings"]).lower() or len(result["warnings"]) > 0
+        )
 
     def test_too_light_portion(self):
         """Very light portion should have warning."""
@@ -327,9 +325,20 @@ class TestFoodCategories:
     def test_category_values(self):
         """Category enum should have expected values."""
         expected = [
-            "fruit", "vegetable", "protein", "grain", "dairy",
-            "beverage", "baked", "snack", "mixed", "legume",
-            "seafood", "nut", "condiment", "unknown"
+            "fruit",
+            "vegetable",
+            "protein",
+            "grain",
+            "dairy",
+            "beverage",
+            "baked",
+            "snack",
+            "mixed",
+            "legume",
+            "seafood",
+            "nut",
+            "condiment",
+            "unknown",
         ]
         category_values = [c.value for c in FoodCategory]
         for exp in expected:
@@ -342,8 +351,16 @@ class TestCookingMethods:
     def test_cooking_method_values(self):
         """CookingMethod enum should have expected values."""
         expected = [
-            "raw", "cooked", "boiled", "steamed", "grilled",
-            "fried", "baked", "roasted", "sauteed", "poached"
+            "raw",
+            "cooked",
+            "boiled",
+            "steamed",
+            "grilled",
+            "fried",
+            "baked",
+            "roasted",
+            "sauteed",
+            "poached",
         ]
         method_values = [m.value for m in CookingMethod]
         for exp in expected:
@@ -356,9 +373,9 @@ class TestAminoAcidProteinRatios:
     def test_ratios_defined_for_all_categories(self):
         """All food categories should have amino acid ratios defined."""
         for category in FoodCategory:
-            assert category in AMINO_ACID_PROTEIN_RATIOS, (
-                f"Missing amino acid ratios for {category}"
-            )
+            assert (
+                category in AMINO_ACID_PROTEIN_RATIOS
+            ), f"Missing amino acid ratios for {category}"
 
     def test_ratios_have_required_keys(self):
         """Each category should have lysine and arginine ratios."""
@@ -416,9 +433,7 @@ class TestGetAminoAcids:
     def test_unknown_food_estimates_from_category(self):
         """Unknown foods should estimate based on category."""
         result = get_amino_acids(
-            "unknown_food_xyz",
-            protein_grams=20,
-            category=FoodCategory.PROTEIN
+            "unknown_food_xyz", protein_grams=20, category=FoodCategory.PROTEIN
         )
 
         assert result["lysine"] is not None
@@ -486,7 +501,10 @@ class TestEstimateLysineArginineRatio:
         result = estimate_lysine_arginine_ratio("egg")
         assert result["ratio"] is not None
         assert result["classification"] in [
-            "high_lysine", "balanced", "moderate_arginine", "high_arginine"
+            "high_lysine",
+            "balanced",
+            "moderate_arginine",
+            "high_arginine",
         ]
 
     def test_unknown_food_fallback(self):
@@ -507,7 +525,9 @@ class TestEstimateLysineArginineRatio:
         assert result["ratio"] is not None
         # Tofu has more arginine than lysine
         assert result["classification"] in [
-            "high_arginine", "moderate_arginine", "balanced"
+            "high_arginine",
+            "moderate_arginine",
+            "balanced",
         ]
 
     def test_ratio_thresholds(self):
@@ -530,9 +550,7 @@ class TestAminoAcidDatabaseEntries:
 
     def test_high_protein_foods_have_explicit_values(self):
         """Key high-protein foods should have explicit amino acid values."""
-        high_protein_foods = [
-            "chicken_breast", "beef", "salmon", "egg", "tofu"
-        ]
+        high_protein_foods = ["chicken_breast", "beef", "salmon", "egg", "tofu"]
         for food in high_protein_foods:
             entry = get_food_entry(food)
             if entry is not None:
@@ -544,11 +562,11 @@ class TestAminoAcidDatabaseEntries:
         for key, entry in FOOD_DATABASE.items():
             if entry.lysine is not None:
                 # Lysine should be between 0 and 5000mg per serving
-                assert 0 < entry.lysine <= 5000, (
-                    f"Unrealistic lysine {entry.lysine} for {key}"
-                )
+                assert (
+                    0 < entry.lysine <= 5000
+                ), f"Unrealistic lysine {entry.lysine} for {key}"
             if entry.arginine is not None:
                 # Arginine should be between 0 and 5000mg per serving
-                assert 0 < entry.arginine <= 5000, (
-                    f"Unrealistic arginine {entry.arginine} for {key}"
-                )
+                assert (
+                    0 < entry.arginine <= 5000
+                ), f"Unrealistic arginine {entry.arginine} for {key}"

@@ -10,11 +10,10 @@ It also generates counterfactual explanations:
 - "To reach your target RHR, you should increase protein by 30g and reduce late-night calories by 200"
 """
 
-import copy
 import pickle
-from datetime import date, timedelta
+from datetime import timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import numpy as np
 import torch
@@ -49,9 +48,7 @@ class WhatIfService:
     # What-If Scenarios
     # ========================================================================
 
-    async def test_what_if_scenarios(
-        self, request: WhatIfRequest
-    ) -> WhatIfResponse:
+    async def test_what_if_scenarios(self, request: WhatIfRequest) -> WhatIfResponse:
         """
         Test multiple what-if scenarios.
 
@@ -102,7 +99,7 @@ class WhatIfService:
             feature_names=model_artifacts["feature_names"],
         )
 
-        print(f"✅ Baseline input prepared")
+        print("✅ Baseline input prepared")
 
         # Step 3: Make baseline prediction
         print("\n🔮 Step 3: Making baseline prediction...")
@@ -127,7 +124,9 @@ class WhatIfService:
         scenario_results = []
 
         for i, scenario in enumerate(request.scenarios):
-            print(f"\n   Scenario {i + 1}/{len(request.scenarios)}: {scenario.scenario_name}")
+            print(
+                f"\n   Scenario {i + 1}/{len(request.scenarios)}: {scenario.scenario_name}"
+            )
 
             # Apply changes to features
             X_modified = self._apply_scenario_changes(
@@ -149,9 +148,13 @@ class WhatIfService:
 
             # Calculate change
             change = scenario_prediction - baseline_prediction
-            percent_change = (change / baseline_prediction) * 100 if baseline_prediction != 0 else 0
+            percent_change = (
+                (change / baseline_prediction) * 100 if baseline_prediction != 0 else 0
+            )
 
-            print(f"      Prediction: {scenario_prediction:.2f} (change: {change:+.2f}, {percent_change:+.1f}%)")
+            print(
+                f"      Prediction: {scenario_prediction:.2f} (change: {change:+.2f}, {percent_change:+.1f}%)"
+            )
 
             # Identify biggest drivers (features that changed)
             biggest_drivers = [c.feature_name for c in scenario.changes[:3]]
@@ -180,8 +183,12 @@ class WhatIfService:
             best_scenario = max(scenario_results, key=lambda x: x.predicted_value)
             worst_scenario = min(scenario_results, key=lambda x: x.predicted_value)
 
-        print(f"✅ Best scenario: {best_scenario.scenario_name} ({best_scenario.predicted_value:.2f})")
-        print(f"   Worst scenario: {worst_scenario.scenario_name} ({worst_scenario.predicted_value:.2f})")
+        print(
+            f"✅ Best scenario: {best_scenario.scenario_name} ({best_scenario.predicted_value:.2f})"
+        )
+        print(
+            f"   Worst scenario: {worst_scenario.scenario_name} ({worst_scenario.predicted_value:.2f})"
+        )
 
         # Step 6: Generate summary
         summary = self._generate_what_if_summary(
@@ -249,7 +256,7 @@ class WhatIfService:
             CounterfactualResponse with suggested changes
         """
         print(f"\n{'='*70}")
-        print(f"🔍 Generating counterfactual explanation")
+        print("🔍 Generating counterfactual explanation")
         print(f"   User: {request.user_id}")
         print(f"   Metric: {request.metric.value}")
         print(f"   Target: {request.target_type.value}")
@@ -260,7 +267,7 @@ class WhatIfService:
         model_id = self._find_latest_model(request.user_id, request.metric)
 
         if not model_id:
-            raise ValueError(f"No trained model found")
+            raise ValueError("No trained model found")
 
         model_artifacts = self._load_model_artifacts(model_id)
 
@@ -304,7 +311,7 @@ class WhatIfService:
             else:
                 target_prediction = current_prediction * 1.05  # Higher HRV
         elif request.target_type == CounterfactualTarget.TARGET_VALUE:
-            target_prediction = request.target_value
+            target_prediction = request.target_value or current_prediction
         else:
             target_prediction = current_prediction * 1.05
 
@@ -408,7 +415,9 @@ class WhatIfService:
         for change in scenario.changes:
             # Find feature index
             if change.feature_name not in feature_names:
-                print(f"⚠️ Warning: Feature '{change.feature_name}' not found, skipping")
+                print(
+                    f"⚠️ Warning: Feature '{change.feature_name}' not found, skipping"
+                )
                 continue
 
             feature_idx = feature_names.index(change.feature_name)
@@ -467,7 +476,7 @@ class WhatIfService:
         2. Select feature with highest impact toward target
         3. Repeat until target reached or max_changes hit
         """
-        changes = []
+        changes: List[CounterfactualChange] = []
         X_current = X_baseline.clone()
         current_pred = current_prediction
 
@@ -499,7 +508,9 @@ class WhatIfService:
 
                 # Try modification
                 new_value = current_value + (0.2 * direction)
-                new_unnorm = current_unnorm * 1.2 if direction > 0 else current_unnorm * 0.8
+                new_unnorm = (
+                    current_unnorm * 1.2 if direction > 0 else current_unnorm * 0.8
+                )
 
                 # Test this change
                 X_test = X_current.clone()
@@ -527,7 +538,7 @@ class WhatIfService:
                     best_unnorm_value = new_unnorm
 
             # If we found a good change, apply it
-            if best_feature and best_impact > 0:
+            if best_feature and best_impact > 0 and best_unnorm_value is not None:
                 feature_idx = feature_names.index(best_feature)
                 X_current[0, -1, feature_idx] = best_value
 
@@ -540,7 +551,9 @@ class WhatIfService:
                     suggested_value=float(best_unnorm_value),
                     change_amount=float(best_unnorm_value - current_unnorm_value),
                     change_description=self._describe_change(
-                        best_feature, current_unnorm_value, best_unnorm_value
+                        best_feature,
+                        float(current_unnorm_value),
+                        float(best_unnorm_value),
                     ),
                 )
 
@@ -550,8 +563,9 @@ class WhatIfService:
                 current_pred = current_pred + (best_impact * direction)
 
                 # Check if we reached target
-                if (direction > 0 and current_pred >= target_prediction) or \
-                   (direction < 0 and current_pred <= target_prediction):
+                if (direction > 0 and current_pred >= target_prediction) or (
+                    direction < 0 and current_pred <= target_prediction
+                ):
                     break
             else:
                 # No more improvements found
@@ -566,7 +580,11 @@ class WhatIfService:
         change = new_value - current_value
 
         # Clean feature name
-        clean_name = feature_name.replace("_", " ").replace("nutrition ", "").replace("activity ", "")
+        clean_name = (
+            feature_name.replace("_", " ")
+            .replace("nutrition ", "")
+            .replace("activity ", "")
+        )
 
         if "protein" in feature_name.lower():
             return f"{change:+.1f}g protein"
@@ -597,7 +615,12 @@ class WhatIfService:
             return 0.9
 
     def _generate_what_if_summary(
-        self, metric, baseline_prediction, best_scenario, worst_scenario, scenario_results
+        self,
+        metric,
+        baseline_prediction,
+        best_scenario,
+        worst_scenario,
+        scenario_results,
     ) -> str:
         """Generate summary of what-if scenarios."""
         summary = (
@@ -609,12 +632,13 @@ class WhatIfService:
         )
         return summary
 
-    def _generate_what_if_recommendation(
-        self, metric, best_scenario, scenarios
-    ) -> str:
+    def _generate_what_if_recommendation(self, metric, best_scenario, scenarios) -> str:
         """Generate recommendation based on best scenario."""
         # Find the best scenario details
-        best_scenario_obj = next((s for s in scenarios if s.scenario_name == best_scenario.scenario_name), None)
+        best_scenario_obj = next(
+            (s for s in scenarios if s.scenario_name == best_scenario.scenario_name),
+            None,
+        )
 
         if not best_scenario_obj:
             return "Consider making the changes in the best scenario to improve your prediction."
@@ -631,7 +655,12 @@ class WhatIfService:
         return recommendation
 
     def _generate_counterfactual_summary(
-        self, metric, current_prediction, target_prediction, achieved_prediction, changes
+        self,
+        metric,
+        current_prediction,
+        target_prediction,
+        achieved_prediction,
+        changes,
     ) -> str:
         """Generate summary of counterfactual explanation."""
         if not changes:
@@ -674,9 +703,7 @@ class WhatIfService:
 
         # Load model
         model = HealthMetricLSTM(config)
-        model.load_state_dict(
-            torch.load(model_dir / "model.pt", map_location="cpu")
-        )
+        model.load_state_dict(torch.load(model_dir / "model.pt", map_location="cpu"))
 
         # Load scalers
         with open(model_dir / "scaler.pkl", "rb") as f:
@@ -706,7 +733,6 @@ class WhatIfService:
         self, user_id, target_date, sequence_length, feature_names
     ) -> np.ndarray:
         """Get unnormalized feature values."""
-        from datetime import timedelta
         import pandas as pd
 
         start_date = target_date - timedelta(days=sequence_length)

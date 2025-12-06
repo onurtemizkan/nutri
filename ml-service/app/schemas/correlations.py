@@ -2,7 +2,7 @@
 Pydantic schemas for correlation analysis.
 """
 
-from datetime import date, datetime
+from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
@@ -35,53 +35,57 @@ class HealthMetricTarget(str, Enum):
 # Correlation Request/Response Models
 # ============================================================================
 
+
 class CorrelationRequest(BaseModel):
     """Request to analyze correlations between features and health metrics."""
 
     user_id: str = Field(..., description="User ID")
-    target_metric: HealthMetricTarget = Field(..., description="Health metric to correlate with")
+    target_metric: HealthMetricTarget = Field(
+        ..., description="Health metric to correlate with"
+    )
     methods: List[CorrelationMethod] = Field(
         default=[CorrelationMethod.PEARSON, CorrelationMethod.SPEARMAN],
-        description="Correlation methods to use"
+        description="Correlation methods to use",
     )
     lookback_days: int = Field(
         default=30,
         ge=14,
         le=180,
-        description="Days of historical data to analyze (14-180)"
+        description="Days of historical data to analyze (14-180)",
     )
     significance_threshold: float = Field(
         default=0.05,
         ge=0.001,
         le=0.1,
-        description="P-value threshold for statistical significance"
+        description="P-value threshold for statistical significance",
     )
     min_correlation: float = Field(
         default=0.3,
         ge=0.0,
         le=1.0,
-        description="Minimum absolute correlation to report"
+        description="Minimum absolute correlation to report",
     )
-    top_k: int = Field(
-        default=10,
-        ge=1,
-        le=50,
-        description="Return top K correlations"
-    )
+    top_k: int = Field(default=10, ge=1, le=50, description="Return top K correlations")
 
 
 class CorrelationResult(BaseModel):
     """A single correlation result."""
 
     feature_name: str = Field(..., description="Name of the feature")
-    feature_category: str = Field(..., description="Category (nutrition, activity, health, etc.)")
-    correlation: float = Field(..., ge=-1, le=1, description="Correlation coefficient (-1 to 1)")
+    feature_category: str = Field(
+        ..., description="Category (nutrition, activity, health, etc.)"
+    )
+    correlation: float = Field(
+        ..., ge=-1, le=1, description="Correlation coefficient (-1 to 1)"
+    )
     p_value: float = Field(..., description="P-value for statistical significance")
     sample_size: int = Field(..., description="Number of data points used")
     method: CorrelationMethod = Field(..., description="Correlation method used")
 
     # Interpretation helpers
-    is_significant: bool = Field(..., description="True if p_value < significance_threshold")
+    is_significant: bool = Field(
+        ..., description="True if p_value < significance_threshold"
+    )
     strength: str = Field(..., description="weak/moderate/strong")
     direction: str = Field(..., description="positive/negative/none")
 
@@ -119,35 +123,28 @@ class CorrelationResponse(BaseModel):
 # Lag Analysis Models
 # ============================================================================
 
+
 class LagAnalysisRequest(BaseModel):
     """Request to analyze lagged correlations (time-delayed effects)."""
 
     user_id: str = Field(..., description="User ID")
-    target_metric: HealthMetricTarget = Field(..., description="Health metric to correlate with")
+    target_metric: HealthMetricTarget = Field(
+        ..., description="Health metric to correlate with"
+    )
     feature_name: str = Field(..., description="Specific feature to analyze")
 
     max_lag_hours: int = Field(
-        default=72,
-        ge=6,
-        le=168,
-        description="Maximum lag to test in hours (6-168)"
+        default=72, ge=6, le=168, description="Maximum lag to test in hours (6-168)"
     )
     lag_step_hours: int = Field(
-        default=6,
-        ge=1,
-        le=24,
-        description="Step size for lag analysis in hours"
+        default=6, ge=1, le=24, description="Step size for lag analysis in hours"
     )
 
     lookback_days: int = Field(
-        default=30,
-        ge=14,
-        le=180,
-        description="Days of historical data to analyze"
+        default=30, ge=14, le=180, description="Days of historical data to analyze"
     )
     method: CorrelationMethod = Field(
-        default=CorrelationMethod.PEARSON,
-        description="Correlation method to use"
+        default=CorrelationMethod.PEARSON, description="Correlation method to use"
     )
 
 
@@ -199,6 +196,7 @@ class LagAnalysisResponse(BaseModel):
 # ============================================================================
 # Helper Functions
 # ============================================================================
+
 
 def interpret_correlation_strength(correlation: float) -> str:
     """Interpret correlation strength."""

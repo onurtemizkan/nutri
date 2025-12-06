@@ -31,14 +31,14 @@ class ModelArchitecture(str, Enum):
 # Training Request/Response
 # ============================================================================
 
+
 class TrainModelRequest(BaseModel):
     """Request to train a prediction model."""
 
     user_id: str = Field(..., description="User ID")
     metric: PredictionMetric = Field(..., description="Health metric to predict")
     architecture: ModelArchitecture = Field(
-        default=ModelArchitecture.LSTM,
-        description="Model architecture to use"
+        default=ModelArchitecture.LSTM, description="Model architecture to use"
     )
 
     # Training data parameters
@@ -46,30 +46,32 @@ class TrainModelRequest(BaseModel):
         default=90,
         ge=30,
         le=365,
-        description="Days of historical data for training (30-365)"
+        description="Days of historical data for training (30-365)",
     )
     sequence_length: int = Field(
-        default=30,
-        ge=7,
-        le=60,
-        description="Length of input sequences (7-60 days)"
+        default=30, ge=7, le=60, description="Length of input sequences (7-60 days)"
     )
 
     # Training hyperparameters
     epochs: int = Field(default=50, ge=10, le=200, description="Training epochs")
     batch_size: int = Field(default=32, ge=8, le=128, description="Batch size")
-    learning_rate: float = Field(default=0.001, ge=0.0001, le=0.1, description="Learning rate")
-    validation_split: float = Field(default=0.2, ge=0.1, le=0.3, description="Validation split")
+    learning_rate: float = Field(
+        default=0.001, ge=0.0001, le=0.1, description="Learning rate"
+    )
+    validation_split: float = Field(
+        default=0.2, ge=0.1, le=0.3, description="Validation split"
+    )
 
     # Model architecture hyperparameters (for LSTM)
-    hidden_dim: int = Field(default=128, ge=32, le=512, description="LSTM hidden dimension")
+    hidden_dim: int = Field(
+        default=128, ge=32, le=512, description="LSTM hidden dimension"
+    )
     num_layers: int = Field(default=2, ge=1, le=4, description="Number of LSTM layers")
     dropout: float = Field(default=0.2, ge=0.0, le=0.5, description="Dropout rate")
 
     # Force retraining
     force_retrain: bool = Field(
-        default=False,
-        description="Force retraining even if model exists"
+        default=False, description="Force retraining even if model exists"
     )
 
 
@@ -128,6 +130,7 @@ class TrainModelResponse(BaseModel):
 # Prediction Request/Response
 # ============================================================================
 
+
 class PredictRequest(BaseModel):
     """Request to make a prediction."""
 
@@ -145,8 +148,7 @@ class PredictRequest(BaseModel):
 
     # Feature engineering
     force_recompute_features: bool = Field(
-        default=False,
-        description="Force recomputation of input features"
+        default=False, description="Force recomputation of input features"
     )
 
 
@@ -193,9 +195,7 @@ class PredictResponse(BaseModel):
 
     # Interpretation
     interpretation: str = Field(..., description="Natural language interpretation")
-    recommendation: Optional[str] = Field(
-        None, description="Actionable recommendation"
-    )
+    recommendation: Optional[str] = Field(None, description="Actionable recommendation")
 
     # Cached or fresh
     cached: bool = Field(..., description="True if prediction was cached")
@@ -204,6 +204,7 @@ class PredictResponse(BaseModel):
 # ============================================================================
 # Batch Prediction
 # ============================================================================
+
 
 class BatchPredictRequest(BaseModel):
     """Request to predict multiple metrics at once."""
@@ -214,7 +215,9 @@ class BatchPredictRequest(BaseModel):
     )
     target_date: date = Field(..., description="Date to predict for")
 
-    model_version: Optional[str] = Field(None, description="Model version (all metrics)")
+    model_version: Optional[str] = Field(
+        None, description="Model version (all metrics)"
+    )
     force_recompute_features: bool = Field(default=False)
 
 
@@ -242,6 +245,7 @@ class BatchPredictResponse(BaseModel):
 # ============================================================================
 # Model Management
 # ============================================================================
+
 
 class ModelInfo(BaseModel):
     """Information about a trained model."""
@@ -284,22 +288,18 @@ class ModelPerformanceHistory(BaseModel):
 
     # Accuracy when actuals are available
     actual_vs_predicted: List[Dict[str, float]] = Field(
-        default=[],
-        description="List of {date, predicted, actual, error}"
+        default=[], description="List of {date, predicted, actual, error}"
     )
 
     # Drift detection
-    is_drifting: bool = Field(
-        ..., description="True if performance is degrading"
-    )
-    should_retrain: bool = Field(
-        ..., description="True if model should be retrained"
-    )
+    is_drifting: bool = Field(..., description="True if performance is degrading")
+    should_retrain: bool = Field(..., description="True if model should be retrained")
 
 
 # ============================================================================
 # What-If Scenarios
 # ============================================================================
+
 
 class WhatIfScenario(BaseModel):
     """A hypothetical nutrition/activity scenario."""
@@ -308,12 +308,11 @@ class WhatIfScenario(BaseModel):
 
     # Hypothetical changes to today's data
     nutrition_changes: Optional[Dict[str, float]] = Field(
-        None,
-        description="Changes to nutrition features (e.g., {'protein_daily': 200})"
+        None, description="Changes to nutrition features (e.g., {'protein_daily': 200})"
     )
     activity_changes: Optional[Dict[str, float]] = Field(
         None,
-        description="Changes to activity features (e.g., {'workout_intensity': 0.8})"
+        description="Changes to activity features (e.g., {'workout_intensity': 0.8})",
     )
 
 
@@ -339,9 +338,7 @@ class WhatIfResult(BaseModel):
     change_from_baseline: float = Field(
         ..., description="Difference from baseline prediction"
     )
-    percent_change: float = Field(
-        ..., description="Percentage change from baseline"
-    )
+    percent_change: float = Field(..., description="Percentage change from baseline")
 
 
 class WhatIfResponse(BaseModel):
@@ -351,15 +348,11 @@ class WhatIfResponse(BaseModel):
     metric: PredictionMetric
     target_date: date
 
-    baseline_prediction: float = Field(
-        ..., description="Prediction with current data"
-    )
+    baseline_prediction: float = Field(..., description="Prediction with current data")
 
     scenarios: List[WhatIfResult] = Field(..., description="Scenario results")
 
-    best_scenario: str = Field(
-        ..., description="Scenario with best predicted outcome"
-    )
+    best_scenario: str = Field(..., description="Scenario with best predicted outcome")
     worst_scenario: str = Field(
         ..., description="Scenario with worst predicted outcome"
     )

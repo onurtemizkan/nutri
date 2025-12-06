@@ -26,10 +26,12 @@ router = APIRouter()
 @router.post("/analyze", response_model=FoodAnalysisResponse)
 async def analyze_food(
     image: UploadFile = File(..., description="Food image (JPEG/PNG, max 10MB)"),
-    dimensions: Optional[str] = Form(None, description="JSON string of AR measurements"),
+    dimensions: Optional[str] = Form(
+        None, description="JSON string of AR measurements"
+    ),
     cooking_method: Optional[str] = Form(
         None,
-        description="How the food was prepared (raw, cooked, grilled, fried, etc.)"
+        description="How the food was prepared (raw, cooked, grilled, fried, etc.)",
     ),
 ):
     """
@@ -62,7 +64,9 @@ async def analyze_food(
         # Validate file size (10MB limit)
         contents = await image.read()
         if len(contents) > 10 * 1024 * 1024:
-            raise HTTPException(status_code=413, detail="Image file too large (max 10MB)")
+            raise HTTPException(
+                status_code=413, detail="Image file too large (max 10MB)"
+            )
 
         # Validate file type
         if image.content_type not in ["image/jpeg", "image/png", "image/jpg"]:
@@ -76,7 +80,9 @@ async def analyze_food(
             pil_image = Image.open(io.BytesIO(contents))
         except Exception as e:
             logger.error(f"Error loading image: {str(e)}")
-            raise HTTPException(status_code=400, detail="Invalid or corrupted image file")
+            raise HTTPException(
+                status_code=400, detail="Invalid or corrupted image file"
+            )
 
         # Parse dimensions if provided
         dimensions_obj = None
@@ -89,7 +95,7 @@ async def analyze_food(
                 logger.error(f"Invalid JSON in dimensions: {str(e)}")
                 raise HTTPException(
                     status_code=400,
-                    detail="Invalid dimensions format: must be valid JSON"
+                    detail="Invalid dimensions format: must be valid JSON",
                 )
 
             # Validate dimensions values with Pydantic
@@ -98,17 +104,17 @@ async def analyze_food(
             except Exception as e:
                 logger.error(f"Invalid dimensions values: {str(e)}")
                 raise HTTPException(
-                    status_code=422,
-                    detail=f"Invalid dimensions values: {str(e)}"
+                    status_code=422, detail=f"Invalid dimensions values: {str(e)}"
                 )
 
         # Analyze food with cooking method support
-        food_items, measurement_quality, processing_time, service_suggestions = (
-            await food_analysis_service.analyze_food(
-                pil_image,
-                dimensions_obj,
-                cooking_method
-            )
+        (
+            food_items,
+            measurement_quality,
+            processing_time,
+            service_suggestions,
+        ) = await food_analysis_service.analyze_food(
+            pil_image, dimensions_obj, cooking_method
         )
 
         # Generate API-level suggestions and merge with service suggestions
@@ -116,9 +122,7 @@ async def analyze_food(
 
         # Add API-specific suggestions
         if measurement_quality == "low" and dimensions_obj is None:
-            suggestions.append(
-                "Use AR measurements for better portion size accuracy"
-            )
+            suggestions.append("Use AR measurements for better portion size accuracy")
         if len(food_items) > 0 and food_items[0].confidence < 0.8:
             suggestions.append(
                 "Take a clearer photo with better lighting for improved classification"

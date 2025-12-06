@@ -1,5 +1,34 @@
 // https://docs.expo.dev/guides/using-eslint/
 module.exports = {
   extends: 'expo',
-  ignorePatterns: ['/dist/*'],
+  ignorePatterns: [
+    // Dependencies
+    'node_modules/',
+    '**/node_modules/',
+    // Build outputs
+    'dist/',
+    'server/dist/',
+    'build/',
+    '.expo/',
+    'web-build/',
+    // Server directory (has its own ESLint config)
+    'server/',
+    // ML Service (Python project)
+    'ml-service/',
+    // Python virtual environment
+    'venv/',
+    'env/',
+    // Python files (not JavaScript)
+    '**/*.py',
+    // Test files (have different linting rules handled by jest-expo)
+    '**/__tests__/',
+    '**/*.test.ts',
+    '**/*.test.tsx',
+    // Configuration
+    '.expo-shared/',
+    // Logs and cache
+    'logs/',
+    '*.log',
+    '.cache/',
+  ],
 };

@@ -60,9 +60,7 @@ class RedisClient:
             logger.error(f"Redis GET error for key '{key}': {str(e)}")
             return None
 
-    async def set(
-        self, key: str, value: Any, ttl: Optional[int] = None
-    ) -> bool:
+    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
         """
         Set value in Redis cache.
         Automatically serializes to JSON.
@@ -133,7 +131,9 @@ class RedisClient:
                 return await self.redis.delete(*keys)
             return 0
         except Exception as e:
-            logger.error(f"Redis DELETE_PATTERN error for pattern '{pattern}': {str(e)}")
+            logger.error(
+                f"Redis DELETE_PATTERN error for pattern '{pattern}': {str(e)}"
+            )
             return 0
 
     async def get_ttl(self, key: str) -> Optional[int]:

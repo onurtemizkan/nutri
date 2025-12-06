@@ -75,9 +75,7 @@ class TestDataGenerator:
             num_meals = random.randint(3, 5)
 
             for meal_num in range(num_meals):
-                meal = self._generate_meal(
-                    current_date, meal_num, num_meals, day_type
-                )
+                meal = self._generate_meal(current_date, meal_num, num_meals, day_type)
                 meals.append(meal)
 
             current_date += timedelta(days=1)
@@ -334,9 +332,7 @@ class TestDataGenerator:
             # 2. Late night carbs influence (+1-3 BPM)
             if yesterday_meals:
                 late_night_carbs = sum(
-                    m["carbs"]
-                    for m in yesterday_meals
-                    if m["consumed_at"].hour >= 20
+                    m["carbs"] for m in yesterday_meals if m["consumed_at"].hour >= 20
                 )
                 if late_night_carbs > 50:
                     rhr += min(3, late_night_carbs / 30)
@@ -345,7 +341,7 @@ class TestDataGenerator:
             if yesterday_activities:
                 max_intensity = max(
                     (a.get("intensity_numeric", 0) for a in yesterday_activities),
-                    default=0
+                    default=0,
                 )
                 if max_intensity > 0.8:
                     rhr += 3
@@ -365,7 +361,7 @@ class TestDataGenerator:
             if yesterday_activities:
                 max_intensity = max(
                     (a.get("intensity_numeric", 0) for a in yesterday_activities),
-                    default=0
+                    default=0,
                 )
                 if max_intensity > 0.8:
                     hrv -= 8
@@ -376,9 +372,7 @@ class TestDataGenerator:
             if yesterday_meals:
                 total_protein = sum(m["protein"] for m in yesterday_meals)
                 late_night_carbs = sum(
-                    m["carbs"]
-                    for m in yesterday_meals
-                    if m["consumed_at"].hour >= 20
+                    m["carbs"] for m in yesterday_meals if m["consumed_at"].hour >= 20
                 )
                 if total_protein > 180 and late_night_carbs < 30:
                     hrv += 5
@@ -400,29 +394,33 @@ class TestDataGenerator:
             hrv = max(40, min(90, hrv))
 
             # Create metrics (recorded in morning)
-            metrics.append({
-                "id": f"metric_rhr_{date_str}",
-                "user_id": self.user_id,
-                "metric_type": "RESTING_HEART_RATE",
-                "value": round(rhr, 1),
-                "unit": "bpm",
-                "source": "manual",
-                "recorded_at": datetime.combine(
-                    current_date, datetime.min.time().replace(hour=7)
-                ),
-            })
+            metrics.append(
+                {
+                    "id": f"metric_rhr_{date_str}",
+                    "user_id": self.user_id,
+                    "metric_type": "RESTING_HEART_RATE",
+                    "value": round(rhr, 1),
+                    "unit": "bpm",
+                    "source": "manual",
+                    "recorded_at": datetime.combine(
+                        current_date, datetime.min.time().replace(hour=7)
+                    ),
+                }
+            )
 
-            metrics.append({
-                "id": f"metric_hrv_{date_str}",
-                "user_id": self.user_id,
-                "metric_type": "HEART_RATE_VARIABILITY_SDNN",
-                "value": round(hrv, 1),
-                "unit": "ms",
-                "source": "manual",
-                "recorded_at": datetime.combine(
-                    current_date, datetime.min.time().replace(hour=7)
-                ),
-            })
+            metrics.append(
+                {
+                    "id": f"metric_hrv_{date_str}",
+                    "user_id": self.user_id,
+                    "metric_type": "HEART_RATE_VARIABILITY_SDNN",
+                    "value": round(hrv, 1),
+                    "unit": "ms",
+                    "source": "manual",
+                    "recorded_at": datetime.combine(
+                        current_date, datetime.min.time().replace(hour=7)
+                    ),
+                }
+            )
 
             # Update previous values
             previous_rhr = rhr
@@ -475,9 +473,11 @@ class TestDataGenerator:
         total_days = (self.end_date - self.start_date).days + 1
         avg_meals_per_day = len(meals) / total_days
         avg_protein = np.mean([m["protein"] for m in meals])
-        workout_days = len([a for a in activities if a.get("intensity_numeric", 0) > 0.5])
+        workout_days = len(
+            [a for a in activities if a.get("intensity_numeric", 0) > 0.5]
+        )
 
-        print(f"\n📊 Dataset Summary:")
+        print("\n📊 Dataset Summary:")
         print(f"   Days: {total_days}")
         print(f"   Meals per day: {avg_meals_per_day:.1f}")
         print(f"   Avg protein per meal: {avg_protein:.1f}g")

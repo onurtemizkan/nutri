@@ -5,7 +5,7 @@ Business logic for user authentication, registration, and token management.
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Tuple
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import HTTPException, status
@@ -45,7 +45,7 @@ def ensure_utc(dt: Optional[datetime]) -> Optional[datetime]:
         return None
     if dt.tzinfo is None:
         # Naive datetime - assume UTC
-        return dt.replace(tzinfo=UTC)
+        return dt.replace(tzinfo=timezone.utc)
     return dt
 
 
@@ -156,8 +156,10 @@ class AuthService:
 
         # Check if account is locked
         locked_until_utc = ensure_utc(user.locked_until)
-        if locked_until_utc and locked_until_utc > datetime.now(UTC):
-            remaining = int((locked_until_utc - datetime.now(UTC)).total_seconds())
+        if locked_until_utc and locked_until_utc > datetime.now(timezone.utc):
+            remaining = int(
+                (locked_until_utc - datetime.now(timezone.utc)).total_seconds()
+            )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Account locked. Try again in {remaining // 60} minutes",
@@ -170,14 +172,12 @@ class AuthService:
 
             # Lock account if too many failures
             if user.failed_login_attempts >= self.MAX_FAILED_ATTEMPTS:
-                user.locked_until = datetime.now(UTC) + timedelta(
+                user.locked_until = datetime.now(timezone.utc) + timedelta(
                     minutes=self.LOCKOUT_DURATION_MINUTES
                 )
                 await self.session.commit()
 
-                logger.warning(
-                    f"Account locked due to failed attempts: {user.email}"
-                )
+                logger.warning(f"Account locked due to failed attempts: {user.email}")
 
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -200,7 +200,7 @@ class AuthService:
         # Password verified - reset failed attempts and update last login
         user.failed_login_attempts = 0
         user.locked_until = None
-        user.last_login = datetime.now(UTC)
+        user.last_login = datetime.now(timezone.utc)
 
         # Check if password hash needs update
         if PasswordHandler.needs_rehash(user.password):
@@ -324,9 +324,7 @@ class AuthService:
             )
 
         # Verify current password
-        if not PasswordHandler.verify_password(
-            request.current_password, user.password
-        ):
+        if not PasswordHandler.verify_password(request.current_password, user.password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Current password is incorrect",

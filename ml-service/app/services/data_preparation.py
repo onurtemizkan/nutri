@@ -10,7 +10,7 @@ Prepares time-series data for PyTorch LSTM models:
 """
 
 from datetime import date, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -70,18 +70,14 @@ class DataPreparationService:
         """
         # Step 1: Build feature matrix (one row per day)
         print(f"📊 Fetching features for {lookback_days} days...")
-        feature_matrix, dates = await self._build_feature_matrix(
-            user_id, lookback_days
-        )
+        feature_matrix, dates = await self._build_feature_matrix(user_id, lookback_days)
 
         if feature_matrix.empty:
             raise ValueError(f"No feature data available for user {user_id}")
 
         # Step 2: Fetch target metric values
         print(f"🎯 Fetching target metric: {target_metric.value}")
-        target_values = await self._fetch_target_metric(
-            user_id, target_metric, dates
-        )
+        target_values = await self._fetch_target_metric(user_id, target_metric, dates)
 
         if target_values.empty:
             raise ValueError(
@@ -135,7 +131,7 @@ class DataPreparationService:
         X_val = torch.FloatTensor(X_val_norm)
         y_val = torch.FloatTensor(y_val_norm).unsqueeze(1)
 
-        print(f"✅ Training data prepared:")
+        print("✅ Training data prepared:")
         print(f"   - Training samples: {len(X_train)}")
         print(f"   - Validation samples: {len(X_val)}")
         print(f"   - Features per day: {X_train.shape[2]}")
@@ -250,32 +246,40 @@ class DataPreparationService:
                 flat_features = {}
 
                 if response.nutrition:
-                    flat_features.update({
-                        f"nutrition_{k}": v
-                        for k, v in response.nutrition.model_dump().items()
-                        if v is not None
-                    })
+                    flat_features.update(
+                        {
+                            f"nutrition_{k}": v
+                            for k, v in response.nutrition.model_dump().items()
+                            if v is not None
+                        }
+                    )
 
                 if response.activity:
-                    flat_features.update({
-                        f"activity_{k}": v
-                        for k, v in response.activity.model_dump().items()
-                        if v is not None
-                    })
+                    flat_features.update(
+                        {
+                            f"activity_{k}": v
+                            for k, v in response.activity.model_dump().items()
+                            if v is not None
+                        }
+                    )
 
                 if response.health:
-                    flat_features.update({
-                        f"health_{k}": v
-                        for k, v in response.health.model_dump().items()
-                        if v is not None
-                    })
+                    flat_features.update(
+                        {
+                            f"health_{k}": v
+                            for k, v in response.health.model_dump().items()
+                            if v is not None
+                        }
+                    )
 
                 if response.temporal:
-                    flat_features.update({
-                        f"temporal_{k}": v
-                        for k, v in response.temporal.model_dump().items()
-                        if v is not None and not isinstance(v, bool)
-                    })
+                    flat_features.update(
+                        {
+                            f"temporal_{k}": v
+                            for k, v in response.temporal.model_dump().items()
+                            if v is not None and not isinstance(v, bool)
+                        }
+                    )
 
                     # Convert boolean to int
                     if response.temporal.is_weekend is not None:
@@ -284,11 +288,13 @@ class DataPreparationService:
                         )
 
                 if response.interaction:
-                    flat_features.update({
-                        f"interaction_{k}": v
-                        for k, v in response.interaction.model_dump().items()
-                        if v is not None
-                    })
+                    flat_features.update(
+                        {
+                            f"interaction_{k}": v
+                            for k, v in response.interaction.model_dump().items()
+                            if v is not None
+                        }
+                    )
 
                 if flat_features:
                     features_by_date[current_date] = flat_features
@@ -334,12 +340,12 @@ class DataPreparationService:
             return pd.Series(dtype=float)
 
         # Group by date and average
-        data = {}
+        data: Dict[date, List[float]] = {}
         for metric in metrics:
             metric_date = metric.recorded_at.date()
             if metric_date not in data:
                 data[metric_date] = []
-            data[metric_date].append(metric.value)
+            data[metric_date].append(float(metric.value))
 
         averaged = {d: np.mean(values) for d, values in data.items()}
         series = pd.Series(averaged)
@@ -442,7 +448,9 @@ class DataPreparationService:
         X_train_norm_2d = scaler.fit_transform(X_train_2d)
 
         # Replace NaN values that may result from zero-variance features
-        X_train_norm_2d = np.nan_to_num(X_train_norm_2d, nan=0.0, posinf=0.0, neginf=0.0)
+        X_train_norm_2d = np.nan_to_num(
+            X_train_norm_2d, nan=0.0, posinf=0.0, neginf=0.0
+        )
 
         # Reshape back to 3D
         X_train_norm = X_train_norm_2d.reshape(num_samples_train, seq_len, num_features)
@@ -458,7 +466,9 @@ class DataPreparationService:
             X_val_norm_2d = scaler.transform(X_val_2d)
 
             # Replace NaN values
-            X_val_norm_2d = np.nan_to_num(X_val_norm_2d, nan=0.0, posinf=0.0, neginf=0.0)
+            X_val_norm_2d = np.nan_to_num(
+                X_val_norm_2d, nan=0.0, posinf=0.0, neginf=0.0
+            )
 
             X_val_norm = X_val_norm_2d.reshape(num_samples_val, seq_len, num_features)
         else:
@@ -486,7 +496,9 @@ class DataPreparationService:
         y_train_clean = np.nan_to_num(y_train, nan=0.0, posinf=0.0, neginf=0.0)
 
         # Fit on training labels
-        y_train_norm = label_scaler.fit_transform(y_train_clean.reshape(-1, 1)).flatten()
+        y_train_norm = label_scaler.fit_transform(
+            y_train_clean.reshape(-1, 1)
+        ).flatten()
 
         # Replace any NaN that may result from normalization
         y_train_norm = np.nan_to_num(y_train_norm, nan=0.0, posinf=0.0, neginf=0.0)
@@ -518,6 +530,4 @@ class DataPreparationService:
         Returns:
             Denormalized prediction
         """
-        return float(
-            label_scaler.inverse_transform([[normalized_value]])[0][0]
-        )
+        return float(label_scaler.inverse_transform([[normalized_value]])[0][0])
