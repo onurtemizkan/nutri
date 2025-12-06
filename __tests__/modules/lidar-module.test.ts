@@ -202,6 +202,7 @@ describe('LiDARModule', () => {
     it('should accept valid DeviceCapabilities structure', () => {
       const capabilities: DeviceCapabilities = {
         hasLiDAR: true,
+        hasARKit: true,
         supportsSceneDepth: true,
         maxDepthResolution: { width: 256, height: 192 },
         maxRGBResolution: { width: 1920, height: 1440 },

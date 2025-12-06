@@ -256,7 +256,7 @@ export class AuthService {
       if (!appleId) {
         throw new Error('Invalid identity token: missing user ID');
       }
-    } catch (error) {
+    } catch {
       throw new Error('Failed to decode Apple identity token');
     }
 

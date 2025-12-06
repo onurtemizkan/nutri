@@ -27,6 +27,10 @@ router = APIRouter()
 async def analyze_food(
     image: UploadFile = File(..., description="Food image (JPEG/PNG, max 10MB)"),
     dimensions: Optional[str] = Form(None, description="JSON string of AR measurements"),
+    cooking_method: Optional[str] = Form(
+        None,
+        description="How the food was prepared (raw, cooked, grilled, fried, etc.)"
+    ),
 ):
     """
     Analyze food image and estimate nutrition.
@@ -34,8 +38,9 @@ async def analyze_food(
     **Process:**
     1. Classify food item using computer vision
     2. Estimate portion size (from AR measurements or image analysis)
-    3. Calculate nutrition values based on food type and portion size
-    4. Return results with confidence scores
+    3. Apply cooking method adjustments for weight/calorie accuracy
+    4. Calculate nutrition values based on food type, portion size, and cooking
+    5. Return results with confidence scores and validation warnings
 
     **Parameters:**
     - **image**: Food photo (JPEG or PNG format, max 10MB)
@@ -44,12 +49,14 @@ async def analyze_food(
       {"width": 10.5, "height": 8.2, "depth": 6.0}
       ```
       All values in centimeters.
+    - **cooking_method** (optional): How the food was prepared. Options:
+      - raw, cooked, boiled, steamed, grilled, fried, baked, roasted, sauteed, poached
 
     **Returns:**
     - List of detected food items with nutrition information
     - Measurement quality assessment
     - Processing time
-    - Suggestions for improving accuracy
+    - Suggestions for improving accuracy (including portion validation warnings)
     """
     try:
         # Validate file size (10MB limit)
@@ -95,14 +102,20 @@ async def analyze_food(
                     detail=f"Invalid dimensions values: {str(e)}"
                 )
 
-        # Analyze food
-        food_items, measurement_quality, processing_time = (
-            await food_analysis_service.analyze_food(pil_image, dimensions_obj)
+        # Analyze food with cooking method support
+        food_items, measurement_quality, processing_time, service_suggestions = (
+            await food_analysis_service.analyze_food(
+                pil_image,
+                dimensions_obj,
+                cooking_method
+            )
         )
 
-        # Generate suggestions
-        suggestions = []
-        if measurement_quality == "low":
+        # Generate API-level suggestions and merge with service suggestions
+        suggestions = list(service_suggestions) if service_suggestions else []
+
+        # Add API-specific suggestions
+        if measurement_quality == "low" and dimensions_obj is None:
             suggestions.append(
                 "Use AR measurements for better portion size accuracy"
             )
@@ -113,6 +126,10 @@ async def analyze_food(
         if dimensions_obj is None:
             suggestions.append(
                 "Include a reference object (hand, credit card) for better size estimation"
+            )
+        if cooking_method is None and len(food_items) > 0:
+            suggestions.append(
+                "Specify cooking method for more accurate nutrition estimates"
             )
 
         return FoodAnalysisResponse(
@@ -194,6 +211,29 @@ async def search_nutrition_db(q: str):
         raise HTTPException(
             status_code=500,
             detail="Search failed",
+        )
+
+
+@router.get("/cooking-methods")
+async def get_cooking_methods():
+    """
+    Get list of supported cooking methods.
+
+    **Returns:**
+    - List of cooking method strings
+    - Can be used to populate cooking method dropdown in clients
+    """
+    try:
+        methods = food_analysis_service.get_supported_cooking_methods()
+        return {
+            "cooking_methods": methods,
+            "total": len(methods),
+        }
+    except Exception as e:
+        logger.error(f"Error getting cooking methods: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to retrieve cooking methods",
         )
 
 

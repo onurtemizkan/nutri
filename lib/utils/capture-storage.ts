@@ -37,17 +37,18 @@ export const captureStorage = {
    */
   async saveFrame(sessionId: string, frame: RGBDFrame): Promise<void> {
     const sessionDir = `${CAPTURE_DIR}${sessionId}/`;
-    const frameFile = `${sessionDir}frame_${frame.id}.json`;
-    
+    const frameFile = `${sessionDir}frame_${frame.frameId}.json`;
+
     // For now, save frame metadata (actual binary data handling would need native module)
     const frameData = {
-      id: frame.id,
+      frameId: frame.frameId,
       timestamp: frame.timestamp,
-      width: frame.width,
-      height: frame.height,
-      intrinsics: frame.intrinsics,
+      width: frame.rgbImage.width,
+      height: frame.rgbImage.height,
+      cameraIntrinsics: frame.depthData.cameraIntrinsics,
+      metadata: frame.metadata,
     };
-    
+
     await FileSystem.writeAsStringAsync(frameFile, JSON.stringify(frameData));
   },
 

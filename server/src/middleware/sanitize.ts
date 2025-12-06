@@ -23,12 +23,12 @@ const STRICT_SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   allowedAttributes: {}, // No attributes allowed
   disallowedTagsMode: 'discard',
   // Strip all tags and their content for dangerous elements
-  exclusiveFilter: (frame) => {
+  exclusiveFilter: (frame: sanitizeHtml.IFrame) => {
     // Remove script, style, and other dangerous tags completely
     const dangerousTags = ['script', 'style', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'form', 'input', 'button', 'textarea', 'select', 'meta', 'link', 'base'];
     return dangerousTags.includes(frame.tag);
   },
-  textFilter: (text) => {
+  textFilter: (text: string) => {
     // Additional text-level sanitization
     return text
       // Remove null bytes

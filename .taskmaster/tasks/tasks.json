@@ -321,8 +321,111 @@
         "dependencies": [
           "2"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Install AR Dependencies and Configure Native Modules",
+            "description": "Add required AR dependencies for React Native/Expo including @react-three/fiber, react-three-fiber, and configure native AR capabilities for iOS (ARKit) and Android (ARCore).",
+            "dependencies": [],
+            "details": "1. Install @react-three/fiber and react-three-fiber packages\n2. Configure expo plugins for AR in app.json (expo-camera already configured)\n3. Set up iOS ARKit permissions in Info.plist (NSCameraUsageDescription already exists)\n4. Configure Android ARCore requirements in AndroidManifest.xml\n5. Verify expo-gl and three.js integration\n6. Create basic AR session test to verify setup\n7. Document AR capability requirements for devices (iOS 11+, ARCore-compatible Android)",
+            "status": "done",
+            "testStrategy": "1. Test package installation with npm/yarn\n2. Verify expo-gl renders basic 3D scene\n3. Test AR session initialization on iOS simulator (limited) and physical device\n4. Verify ARKit permissions prompt\n5. Test Android ARCore availability detection",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-05T19:10:26.758Z"
+          },
+          {
+            "id": 2,
+            "title": "Create Interactive AR Measurement Component",
+            "description": "Build the core ARPortionMeasure component that allows users to tap 4 corner points to create a bounding box and measure food portion dimensions in real-world coordinates.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Create lib/components/ARPortionMeasure.tsx component\n2. Initialize AR session with plane detection enabled\n3. Implement tap-to-place point placement (4 corners for bounding box)\n4. Convert screen coordinates to world coordinates using AR raycasting\n5. Calculate real-world dimensions (width, height, depth) from placed points\n6. Display visual guides showing detected plane surface\n7. Render bounding box overlay with dimension labels\n8. Add point placement indicators and connection lines\n9. Implement reset/undo functionality for point placement\n10. Return ARMeasurement type with confidence scoring based on plane detection quality\n11. Handle edge cases: insufficient plane detection, invalid point placement",
+            "status": "done",
+            "testStrategy": "1. Unit tests for coordinate conversion calculations\n2. Component tests for point placement state management\n3. Test bounding box dimension calculations with known distances\n4. Test plane detection callbacks and state updates\n5. Integration test with mock AR session data\n6. Manual testing on physical device with various surfaces\n7. Test reset/undo functionality",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-05T19:16:24.790Z"
+          },
+          {
+            "id": 3,
+            "title": "Build AR Measurement Modal/Overlay Screen",
+            "description": "Create the modal screen (app/ar-measure-portion.tsx) that launches the AR measurement experience with user instructions and controls.",
+            "dependencies": [
+              2
+            ],
+            "details": "1. Create app/ar-measure-portion.tsx as a modal screen\n2. Integrate ARPortionMeasure component into modal\n3. Design instruction UI:\n   - Step-by-step guide for users (detect plane, place 4 corners)\n   - Visual indicators for current step\n   - Progress indicator during plane detection\n4. Add control buttons:\n   - Confirm measurement (validates 4 points placed)\n   - Cancel and return to scan screen\n   - Reset measurement (clear all points)\n5. Display real-time measurement quality indicator\n6. Show current dimensions as user places points\n7. Handle AR session lifecycle (start on mount, cleanup on unmount)\n8. Add error states: no plane detected, AR not supported\n9. Implement navigation: return measured dimensions to caller",
+            "status": "done",
+            "testStrategy": "1. Component mounting/unmounting tests\n2. Test navigation with expo-router params\n3. Test confirm button validation (requires 4 points)\n4. Test cancel navigation back to scan screen\n5. Test reset functionality clears all state\n6. Integration test: full flow from scan to measurement to confirmation",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-05T19:22:51.508Z"
+          },
+          {
+            "id": 4,
+            "title": "Integrate AR Measurement into Food Scanning Flow",
+            "description": "Update scan-food.tsx to include 'Measure with AR' button after photo capture, launch the AR measurement modal, and pass captured dimensions to the food analysis API.",
+            "dependencies": [
+              3
+            ],
+            "details": "1. Update scan-food.tsx after photo capture (line 114 area)\n2. Add 'Measure with AR' button alongside 'Analyze Food' button\n3. Implement AR measurement flow:\n   - Launch ar-measure-portion modal\n   - Receive ARMeasurement result from modal\n   - Store measurements in component state\n4. Update foodAnalysisApi.analyzeFood() call to include measurements\n5. Replace mockMeasurements with real AR data\n6. Display measurement quality indicator in UI (high/medium/low badge)\n7. Show captured dimensions in preview (width x height x depth)\n8. Allow re-measurement before final analysis\n9. Handle AR not available gracefully (hide button, show alternative)\n10. Update UI flow: Photo → Measure (optional) → Analyze → Results",
+            "status": "pending",
+            "testStrategy": "1. Test button visibility after photo capture\n2. Test modal launch with expo-router\n3. Test receiving ARMeasurement data from modal\n4. Test API call includes measurements in request\n5. Test UI updates with measurement quality indicator\n6. Integration test: full scan flow with AR measurement\n7. Test fallback when AR not available",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Implement Reference Object Calibration Feature",
+            "description": "Build calibration wizard allowing users to use a credit card or other reference object to improve AR measurement accuracy.",
+            "dependencies": [
+              2
+            ],
+            "details": "1. Create lib/components/ARCalibration.tsx component\n2. Implement credit card calibration mode:\n   - Standard dimensions: 85.60mm × 53.98mm\n   - AR measurement of credit card\n   - Calculate calibration factor: measured/actual\n3. Build calibration wizard UI:\n   - Introduction screen explaining calibration\n   - Place credit card on surface instructions\n   - Measure card with AR (4 corner points)\n   - Validation: check if dimensions are reasonable (within 20% of standard)\n   - Success/failure feedback\n4. Store calibration factor in AsyncStorage/SecureStore\n5. Apply calibration to subsequent measurements (multiply by factor)\n6. Add calibration status indicator in AR measurement screen\n7. Optional: Allow re-calibration from settings\n8. Optional: Support other reference objects (smartphone, hand span)\n9. Create lib/utils/calibration.ts for storage and retrieval",
+            "status": "pending",
+            "testStrategy": "1. Test calibration factor calculation\n2. Test storage and retrieval of calibration data\n3. Test validation of measured card dimensions\n4. Test applying calibration to measurements\n5. Component tests for calibration wizard\n6. Integration test: calibrate then measure food\n7. Test calibration persistence across app restarts",
+            "parentId": "undefined"
+          },
+          {
+            "id": 6,
+            "title": "Create Fallback Manual Size Picker for Non-AR Devices",
+            "description": "Build a manual size selection UI for devices without AR/LiDAR support, providing Small/Medium/Large presets with visual references.",
+            "dependencies": [],
+            "details": "1. Create lib/components/ManualSizePicker.tsx component\n2. Implement size selector options:\n   - Small (e.g., 5cm × 5cm × 5cm → ~87g assuming 0.7 density)\n   - Medium (e.g., 10cm × 10cm × 10cm → ~700g)\n   - Large (e.g., 15cm × 15cm × 15cm → ~2.3kg)\n   - Custom (slider input for each dimension)\n3. Add visual reference images for each size:\n   - Small: Size of a golf ball\n   - Medium: Size of a baseball\n   - Large: Size of a grapefruit\n4. Implement custom slider:\n   - Width slider (1-30cm)\n   - Height slider (1-30cm)\n   - Depth slider (1-30cm)\n   - Real-time volume calculation display\n5. Convert selected size to ARMeasurement type:\n   - Set confidence: 'low' (manual estimate)\n   - Set planeDetected: false\n   - Set distance, width, height, depth\n6. Integrate into scan-food.tsx as fallback when AR unavailable\n7. Show manual picker when device lacks AR support or user declines AR permissions",
+            "status": "done",
+            "testStrategy": "1. Component tests for size selection state\n2. Test dimension calculations for presets\n3. Test slider value updates and bounds\n4. Test conversion to ARMeasurement format\n5. Test integration with scan flow\n6. Visual regression tests for UI\n7. Test device AR capability detection",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-05T18:02:37.997Z"
+          },
+          {
+            "id": 7,
+            "title": "Add Dimension-to-Weight Conversion Utilities",
+            "description": "Create client-side utilities for volume calculation, food density lookup, and weight estimation to complement the ML service's backend estimation.",
+            "dependencies": [],
+            "details": "1. Create lib/utils/portion-estimation.ts utility file\n2. Implement volume calculation:\n   - volumeFromDimensions(width, height, depth): cm³\n   - applyShapeFactor(volume, shapeFactor): adjusted cm³\n3. Create food density lookup table:\n   - Common foods with g/cm³ density values\n   - Categorized by food type (fruits, vegetables, proteins, grains)\n   - Default density for unknown foods\n4. Implement weight estimation:\n   - estimateWeight(volume, foodType): grams\n   - Confidence score based on food type match\n   - Apply min/max bounds (1g - 5000g)\n5. Add unit conversion helpers:\n   - cmToInches(cm), inchesToCm(inches)\n   - gramsToOz(grams), ozToGrams(oz)\n   - volumeCm3ToMl(cm3), mlToVolumeCm3(ml)\n6. Create TypeScript interfaces for density data\n7. Export utility functions for use in components",
+            "status": "done",
+            "testStrategy": "1. Unit tests for volume calculations with known dimensions\n2. Test shape factor application\n3. Test density lookup for various food types\n4. Test weight estimation accuracy\n5. Test unit conversions (bidirectional)\n6. Test bounds enforcement (min/max weight)\n7. Test confidence scoring logic",
+            "updatedAt": "2025-12-05T17:51:26.304Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 8,
+            "title": "Write Comprehensive Tests for AR Measurement System",
+            "description": "Create unit, component, and integration tests covering the entire AR measurement feature including edge cases and device compatibility.",
+            "dependencies": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "details": "1. Unit tests for dimension calculations:\n   - Test bounding box calculation from 4 points\n   - Test coordinate conversion (screen to world)\n   - Test volume and weight calculations\n   - Test calibration factor application\n2. Component tests for ARPortionMeasure:\n   - Test point placement state management\n   - Test plane detection callbacks\n   - Test measurement completion validation\n   - Test reset functionality\n3. Component tests for ar-measure-portion modal:\n   - Test modal lifecycle (mount, unmount)\n   - Test navigation with params\n   - Test instruction UI state transitions\n4. Integration tests for measurement flow:\n   - Test full flow: scan → measure → analyze\n   - Test with calibration applied\n   - Test fallback to manual picker\n   - Test error handling (no plane, invalid points)\n5. Mock tests for devices without AR:\n   - Mock AR availability check\n   - Test manual picker display\n   - Test manual measurements passed to API\n6. Test calibration accuracy:\n   - Test with known reference object dimensions\n   - Test calibration persistence\n   - Test validation logic\n7. Add test fixtures:\n   - Mock ARMeasurement data\n   - Mock AR session responses\n   - Mock plane detection results\n8. Create test documentation in README or docs/testing.md",
+            "status": "done",
+            "testStrategy": "1. Run full test suite with jest\n2. Verify 80%+ code coverage for AR modules\n3. Test on iOS simulator (limited AR)\n4. Test on physical iOS device with ARKit\n5. Test on Android device with ARCore\n6. Test on older devices without AR support\n7. Regression testing after changes",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-05T19:45:52.543Z"
+          }
+        ],
+        "updatedAt": "2025-12-05T19:45:57.388Z"
       },
       {
         "id": "11",
@@ -343,7 +446,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-05T01:59:24.617Z",
+      "lastModified": "2025-12-05T19:45:57.393Z",
       "taskCount": 10,
       "completedCount": 1,
       "tags": [
