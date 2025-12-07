@@ -436,7 +436,7 @@ class PredictionService:
             * 100
         )
 
-        return percentile
+        return float(percentile)
 
     # ========================================================================
     # Interpretation and Recommendations
