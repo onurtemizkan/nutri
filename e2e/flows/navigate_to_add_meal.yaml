@@ -1,0 +1,19 @@
+# Reusable flow: Navigate to Add Meal screen
+# Assumes user is authenticated and on home screen
+
+appId: host.exp.Exponent
+
+---
+
+# Ensure we're on the home screen
+- assertVisible:
+    id: "home-screen"
+    optional: true
+
+# Tap the floating action button
+- tapOn:
+    id: "add-meal-fab"
+
+# Wait for add meal screen to appear
+- assertVisible:
+    id: "add-meal-screen"

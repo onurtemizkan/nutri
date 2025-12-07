@@ -62,11 +62,11 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="profile-screen">
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           {/* Profile Header */}
-          <View style={styles.profileHeader}>
+          <View style={styles.profileHeader} testID="profile-header">
             <LinearGradient
               colors={gradients.primary}
               start={{ x: 0, y: 0 }}
@@ -86,7 +86,7 @@ export default function ProfileScreen() {
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Daily Goals</Text>
               {!isEditing && (
-                <TouchableOpacity onPress={() => setIsEditing(true)}>
+                <TouchableOpacity onPress={() => setIsEditing(true)} testID="profile-edit-goals-button">
                   <Text style={styles.editButton}>Edit</Text>
                 </TouchableOpacity>
               )}
@@ -162,6 +162,7 @@ export default function ProfileScreen() {
                     }}
                     disabled={isLoading}
                     activeOpacity={0.8}
+                    testID="profile-cancel-edit-button"
                   >
                     <Text style={styles.cancelButtonText}>Cancel</Text>
                   </TouchableOpacity>
@@ -171,6 +172,7 @@ export default function ProfileScreen() {
                     onPress={handleSaveGoals}
                     disabled={isLoading}
                     activeOpacity={0.8}
+                    testID="profile-save-goals-button"
                   >
                     <LinearGradient
                       colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
@@ -220,6 +222,7 @@ export default function ProfileScreen() {
               style={styles.menuItemWithArrow}
               onPress={() => router.push('/health-settings')}
               accessibilityLabel="Open health settings"
+              testID="health-integration-button"
             >
               <View style={styles.menuItemLeft}>
                 <View style={styles.menuItemIcon}>
@@ -244,7 +247,7 @@ export default function ProfileScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Account</Text>
 
-            <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+            <TouchableOpacity style={styles.menuItem} onPress={handleLogout} testID="profile-logout-button">
               <Text style={[styles.menuItemText, styles.logoutText]}>Logout</Text>
             </TouchableOpacity>
           </View>

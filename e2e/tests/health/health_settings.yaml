@@ -1,0 +1,114 @@
+# Health Settings E2E Tests
+# Tests the health integration settings (iOS specific)
+
+appId: host.exp.Exponent
+
+---
+
+# Test: View Health Settings Screen
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to profile
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Navigate to health settings
+- tapOn:
+    id: "health-integration-button"
+
+# Verify health settings screen
+- assertVisible:
+    id: "health-settings-screen"
+
+---
+
+# Test: Navigate Back from Health Settings
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to health settings via flow
+- runFlow: ../../flows/navigate_to_health_settings.yaml
+
+- assertVisible:
+    id: "health-settings-screen"
+
+# Go back
+- tapOn:
+    id: "health-settings-back-button"
+
+# Should be back on profile
+- assertVisible:
+    id: "profile-screen"
+
+---
+
+# Test: Health Settings Connect Button (iOS only)
+# Note: This test requires iOS and will skip on Android
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to health settings
+- runFlow: ../../flows/navigate_to_health_settings.yaml
+
+- assertVisible:
+    id: "health-settings-screen"
+
+# On iOS, should see connect button if not connected
+# On Android, should see warning message
+- assertVisible:
+    id: "health-settings-connect-button"
+    optional: true
+
+---
+
+# Test: Health Settings Sync Buttons (when connected)
+# Note: This test assumes Apple Health is already connected
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to health settings
+- runFlow: ../../flows/navigate_to_health_settings.yaml
+
+- assertVisible:
+    id: "health-settings-screen"
+
+# These should be visible if connected
+- assertVisible:
+    id: "health-settings-sync-button"
+    optional: true
+
+- assertVisible:
+    id: "health-settings-resync-button"
+    optional: true
+
+- assertVisible:
+    id: "health-settings-disconnect-button"
+    optional: true

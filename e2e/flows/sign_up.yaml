@@ -1,0 +1,49 @@
+# Reusable flow: Sign up with email and password
+# Usage: runFlow with env vars NAME, EMAIL, PASSWORD
+#
+# Example:
+#   - runFlow:
+#       file: flows/sign_up.yaml
+#       env:
+#         NAME: Test User
+#         EMAIL: test@example.com
+#         PASSWORD: password123
+
+appId: host.exp.Exponent
+
+---
+
+# Wait for sign up screen to be visible
+- assertVisible:
+    id: "signup-screen"
+    optional: true
+- assertVisible:
+    text: "Create Account"
+
+# Enter name
+- tapOn:
+    id: "signup-name-input"
+- inputText: ${NAME}
+
+# Enter email
+- tapOn:
+    id: "signup-email-input"
+- inputText: ${EMAIL}
+
+# Enter password
+- tapOn:
+    id: "signup-password-input"
+- inputText: ${PASSWORD}
+
+# Enter confirm password
+- tapOn:
+    id: "signup-confirm-password-input"
+- inputText: ${PASSWORD}
+
+# Tap create account button
+- tapOn:
+    id: "signup-submit-button"
+
+# Wait for navigation to home (indicating successful registration)
+- assertVisible:
+    id: "home-screen"

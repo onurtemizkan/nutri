@@ -49,7 +49,7 @@ export default function SignInScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="signin-screen">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -82,6 +82,7 @@ export default function SignInScreen() {
                   keyboardType="email-address"
                   editable={!isLoading}
                   autoComplete="email"
+                  testID="signin-email-input"
                 />
               </View>
             </View>
@@ -91,7 +92,7 @@ export default function SignInScreen() {
               <View style={styles.labelRow}>
                 <Text style={styles.label}>Password</Text>
                 <Link href="/auth/forgot-password" asChild>
-                  <TouchableOpacity disabled={isLoading}>
+                  <TouchableOpacity disabled={isLoading} testID="signin-forgot-password-link">
                     <Text style={styles.forgotPasswordLink}>Forgot?</Text>
                   </TouchableOpacity>
                 </Link>
@@ -106,6 +107,7 @@ export default function SignInScreen() {
                   secureTextEntry
                   editable={!isLoading}
                   autoComplete="password"
+                  testID="signin-password-input"
                 />
               </View>
             </View>
@@ -116,6 +118,7 @@ export default function SignInScreen() {
               onPress={handleSignIn}
               disabled={isLoading}
               activeOpacity={0.8}
+              testID="signin-submit-button"
             >
               <LinearGradient
                 colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
@@ -135,7 +138,7 @@ export default function SignInScreen() {
             <View style={styles.footer}>
               <Text style={styles.footerText}>Don't have an account? </Text>
               <Link href="/auth/signup" asChild>
-                <TouchableOpacity disabled={isLoading}>
+                <TouchableOpacity disabled={isLoading} testID="signin-signup-link">
                   <Text style={styles.link}>Sign Up</Text>
                 </TouchableOpacity>
               </Link>

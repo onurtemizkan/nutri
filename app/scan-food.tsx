@@ -241,7 +241,7 @@ export default function ScanFoodScreen() {
 
   if (!permission.granted) {
     return (
-      <View style={styles.permissionContainer}>
+      <View style={styles.permissionContainer} testID="scan-food-permission-screen">
         <Ionicons name="camera-outline" size={64} color="#ccc" />
         <Text style={styles.permissionText}>Camera access is required</Text>
         <Text style={styles.permissionSubtext}>
@@ -251,6 +251,7 @@ export default function ScanFoodScreen() {
           style={styles.permissionButton}
           onPress={requestPermission}
           activeOpacity={0.8}
+          testID="scan-food-grant-permission-button"
         >
           <LinearGradient
             colors={gradients.primary}
@@ -268,9 +269,9 @@ export default function ScanFoodScreen() {
   // Show captured image with analysis results
   if (capturedImage) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} testID="scan-food-preview-screen">
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleRetake}>
+          <TouchableOpacity onPress={handleRetake} testID="scan-food-retake-button">
             <Text style={styles.headerButton}>Retake</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Food Scan</Text>
@@ -430,6 +431,7 @@ export default function ScanFoodScreen() {
                 style={styles.analyzeButton}
                 onPress={handleAnalyzeFood}
                 activeOpacity={0.8}
+                testID="scan-food-analyze-button"
               >
                 <LinearGradient
                   colors={gradients.primary}
@@ -450,6 +452,7 @@ export default function ScanFoodScreen() {
               style={styles.analyzeButton}
               onPress={handleUseScan}
               activeOpacity={0.8}
+              testID="scan-food-use-scan-button"
             >
               <LinearGradient
                 colors={gradients.primary}
@@ -468,7 +471,7 @@ export default function ScanFoodScreen() {
 
   // Camera view
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="scan-food-camera-screen">
       <CameraView
         ref={cameraRef}
         style={styles.camera}
@@ -480,6 +483,7 @@ export default function ScanFoodScreen() {
           <TouchableOpacity
             style={styles.closeButton}
             onPress={() => router.back()}
+            testID="scan-food-close-button"
           >
             <Ionicons name="close" size={32} color="#fff" />
           </TouchableOpacity>
@@ -525,6 +529,7 @@ export default function ScanFoodScreen() {
           <TouchableOpacity
             style={styles.captureButton}
             onPress={handleCapturePhoto}
+            testID="scan-food-capture-button"
           >
             <View style={styles.captureButtonInner} />
           </TouchableOpacity>

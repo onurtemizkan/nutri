@@ -1,0 +1,74 @@
+# Home/Dashboard E2E Tests
+# Tests the main dashboard functionality
+
+appId: host.exp.Exponent
+
+---
+
+# Test: View Dashboard After Login
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+# Verify home screen elements
+- assertVisible:
+    id: "home-screen"
+
+- assertVisible:
+    id: "home-calorie-summary"
+
+- assertVisible:
+    id: "home-macros-container"
+
+- assertVisible:
+    id: "home-meals-section"
+
+- assertVisible:
+    id: "home-add-meal-fab"
+
+---
+
+# Test: Navigate to Add Meal via FAB
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Tap FAB to add meal
+- tapOn:
+    id: "home-add-meal-fab"
+
+# Verify add meal screen opens
+- assertVisible:
+    id: "add-meal-screen"
+
+---
+
+# Test: Pull to Refresh Dashboard
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Pull down to refresh
+- swipe:
+    direction: DOWN
+    from:
+      id: "home-calorie-summary"
+
+# Dashboard should still be visible after refresh
+- assertVisible:
+    id: "home-screen"
+
+- assertVisible:
+    id: "home-calorie-summary"

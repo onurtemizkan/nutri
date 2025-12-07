@@ -1,0 +1,157 @@
+# Sign Up Validation E2E Tests
+# Tests error handling and form validation for sign up
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Empty Fields Validation
+- launchApp:
+    clearState: true
+
+- assertVisible:
+    id: "welcome-screen"
+- tapOn:
+    id: "welcome-signup-button"
+- assertVisible:
+    id: "signup-screen"
+
+# Try to submit without entering anything
+- tapOn:
+    id: "signup-submit-button"
+
+# Should stay on same screen
+- assertVisible:
+    id: "signup-screen"
+
+---
+
+# Test: Password Mismatch
+- launchApp:
+    clearState: true
+
+- assertVisible:
+    id: "welcome-screen"
+- tapOn:
+    id: "welcome-signup-button"
+- assertVisible:
+    id: "signup-screen"
+
+# Fill form with mismatched passwords
+- tapOn:
+    id: "signup-name-input"
+- inputText: "Test User"
+
+- tapOn:
+    id: "signup-email-input"
+- inputText: "test@example.com"
+
+- tapOn:
+    id: "signup-password-input"
+- inputText: "password123"
+
+- tapOn:
+    id: "signup-confirm-password-input"
+- inputText: "different123"
+
+- tapOn:
+    id: "signup-submit-button"
+
+# Should stay on sign up screen
+- assertVisible:
+    id: "signup-screen"
+
+---
+
+# Test: Weak Password
+- launchApp:
+    clearState: true
+
+- assertVisible:
+    id: "welcome-screen"
+- tapOn:
+    id: "welcome-signup-button"
+- assertVisible:
+    id: "signup-screen"
+
+# Fill form with weak password (no numbers)
+- tapOn:
+    id: "signup-name-input"
+- inputText: "Test User"
+
+- tapOn:
+    id: "signup-email-input"
+- inputText: "test@example.com"
+
+- tapOn:
+    id: "signup-password-input"
+- inputText: "password"
+
+- tapOn:
+    id: "signup-confirm-password-input"
+- inputText: "password"
+
+- tapOn:
+    id: "signup-submit-button"
+
+# Should stay on sign up screen
+- assertVisible:
+    id: "signup-screen"
+
+---
+
+# Test: Short Password
+- launchApp:
+    clearState: true
+
+- assertVisible:
+    id: "welcome-screen"
+- tapOn:
+    id: "welcome-signup-button"
+- assertVisible:
+    id: "signup-screen"
+
+# Fill form with short password
+- tapOn:
+    id: "signup-name-input"
+- inputText: "Test User"
+
+- tapOn:
+    id: "signup-email-input"
+- inputText: "test@example.com"
+
+- tapOn:
+    id: "signup-password-input"
+- inputText: "ab1"
+
+- tapOn:
+    id: "signup-confirm-password-input"
+- inputText: "ab1"
+
+- tapOn:
+    id: "signup-submit-button"
+
+# Should stay on sign up screen
+- assertVisible:
+    id: "signup-screen"
+
+---
+
+# Test: Navigation to Sign In
+- launchApp:
+    clearState: true
+
+- assertVisible:
+    id: "welcome-screen"
+- tapOn:
+    id: "welcome-signup-button"
+- assertVisible:
+    id: "signup-screen"
+
+# Tap sign in link
+- tapOn:
+    id: "signup-signin-link"
+
+# Should navigate to sign in screen
+- assertVisible:
+    id: "signin-screen"

@@ -1,0 +1,44 @@
+# Maestro E2E Test Configuration for Nutri App
+# =============================================
+# This file configures the Maestro test runner for the Nutri mobile app.
+#
+# Running tests:
+#   maestro test e2e/tests/             # Run all tests
+#   maestro test e2e/tests/auth/        # Run auth tests only
+#   maestro test --parallel e2e/tests/  # Run in parallel (faster)
+#
+# Configuration
+# -------------
+
+# App identifier
+appId: host.exp.Exponent  # Expo Go app ID (for development)
+# For production builds, use: com.nutri.app
+
+# Environment variables for tests
+env:
+  # Test user credentials (created in test backend)
+  TEST_USER_EMAIL: test@nutri-e2e.local
+  TEST_USER_PASSWORD: TestPass123!
+  TEST_USER_NAME: E2E Test User
+
+  # API configuration
+  API_BASE_URL: http://localhost:3000/api
+
+  # Timeouts (in milliseconds)
+  DEFAULT_TIMEOUT: 10000
+  LONG_TIMEOUT: 30000
+
+  # Test data prefixes (for cleanup)
+  TEST_DATA_PREFIX: e2e_test_
+
+# Hooks
+# -----
+# These can be used to set up/tear down test state
+
+onFlowStart:
+  # Clear app state before each test flow
+  - clearState
+
+onFlowComplete:
+  # Take screenshot on completion for debugging
+  - takeScreenshot: "flow_complete"

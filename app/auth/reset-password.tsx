@@ -116,7 +116,7 @@ export default function ResetPasswordScreen() {
 
   if (isVerifying) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} testID="reset-password-verifying-screen">
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={colors.primary.main} />
           <Text style={styles.loadingText}>Verifying reset token...</Text>
@@ -127,7 +127,7 @@ export default function ResetPasswordScreen() {
 
   if (!tokenValid && !params.token) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} testID="reset-password-token-screen">
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
@@ -159,6 +159,7 @@ export default function ResetPasswordScreen() {
                     editable={!isLoading}
                     multiline
                     numberOfLines={3}
+                    testID="reset-password-token-input"
                   />
                 </View>
               </View>
@@ -168,6 +169,7 @@ export default function ResetPasswordScreen() {
                 onPress={handleVerifyToken}
                 disabled={isLoading}
                 activeOpacity={0.8}
+                testID="reset-password-verify-token-button"
               >
                 <LinearGradient
                   colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
@@ -188,6 +190,7 @@ export default function ResetPasswordScreen() {
                 <TouchableOpacity
                   onPress={() => router.push('/auth/forgot-password')}
                   disabled={isLoading}
+                  testID="reset-password-request-token-link"
                 >
                   <Text style={styles.link}>Request One</Text>
                 </TouchableOpacity>
@@ -200,7 +203,7 @@ export default function ResetPasswordScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="reset-password-screen">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -233,6 +236,7 @@ export default function ResetPasswordScreen() {
                   secureTextEntry
                   editable={!isLoading}
                   autoComplete="password-new"
+                  testID="reset-password-new-password-input"
                 />
               </View>
             </View>
@@ -249,6 +253,7 @@ export default function ResetPasswordScreen() {
                   secureTextEntry
                   editable={!isLoading}
                   autoComplete="password-new"
+                  testID="reset-password-confirm-password-input"
                 />
               </View>
             </View>
@@ -258,6 +263,7 @@ export default function ResetPasswordScreen() {
               onPress={handleResetPassword}
               disabled={isLoading}
               activeOpacity={0.8}
+              testID="reset-password-submit-button"
             >
               <LinearGradient
                 colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
@@ -278,6 +284,7 @@ export default function ResetPasswordScreen() {
               <TouchableOpacity
                 onPress={() => router.push('/auth/signin')}
                 disabled={isLoading}
+                testID="reset-password-signin-link"
               >
                 <Text style={styles.link}>Sign In</Text>
               </TouchableOpacity>

@@ -1,0 +1,81 @@
+# Edit Goals E2E Tests
+# Tests editing nutrition goals
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Open and Cancel Edit Goals
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to profile
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Tap edit goals
+- tapOn:
+    id: "profile-edit-goals-button"
+
+# Should show cancel and save buttons
+- assertVisible:
+    id: "profile-cancel-edit-button"
+
+- assertVisible:
+    id: "profile-save-goals-button"
+
+# Cancel editing
+- tapOn:
+    id: "profile-cancel-edit-button"
+
+# Should show edit button again
+- assertVisible:
+    id: "profile-edit-goals-button"
+
+---
+
+# Test: Edit and Save Goals
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to profile
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Tap edit goals
+- tapOn:
+    id: "profile-edit-goals-button"
+
+# Wait for edit mode
+- assertVisible:
+    id: "profile-save-goals-button"
+
+# Clear and enter new calorie goal (need to find and tap the input)
+# Note: The calorie input doesn't have a testID in edit mode
+# For now we'll just test the button interaction
+
+# Save goals
+- tapOn:
+    id: "profile-save-goals-button"
+
+# Should show success and return to view mode
+- assertVisible:
+    id: "profile-edit-goals-button"

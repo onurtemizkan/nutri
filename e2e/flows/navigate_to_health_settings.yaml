@@ -1,0 +1,22 @@
+# Reusable flow: Navigate to Health Settings screen
+# Assumes user is authenticated
+
+appId: host.exp.Exponent
+
+---
+
+# Navigate to profile tab
+- tapOn:
+    id: "tab-profile"
+
+# Wait for profile screen
+- assertVisible:
+    id: "profile-screen"
+
+# Tap on Apple Health / Health Integration
+- tapOn:
+    id: "health-integration-button"
+
+# Wait for health settings screen
+- assertVisible:
+    id: "health-settings-screen"

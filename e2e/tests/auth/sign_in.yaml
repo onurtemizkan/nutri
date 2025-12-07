@@ -1,0 +1,36 @@
+# Sign In E2E Tests
+# Tests the complete sign in flow including validation
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Successful Sign In
+
+# Launch app and connect to dev server
+- runFlow: ../../flows/launch_app.yaml
+
+# Navigate to sign in (use text since inspector may interfere with testID)
+- tapOn:
+    text: "Sign In"
+
+# Verify sign in screen is visible
+- assertVisible:
+    id: "signin-screen"
+
+# Enter valid credentials
+- tapOn:
+    id: "signin-email-input"
+- inputText: ${TEST_USER_EMAIL}
+
+- tapOn:
+    id: "signin-password-input"
+- inputText: ${TEST_USER_PASSWORD}
+
+# Submit form
+- tapOn:
+    id: "signin-submit-button"
+
+# Verify navigation to home screen
+- assertVisible:
+    id: "home-screen"

@@ -1,0 +1,47 @@
+# Launch App Flow
+# Handles launching Expo Go and connecting to the development server
+
+appId: host.exp.Exponent
+
+---
+
+# Launch Expo Go first
+- launchApp:
+    clearState: true
+
+# Wait for Expo Go to be ready
+- assertVisible:
+    text: "Expo Go"
+
+# Open the dev server URL
+- openLink: "exp://localhost:8081"
+
+# Wait for the bundle to load - either dev menu or welcome screen will appear
+- extendedWaitUntil:
+    visible:
+      text: "Continue"
+    timeout: 90000
+
+# Dismiss the developer menu
+- tapOn:
+    text: "Continue"
+
+# Wait for the welcome screen to appear
+- extendedWaitUntil:
+    visible:
+      id: "welcome-screen"
+    timeout: 10000
+
+# Dismiss the React Native element inspector by tapping the Inspect button at bottom-left
+# The inspector shows "Inspect" tab at bottom-left - tap it to toggle off
+- tapOn:
+    point: "10%,95%"
+
+# Wait a moment for inspector to dismiss
+- swipe:
+    direction: DOWN
+    duration: 50
+
+# Tap again to ensure inspection mode is off
+- tapOn:
+    point: "50%,50%"

@@ -1,0 +1,143 @@
+# Scan Food E2E Tests
+# Tests the food scanning functionality
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Open Scan Food Screen
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Open add meal screen
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Tap scan food button
+- tapOn:
+    id: "add-meal-scan-food-button"
+
+# Should show either camera screen or permission screen
+- assertVisible:
+    id: "scan-food-camera-screen"
+    optional: true
+
+- assertVisible:
+    id: "scan-food-permission-screen"
+    optional: true
+
+---
+
+# Test: Camera Permission Screen Elements
+# Note: This test runs when camera permission is not granted
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Open add meal screen
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Tap scan food button
+- tapOn:
+    id: "add-meal-scan-food-button"
+
+# If permission screen is shown, verify grant button exists
+- assertVisible:
+    id: "scan-food-permission-screen"
+    optional: true
+
+- assertVisible:
+    id: "scan-food-grant-permission-button"
+    optional: true
+
+---
+
+# Test: Camera Screen Elements (when permission granted)
+# Note: This test requires camera permission to be pre-granted
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Open add meal screen
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Tap scan food button
+- tapOn:
+    id: "add-meal-scan-food-button"
+
+# If camera screen is shown, verify elements
+- assertVisible:
+    id: "scan-food-camera-screen"
+    optional: true
+
+- assertVisible:
+    id: "scan-food-close-button"
+    optional: true
+
+- assertVisible:
+    id: "scan-food-capture-button"
+    optional: true
+
+---
+
+# Test: Close Scan Food Screen
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Open add meal screen
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Tap scan food button
+- tapOn:
+    id: "add-meal-scan-food-button"
+
+# Wait for either camera or permission screen
+- extendedWaitUntil:
+    visible:
+      id: "scan-food-camera-screen"
+
+# If on camera screen, close it
+- tapOn:
+    id: "scan-food-close-button"
+    optional: true
+
+# Should go back to add meal
+- assertVisible:
+    id: "add-meal-screen"

@@ -1,0 +1,161 @@
+# Meal Types E2E Tests
+# Tests selecting different meal types
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Select Different Meal Types
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Open add meal screen
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Default should be lunch (based on code)
+# Test selecting breakfast
+- tapOn:
+    text: "Breakfast"
+
+# Fill minimal required fields
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: "Morning Oatmeal"
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: "300"
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: "10"
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: "45"
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: "8"
+
+# Save
+- tapOn:
+    id: "add-meal-save-button"
+
+# Should succeed
+- assertVisible:
+    id: "home-screen"
+
+---
+
+# Test: Add Dinner Meal
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Open add meal screen
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Select dinner
+- tapOn:
+    text: "Dinner"
+
+# Fill required fields
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: "Salmon with Rice"
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: "550"
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: "40"
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: "35"
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: "25"
+
+# Save
+- tapOn:
+    id: "add-meal-save-button"
+
+# Should succeed
+- assertVisible:
+    id: "home-screen"
+
+---
+
+# Test: Add Snack
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Open add meal screen
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Select snack
+- tapOn:
+    text: "Snack"
+
+# Fill required fields
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: "Protein Bar"
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: "200"
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: "20"
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: "15"
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: "8"
+
+# Save
+- tapOn:
+    id: "add-meal-save-button"
+
+# Should succeed
+- assertVisible:
+    id: "home-screen"

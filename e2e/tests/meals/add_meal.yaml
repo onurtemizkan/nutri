@@ -1,0 +1,143 @@
+# Add Meal E2E Tests
+# Tests the complete meal creation flow
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Add Meal with All Required Fields
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Open add meal screen
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Fill in meal details
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: "Grilled Chicken Salad"
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: "450"
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: "35"
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: "20"
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: "22"
+
+# Save the meal
+- tapOn:
+    id: "add-meal-save-button"
+
+# Should navigate back to home after success
+- assertVisible:
+    id: "home-screen"
+
+---
+
+# Test: Add Meal Validation - Empty Fields
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Open add meal screen
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Try to save without filling required fields
+- tapOn:
+    id: "add-meal-save-button"
+
+# Should stay on add meal screen
+- assertVisible:
+    id: "add-meal-screen"
+
+---
+
+# Test: Cancel Adding Meal
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Open add meal screen
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Fill some data
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: "Test Meal"
+
+# Cancel
+- tapOn:
+    id: "add-meal-cancel-button"
+
+# Should be back on home
+- assertVisible:
+    id: "home-screen"
+
+---
+
+# Test: Navigate to Scan Food from Add Meal
+- launchApp:
+    clearState: true
+
+# Sign in first
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Open add meal screen
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Tap scan food button
+- tapOn:
+    id: "add-meal-scan-food-button"
+
+# Should open scan food screen (may need permission)
+- assertVisible:
+    id: "scan-food-camera-screen"
+    optional: true
+
+- assertVisible:
+    id: "scan-food-permission-screen"
+    optional: true
