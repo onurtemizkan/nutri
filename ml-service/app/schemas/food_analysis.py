@@ -7,20 +7,22 @@ from pydantic import BaseModel, Field, validator
 
 class DimensionsInput(BaseModel):
     """AR measurement dimensions in centimeters"""
+
     width: float = Field(..., gt=0, description="Width in cm")
     height: float = Field(..., gt=0, description="Height in cm")
     depth: float = Field(..., gt=0, description="Depth in cm")
 
-    @validator('*')
+    @validator("*")
     def validate_dimensions(cls, v):
         """Ensure dimensions are reasonable (< 100cm for food items)"""
         if v > 100:
-            raise ValueError('Dimension too large for typical food item')
+            raise ValueError("Dimension too large for typical food item")
         return v
 
 
 class NutritionInfo(BaseModel):
     """Nutrition information per serving"""
+
     calories: float = Field(..., ge=0)
     protein: float = Field(..., ge=0)  # grams
     carbs: float = Field(..., ge=0)  # grams
@@ -30,17 +32,21 @@ class NutritionInfo(BaseModel):
     sodium: Optional[float] = Field(None, ge=0)  # mg
     saturated_fat: Optional[float] = Field(None, ge=0)  # grams
     lysine: Optional[float] = Field(None, ge=0)  # mg - essential amino acid
-    arginine: Optional[float] = Field(None, ge=0)  # mg - conditionally essential amino acid
+    arginine: Optional[float] = Field(
+        None, ge=0
+    )  # mg - conditionally essential amino acid
 
 
 class FoodItemAlternative(BaseModel):
     """Alternative food classification"""
+
     name: str
     confidence: float = Field(..., ge=0, le=1)
 
 
 class FoodItem(BaseModel):
     """Detected food item with nutrition information"""
+
     name: str
     confidence: float = Field(..., ge=0, le=1)
     portion_size: str  # e.g., "1 cup", "150g"
@@ -52,6 +58,7 @@ class FoodItem(BaseModel):
 
 class FoodAnalysisResponse(BaseModel):
     """Response from food analysis"""
+
     food_items: List[FoodItem]
     measurement_quality: str = Field(..., pattern="^(high|medium|low)$")
     processing_time: float  # milliseconds
@@ -61,6 +68,7 @@ class FoodAnalysisResponse(BaseModel):
 
 class ModelInfo(BaseModel):
     """Information about available ML models"""
+
     name: str
     version: str
     accuracy: Optional[float] = None
@@ -70,12 +78,14 @@ class ModelInfo(BaseModel):
 
 class ModelsInfoResponse(BaseModel):
     """Response for models info endpoint"""
+
     available_models: List[ModelInfo]
     active_model: str
 
 
 class NutritionDBEntry(BaseModel):
     """Nutrition database entry"""
+
     food_name: str
     fdc_id: Optional[str] = None  # USDA FoodData Central ID
     category: str
@@ -87,6 +97,7 @@ class NutritionDBEntry(BaseModel):
 
 class NutritionDBSearchResponse(BaseModel):
     """Response for nutrition database search"""
+
     results: List[NutritionDBEntry]
     query: str
     total_results: int

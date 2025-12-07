@@ -221,9 +221,9 @@ async def batch_predict(
 
         # Calculate overall data quality (average of individual predictions)
         if predictions:
-            overall_quality = sum(
-                0.85 for _ in predictions
-            ) / len(predictions)  # TODO: Use actual quality scores
+            overall_quality = sum(0.85 for _ in predictions) / len(
+                predictions
+            )  # TODO: Use actual quality scores
         else:
             overall_quality = 0.0
 
@@ -355,9 +355,7 @@ async def list_models(
         )
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to list models: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to list models: {str(e)}")
 
 
 @router.delete("/models/{model_id}")
@@ -397,9 +395,7 @@ async def delete_model(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to delete model: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to delete model: {str(e)}")
 
 
 # ============================================================================

@@ -20,7 +20,7 @@ import torch
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.redis_client import redis_client
-from app.ml_models.lstm import HealthMetricLSTM, LSTMConfig
+from app.ml_models.lstm import HealthMetricLSTM
 from app.schemas.predictions import (
     PredictRequest,
     PredictResponse,
@@ -109,7 +109,7 @@ class PredictionService:
             feature_names=model_artifacts["feature_names"],
         )
 
-        print(f"✅ Input prepared:")
+        print("✅ Input prepared:")
         print(f"   - Shape: {X_input.shape}")
         print(f"   - Features: {X_input.shape[2]}")
         print(f"   - Sequence length: {X_input.shape[1]}")
@@ -139,7 +139,9 @@ class PredictionService:
             predicted_value, model_artifacts["metadata"]
         )
 
-        print(f"✅ 95% CI: [{confidence_interval['lower']:.2f}, {confidence_interval['upper']:.2f}]")
+        print(
+            f"✅ 95% CI: [{confidence_interval['lower']:.2f}, {confidence_interval['upper']:.2f}]"
+        )
 
         # Step 7: Get historical context
         print("\n📊 Step 5: Getting historical context...")
@@ -184,7 +186,9 @@ class PredictionService:
                 predicted_value, historical_stats["values"]
             ),
             model_id=model_id,
-            model_version=model_artifacts["metadata"]["model_version"] if "model_version" in model_artifacts["metadata"] else "v1.0.0",
+            model_version=model_artifacts["metadata"]["model_version"]
+            if "model_version" in model_artifacts["metadata"]
+            else "v1.0.0",
             architecture=request.architecture or ModelArchitecture.LSTM,
         )
 
@@ -308,7 +312,9 @@ class PredictionService:
         # Use 1.96 * MAE as confidence interval width (approximation for 95% CI)
         # Get MAE from validation_metrics (saved during training)
         validation_metrics = metadata.get("validation_metrics", {})
-        mae = validation_metrics.get("mae", predicted_value * 0.1)  # Fallback: 10% of value
+        mae = validation_metrics.get(
+            "mae", predicted_value * 0.1
+        )  # Fallback: 10% of value
 
         margin = 1.96 * mae
 
@@ -430,7 +436,7 @@ class PredictionService:
             * 100
         )
 
-        return percentile
+        return float(percentile)
 
     # ========================================================================
     # Interpretation and Recommendations
@@ -532,9 +538,7 @@ class PredictionService:
         """Generate Redis cache key for prediction."""
         return f"prediction:{user_id}:{metric.value}:{target_date.isoformat()}"
 
-    async def _get_cached_prediction(
-        self, cache_key: str
-    ) -> Optional[PredictResponse]:
+    async def _get_cached_prediction(self, cache_key: str) -> Optional[PredictResponse]:
         """Retrieve cached prediction from Redis."""
         cached = await redis_client.get(cache_key)
 

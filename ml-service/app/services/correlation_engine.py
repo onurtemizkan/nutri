@@ -6,7 +6,7 @@ Implements Pearson, Spearman, Kendall correlations with lag analysis for time-de
 """
 
 from datetime import date, datetime, timedelta, timezone
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -71,17 +71,13 @@ class CorrelationEngineService:
         target_metric = request.target_metric
 
         # Step 1: Build feature matrix (one row per day)
-        feature_matrix, dates = await self._build_feature_matrix(
-            user_id, lookback_days
-        )
+        feature_matrix, dates = await self._build_feature_matrix(user_id, lookback_days)
 
         if feature_matrix.empty:
             return self._empty_correlation_response(request)
 
         # Step 2: Fetch target metric values
-        target_values = await self._fetch_target_metric(
-            user_id, target_metric, dates
-        )
+        target_values = await self._fetch_target_metric(user_id, target_metric, dates)
 
         if target_values.empty:
             return self._empty_correlation_response(request)
@@ -95,7 +91,7 @@ class CorrelationEngineService:
             return CorrelationResponse(
                 user_id=user_id,
                 target_metric=target_metric,
-                analyzed_at=datetime.now(UTC),
+                analyzed_at=datetime.now(timezone.utc),
                 lookback_days=lookback_days,
                 correlations=[],
                 total_features_analyzed=0,
@@ -132,7 +128,8 @@ class CorrelationEngineService:
         # Step 5: Filter and sort results
         # Filter by significance and minimum correlation
         significant = [
-            r for r in all_correlations
+            r
+            for r in all_correlations
             if r.is_significant and abs(r.correlation) >= request.min_correlation
         ]
 
@@ -140,7 +137,7 @@ class CorrelationEngineService:
         significant.sort(key=lambda x: abs(x.correlation), reverse=True)
 
         # Take top K
-        top_correlations = significant[:request.top_k]
+        top_correlations = significant[: request.top_k]
 
         # Step 6: Calculate summary statistics
         strongest_positive = None
@@ -164,7 +161,7 @@ class CorrelationEngineService:
         return CorrelationResponse(
             user_id=user_id,
             target_metric=target_metric,
-            analyzed_at=datetime.now(UTC),
+            analyzed_at=datetime.now(timezone.utc),
             lookback_days=lookback_days,
             correlations=top_correlations,
             total_features_analyzed=len(aligned_features.columns),
@@ -173,7 +170,9 @@ class CorrelationEngineService:
             strongest_negative=strongest_negative,
             data_quality_score=quality_score,
             missing_days=missing_days,
-            warning=None if quality_score > 0.7 else "Data quality is low (< 70% complete)",
+            warning=None
+            if quality_score > 0.7
+            else "Data quality is low (< 70% complete)",
         )
 
     def _compute_correlation(
@@ -224,7 +223,9 @@ class CorrelationEngineService:
                 if max_lag < 1:
                     return None
 
-                granger_result = grangercausalitytests(data, maxlag=max_lag, verbose=False)
+                granger_result = grangercausalitytests(
+                    data, maxlag=max_lag, verbose=False
+                )
 
                 # Extract minimum p-value across all lags
                 p_values = [
@@ -252,7 +253,7 @@ class CorrelationEngineService:
             # Calculate explained variance (R²) for Pearson
             explained_variance = None
             if method == CorrelationMethod.PEARSON:
-                explained_variance = correlation ** 2
+                explained_variance = correlation**2
 
             return CorrelationResult(
                 feature_name=feature_name,
@@ -276,15 +277,33 @@ class CorrelationEngineService:
         """Infer feature category from feature name."""
         name_lower = feature_name.lower()
 
-        if any(x in name_lower for x in ["protein", "carbs", "fat", "calories", "fiber", "meal", "eating"]):
+        if any(
+            x in name_lower
+            for x in ["protein", "carbs", "fat", "calories", "fiber", "meal", "eating"]
+        ):
             return "nutrition"
-        elif any(x in name_lower for x in ["steps", "active", "workout", "recovery", "cardio", "strength"]):
+        elif any(
+            x in name_lower
+            for x in ["steps", "active", "workout", "recovery", "cardio", "strength"]
+        ):
             return "activity"
         elif any(x in name_lower for x in ["rhr", "hrv", "sleep", "recovery_score"]):
             return "health"
-        elif any(x in name_lower for x in ["day_of_week", "weekend", "week", "month", "cycle"]):
+        elif any(
+            x in name_lower
+            for x in ["day_of_week", "weekend", "week", "month", "cycle"]
+        ):
             return "temporal"
-        elif any(x in name_lower for x in ["per_kg", "per_minute", "per_workout", "to_recovery", "to_intensity"]):
+        elif any(
+            x in name_lower
+            for x in [
+                "per_kg",
+                "per_minute",
+                "per_workout",
+                "to_recovery",
+                "to_intensity",
+            ]
+        ):
             return "interaction"
         else:
             return "other"
@@ -317,16 +336,12 @@ class CorrelationEngineService:
         feature_name = request.feature_name
 
         # Build feature matrix and fetch target
-        feature_matrix, dates = await self._build_feature_matrix(
-            user_id, lookback_days
-        )
+        feature_matrix, dates = await self._build_feature_matrix(user_id, lookback_days)
 
         if feature_matrix.empty or feature_name not in feature_matrix.columns:
             return self._empty_lag_response(request)
 
-        target_values = await self._fetch_target_metric(
-            user_id, target_metric, dates
-        )
+        target_values = await self._fetch_target_metric(user_id, target_metric, dates)
 
         if target_values.empty:
             return self._empty_lag_response(request)
@@ -341,7 +356,7 @@ class CorrelationEngineService:
                 user_id=user_id,
                 target_metric=target_metric,
                 feature_name=feature_name,
-                analyzed_at=datetime.now(UTC),
+                analyzed_at=datetime.now(timezone.utc),
                 lag_results=[],
                 optimal_lag_hours=None,
                 optimal_correlation=None,
@@ -375,11 +390,17 @@ class CorrelationEngineService:
             # Compute correlation at this lag
             try:
                 if request.method == CorrelationMethod.PEARSON:
-                    correlation, p_value = stats.pearsonr(shifted_feature, shifted_target)
+                    correlation, p_value = stats.pearsonr(
+                        shifted_feature, shifted_target
+                    )
                 elif request.method == CorrelationMethod.SPEARMAN:
-                    correlation, p_value = stats.spearmanr(shifted_feature, shifted_target)
+                    correlation, p_value = stats.spearmanr(
+                        shifted_feature, shifted_target
+                    )
                 else:
-                    correlation, p_value = stats.kendalltau(shifted_feature, shifted_target)
+                    correlation, p_value = stats.kendalltau(
+                        shifted_feature, shifted_target
+                    )
 
                 lag_results.append(
                     LagAnalysisResult(
@@ -405,7 +426,9 @@ class CorrelationEngineService:
         optimal_correlation = optimal.correlation
 
         # Determine immediate vs delayed effect
-        immediate_effect = lag_results[0].is_significant and abs(lag_results[0].correlation) >= 0.3
+        immediate_effect = (
+            lag_results[0].is_significant and abs(lag_results[0].correlation) >= 0.3
+        )
         delayed_effect = optimal_lag_hours > 0
 
         # Calculate effect duration (consecutive significant lags)
@@ -426,7 +449,7 @@ class CorrelationEngineService:
             user_id=user_id,
             target_metric=target_metric,
             feature_name=feature_name,
-            analyzed_at=datetime.now(UTC),
+            analyzed_at=datetime.now(timezone.utc),
             lag_results=lag_results,
             optimal_lag_hours=optimal_lag_hours,
             optimal_correlation=optimal_correlation,
@@ -511,8 +534,14 @@ class CorrelationEngineService:
             )
 
         elif delayed:
-            lag_desc = f"{optimal_lag} hours" if optimal_lag < 48 else f"{optimal_lag // 24} days"
-            duration_desc = f"The effect lasts for {duration} hours." if duration else ""
+            lag_desc = (
+                f"{optimal_lag} hours"
+                if optimal_lag < 48
+                else f"{optimal_lag // 24} days"
+            )
+            duration_desc = (
+                f"The effect lasts for {duration} hours." if duration else ""
+            )
 
             return (
                 f"{feature_name} has a delayed effect on {metric_name}. "
@@ -562,39 +591,49 @@ class CorrelationEngineService:
                 flat_features = {}
 
                 if response.nutrition:
-                    flat_features.update({
-                        f"nutrition_{k}": v
-                        for k, v in response.nutrition.model_dump().items()
-                        if v is not None
-                    })
+                    flat_features.update(
+                        {
+                            f"nutrition_{k}": v
+                            for k, v in response.nutrition.model_dump().items()
+                            if v is not None
+                        }
+                    )
 
                 if response.activity:
-                    flat_features.update({
-                        f"activity_{k}": v
-                        for k, v in response.activity.model_dump().items()
-                        if v is not None
-                    })
+                    flat_features.update(
+                        {
+                            f"activity_{k}": v
+                            for k, v in response.activity.model_dump().items()
+                            if v is not None
+                        }
+                    )
 
                 if response.health:
-                    flat_features.update({
-                        f"health_{k}": v
-                        for k, v in response.health.model_dump().items()
-                        if v is not None
-                    })
+                    flat_features.update(
+                        {
+                            f"health_{k}": v
+                            for k, v in response.health.model_dump().items()
+                            if v is not None
+                        }
+                    )
 
                 if response.temporal:
-                    flat_features.update({
-                        f"temporal_{k}": v
-                        for k, v in response.temporal.model_dump().items()
-                        if v is not None
-                    })
+                    flat_features.update(
+                        {
+                            f"temporal_{k}": v
+                            for k, v in response.temporal.model_dump().items()
+                            if v is not None
+                        }
+                    )
 
                 if response.interaction:
-                    flat_features.update({
-                        f"interaction_{k}": v
-                        for k, v in response.interaction.model_dump().items()
-                        if v is not None
-                    })
+                    flat_features.update(
+                        {
+                            f"interaction_{k}": v
+                            for k, v in response.interaction.model_dump().items()
+                            if v is not None
+                        }
+                    )
 
                 features_by_date[current_date] = flat_features
                 dates.append(current_date)
@@ -631,8 +670,10 @@ class CorrelationEngineService:
                 and_(
                     HealthMetric.user_id == user_id,
                     HealthMetric.metric_type == target_metric.value,
-                    HealthMetric.recorded_at >= datetime.combine(start_date, datetime.min.time()),
-                    HealthMetric.recorded_at <= datetime.combine(end_date, datetime.max.time()),
+                    HealthMetric.recorded_at
+                    >= datetime.combine(start_date, datetime.min.time()),
+                    HealthMetric.recorded_at
+                    <= datetime.combine(end_date, datetime.max.time()),
                 )
             )
         )
@@ -642,12 +683,12 @@ class CorrelationEngineService:
             return pd.Series(dtype=float)
 
         # Group by date and take average (in case multiple readings per day)
-        data = {}
+        data: Dict[date, List[float]] = {}
         for metric in metrics:
             metric_date = metric.recorded_at.date()
             if metric_date not in data:
                 data[metric_date] = []
-            data[metric_date].append(metric.value)
+            data[metric_date].append(float(metric.value))
 
         # Average multiple readings per day
         averaged = {d: np.mean(values) for d, values in data.items()}
@@ -681,7 +722,7 @@ class CorrelationEngineService:
         return CorrelationResponse(
             user_id=request.user_id,
             target_metric=request.target_metric,
-            analyzed_at=datetime.now(UTC),
+            analyzed_at=datetime.now(timezone.utc),
             lookback_days=request.lookback_days,
             correlations=[],
             total_features_analyzed=0,
@@ -697,7 +738,7 @@ class CorrelationEngineService:
             user_id=request.user_id,
             target_metric=request.target_metric,
             feature_name=request.feature_name,
-            analyzed_at=datetime.now(UTC),
+            analyzed_at=datetime.now(timezone.utc),
             lag_results=[],
             optimal_lag_hours=None,
             optimal_correlation=None,

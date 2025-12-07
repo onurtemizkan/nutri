@@ -6,7 +6,6 @@ Integration tests for auth API routes have been removed as those routes are not 
 """
 
 import pytest
-from datetime import datetime, timedelta, timezone
 
 from app.auth.jwt import JWTHandler
 from app.auth.password import PasswordHandler

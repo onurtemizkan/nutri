@@ -34,7 +34,9 @@ def pytest_configure(config):
     - integration: Integration tests requiring external services
     - unit: Fast unit tests
     """
-    config.addinivalue_line("markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')")
+    config.addinivalue_line(
+        "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+    )
     config.addinivalue_line("markers", "integration: marks tests as integration tests")
     config.addinivalue_line("markers", "unit: marks tests as unit tests")
 
@@ -102,6 +104,7 @@ def override_get_db(db: AsyncSession):
 
     This injects the test database session into FastAPI endpoints.
     """
+
     async def _override_get_db():
         yield db
 
@@ -278,8 +281,12 @@ def assert_valid_confidence_interval(lower: float, predicted: float, upper: floa
     Raises:
         AssertionError: If interval is not valid
     """
-    assert lower < predicted, f"Lower bound {lower} should be less than predicted {predicted}"
-    assert predicted < upper, f"Predicted {predicted} should be less than upper bound {upper}"
+    assert (
+        lower < predicted
+    ), f"Lower bound {lower} should be less than predicted {predicted}"
+    assert (
+        predicted < upper
+    ), f"Predicted {predicted} should be less than upper bound {upper}"
     assert lower > 0, f"Lower bound {lower} should be positive"
 
 
@@ -296,8 +303,10 @@ def assert_valid_shap_values(shap_values: list):
     assert len(shap_values) > 0, "Should have SHAP values"
 
     for i, feat in enumerate(shap_values):
-        assert feat["rank"] == i + 1, f"Features should be ranked (expected {i+1}, got {feat['rank']})"
-        assert feat["importance_score"] >= 0, f"Importance score should be non-negative"
+        assert (
+            feat["rank"] == i + 1
+        ), f"Features should be ranked (expected {i+1}, got {feat['rank']})"
+        assert feat["importance_score"] >= 0, "Importance score should be non-negative"
         assert feat["impact_direction"] in ["positive", "negative", "neutral"]
         assert feat["impact_magnitude"] in ["strong", "moderate", "weak"]
 
@@ -467,7 +476,9 @@ def print_dataset_stats(meals: list, activities: list, metrics: list):
 
     if metrics:
         rhr_metrics = [m for m in metrics if m["metric_type"] == "RESTING_HEART_RATE"]
-        hrv_metrics = [m for m in metrics if m["metric_type"] == "HEART_RATE_VARIABILITY_SDNN"]
+        hrv_metrics = [
+            m for m in metrics if m["metric_type"] == "HEART_RATE_VARIABILITY_SDNN"
+        ]
 
         if rhr_metrics:
             rhr_values = [m["value"] for m in rhr_metrics]

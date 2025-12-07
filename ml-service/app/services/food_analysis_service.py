@@ -16,14 +16,12 @@ from app.schemas.food_analysis import (
 )
 from app.data.food_database import (
     FOOD_DATABASE,
-    FoodCategory,
     CookingMethod,
     FoodEntry,
     get_food_entry,
     get_density,
     get_shape_factor,
     get_cooking_modifier,
-    estimate_weight_from_volume,
     validate_portion,
     get_amino_acids,
     PORTION_VALIDATION,
@@ -94,7 +92,7 @@ class FoodAnalysisService:
                         "width": dimensions.width,
                         "height": dimensions.height,
                         "depth": dimensions.depth,
-                    }
+                    },
                 )
                 if validation["warnings"]:
                     suggestions.extend(validation["warnings"])
@@ -198,9 +196,7 @@ class FoodAnalysisService:
         alternatives = []
         remaining_classes = [c for c in self._food_classes if c != primary_class]
         selected_alternatives = np.random.choice(
-            remaining_classes,
-            size=min(2, len(remaining_classes)),
-            replace=False
+            remaining_classes, size=min(2, len(remaining_classes)), replace=False
         )
         for alt_class in selected_alternatives:
             alt_entry = get_food_entry(alt_class)
@@ -212,15 +208,11 @@ class FoodAnalysisService:
                 )
             )
 
-        logger.info(
-            f"Classified as: {primary_class} (confidence: {confidence:.2f})"
-        )
+        logger.info(f"Classified as: {primary_class} (confidence: {confidence:.2f})")
         return primary_class, round(confidence, 2), alternatives
 
     def _parse_cooking_method(
-        self,
-        cooking_method_str: Optional[str],
-        food_entry: Optional[FoodEntry]
+        self, cooking_method_str: Optional[str], food_entry: Optional[FoodEntry]
     ) -> CookingMethod:
         """
         Parse cooking method string to enum.
@@ -286,7 +278,7 @@ class FoodAnalysisService:
         # Apply bounds
         final_weight = max(
             PORTION_VALIDATION["min_weight_g"],
-            min(PORTION_VALIDATION["max_weight_g"], final_weight)
+            min(PORTION_VALIDATION["max_weight_g"], final_weight),
         )
 
         # Determine confidence based on method
@@ -386,7 +378,9 @@ class FoodAnalysisService:
             fiber=round(fiber, 1) if fiber is not None else None,
             sugar=round(sugar, 1) if sugar is not None else None,
             sodium=round(sodium, 1) if sodium is not None else None,
-            saturated_fat=round(saturated_fat, 1) if saturated_fat is not None else None,
+            saturated_fat=round(saturated_fat, 1)
+            if saturated_fat is not None
+            else None,
             lysine=amino_acids["lysine"],
             arginine=amino_acids["arginine"],
         )
@@ -404,7 +398,7 @@ class FoodAnalysisService:
         dims = [dimensions.width, dimensions.height, dimensions.depth]
         max_dim = max(dims)
         min_dim = min(dims)
-        ratio = max_dim / min_dim if min_dim > 0 else float('inf')
+        ratio = max_dim / min_dim if min_dim > 0 else float("inf")
 
         # Factor 1: Dimension ratio (proportions)
         if ratio > 10:
@@ -439,9 +433,7 @@ class FoodAnalysisService:
         return quality_map[total_score]
 
     def _format_portion_size(
-        self,
-        weight_g: float,
-        food_entry: Optional[FoodEntry]
+        self, weight_g: float, food_entry: Optional[FoodEntry]
     ) -> str:
         """
         Format portion size for display.
@@ -465,11 +457,7 @@ class FoodAnalysisService:
         else:
             return f"{int(weight_g)}g"
 
-    def _format_food_name(
-        self,
-        food_class: str,
-        cooking_method: CookingMethod
-    ) -> str:
+    def _format_food_name(self, food_class: str, cooking_method: CookingMethod) -> str:
         """
         Format food name with cooking method if applicable.
 
@@ -553,9 +541,7 @@ class FoodAnalysisService:
             "version": "2.0.0",
             "accuracy": 0.85,
             "num_classes": len(self._food_classes),
-            "categories": list(set(
-                e.category.value for e in FOOD_DATABASE.values()
-            )),
+            "categories": list(set(e.category.value for e in FOOD_DATABASE.values())),
             "description": (
                 "Food classifier with comprehensive nutrition database. "
                 "Supports food-specific density and shape factors for accurate "

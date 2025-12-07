@@ -9,8 +9,6 @@ Endpoints for model interpretability and explainability:
 - GET /attention/{user_id}/{metric}/{target_date} - Attention weights (TODO)
 """
 
-from datetime import date
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -94,9 +92,7 @@ async def explain_prediction(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Explanation failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Explanation failed: {str(e)}")
 
 
 @router.post("/global-importance", response_model=GlobalImportanceResponse)

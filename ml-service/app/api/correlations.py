@@ -85,10 +85,11 @@ async def analyze_correlations(
 
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         raise HTTPException(
             status_code=500,
-            detail=f"Error analyzing correlations: {str(e)}\n{traceback.format_exc()}"
+            detail=f"Error analyzing correlations: {str(e)}\n{traceback.format_exc()}",
         )
 
 
@@ -152,10 +153,7 @@ async def analyze_lag(
         return response
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error analyzing lag: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error analyzing lag: {str(e)}")
 
 
 @router.get("/{user_id}/{target_metric}/summary")
@@ -237,6 +235,5 @@ async def get_correlation_summary(
 
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Error fetching correlation summary: {str(e)}"
+            status_code=500, detail=f"Error fetching correlation summary: {str(e)}"
         )

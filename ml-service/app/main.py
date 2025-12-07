@@ -110,7 +110,7 @@ async def health_check():
     redis_healthy = False
     try:
         redis_healthy = await redis_client.redis.ping() if redis_client.redis else False
-    except:
+    except Exception:
         pass
 
     # Check database (simplified check)
@@ -140,7 +140,7 @@ async def readiness_check():
     redis_ready = False
     try:
         redis_ready = await redis_client.redis.ping() if redis_client.redis else False
-    except:
+    except Exception:
         pass
 
     if redis_ready:
@@ -156,7 +156,7 @@ async def readiness_check():
 # API ROUTES
 # ============================================================================
 
-from app.api import api_router
+from app.api import api_router  # noqa: E402
 
 # Register all API routes
 app.include_router(api_router)

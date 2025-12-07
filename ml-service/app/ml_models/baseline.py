@@ -71,7 +71,7 @@ class MovingAverageBaseline:
             Predicted value (scalar)
         """
         # Take last window_size values
-        recent = historical_values[-self.window_size:]
+        recent = historical_values[-self.window_size :]
         return float(recent.mean())
 
 

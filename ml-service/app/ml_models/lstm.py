@@ -97,7 +97,9 @@ class HealthMetricLSTM(nn.Module):
                 nn.init.zeros_(param)
 
     def forward(
-        self, x: torch.Tensor, hidden: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
+        self,
+        x: torch.Tensor,
+        hidden: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
     ) -> torch.Tensor:
         """
         Forward pass.
@@ -109,7 +111,7 @@ class HealthMetricLSTM(nn.Module):
         Returns:
             Predicted values of shape (batch, output_dim)
         """
-        batch_size = x.size(0)
+        _batch_size = x.size(0)  # noqa: F841 - documented for clarity
 
         # LSTM forward pass
         if hidden is not None:
@@ -156,7 +158,7 @@ class HealthMetricLSTM(nn.Module):
             predictions = self.forward(x)
         return predictions
 
-    def get_attention_weights(self, x: torch.Tensor) -> torch.Tensor:
+    def get_attention_weights(self, x: torch.Tensor) -> Optional[torch.Tensor]:
         """
         Get attention weights for interpretability.
 
@@ -183,7 +185,7 @@ class HealthMetricLSTM(nn.Module):
 
     def summary(self):
         """Print model summary."""
-        print(f"HealthMetricLSTM Model Summary:")
+        print("HealthMetricLSTM Model Summary:")
         print(f"  Input dimension: {self.config.input_dim}")
         print(f"  Hidden dimension: {self.config.hidden_dim}")
         print(f"  Number of layers: {self.config.num_layers}")
@@ -234,15 +236,17 @@ class MultiTaskLSTM(nn.Module):
         self.relu = nn.ReLU()
 
         # Task-specific heads
-        self.task_heads = nn.ModuleList([
-            nn.Sequential(
-                nn.Linear(config.hidden_dim // 2, config.hidden_dim // 4),
-                nn.ReLU(),
-                nn.Dropout(config.dropout),
-                nn.Linear(config.hidden_dim // 4, 1)
-            )
-            for _ in range(num_tasks)
-        ])
+        self.task_heads = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Linear(config.hidden_dim // 2, config.hidden_dim // 4),
+                    nn.ReLU(),
+                    nn.Dropout(config.dropout),
+                    nn.Linear(config.hidden_dim // 4, 1),
+                )
+                for _ in range(num_tasks)
+            ]
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -378,8 +382,8 @@ class LSTMWithAttention(nn.Module):
                 - predictions: (batch, output_dim)
                 - attention_weights: (batch, sequence_length)
         """
-        batch_size = x.size(0)
-        seq_length = x.size(1)
+        _batch_size = x.size(0)  # noqa: F841 - documented for clarity
+        _seq_length = x.size(1)  # noqa: F841 - documented for clarity
 
         # LSTM forward pass
         lstm_out, _ = self.lstm(x)
@@ -396,9 +400,7 @@ class LSTMWithAttention(nn.Module):
         # Create context vector: weighted sum of LSTM outputs
         # Shape: (batch, seq_length, 1) @ (batch, seq_length, lstm_output_dim)
         # Result: (batch, lstm_output_dim)
-        context_vector = torch.bmm(
-            attention_weights.unsqueeze(1), lstm_out
-        ).squeeze(1)
+        context_vector = torch.bmm(attention_weights.unsqueeze(1), lstm_out).squeeze(1)
 
         # Apply dropout
         out = self.dropout(context_vector)
@@ -447,7 +449,7 @@ class LSTMWithAttention(nn.Module):
         else:
             return predictions, None
 
-    def get_attention_weights(self, x: torch.Tensor) -> torch.Tensor:
+    def get_attention_weights(self, x: torch.Tensor) -> Optional[torch.Tensor]:
         """
         Get attention weights for interpretability.
 
@@ -485,12 +487,12 @@ class LSTMWithAttention(nn.Module):
 
     def summary(self):
         """Print model summary."""
-        print(f"LSTMWithAttention Model Summary:")
+        print("LSTMWithAttention Model Summary:")
         print(f"  Input dimension: {self.config.input_dim}")
         print(f"  Hidden dimension: {self.config.hidden_dim}")
         print(f"  Number of layers: {self.config.num_layers}")
         print(f"  Bidirectional: {self.config.bidirectional}")
         print(f"  Dropout: {self.config.dropout}")
         print(f"  Sequence length: {self.config.sequence_length}")
-        print(f"  Attention: Yes")
+        print("  Attention: Yes")
         print(f"  Total parameters: {self.count_parameters():,}")

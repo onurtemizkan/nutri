@@ -9,13 +9,14 @@ Sources:
 - Food Science Literature
 - Standardized food density tables
 """
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, List, Union
 from dataclasses import dataclass
 from enum import Enum
 
 
 class FoodCategory(str, Enum):
     """Food category classifications"""
+
     FRUIT = "fruit"
     VEGETABLE = "vegetable"
     PROTEIN = "protein"
@@ -34,6 +35,7 @@ class FoodCategory(str, Enum):
 
 class CookingMethod(str, Enum):
     """Cooking method classifications"""
+
     RAW = "raw"
     COOKED = "cooked"
     BOILED = "boiled"
@@ -49,6 +51,7 @@ class CookingMethod(str, Enum):
 @dataclass
 class CookingModifier:
     """Modifiers for cooking method effects on weight/nutrition"""
+
     weight_multiplier: float  # How weight changes (moisture loss/gain)
     calorie_multiplier: float  # How calories change (oil absorption, etc.)
     description: str
@@ -57,14 +60,22 @@ class CookingModifier:
 # Cooking method modifiers
 COOKING_MODIFIERS: Dict[CookingMethod, CookingModifier] = {
     CookingMethod.RAW: CookingModifier(1.0, 1.0, "No cooking, original state"),
-    CookingMethod.COOKED: CookingModifier(0.85, 1.0, "Generic cooking, ~15% moisture loss"),
+    CookingMethod.COOKED: CookingModifier(
+        0.85, 1.0, "Generic cooking, ~15% moisture loss"
+    ),
     CookingMethod.BOILED: CookingModifier(0.90, 1.0, "Boiled, ~10% moisture loss"),
     CookingMethod.STEAMED: CookingModifier(0.92, 1.0, "Steamed, ~8% moisture loss"),
-    CookingMethod.GRILLED: CookingModifier(0.75, 1.05, "Grilled, ~25% moisture loss, slight fat increase"),
-    CookingMethod.FRIED: CookingModifier(0.80, 1.25, "Fried, moisture loss + oil absorption (~25% calorie increase)"),
+    CookingMethod.GRILLED: CookingModifier(
+        0.75, 1.05, "Grilled, ~25% moisture loss, slight fat increase"
+    ),
+    CookingMethod.FRIED: CookingModifier(
+        0.80, 1.25, "Fried, moisture loss + oil absorption (~25% calorie increase)"
+    ),
     CookingMethod.BAKED: CookingModifier(0.85, 1.0, "Baked, ~15% moisture loss"),
     CookingMethod.ROASTED: CookingModifier(0.78, 1.05, "Roasted, ~22% moisture loss"),
-    CookingMethod.SAUTEED: CookingModifier(0.82, 1.15, "Sautéed, moderate oil absorption"),
+    CookingMethod.SAUTEED: CookingModifier(
+        0.82, 1.15, "Sautéed, moderate oil absorption"
+    ),
     CookingMethod.POACHED: CookingModifier(0.95, 1.0, "Poached, minimal moisture loss"),
 }
 
@@ -72,6 +83,7 @@ COOKING_MODIFIERS: Dict[CookingMethod, CookingModifier] = {
 @dataclass
 class FoodEntry:
     """Complete food database entry"""
+
     name: str
     display_name: str
     category: FoodCategory
@@ -88,9 +100,11 @@ class FoodEntry:
     sodium: Optional[float] = None  # mg
     saturated_fat: Optional[float] = None
     lysine: Optional[float] = None  # mg per serving - essential amino acid
-    arginine: Optional[float] = None  # mg per serving - conditionally essential amino acid
+    arginine: Optional[
+        float
+    ] = None  # mg per serving - conditionally essential amino acid
     fdc_id: Optional[str] = None  # USDA FoodData Central ID
-    aliases: List[str] = None  # Alternative names for fuzzy matching
+    aliases: Optional[List[str]] = None  # Alternative names for fuzzy matching
     default_cooking_method: CookingMethod = CookingMethod.RAW
 
     def __post_init__(self):
@@ -417,7 +431,6 @@ FOOD_DATABASE: Dict[str, FoodEntry] = {
         fdc_id="1102691",
         aliases=["pears"],
     ),
-
     # ========================================================================
     # VEGETABLES
     # ========================================================================
@@ -609,7 +622,13 @@ FOOD_DATABASE: Dict[str, FoodEntry] = {
         fiber=0.7,
         sugar=1,
         fdc_id="1103183",
-        aliases=["mushrooms", "white mushroom", "button mushroom", "cremini", "portobello"],
+        aliases=[
+            "mushrooms",
+            "white mushroom",
+            "button mushroom",
+            "cremini",
+            "portobello",
+        ],
     ),
     "corn": FoodEntry(
         name="corn",
@@ -769,7 +788,6 @@ FOOD_DATABASE: Dict[str, FoodEntry] = {
         aliases=["aubergine", "eggplants"],
         default_cooking_method=CookingMethod.GRILLED,
     ),
-
     # ========================================================================
     # PROTEINS
     # ========================================================================
@@ -999,7 +1017,6 @@ FOOD_DATABASE: Dict[str, FoodEntry] = {
         fdc_id="1100510",
         aliases=[],
     ),
-
     # ========================================================================
     # SEAFOOD
     # ========================================================================
@@ -1147,7 +1164,6 @@ FOOD_DATABASE: Dict[str, FoodEntry] = {
         aliases=["sea scallops", "bay scallops"],
         default_cooking_method=CookingMethod.SAUTEED,
     ),
-
     # ========================================================================
     # GRAINS
     # ========================================================================
@@ -1284,7 +1300,6 @@ FOOD_DATABASE: Dict[str, FoodEntry] = {
         fdc_id="1101702",
         aliases=["bagels", "plain bagel", "everything bagel"],
     ),
-
     # ========================================================================
     # DAIRY
     # ========================================================================
@@ -1410,7 +1425,6 @@ FOOD_DATABASE: Dict[str, FoodEntry] = {
         fdc_id="1097944",
         aliases=["vanilla ice cream", "chocolate ice cream"],
     ),
-
     # ========================================================================
     # LEGUMES
     # ========================================================================
@@ -1523,7 +1537,6 @@ FOOD_DATABASE: Dict[str, FoodEntry] = {
         aliases=["soybeans"],
         default_cooking_method=CookingMethod.STEAMED,
     ),
-
     # ========================================================================
     # NUTS & SEEDS
     # ========================================================================
@@ -1649,7 +1662,6 @@ FOOD_DATABASE: Dict[str, FoodEntry] = {
         fdc_id="1100546",
         aliases=[],
     ),
-
     # ========================================================================
     # BAKED GOODS
     # ========================================================================
@@ -1783,7 +1795,6 @@ FOOD_DATABASE: Dict[str, FoodEntry] = {
         fdc_id="1104245",
         aliases=["waffles", "belgian waffle"],
     ),
-
     # ========================================================================
     # SNACKS
     # ========================================================================
@@ -1868,7 +1879,6 @@ FOOD_DATABASE: Dict[str, FoodEntry] = {
         fdc_id="1104300",
         aliases=["saltines", "ritz crackers", "wheat crackers"],
     ),
-
     # ========================================================================
     # MIXED / PREPARED FOODS
     # ========================================================================
@@ -2026,7 +2036,6 @@ FOOD_DATABASE: Dict[str, FoodEntry] = {
         fdc_id="1102796",
         aliases=["chicken curry", "vegetable curry", "thai curry"],
     ),
-
     # ========================================================================
     # CONDIMENTS
     # ========================================================================
@@ -2345,7 +2354,9 @@ def estimate_weight_from_volume(
 
     # Get parameters
     density = entry.density if entry else get_density(food_name, category)
-    shape_factor = entry.shape_factor if entry else get_shape_factor(food_name, category)
+    shape_factor = (
+        entry.shape_factor if entry else get_shape_factor(food_name, category)
+    )
 
     # Determine cooking method
     if cooking_method is None and entry and entry.default_cooking_method:
@@ -2373,7 +2384,9 @@ def estimate_weight_from_volume(
     return {
         "weight": round(final_weight, 1),
         "confidence": confidence,
-        "method": "density-lookup" if entry else ("category-default" if category else "generic-default"),
+        "method": "density-lookup"
+        if entry
+        else ("category-default" if category else "generic-default"),
         "density_used": density,
         "shape_factor_used": shape_factor,
         "cooking_method": cooking_method.value,
@@ -2418,13 +2431,19 @@ def validate_portion(
         warnings.append(f"Unusually small portion ({weight_g}g)")
 
     if weight_g > PORTION_VALIDATION["max_weight_g"]:
-        warnings.append(f"Weight exceeds maximum ({PORTION_VALIDATION['max_weight_g']}g)")
+        warnings.append(
+            f"Weight exceeds maximum ({PORTION_VALIDATION['max_weight_g']}g)"
+        )
     elif weight_g > PORTION_VALIDATION["typical_max_g"]:
         warnings.append(f"Unusually large portion ({weight_g}g)")
 
     # Dimension validation
     if dimensions:
-        dims = [dimensions.get("width", 0), dimensions.get("height", 0), dimensions.get("depth", 0)]
+        dims = [
+            dimensions.get("width", 0),
+            dimensions.get("height", 0),
+            dimensions.get("depth", 0),
+        ]
         dims = [d for d in dims if d > 0]
 
         if dims:
@@ -2449,9 +2468,7 @@ def validate_portion(
 
 
 def get_amino_acids(
-    food_name: str,
-    protein_grams: float,
-    category: Optional[FoodCategory] = None
+    food_name: str, protein_grams: float, category: Optional[FoodCategory] = None
 ) -> Dict[str, Optional[float]]:
     """
     Get lysine and arginine content for a food.
@@ -2482,7 +2499,9 @@ def get_amino_acids(
 
     # Estimate based on protein content and category ratios
     cat = category or FoodCategory.UNKNOWN
-    ratios = AMINO_ACID_PROTEIN_RATIOS.get(cat, AMINO_ACID_PROTEIN_RATIOS[FoodCategory.UNKNOWN])
+    ratios = AMINO_ACID_PROTEIN_RATIOS.get(
+        cat, AMINO_ACID_PROTEIN_RATIOS[FoodCategory.UNKNOWN]
+    )
 
     # Calculate: protein (g) × ratio (mg/g protein) = amino acid (mg)
     lysine_mg = protein_grams * ratios["lysine"]
@@ -2494,7 +2513,7 @@ def get_amino_acids(
     }
 
 
-def estimate_lysine_arginine_ratio(food_name: str) -> Dict[str, float]:
+def estimate_lysine_arginine_ratio(food_name: str) -> Dict[str, Union[float, str]]:
     """
     Get the lysine-to-arginine ratio for a food.
 
@@ -2516,7 +2535,9 @@ def estimate_lysine_arginine_ratio(food_name: str) -> Dict[str, float]:
     else:
         # Use category-based estimation
         cat = entry.category if entry else FoodCategory.UNKNOWN
-        ratios = AMINO_ACID_PROTEIN_RATIOS.get(cat, AMINO_ACID_PROTEIN_RATIOS[FoodCategory.UNKNOWN])
+        ratios = AMINO_ACID_PROTEIN_RATIOS.get(
+            cat, AMINO_ACID_PROTEIN_RATIOS[FoodCategory.UNKNOWN]
+        )
         ratio = ratios["lysine"] / ratios["arginine"] if ratios["arginine"] > 0 else 1.0
 
     # Classify the ratio

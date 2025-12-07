@@ -6,7 +6,7 @@ Implements 50+ features across 5 categories: nutrition, activity, health, tempor
 """
 
 from datetime import date, datetime, timedelta, timezone
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -27,7 +27,6 @@ from app.schemas.features import (
     FeatureCategory,
 )
 from app.redis_client import redis_client
-from app.config import settings
 
 
 class FeatureEngineeringService:
@@ -85,8 +84,12 @@ class FeatureEngineeringService:
 
         # Fetch raw data
         meals_df = await self._fetch_meals(user_id, target_date, lookback_days)
-        activities_df = await self._fetch_activities(user_id, target_date, lookback_days)
-        health_df = await self._fetch_health_metrics(user_id, target_date, lookback_days)
+        activities_df = await self._fetch_activities(
+            user_id, target_date, lookback_days
+        )
+        health_df = await self._fetch_health_metrics(
+            user_id, target_date, lookback_days
+        )
 
         # Engineer features by category
         nutrition = None
@@ -106,9 +109,7 @@ class FeatureEngineeringService:
             )
 
         if compute_health:
-            health = await self._engineer_health_features(
-                health_df, target_date
-            )
+            health = await self._engineer_health_features(health_df, target_date)
 
         if compute_temporal:
             temporal = self._engineer_temporal_features(target_date)
@@ -119,14 +120,18 @@ class FeatureEngineeringService:
             )
 
         # Calculate data quality metrics
-        feature_count, missing_features, quality_score = self._calculate_quality_metrics(
+        (
+            feature_count,
+            missing_features,
+            quality_score,
+        ) = self._calculate_quality_metrics(
             nutrition, activity, health, temporal, interaction
         )
 
         response = EngineerFeaturesResponse(
             user_id=user_id,
             target_date=target_date,
-            computed_at=datetime.now(UTC),
+            computed_at=datetime.now(timezone.utc),
             cached=False,
             nutrition=nutrition,
             activity=activity,
@@ -180,15 +185,15 @@ class FeatureEngineeringService:
         fiber_daily = today_meals["fiber"].sum()
 
         # Rolling averages (7 days)
-        last_7_days = meals_df[
-            meals_df["date"] > (target_date - timedelta(days=7))
-        ]
-        daily_sums = last_7_days.groupby("date").agg({
-            "calories": "sum",
-            "protein": "sum",
-            "carbs": "sum",
-            "fat": "sum",
-        })
+        last_7_days = meals_df[meals_df["date"] > (target_date - timedelta(days=7))]
+        daily_sums = last_7_days.groupby("date").agg(
+            {
+                "calories": "sum",
+                "protein": "sum",
+                "carbs": "sum",
+                "fat": "sum",
+            }
+        )
 
         calories_7d_avg = daily_sums["calories"].mean() if not daily_sums.empty else 0
         protein_7d_avg = daily_sums["protein"].mean() if not daily_sums.empty else 0
@@ -196,7 +201,9 @@ class FeatureEngineeringService:
         fat_7d_avg = daily_sums["fat"].mean() if not daily_sums.empty else 0
 
         # Macro ratios
-        total_cal = calories_daily if calories_daily > 0 else 1  # Avoid division by zero
+        total_cal = (
+            calories_daily if calories_daily > 0 else 1
+        )  # Avoid division by zero
         protein_ratio = (protein_daily * 4) / total_cal
         carbs_ratio = (carbs_daily * 4) / total_cal
         fat_ratio = (fat_daily * 9) / total_cal
@@ -295,19 +302,23 @@ class FeatureEngineeringService:
 
         # Use goal_calories as baseline estimate
         # Most users set their calorie goal based on their TDEE +/- deficit
-        base_calories = user.goal_calories if user.goal_calories else 2000
+        base_calories: float = (
+            float(user.goal_calories) if user.goal_calories else 2000.0
+        )
 
         # Activity level multipliers (rough estimates)
         activity_multipliers = {
-            "sedentary": 0.9,    # Less than goal (deficit for weight loss)
-            "light": 0.95,       # Slightly less
-            "moderate": 1.0,     # At goal
-            "active": 1.05,      # Slightly more (maintenance for active people)
+            "sedentary": 0.9,  # Less than goal (deficit for weight loss)
+            "light": 0.95,  # Slightly less
+            "moderate": 1.0,  # At goal
+            "active": 1.05,  # Slightly more (maintenance for active people)
             "very_active": 1.1,  # More (maintenance for very active people)
         }
 
         # Get activity level (default to moderate)
-        activity_level = user.activity_level if hasattr(user, 'activity_level') else "moderate"
+        activity_level: str = (
+            str(user.activity_level) if hasattr(user, "activity_level") else "moderate"
+        )
         multiplier = activity_multipliers.get(activity_level, 1.0)
 
         estimated_tdee = base_calories * multiplier
@@ -366,9 +377,12 @@ class FeatureEngineeringService:
         today_activities = activities_df[activities_df["date"] == target_date]
 
         # Daily activity
-        steps_daily = int(today_activities[
-            today_activities["activity_type"] == "WALKING"
-        ]["duration_minutes"].sum() * 100)  # Rough estimate: 100 steps/min
+        steps_daily = int(
+            today_activities[today_activities["activity_type"] == "WALKING"][
+                "duration_minutes"
+            ].sum()
+            * 100
+        )  # Rough estimate: 100 steps/min
 
         active_minutes_daily = today_activities["duration_minutes"].sum()
         calories_burned_daily = today_activities["calories_burned"].sum()
@@ -377,14 +391,20 @@ class FeatureEngineeringService:
         last_7_days = activities_df[
             activities_df["date"] > (target_date - timedelta(days=7))
         ]
-        daily_sums = last_7_days.groupby("date").agg({
-            "duration_minutes": "sum",
-            "calories_burned": "sum",
-        })
+        daily_sums = last_7_days.groupby("date").agg(
+            {
+                "duration_minutes": "sum",
+                "calories_burned": "sum",
+            }
+        )
 
         steps_7d_avg = 0  # TODO: Implement proper step tracking
-        active_minutes_7d_avg = daily_sums["duration_minutes"].mean() if not daily_sums.empty else 0
-        calories_burned_7d_avg = daily_sums["calories_burned"].mean() if not daily_sums.empty else 0
+        active_minutes_7d_avg = (
+            daily_sums["duration_minutes"].mean() if not daily_sums.empty else 0
+        )
+        calories_burned_7d_avg = (
+            daily_sums["calories_burned"].mean() if not daily_sums.empty else 0
+        )
 
         # Workout intensity
         workout_count_daily = len(today_activities)
@@ -442,7 +462,9 @@ class FeatureEngineeringService:
             flexibility_minutes_7d=flexibility_minutes_7d,
         )
 
-    def _calculate_recovery_time(self, activities_df: pd.DataFrame, target_date: date) -> float:
+    def _calculate_recovery_time(
+        self, activities_df: pd.DataFrame, target_date: date
+    ) -> float:
         """Calculate hours since last high-intensity workout."""
         high_intensity = activities_df[activities_df["intensity"] == "HIGH"]
         if high_intensity.empty:
@@ -455,7 +477,9 @@ class FeatureEngineeringService:
         hours = (target_date - last_high).days * 24
         return float(hours)
 
-    def _calculate_days_since_rest(self, activities_df: pd.DataFrame, target_date: date) -> int:
+    def _calculate_days_since_rest(
+        self, activities_df: pd.DataFrame, target_date: date
+    ) -> int:
         """Calculate days since last rest day (no workouts)."""
         # Get dates with workouts
         workout_dates = set(activities_df[activities_df["date"] <= target_date]["date"])
@@ -510,15 +534,25 @@ class FeatureEngineeringService:
 
         # RHR features
         rhr_df = health_df[health_df["metric_type"] == "RESTING_HEART_RATE"]
-        rhr_yesterday, rhr_7d_avg, rhr_7d_std, rhr_trend, rhr_baseline, rhr_deviation = (
-            self._calculate_metric_features(rhr_df, target_date)
-        )
+        (
+            rhr_yesterday,
+            rhr_7d_avg,
+            rhr_7d_std,
+            rhr_trend,
+            rhr_baseline,
+            rhr_deviation,
+        ) = self._calculate_metric_features(rhr_df, target_date)
 
         # HRV features (using RMSSD as primary)
         hrv_df = health_df[health_df["metric_type"] == "HEART_RATE_VARIABILITY_RMSSD"]
-        hrv_yesterday, hrv_7d_avg, hrv_7d_std, hrv_trend, hrv_baseline, hrv_deviation = (
-            self._calculate_metric_features(hrv_df, target_date)
-        )
+        (
+            hrv_yesterday,
+            hrv_7d_avg,
+            hrv_7d_std,
+            hrv_trend,
+            hrv_baseline,
+            hrv_deviation,
+        ) = self._calculate_metric_features(hrv_df, target_date)
 
         # Sleep features
         sleep_duration_df = health_df[health_df["metric_type"] == "SLEEP_DURATION"]
@@ -569,8 +603,8 @@ class FeatureEngineeringService:
 
         # 7-day statistics
         last_7_days = metric_df[
-            (metric_df["date"] > (target_date - timedelta(days=7))) &
-            (metric_df["date"] <= target_date)
+            (metric_df["date"] > (target_date - timedelta(days=7)))
+            & (metric_df["date"] <= target_date)
         ]
         avg_7d = last_7_days["value"].mean() if not last_7_days.empty else None
         std_7d = last_7_days["value"].std() if not last_7_days.empty else None
@@ -584,8 +618,8 @@ class FeatureEngineeringService:
 
         # 30-day baseline
         last_30_days = metric_df[
-            (metric_df["date"] > (target_date - timedelta(days=30))) &
-            (metric_df["date"] <= target_date)
+            (metric_df["date"] > (target_date - timedelta(days=30)))
+            & (metric_df["date"] <= target_date)
         ]
         baseline = last_30_days["value"].mean() if not last_30_days.empty else None
 
@@ -596,7 +630,9 @@ class FeatureEngineeringService:
 
         return yesterday, avg_7d, std_7d, trend, baseline, deviation
 
-    def _get_yesterday_value(self, metric_df: pd.DataFrame, target_date: date) -> Optional[float]:
+    def _get_yesterday_value(
+        self, metric_df: pd.DataFrame, target_date: date
+    ) -> Optional[float]:
         """Get metric value from yesterday."""
         yesterday = target_date - timedelta(days=1)
         yesterday_data = metric_df[metric_df["date"] == yesterday]
@@ -604,11 +640,13 @@ class FeatureEngineeringService:
             return float(yesterday_data["value"].iloc[0])
         return None
 
-    def _calculate_7d_avg(self, metric_df: pd.DataFrame, target_date: date) -> Optional[float]:
+    def _calculate_7d_avg(
+        self, metric_df: pd.DataFrame, target_date: date
+    ) -> Optional[float]:
         """Calculate 7-day average for a metric."""
         last_7_days = metric_df[
-            (metric_df["date"] > (target_date - timedelta(days=7))) &
-            (metric_df["date"] <= target_date)
+            (metric_df["date"] > (target_date - timedelta(days=7)))
+            & (metric_df["date"] <= target_date)
         ]
         if not last_7_days.empty:
             return float(last_7_days["value"].mean())
@@ -725,9 +763,7 @@ class FeatureEngineeringService:
 
     async def _get_user(self, user_id: str) -> Optional[User]:
         """Fetch user from database."""
-        result = await self.db.execute(
-            select(User).where(User.id == user_id)
-        )
+        result = await self.db.execute(select(User).where(User.id == user_id))
         return result.scalar_one_or_none()
 
     async def _fetch_meals(
@@ -740,8 +776,10 @@ class FeatureEngineeringService:
             select(Meal).where(
                 and_(
                     Meal.user_id == user_id,
-                    Meal.consumed_at >= datetime.combine(start_date, datetime.min.time()),
-                    Meal.consumed_at <= datetime.combine(target_date, datetime.max.time()),
+                    Meal.consumed_at
+                    >= datetime.combine(start_date, datetime.min.time()),
+                    Meal.consumed_at
+                    <= datetime.combine(target_date, datetime.max.time()),
                 )
             )
         )
@@ -775,8 +813,10 @@ class FeatureEngineeringService:
             select(Activity).where(
                 and_(
                     Activity.user_id == user_id,
-                    Activity.started_at >= datetime.combine(start_date, datetime.min.time()),
-                    Activity.started_at <= datetime.combine(target_date, datetime.max.time()),
+                    Activity.started_at
+                    >= datetime.combine(start_date, datetime.min.time()),
+                    Activity.started_at
+                    <= datetime.combine(target_date, datetime.max.time()),
                 )
             )
         )
@@ -808,8 +848,10 @@ class FeatureEngineeringService:
             select(HealthMetric).where(
                 and_(
                     HealthMetric.user_id == user_id,
-                    HealthMetric.recorded_at >= datetime.combine(start_date, datetime.min.time()),
-                    HealthMetric.recorded_at <= datetime.combine(target_date, datetime.max.time()),
+                    HealthMetric.recorded_at
+                    >= datetime.combine(start_date, datetime.min.time()),
+                    HealthMetric.recorded_at
+                    <= datetime.combine(target_date, datetime.max.time()),
                 )
             )
         )
@@ -857,7 +899,9 @@ class FeatureEngineeringService:
                 missing_features += sum(1 for v in fields.values() if v is None)
 
         # Quality score: 1.0 - (missing / total)
-        quality_score = 1.0 - (missing_features / total_features) if total_features > 0 else 0.0
+        quality_score = (
+            1.0 - (missing_features / total_features) if total_features > 0 else 0.0
+        )
 
         return total_features, missing_features, quality_score
 
@@ -885,7 +929,7 @@ class FeatureEngineeringService:
         self, user_id: str, target_date: date, response: EngineerFeaturesResponse
     ) -> None:
         """Cache features in Redis."""
-        key = f"features:{user_id}:{target_date}:all"
+        # Note: key format is f"features:{user_id}:{target_date}:all"
         await redis_client.cache_features(
             user_id, str(target_date), "all", response.model_dump(mode="json")
         )
