@@ -54,17 +54,27 @@ export async function cleanDatabase() {
       // Otherwise, retry immediately
     }
   }
+  // Supplement tracking
   await prisma.supplementLog.deleteMany();
   await prisma.supplement.deleteMany();
+  // Health & Activity
   await prisma.healthMetric.deleteMany();
   await prisma.activity.deleteMany();
+  // Onboarding models
+  await prisma.userOnboarding.deleteMany();
+  await prisma.userHealthBackground.deleteMany();
+  await prisma.userLifestyle.deleteMany();
+  await prisma.userPermissions.deleteMany();
+  // Core models
   await prisma.meal.deleteMany();
   await prisma.waterIntake.deleteMany();
   await prisma.weightRecord.deleteMany();
+  // ML models
   await prisma.mLInsight.deleteMany();
   await prisma.mLPrediction.deleteMany();
   await prisma.mLFeature.deleteMany();
   await prisma.userMLProfile.deleteMany();
+  // User (last due to foreign key constraints)
   await prisma.user.deleteMany();
 }
 

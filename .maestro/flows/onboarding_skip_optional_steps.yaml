@@ -1,0 +1,79 @@
+appId: com.nutri.app
+name: Onboarding - Skip Optional Steps
+tags:
+  - onboarding
+  - e2e
+  - skip-flow
+---
+
+# Test: Complete onboarding while skipping optional steps (Health Background, Lifestyle)
+# Prerequisites: User must be logged in and not have completed onboarding
+
+- launchApp:
+    clearState: true
+
+# Wait for app to load
+- assertVisible: "Welcome to Nutri"
+- tapOn: "Get Started"
+
+# Step 1: Profile Basics (required)
+- assertVisible: "Profile Basics"
+- tapOn: "Your name"
+- inputText: "Skip Test User"
+- hideKeyboard
+
+- tapOn: "Date of Birth"
+- inputText: "05/20/1985"
+- hideKeyboard
+
+- tapOn: "Biological Sex"
+- tapOn: "Female"
+
+- tapOn: "Height"
+- inputText: "165"
+- hideKeyboard
+
+- tapOn: "Current Weight"
+- inputText: "60"
+- hideKeyboard
+
+- tapOn:
+    id: "activity-level-picker"
+- tapOn: "Light"
+
+- tapOn: "Continue"
+
+# Step 2: Health Goals (required)
+- assertVisible: "Health Goals"
+- tapOn: "General Health"
+- tapOn: "Continue"
+
+# Step 3: Permissions (required but all toggles are optional)
+- assertVisible: "Permissions"
+# Don't enable any permissions, just continue
+- tapOn: "Continue"
+
+# Step 4: Health Background (skippable)
+- assertVisible: "Health Background"
+- assertVisible: "Skip"
+- tapOn: "Skip"
+
+# Step 5: Lifestyle (skippable)
+- assertVisible: "Lifestyle"
+- assertVisible: "Skip"
+- tapOn: "Skip"
+
+# Step 6: Completion
+- assertVisible: "You're All Set"
+
+# Verify skipped steps are shown
+- assertVisible: "Skipped Steps"
+- assertVisible: "Health Background"
+- assertVisible: "Lifestyle"
+
+# Complete onboarding
+- tapOn: "Start Tracking"
+
+# Verify main screen
+- assertVisible:
+    id: "home-screen"

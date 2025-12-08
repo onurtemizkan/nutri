@@ -1,0 +1,38 @@
+# Maestro Configuration
+# https://maestro.mobile.dev/reference/configuration
+
+appId: com.nutri.app
+
+# Default configuration for all flows
+onFlowStart:
+  - launchApp:
+      clearState: true
+      clearKeychain: true
+
+# Environment variables for tests
+env:
+  TEST_USER_EMAIL: test@example.com
+  TEST_USER_PASSWORD: TestPassword123!
+  API_BASE_URL: http://localhost:3000
+
+# Tags for organizing tests
+tags:
+  - onboarding
+  - auth
+  - meals
+  - health
+
+# Retry configuration
+retryFailedTests: 2
+
+# Screenshots on failure
+takeScreenshotOnFailure: true
+
+# Video recording
+recordVideo: true
+
+# Output configuration
+outputDir: .maestro/output
+
+# Timeout settings (in milliseconds)
+defaultTimeout: 10000
