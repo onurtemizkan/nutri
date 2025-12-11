@@ -15,6 +15,7 @@ import { mealsApi } from '@/lib/api/meals';
 import { DailySummary, Meal } from '@/lib/types';
 import { useAuth } from '@/lib/context/AuthContext';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function HomeScreen() {
   const [summary, setSummary] = useState<DailySummary | null>(null);
@@ -22,6 +23,30 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
+  const { isTablet, deviceCategory, getResponsiveValue, scale } = useResponsive();
+
+  // Responsive values
+  const contentPadding = getResponsiveValue({
+    small: spacing.md,
+    medium: spacing.lg,
+    large: spacing.lg,
+    tablet: spacing.xl,
+    default: spacing.lg,
+  });
+  const calorieRingSize = getResponsiveValue({
+    small: 120,
+    medium: 140,
+    large: 160,
+    tablet: 180,
+    default: 140,
+  });
+  const fabSize = getResponsiveValue({
+    small: 52,
+    medium: 56,
+    large: 60,
+    tablet: 64,
+    default: 56,
+  });
 
   const loadSummary = useCallback(async () => {
     // Only load if user is authenticated
@@ -83,7 +108,7 @@ export default function HomeScreen() {
           />
         }
       >
-        <View style={styles.content}>
+        <View style={[styles.content, { padding: contentPadding }]}>
           {/* Header */}
           <View style={styles.header}>
             <View>
@@ -97,14 +122,20 @@ export default function HomeScreen() {
           </View>
 
           {/* Calorie Summary Card */}
-          <View style={styles.summaryCard} testID="home-calorie-summary">
+          <View style={[styles.summaryCard, isTablet && styles.summaryCardTablet]} testID="home-calorie-summary">
             <LinearGradient
               colors={gradients.primary}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={styles.calorieRing}
+              style={[
+                styles.calorieRing,
+                { width: calorieRingSize, height: calorieRingSize, borderRadius: calorieRingSize / 2 }
+              ]}
             >
-              <View style={styles.calorieContent}>
+              <View style={[
+                styles.calorieContent,
+                { width: calorieRingSize - 24, height: calorieRingSize - 24, borderRadius: (calorieRingSize - 24) / 2 }
+              ]}>
                 <Text style={styles.calorieValue}>{Math.round(summary?.totalCalories || 0)}</Text>
                 <Text style={styles.calorieLabel}>/ {summary?.goals?.goalCalories || 2000}</Text>
               </View>
@@ -124,7 +155,7 @@ export default function HomeScreen() {
           </View>
 
           {/* Macros */}
-          <View style={styles.macrosContainer} testID="home-macros-container">
+          <View style={[styles.macrosContainer, isTablet && styles.macrosContainerTablet]} testID="home-macros-container">
             <View style={styles.macroCard}>
               <Text style={styles.macroValue}>{Math.round(summary?.totalProtein || 0)}g</Text>
               <Text style={styles.macroLabel}>Protein</Text>
@@ -215,7 +246,10 @@ export default function HomeScreen() {
 
       {/* Floating Add Button */}
       <TouchableOpacity
-        style={styles.fab}
+        style={[
+          styles.fab,
+          { width: fabSize, height: fabSize, borderRadius: fabSize / 2 }
+        ]}
         onPress={() => router.push('/add-meal')}
         activeOpacity={0.8}
         testID="home-add-meal-fab"
@@ -226,7 +260,7 @@ export default function HomeScreen() {
           end={{ x: 1, y: 1 }}
           style={styles.fabGradient}
         >
-          <Text style={styles.fabText}>+</Text>
+          <Text style={[styles.fabText, { fontSize: fabSize * 0.5 }]}>+</Text>
         </LinearGradient>
       </TouchableOpacity>
     </SafeAreaView>
@@ -247,7 +281,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: spacing.lg,
     paddingBottom: 100,
   },
 
@@ -278,6 +311,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.secondary,
     ...shadows.md,
+  },
+  summaryCardTablet: {
+    maxWidth: 500,
+    alignSelf: 'center',
+    width: '100%',
   },
   calorieRing: {
     width: 140,
@@ -329,6 +367,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: spacing.xl,
     gap: spacing.md,
+  },
+  macrosContainerTablet: {
+    maxWidth: 600,
+    alignSelf: 'center',
+    width: '100%',
   },
   macroCard: {
     flex: 1,
@@ -428,9 +471,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: spacing.xl,
     right: spacing.xl,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
     overflow: 'hidden',
     ...shadows.xl,
   },
@@ -441,7 +481,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   fabText: {
-    fontSize: 32,
     color: colors.text.primary,
     fontWeight: typography.fontWeight.regular,
   },

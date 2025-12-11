@@ -19,6 +19,9 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import ARFoodScanner from '@/components/ARFoodScanner';
 import { captureStorage } from '@/lib/utils/capture-storage';
+import { colors, spacing, borderRadius, typography } from '@/lib/theme/colors';
+import { useResponsive } from '@/hooks/useResponsive';
+import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 import type {
   RGBDFrame,
   CaptureSession,
@@ -35,6 +38,8 @@ export default function ARScanFoodScreen() {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [capturedFrames, setCapturedFrames] = useState<RGBDFrame[]>([]);
   const [isExporting, setIsExporting] = useState(false);
+  const { isTablet, getSpacing } = useResponsive();
+  const responsiveSpacing = getSpacing();
 
   const handleSessionStart = useCallback(
     async (sessionId: string, session: CaptureSession) => {
@@ -160,7 +165,7 @@ export default function ARScanFoodScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#007AFF" />
+          <Ionicons name="arrow-back" size={24} color={colors.primary.main} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>AR Food Scanner</Text>
         <View style={styles.placeholder} />
@@ -169,7 +174,14 @@ export default function ARScanFoodScreen() {
       {/* Scanner Mode Toggle */}
       {!isScanning && (
         <View style={styles.configSection}>
-          <ScrollView style={styles.configScroll}>
+          <ScrollView
+            style={styles.configScroll}
+            contentContainerStyle={[
+              styles.configContent,
+              { paddingHorizontal: responsiveSpacing.horizontal },
+              isTablet && styles.configContentTablet
+            ]}
+          >
             <Text style={styles.sectionTitle}>Food Information</Text>
 
             <TextInput
@@ -177,7 +189,7 @@ export default function ARScanFoodScreen() {
               placeholder="Food name (optional)"
               value={foodName}
               onChangeText={setFoodName}
-              placeholderTextColor="#999"
+              placeholderTextColor={colors.text.disabled}
             />
 
             <TextInput
@@ -187,7 +199,7 @@ export default function ARScanFoodScreen() {
               onChangeText={setNotes}
               multiline
               numberOfLines={3}
-              placeholderTextColor="#999"
+              placeholderTextColor={colors.text.disabled}
             />
 
             <Text style={styles.sectionTitle}>Scan Mode</Text>
@@ -203,7 +215,7 @@ export default function ARScanFoodScreen() {
                 <Ionicons
                   name="camera"
                   size={24}
-                  color={scanMode === 'photo' ? '#fff' : '#007AFF'}
+                  color={scanMode === 'photo' ? colors.text.primary : colors.primary.main}
                 />
                 <Text
                   style={[
@@ -226,7 +238,7 @@ export default function ARScanFoodScreen() {
                 <Ionicons
                   name="videocam"
                   size={24}
-                  color={scanMode === 'video' ? '#fff' : '#007AFF'}
+                  color={scanMode === 'video' ? colors.text.primary : colors.primary.main}
                 />
                 <Text
                   style={[
@@ -241,7 +253,7 @@ export default function ARScanFoodScreen() {
             </View>
 
             <View style={styles.infoBox}>
-              <Ionicons name="information-circle" size={20} color="#007AFF" />
+              <Ionicons name="information-circle" size={20} color={colors.primary.main} />
               <Text style={styles.infoText}>
                 {scanMode === 'photo'
                   ? 'Capture a single high-quality RGB-D image of your food using LiDAR.'
@@ -301,45 +313,55 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
     paddingTop: 60,
-    paddingBottom: 16,
-    backgroundColor: '#fff',
+    paddingBottom: spacing.lg,
+    backgroundColor: colors.background.secondary,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: colors.border.secondary,
   },
   backButton: {
-    padding: 8,
+    padding: spacing.sm,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
   },
   placeholder: {
     width: 40,
   },
   configSection: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.background.secondary,
     maxHeight: 300,
   },
   configScroll: {
-    padding: 16,
+    flex: 1,
+  },
+  configContent: {
+    padding: spacing.lg,
+  },
+  configContentTablet: {
+    maxWidth: FORM_MAX_WIDTH,
+    alignSelf: 'center',
+    width: '100%',
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 12,
-    marginTop: 8,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.md,
+    marginTop: spacing.sm,
   },
   input: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    marginBottom: 12,
-    color: '#000',
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    fontSize: typography.fontSize.md,
+    marginBottom: spacing.md,
+    color: colors.text.primary,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
   },
   textArea: {
     height: 80,
@@ -347,48 +369,50 @@ const styles = StyleSheet.create({
   },
   modeSelector: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
+    gap: spacing.md,
+    marginBottom: spacing.lg,
   },
   modeButton: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
   },
   modeButtonActive: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+    backgroundColor: colors.primary.main,
+    borderColor: colors.primary.main,
   },
   modeText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#007AFF',
-    marginTop: 8,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary.main,
+    marginTop: spacing.sm,
   },
   modeTextActive: {
-    color: '#fff',
+    color: colors.text.primary,
   },
   modeSubtext: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 4,
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+    marginTop: spacing.xs,
   },
   infoBox: {
     flexDirection: 'row',
-    backgroundColor: '#E8F4FD',
-    borderRadius: 8,
-    padding: 12,
-    gap: 8,
-    marginBottom: 16,
+    backgroundColor: colors.special.highlight,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border.focus,
   },
   infoText: {
     flex: 1,
-    fontSize: 13,
-    color: '#007AFF',
+    fontSize: typography.fontSize.sm,
+    color: colors.primary.main,
     lineHeight: 18,
   },
   scannerContainer: {
@@ -400,19 +424,19 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    padding: 16,
+    padding: spacing.lg,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   statusText: {
-    color: '#fff',
-    fontSize: 14,
+    color: colors.text.primary,
+    fontSize: typography.fontSize.sm,
   },
   frameCount: {
-    color: '#34C759',
-    fontSize: 14,
-    fontWeight: '600',
+    color: colors.status.success,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
   },
   exportOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -421,21 +445,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   exportCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
     alignItems: 'center',
     minWidth: 200,
+    maxWidth: FORM_MAX_WIDTH,
   },
   exportTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 8,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
   },
   exportSubtitle: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: typography.fontSize.sm,
+    color: colors.text.tertiary,
     textAlign: 'center',
   },
 });

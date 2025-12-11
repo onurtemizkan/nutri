@@ -64,7 +64,8 @@
     "react-native-worklets": "0.5.1",
     "task-master-ai": "^0.37.0",
     "three": "^0.170.0",
-    "expo-sensors": "~14.0.2"
+    "expo-sensors": "~14.0.2",
+    "expo-screen-orientation": "~8.0.4"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
@@ -86,7 +87,10 @@
   "expo": {
     "doctor": {
       "reactNativeDirectoryCheck": {
-        "exclude": ["react-native-health", "lidar-module"]
+        "exclude": [
+          "react-native-health",
+          "lidar-module"
+        ]
       }
     }
   },

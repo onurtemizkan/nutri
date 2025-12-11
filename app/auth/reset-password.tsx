@@ -17,6 +17,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { authApi } from '@/lib/api/auth';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
+import { useResponsive } from '@/hooks/useResponsive';
+import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 
 export default function ResetPasswordScreen() {
   const [token, setToken] = useState('');
@@ -28,6 +30,8 @@ export default function ResetPasswordScreen() {
   const [userEmail, setUserEmail] = useState('');
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { isTablet, getSpacing } = useResponsive();
+  const responsiveSpacing = getSpacing();
 
   const verifyToken = useCallback(async (tokenToVerify: string) => {
     setIsVerifying(true);
@@ -117,7 +121,10 @@ export default function ResetPasswordScreen() {
   if (isVerifying) {
     return (
       <SafeAreaView style={styles.container} testID="reset-password-verifying-screen">
-        <View style={styles.centerContainer}>
+        <View style={[
+          styles.centerContainer,
+          isTablet && styles.tabletContent
+        ]}>
           <ActivityIndicator size="large" color={colors.primary.main} />
           <Text style={styles.loadingText}>Verifying reset token...</Text>
         </View>
@@ -134,7 +141,11 @@ export default function ResetPasswordScreen() {
         >
           <ScrollView
             style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingHorizontal: responsiveSpacing.horizontal },
+              isTablet && styles.tabletContent
+            ]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
@@ -210,7 +221,11 @@ export default function ResetPasswordScreen() {
       >
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingHorizontal: responsiveSpacing.horizontal },
+            isTablet && styles.tabletContent
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -312,6 +327,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing['2xl'],
     paddingBottom: spacing.xl,
+  },
+  tabletContent: {
+    maxWidth: FORM_MAX_WIDTH,
+    alignSelf: 'center',
+    width: '100%',
   },
   centerContainer: {
     flex: 1,

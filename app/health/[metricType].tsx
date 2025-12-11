@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,14 +22,22 @@ import {
   SOURCE_CONFIG,
 } from '@/lib/types/health-metrics';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
+import { useResponsive } from '@/hooks/useResponsive';
+import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 
 type DateRange = '7d' | '30d' | '90d';
-
-const screenWidth = Dimensions.get('window').width;
 
 export default function HealthMetricDetailScreen() {
   const { metricType } = useLocalSearchParams<{ metricType: string }>();
   const router = useRouter();
+  const { isTablet, getSpacing, width: screenWidth } = useResponsive();
+  const responsiveSpacing = getSpacing();
+
+  // Calculate chart width based on responsive layout
+  const effectiveContentWidth = isTablet
+    ? Math.min(screenWidth, FORM_MAX_WIDTH)
+    : screenWidth;
+  const chartWidth = effectiveContentWidth - responsiveSpacing.horizontal * 2 - spacing.md * 2;
 
   const [timeSeries, setTimeSeries] = useState<TimeSeriesDataPoint[]>([]);
   const [stats, setStats] = useState<HealthMetricStats | null>(null);
@@ -218,7 +225,15 @@ export default function HealthMetricDetailScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingHorizontal: responsiveSpacing.horizontal },
+          isTablet && styles.scrollContentTablet
+        ]}
+      >
         <View style={styles.content}>
           {/* Date Range Selector */}
           <View style={styles.dateRangeContainer}>
@@ -285,7 +300,7 @@ export default function HealthMetricDetailScreen() {
             <View style={styles.chartCard}>
               <LineChart
                 data={chartData}
-                width={screenWidth - spacing.lg * 2 - spacing.md * 2}
+                width={chartWidth}
                 height={200}
                 chartConfig={chartConfig}
                 bezier
@@ -413,8 +428,17 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: spacing.lg,
+  },
+  scrollContentTablet: {
+    maxWidth: FORM_MAX_WIDTH,
+    alignSelf: 'center',
+    width: '100%',
+  },
   content: {
-    padding: spacing.lg,
+    paddingVertical: spacing.lg,
     paddingBottom: spacing['3xl'],
   },
 

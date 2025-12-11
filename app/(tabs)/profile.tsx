@@ -16,12 +16,37 @@ import { useAuth } from '@/lib/context/AuthContext';
 import { useRouter } from 'expo-router';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import { showAlert } from '@/lib/utils/alert';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function ProfileScreen() {
   const { user, logout, updateUser } = useAuth();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { isTablet, getResponsiveValue } = useResponsive();
+
+  // Responsive values
+  const contentPadding = getResponsiveValue({
+    small: spacing.md,
+    medium: spacing.lg,
+    large: spacing.lg,
+    tablet: spacing.xl,
+    default: spacing.lg,
+  });
+  const avatarSize = getResponsiveValue({
+    small: 70,
+    medium: 80,
+    large: 90,
+    tablet: 100,
+    default: 80,
+  });
+  const maxContentWidth = getResponsiveValue({
+    small: undefined,
+    medium: undefined,
+    large: 600,
+    tablet: 500,
+    default: undefined,
+  });
 
   const [goalCalories, setGoalCalories] = useState(user?.goalCalories.toString() || '2000');
   const [goalProtein, setGoalProtein] = useState(user?.goalProtein.toString() || '150');
@@ -64,14 +89,21 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container} testID="profile-screen">
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
+        <View style={[
+          styles.content,
+          { padding: contentPadding },
+          maxContentWidth && { maxWidth: maxContentWidth, alignSelf: 'center', width: '100%' }
+        ]}>
           {/* Profile Header */}
           <View style={styles.profileHeader} testID="profile-header">
             <LinearGradient
               colors={gradients.primary}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={styles.avatar}
+              style={[
+                styles.avatar,
+                { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }
+              ]}
             >
               <Text style={styles.avatarText}>
                 {user?.name.charAt(0).toUpperCase()}
@@ -266,7 +298,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: spacing.lg,
+    // padding applied dynamically
   },
 
   // Profile Header
@@ -281,9 +313,6 @@ const styles = StyleSheet.create({
     ...shadows.md,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.md,

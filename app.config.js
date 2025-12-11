@@ -23,6 +23,7 @@ module.exports = {
     newArchEnabled: true, // Required by react-native-reanimated and other modern dependencies
     ios: {
       supportsTablet: true,
+      requireFullScreen: false, // Allow iPad multitasking (Split View, Slide Over)
       bundleIdentifier: 'com.anonymous.nutri',
       bitcode: false,
       infoPlist: {
@@ -59,6 +60,13 @@ module.exports = {
     },
     plugins: [
       'expo-router',
+      [
+        'expo-screen-orientation',
+        {
+          // Default to portrait for iPhones, but allow runtime control for iPads
+          initialOrientation: 'PORTRAIT',
+        },
+      ],
       [
         'expo-splash-screen',
         {

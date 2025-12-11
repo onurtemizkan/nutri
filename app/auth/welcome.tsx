@@ -7,11 +7,15 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { useAuth } from '@/lib/context/AuthContext';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
+import { useResponsive } from '@/hooks/useResponsive';
+import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 
 export default function WelcomeScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const { appleSignIn } = useAuth();
   const router = useRouter();
+  const { isTablet, getSpacing } = useResponsive();
+  const responsiveSpacing = getSpacing();
 
   const handleAppleSignIn = async () => {
     setIsLoading(true);
@@ -56,7 +60,14 @@ export default function WelcomeScreen() {
   return (
     <SafeAreaView style={styles.container} testID="welcome-screen">
       <LinearGradient colors={gradients.dark} style={styles.gradient}>
-        <View style={styles.content} testID="welcome-content">
+        <View
+          style={[
+            styles.content,
+            { paddingHorizontal: responsiveSpacing.horizontal },
+            isTablet && styles.tabletContent
+          ]}
+          testID="welcome-content"
+        >
           {/* Header Section */}
           <View style={styles.header}>
             {/* Logo/Icon with gradient background */}
@@ -156,6 +167,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing['3xl'],
     paddingBottom: spacing.xl,
+  },
+  tabletContent: {
+    maxWidth: FORM_MAX_WIDTH,
+    alignSelf: 'center',
+    width: '100%',
   },
 
   // Header

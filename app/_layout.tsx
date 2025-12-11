@@ -1,4 +1,5 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -12,6 +13,9 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/lib/context/AuthContext';
 import { AlertProvider } from '@/lib/components/CustomAlert';
 import { healthKitService } from '@/lib/services/healthkit';
+
+// Check if running in Expo Go (native modules for screen orientation not available)
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -80,6 +84,37 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+
+  // Configure orientation: Portrait-only for iPhones, both orientations for iPads
+  // Note: expo-screen-orientation requires a development build (not available in Expo Go)
+  useEffect(() => {
+    async function configureOrientation() {
+      // Skip orientation setup in Expo Go - native module not available
+      if (isExpoGo) {
+        console.log('ScreenOrientation: Skipping in Expo Go (native module not available)');
+        return;
+      }
+
+      try {
+        // Dynamic import to avoid bundling issues
+        const ScreenOrientation = await import('expo-screen-orientation');
+
+        if (Platform.OS === 'ios' && Platform.isPad) {
+          // iPad: Allow all orientations (portrait and landscape)
+          await ScreenOrientation.unlockAsync();
+        } else {
+          // iPhone/Android: Lock to portrait only
+          await ScreenOrientation.lockAsync(
+            ScreenOrientation.OrientationLock.PORTRAIT_UP
+          );
+        }
+      } catch (error) {
+        // Fallback: silently ignore if native module fails
+        console.log('ScreenOrientation: Error configuring orientation:', error);
+      }
+    }
+    configureOrientation();
+  }, []);
 
   useEffect(() => {
     if (loaded) {

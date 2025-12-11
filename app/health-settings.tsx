@@ -17,6 +17,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, typography, shadows } from '@/lib/theme/colors';
+import { useResponsive } from '@/hooks/useResponsive';
+import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 import { showAlert } from '@/lib/utils/alert';
 import {
   healthKitService,
@@ -78,6 +80,8 @@ function SyncCategory({
 
 export default function HealthSettingsScreen() {
   const router = useRouter();
+  const { isTablet, getSpacing } = useResponsive();
+  const responsiveSpacing = getSpacing();
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
@@ -251,7 +255,15 @@ export default function HealthSettingsScreen() {
         <View style={styles.headerRight} />
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingHorizontal: responsiveSpacing.horizontal },
+          isTablet && styles.scrollContentTablet
+        ]}
+      >
         <View style={styles.content}>
           {/* Apple Health Card */}
           <View style={styles.section}>
@@ -450,8 +462,17 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: spacing.lg,
+  },
+  scrollContentTablet: {
+    maxWidth: FORM_MAX_WIDTH,
+    alignSelf: 'center',
+    width: '100%',
+  },
   content: {
-    padding: spacing.lg,
+    paddingVertical: spacing.lg,
   },
 
   // Section

@@ -30,9 +30,13 @@ import {
 import { colors, gradients, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import { showAlert } from '@/lib/utils/alert';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
+import { useResponsive } from '@/hooks/useResponsive';
+import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 
 export default function AddHealthMetricScreen() {
   const router = useRouter();
+  const { isTablet, getSpacing } = useResponsive();
+  const responsiveSpacing = getSpacing();
 
   const [metricType, setMetricType] = useState<HealthMetricType>('RESTING_HEART_RATE');
   const [value, setValue] = useState('');
@@ -247,7 +251,15 @@ export default function AddHealthMetricScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingHorizontal: responsiveSpacing.horizontal },
+            isTablet && styles.scrollContentTablet
+          ]}
+        >
           <View style={styles.content}>
             {/* Metric Type Selector */}
             <View style={styles.section}>
@@ -411,8 +423,17 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: spacing.lg,
+  },
+  scrollContentTablet: {
+    maxWidth: FORM_MAX_WIDTH,
+    alignSelf: 'center',
+    width: '100%',
+  },
   content: {
-    padding: spacing.lg,
+    paddingVertical: spacing.lg,
     paddingBottom: spacing['3xl'],
   },
   section: {

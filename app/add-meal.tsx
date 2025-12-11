@@ -19,6 +19,8 @@ import { CreateMealInput } from '@/lib/types';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 import { colors, gradients, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import { showAlert } from '@/lib/utils/alert';
+import { useResponsive } from '@/hooks/useResponsive';
+import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 
 export default function AddMealScreen() {
   const params = useLocalSearchParams<{
@@ -43,6 +45,8 @@ export default function AddMealScreen() {
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { isTablet, getSpacing } = useResponsive();
+  const responsiveSpacing = getSpacing();
 
   // Pre-fill form if coming from food scanner
   useEffect(() => {
@@ -122,7 +126,15 @@ export default function AddMealScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingHorizontal: responsiveSpacing.horizontal },
+            isTablet && styles.tabletContent
+          ]}
+        >
           <View style={styles.content}>
             {/* Meal Type Selector */}
             <View style={styles.section}>
@@ -366,8 +378,17 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: spacing.lg,
+  },
+  tabletContent: {
+    maxWidth: FORM_MAX_WIDTH,
+    alignSelf: 'center',
+    width: '100%',
+  },
   content: {
-    padding: spacing.lg,
+    paddingTop: spacing.md,
     paddingBottom: spacing['3xl'],
   },
   section: {

@@ -26,6 +26,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, gradients, spacing, borderRadius, typography, shadows } from '@/lib/theme/colors';
+import { useResponsive } from '@/hooks/useResponsive';
+import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 import { ARMeasurementOverlay } from '@/lib/components/ARMeasurementOverlay';
 import { ManualSizePicker } from '@/lib/components/ManualSizePicker';
 import {
@@ -41,6 +43,8 @@ export default function ARMeasureScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ foodName?: string; returnTo?: string }>();
   const [permission, requestPermission] = useCameraPermissions();
+  const { isTablet, getSpacing } = useResponsive();
+  const responsiveSpacing = getSpacing();
 
   const [mode, setMode] = useState<MeasurementMode>('loading');
   const [previousMode, setPreviousMode] = useState<'ar' | 'manual' | null>(null);
@@ -221,8 +225,12 @@ export default function ARMeasureScreen() {
 
         {measurement ? (
           // Show measurement result
-          <View style={styles.resultContainer}>
-            <View style={styles.resultCard}>
+          <View style={[
+            styles.resultContainer,
+            { paddingHorizontal: responsiveSpacing.horizontal },
+            isTablet && styles.resultContainerTablet
+          ]}>
+            <View style={[styles.resultCard, isTablet && styles.resultCardTablet]}>
               <Text style={styles.resultTitle}>Measurement Ready</Text>
 
               <View style={styles.dimensionsRow}>
@@ -436,6 +444,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xl,
+    maxWidth: FORM_MAX_WIDTH,
+    alignSelf: 'center',
+    width: '100%',
   },
   permissionTitle: {
     fontSize: typography.fontSize.xl,
@@ -493,11 +504,19 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: spacing.lg,
   },
+  resultContainerTablet: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   resultCard: {
     backgroundColor: colors.background.tertiary,
     borderRadius: borderRadius.lg,
     padding: spacing.xl,
     ...shadows.md,
+  },
+  resultCardTablet: {
+    maxWidth: FORM_MAX_WIDTH,
+    width: '100%',
   },
   resultTitle: {
     fontSize: typography.fontSize.xl,
@@ -605,6 +624,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.secondary,
     borderRadius: borderRadius.lg,
     padding: spacing.xl,
+    maxWidth: FORM_MAX_WIDTH,
+    alignSelf: 'center',
+    width: '100%',
     ...shadows.lg,
   },
   resultOverlayTitle: {

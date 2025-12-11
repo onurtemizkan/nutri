@@ -17,6 +17,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/lib/context/AuthContext';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
+import { useResponsive } from '@/hooks/useResponsive';
+import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
@@ -24,6 +26,8 @@ export default function SignInScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
+  const { isTablet, getSpacing } = useResponsive();
+  const responsiveSpacing = getSpacing();
 
   const handleSignIn = async () => {
     if (!email || !password) {
@@ -56,7 +60,11 @@ export default function SignInScreen() {
       >
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingHorizontal: responsiveSpacing.horizontal },
+            isTablet && styles.tabletContent
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -166,6 +174,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing['2xl'],
     paddingBottom: spacing.xl,
+  },
+  tabletContent: {
+    maxWidth: FORM_MAX_WIDTH,
+    alignSelf: 'center',
+    width: '100%',
   },
 
   // Header

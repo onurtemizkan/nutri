@@ -8,6 +8,7 @@ import {
   Image,
   Animated,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
@@ -19,6 +20,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { foodAnalysisApi } from '@/lib/api/food-analysis';
 import { showAlert } from '@/lib/utils/alert';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
+import { useResponsive } from '@/hooks/useResponsive';
+import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 import LiDARModule from '@/lib/modules/LiDARModule';
 import {
   estimateWeightFromMeasurement,
@@ -42,6 +45,8 @@ export default function ScanFoodScreen() {
   const [hasARSupport, setHasARSupport] = useState(false);
   const cameraRef = useRef<CameraView>(null);
   const router = useRouter();
+  const { isTablet, getSpacing } = useResponsive();
+  const responsiveSpacing = getSpacing();
 
   // Check AR support on mount
   useEffect(() => {
@@ -317,7 +322,15 @@ export default function ScanFoodScreen() {
           )}
 
           {scanResult && (
-            <View style={styles.resultsContainer}>
+            <ScrollView
+              style={styles.resultsScrollView}
+              contentContainerStyle={[
+                styles.resultsContainer,
+                { paddingHorizontal: responsiveSpacing.horizontal },
+                isTablet && styles.resultsContainerTablet
+              ]}
+              showsVerticalScrollIndicator={false}
+            >
               <Text style={styles.resultsTitle}>Detected Food</Text>
 
               {scanResult.foodItems.map((item: any, index: number) => (
@@ -370,11 +383,15 @@ export default function ScanFoodScreen() {
                   ))}
                 </View>
               )}
-            </View>
+            </ScrollView>
           )}
         </View>
 
-        <View style={styles.actionsContainer}>
+        <View style={[
+          styles.actionsContainer,
+          { paddingHorizontal: responsiveSpacing.horizontal },
+          isTablet && styles.actionsContainerTablet
+        ]}>
           {/* AR Measurement display */}
           {arMeasurement && !scanResult && (
             <View style={styles.measurementInfo}>
@@ -726,10 +743,18 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     textAlign: 'center',
   },
-  resultsContainer: {
+  resultsScrollView: {
     flex: 1,
     backgroundColor: colors.background.primary,
+  },
+  resultsContainer: {
+    flexGrow: 1,
     padding: spacing.lg,
+  },
+  resultsContainerTablet: {
+    maxWidth: FORM_MAX_WIDTH,
+    alignSelf: 'center',
+    width: '100%',
   },
   resultsTitle: {
     fontSize: typography.fontSize.xl,
@@ -810,9 +835,14 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border.secondary,
   },
+  actionsContainerTablet: {
+    alignItems: 'center',
+  },
   analyzeButton: {
     borderRadius: borderRadius.md,
     overflow: 'hidden',
+    width: '100%',
+    maxWidth: FORM_MAX_WIDTH,
     ...shadows.md,
   },
   analyzeButtonGradient: {
@@ -831,6 +861,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.status.success,
+    width: '100%',
+    maxWidth: FORM_MAX_WIDTH,
   },
   measurementHeader: {
     flexDirection: 'row',
@@ -860,6 +892,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border.secondary,
+    width: '100%',
+    maxWidth: FORM_MAX_WIDTH,
   },
   measureButtonContent: {
     flexDirection: 'row',

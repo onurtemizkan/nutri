@@ -22,6 +22,7 @@ import {
 } from '@/lib/types/health-metrics';
 import { useAuth } from '@/lib/context/AuthContext';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
+import { useResponsive } from '@/hooks/useResponsive';
 
 type TimeRange = 'today' | 'week' | 'month';
 
@@ -38,6 +39,33 @@ export default function HealthScreen() {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const router = useRouter();
+  const { isTablet, isLandscape, deviceCategory, getResponsiveValue, width } = useResponsive();
+
+  // Responsive values
+  const contentPadding = getResponsiveValue({
+    small: spacing.md,
+    medium: spacing.lg,
+    large: spacing.lg,
+    tablet: spacing.xl,
+    default: spacing.lg,
+  });
+  const fabSize = getResponsiveValue({
+    small: 52,
+    medium: 56,
+    large: 60,
+    tablet: 64,
+    default: 56,
+  });
+  // Calculate metric card width - 2 columns on phones, 3 on tablets (landscape: 4)
+  const numColumns = isTablet ? (isLandscape ? 4 : 3) : 2;
+  const gridGap = getResponsiveValue({
+    small: spacing.sm,
+    medium: spacing.md,
+    large: spacing.md,
+    tablet: spacing.lg,
+    default: spacing.md,
+  });
+  const cardWidth = (width - (contentPadding * 2) - (gridGap * (numColumns - 1))) / numColumns;
 
   const loadHealthData = useCallback(async () => {
     if (!user) {
@@ -145,7 +173,7 @@ export default function HealthScreen() {
           />
         }
       >
-        <View style={styles.content}>
+        <View style={[styles.content, { padding: contentPadding }]}>
           {/* Header */}
           <View style={styles.header}>
             <View>
@@ -229,7 +257,7 @@ export default function HealthScreen() {
 
           {/* Metric Cards Grid */}
           {!error && hasAnyData && (
-            <View style={styles.metricsGrid}>
+            <View style={[styles.metricsGrid, { gap: gridGap }]}>
               {DASHBOARD_METRICS.map((metricType) => {
                 const config = METRIC_CONFIG[metricType];
                 const data = metrics[metricType];
@@ -240,7 +268,7 @@ export default function HealthScreen() {
                 return (
                   <TouchableOpacity
                     key={metricType}
-                    style={styles.metricCard}
+                    style={[styles.metricCard, { width: cardWidth }]}
                     onPress={() => router.push(`/health/${metricType}` as `/health/${string}`)}
                     activeOpacity={0.7}
                   >
@@ -315,7 +343,10 @@ export default function HealthScreen() {
       {/* Floating Add Button */}
       {hasAnyData && (
         <TouchableOpacity
-          style={styles.fab}
+          style={[
+            styles.fab,
+            { width: fabSize, height: fabSize, borderRadius: fabSize / 2 }
+          ]}
           onPress={() => router.push('/health/add' as `/health/${string}`)}
           activeOpacity={0.8}
         >
@@ -325,7 +356,7 @@ export default function HealthScreen() {
             end={{ x: 1, y: 1 }}
             style={styles.fabGradient}
           >
-            <Ionicons name="add" size={28} color={colors.text.primary} />
+            <Ionicons name="add" size={fabSize * 0.5} color={colors.text.primary} />
           </LinearGradient>
         </TouchableOpacity>
       )}
@@ -347,8 +378,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: spacing.lg,
     paddingBottom: 100,
+    // horizontal padding applied dynamically
   },
 
   // Header
@@ -471,16 +502,17 @@ const styles = StyleSheet.create({
   metricsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.md,
+    // gap applied dynamically
     marginBottom: spacing.xl,
   },
   metricCard: {
-    width: '47%',
+    // width calculated dynamically based on columns
     backgroundColor: colors.background.tertiary,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     borderWidth: 1,
     borderColor: colors.border.secondary,
+    marginBottom: spacing.md,
     ...shadows.sm,
   },
   metricHeader: {
@@ -560,9 +592,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: spacing.xl,
     right: spacing.xl,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    // dimensions applied dynamically
     overflow: 'hidden',
     ...shadows.xl,
   },

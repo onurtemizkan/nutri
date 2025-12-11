@@ -17,12 +17,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { authApi } from '@/lib/api/auth';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
+import { useResponsive } from '@/hooks/useResponsive';
+import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const router = useRouter();
+  const { isTablet, getSpacing } = useResponsive();
+  const responsiveSpacing = getSpacing();
 
   const handleForgotPassword = async () => {
     if (!email) {
@@ -70,7 +74,11 @@ export default function ForgotPasswordScreen() {
   if (emailSent) {
     return (
       <SafeAreaView style={styles.container} testID="forgot-password-success-screen">
-        <View style={styles.successContent}>
+        <View style={[
+          styles.successContent,
+          { paddingHorizontal: responsiveSpacing.horizontal },
+          isTablet && styles.tabletContent
+        ]}>
           <View style={styles.successContainer}>
             {/* Success Icon */}
             <View style={styles.successIconContainer}>
@@ -126,7 +134,11 @@ export default function ForgotPasswordScreen() {
       >
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingHorizontal: responsiveSpacing.horizontal },
+            isTablet && styles.tabletContent
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -211,6 +223,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing['2xl'],
     paddingBottom: spacing.xl,
+  },
+  tabletContent: {
+    maxWidth: FORM_MAX_WIDTH,
+    alignSelf: 'center',
+    width: '100%',
   },
 
   // Header
