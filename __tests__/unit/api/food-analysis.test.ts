@@ -3,7 +3,6 @@
  */
 
 import axios from 'axios';
-import { FoodAnalysisAPI, foodAnalysisApi } from '@/lib/api/food-analysis';
 import * as FileSystem from 'expo-file-system/legacy';
 import {
   fixtures,
@@ -15,6 +14,24 @@ import {
 // Mock dependencies
 jest.mock('axios');
 jest.mock('expo-file-system/legacy');
+
+// Mock the api client module before importing food-analysis
+jest.mock('@/lib/api/client', () => ({
+  __esModule: true,
+  default: {
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+    interceptors: {
+      request: { use: jest.fn() },
+      response: { use: jest.fn() },
+    },
+  },
+}));
+
+// Import after mocks
+import { FoodAnalysisAPI, foodAnalysisApi } from '@/lib/api/food-analysis';
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 const mockedFileSystem = FileSystem as jest.Mocked<typeof FileSystem>;

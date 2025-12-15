@@ -359,15 +359,15 @@ class FoodDetector:
             return
 
         try:
-            from transformers import OwlViTProcessor, OwlViTForObjectDetection
+            from transformers import OwlViTProcessor, OwlViTForObjectDetection  # type: ignore[import-untyped]
 
             logger.info("Loading OWL-ViT food detector model...")
             model_name = "google/owlvit-base-patch32"
 
             self._processor = OwlViTProcessor.from_pretrained(model_name)
             self._model = OwlViTForObjectDetection.from_pretrained(model_name)
-            self._model = self._model.to(self.device)
-            self._model.eval()
+            self._model = self._model.to(self.device)  # type: ignore[attr-defined]
+            self._model.eval()  # type: ignore[attr-defined]
 
             self._loaded = True
             logger.info(f"OWL-ViT model loaded successfully on {self.device}")
@@ -405,11 +405,11 @@ class FoodDetector:
             image = image.convert("RGB")
 
         # Process image with all food queries
-        inputs = self._processor(text=FOOD_QUERIES, images=image, return_tensors="pt")
+        inputs = self._processor(text=FOOD_QUERIES, images=image, return_tensors="pt")  # type: ignore[misc]
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         # Run detection
-        outputs = self._model(**inputs)
+        outputs = self._model(**inputs)  # type: ignore[misc]
 
         # Post-process to get boxes - always on CPU to avoid MPS float64 issues
         # The processor.post_process_object_detection uses float64 internally which MPS doesn't support
@@ -428,9 +428,11 @@ class FoodDetector:
             pred_boxes=outputs.pred_boxes.detach().cpu(),
         )
 
-        results = self._processor.post_process_object_detection(
+        results = self._processor.post_process_object_detection(  # type: ignore[attr-defined]
             outputs=outputs_cpu, threshold=threshold, target_sizes=target_sizes
-        )[0]
+        )[
+            0
+        ]
 
         # Extract detections
         boxes = results["boxes"].cpu().numpy()

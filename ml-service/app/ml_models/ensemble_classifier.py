@@ -616,7 +616,7 @@ class FruitVegetableClassifier(SpecializedClassifier):
             return
 
         try:
-            from transformers import AutoImageProcessor, AutoModelForImageClassification
+            from transformers import AutoImageProcessor, AutoModelForImageClassification  # type: ignore[import-untyped]
 
             logger.info(f"Loading fruits/vegetables classifier: {self.model_name}")
 
@@ -625,13 +625,13 @@ class FruitVegetableClassifier(SpecializedClassifier):
             self._model = AutoModelForImageClassification.from_pretrained(
                 self.model_name
             )
-            self._model = self._model.to(self.device)
-            self._model.eval()
+            self._model = self._model.to(self.device)  # type: ignore[attr-defined]
+            self._model.eval()  # type: ignore[attr-defined]
 
             self._loaded = True
             logger.info(f"Fruits/vegetables classifier loaded on {self.device}")
             logger.info(
-                f"Model labels: {list(self._model.config.id2label.values())[:10]}..."
+                f"Model labels: {list(self._model.config.id2label.values())[:10]}..."  # type: ignore[attr-defined]
             )
 
         except Exception as e:
@@ -700,8 +700,8 @@ class IngredientClassifier(SpecializedClassifier):
             self._model = AutoModelForImageClassification.from_pretrained(
                 self.model_name
             )
-            self._model = self._model.to(self.device)
-            self._model.eval()
+            self._model = self._model.to(self.device)  # type: ignore[attr-defined]
+            self._model.eval()  # type: ignore[attr-defined]
 
             self._loaded = True
             logger.info(f"Ingredient classifier loaded on {self.device}")
@@ -760,6 +760,7 @@ class EnsembleFoodClassifier:
     CONFIDENCE_THRESHOLD = 0.50  # Below this, consult Food-101 fallback
     CLIP_WEIGHT = 1.0  # Primary classifier weight
     FOOD_101_WEIGHT = 0.7  # Secondary/fallback weight
+    SPECIALIST_WEIGHT = 0.8  # Weight for specialist classifiers (fruit/veg, ingredient)
 
     def __init__(self):
         self._clip_classifier = None  # Primary classifier

@@ -53,7 +53,7 @@ jest.mock('@/lib/modules/LiDARModule', () => ({
   },
 }));
 
-// Mock Animated
+// Mock Animated and DeviceEventEmitter
 jest.mock('react-native', () => {
   const RN = jest.requireActual('react-native');
   RN.Animated.timing = () => ({
@@ -69,6 +69,13 @@ jest.mock('react-native', () => {
   RN.Animated.sequence = () => ({
     start: jest.fn((cb?: () => void) => cb && cb()),
   });
+  // Mock DeviceEventEmitter
+  RN.DeviceEventEmitter = {
+    emit: jest.fn(),
+    addListener: jest.fn(() => ({ remove: jest.fn() })),
+    removeListener: jest.fn(),
+    removeAllListeners: jest.fn(),
+  };
   return RN;
 });
 

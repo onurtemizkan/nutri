@@ -109,7 +109,7 @@ class FeedbackService:
         # Invalidate stats cache
         self._stats_cache = None
 
-        return feedback.id, suggestions
+        return feedback.id, suggestions  # type: ignore[return-value]
 
     def _generate_prompts_from_description(
         self, food_key: str, description: str
@@ -150,7 +150,7 @@ class FeedbackService:
                 FoodFeedback.status
             )
         )
-        counts = dict(status_counts.fetchall())
+        counts: Dict[str, int] = dict(status_counts.fetchall())  # type: ignore[arg-type]
 
         total = sum(counts.values())
         pending = counts.get("pending", 0)
@@ -266,7 +266,7 @@ class FeedbackService:
             for fb in result.scalars()
         ]
 
-        return items, total
+        return items, total  # type: ignore[return-value]
 
     async def get_prompt_suggestions(
         self, db: AsyncSession, food_key: str
@@ -289,7 +289,7 @@ class FeedbackService:
             {
                 "prompt": lp.prompt,
                 "source": lp.source,
-                "confidence": (lp.success_count / max(lp.times_used, 1))
+                "confidence": (lp.success_count / max(lp.times_used, 1))  # type: ignore[call-overload]
                 if lp.times_used > 0
                 else 0.5,
                 "feedback_count": lp.times_used,
@@ -390,7 +390,7 @@ class FeedbackService:
         # Group by food key
         prompts_by_food: Dict[str, List[str]] = defaultdict(list)
         for lp in learned:
-            prompts_by_food[lp.food_key].append(lp.prompt)
+            prompts_by_food[lp.food_key].append(lp.prompt)  # type: ignore[index, arg-type]
 
         # Only apply if we have enough feedback
         updated_foods = []
@@ -454,9 +454,9 @@ class FeedbackService:
         )
 
         for fb in feedbacks:
-            by_category[fb.corrected_label]["corrections"] += 1
-            if len(by_category[fb.corrected_label]["examples"]) < 3:
-                by_category[fb.corrected_label]["examples"].append(
+            by_category[fb.corrected_label]["corrections"] += 1  # type: ignore[index]
+            if len(by_category[fb.corrected_label]["examples"]) < 3:  # type: ignore[index]
+                by_category[fb.corrected_label]["examples"].append(  # type: ignore[index]
                     {
                         "from": fb.original_prediction,
                         "confidence": fb.original_confidence,
@@ -466,7 +466,7 @@ class FeedbackService:
         # Correction patterns
         pattern_counts: Dict[Tuple[str, str], int] = defaultdict(int)
         for fb in feedbacks:
-            pattern_counts[(fb.original_prediction, fb.corrected_label)] += 1
+            pattern_counts[(fb.original_prediction, fb.corrected_label)] += 1  # type: ignore[index]
 
         patterns = [
             {
@@ -500,7 +500,7 @@ class FeedbackService:
                     }
                 )
 
-        opportunities.sort(key=lambda x: x["priority"], reverse=True)
+        opportunities.sort(key=lambda x: x["priority"], reverse=True)  # type: ignore[arg-type, return-value]
 
         return {
             "time_period": f"last {days} days",
@@ -533,7 +533,7 @@ class FeedbackService:
         if not feedback:
             return False
 
-        feedback.status = status
+        feedback.status = status  # type: ignore[assignment]
         return True
 
 

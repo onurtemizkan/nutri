@@ -267,7 +267,7 @@ def get_model():
         return _model, _processor
 
     try:
-        from transformers import ViTImageProcessor, ViTForImageClassification
+        from transformers import ViTImageProcessor, ViTForImageClassification  # type: ignore[import-untyped]
 
         logger.info("Loading food classification model (nateraw/food)...")
 
@@ -343,8 +343,8 @@ class FoodClassifier:
 
             self._processor = ViTImageProcessor.from_pretrained(model_name)
             self._model = ViTForImageClassification.from_pretrained(model_name)
-            self._model = self._model.to(self.device)
-            self._model.eval()
+            self._model = self._model.to(self.device)  # type: ignore[attr-defined]
+            self._model.eval()  # type: ignore[attr-defined]
 
             self._loaded = True
             logger.info(f"Model loaded successfully on {self.device}")
@@ -373,11 +373,11 @@ class FoodClassifier:
             image = image.convert("RGB")
 
         # Preprocess
-        inputs = self._processor(images=image, return_tensors="pt")
+        inputs = self._processor(images=image, return_tensors="pt")  # type: ignore[misc]
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         # Inference
-        outputs = self._model(**inputs)
+        outputs = self._model(**inputs)  # type: ignore[misc]
         logits = outputs.logits
 
         # Get top-k predictions

@@ -11,7 +11,7 @@ Key advantages:
 Prompt engineering is critical for accuracy.
 """
 import logging
-from typing import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict, Optional, Any
 
 import torch
 from PIL import Image
@@ -19,10 +19,10 @@ from PIL import Image
 logger = logging.getLogger(__name__)
 
 # Lazy loading
-_clip_model = None
-_clip_processor = None
+_clip_model: Any = None
+_clip_processor: Any = None
 _clip_loaded = False
-_text_features_cache = {}
+_text_features_cache: Dict[str, Any] = {}
 
 # Food categories with descriptive prompts for better CLIP matching
 # Format: database_key -> list of descriptive prompts
@@ -266,14 +266,14 @@ class CLIPFoodClassifier:
             return
 
         try:
-            from transformers import CLIPProcessor, CLIPModel
+            from transformers import CLIPProcessor, CLIPModel  # type: ignore[import-untyped]
 
             logger.info(f"Loading CLIP model: {self.model_name}...")
 
             self._processor = CLIPProcessor.from_pretrained(self.model_name)
             self._model = CLIPModel.from_pretrained(self.model_name)
-            self._model = self._model.to(self.device)
-            self._model.eval()
+            self._model = self._model.to(self.device)  # type: ignore[attr-defined]
+            self._model.eval()  # type: ignore[attr-defined]
 
             self._loaded = True
             logger.info(f"CLIP model loaded successfully on {self.device}")
@@ -294,13 +294,13 @@ class CLIPFoodClassifier:
             for food_key, prompts in FOOD_PROMPTS.items():
                 features_list = []
                 for prompt in prompts:
-                    inputs = self._processor(
+                    inputs = self._processor(  # type: ignore[misc]
                         text=[prompt], return_tensors="pt", padding=True
                     )
                     inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
                     with torch.no_grad():
-                        text_features = self._model.get_text_features(**inputs)
+                        text_features = self._model.get_text_features(**inputs)  # type: ignore[attr-defined]
                         text_features = text_features / text_features.norm(
                             dim=-1, keepdim=True
                         )
@@ -313,13 +313,13 @@ class CLIPFoodClassifier:
         else:
             # Use simple prompts (faster)
             for food_key, prompt in SIMPLE_FOOD_PROMPTS.items():
-                inputs = self._processor(
+                inputs = self._processor(  # type: ignore[misc]
                     text=[prompt], return_tensors="pt", padding=True
                 )
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
                 with torch.no_grad():
-                    text_features = self._model.get_text_features(**inputs)
+                    text_features = self._model.get_text_features(**inputs)  # type: ignore[attr-defined]
                     text_features = text_features / text_features.norm(
                         dim=-1, keepdim=True
                     )
@@ -355,10 +355,10 @@ class CLIPFoodClassifier:
             image = image.convert("RGB")
 
         # Get image features
-        inputs = self._processor(images=image, return_tensors="pt")
+        inputs = self._processor(images=image, return_tensors="pt")  # type: ignore[misc]
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
-        image_features = self._model.get_image_features(**inputs)
+        image_features = self._model.get_image_features(**inputs)  # type: ignore[attr-defined]
         image_features = image_features / image_features.norm(dim=-1, keepdim=True)
 
         # Determine which foods to classify against
@@ -415,17 +415,17 @@ class CLIPFoodClassifier:
             image = image.convert("RGB")
 
         # Get image features
-        img_inputs = self._processor(images=image, return_tensors="pt")
+        img_inputs = self._processor(images=image, return_tensors="pt")  # type: ignore[misc]
         img_inputs = {k: v.to(self.device) for k, v in img_inputs.items()}
-        image_features = self._model.get_image_features(**img_inputs)
+        image_features = self._model.get_image_features(**img_inputs)  # type: ignore[attr-defined]
         image_features = image_features / image_features.norm(dim=-1, keepdim=True)
 
         # Get text features for all prompts
-        text_inputs = self._processor(
+        text_inputs = self._processor(  # type: ignore[misc]
             text=custom_prompts, return_tensors="pt", padding=True
         )
         text_inputs = {k: v.to(self.device) for k, v in text_inputs.items()}
-        text_features = self._model.get_text_features(**text_inputs)
+        text_features = self._model.get_text_features(**text_inputs)  # type: ignore[attr-defined]
         text_features = text_features / text_features.norm(dim=-1, keepdim=True)
 
         # Compute similarities

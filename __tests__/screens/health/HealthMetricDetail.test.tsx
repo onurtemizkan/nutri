@@ -34,6 +34,29 @@ jest.mock('@expo/vector-icons', () => ({
     return <Text {...props}>{name}</Text>;
   },
 }));
+jest.mock('react-native-safe-area-context', () => ({
+  SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
+}));
+jest.mock('@/hooks/useResponsive', () => ({
+  useResponsive: () => ({
+    isTablet: false,
+    isLandscape: false,
+    deviceCategory: 'medium',
+    getResponsiveValue: (values: Record<string, number>) => values.default ?? values.medium ?? 16,
+    getSpacing: () => ({ horizontal: 16, vertical: 16 }),
+    width: 375,
+  }),
+}));
+jest.mock('@/lib/components/SwipeableHealthMetricCard', () => ({
+  SwipeableHealthMetricCard: ({ metric }: { metric: unknown }) => {
+    const { View, Text } = require('react-native');
+    return (
+      <View>
+        <Text>MetricCard</Text>
+      </View>
+    );
+  },
+}));
 
 const mockedHealthMetricsApi = healthMetricsApi as jest.Mocked<typeof healthMetricsApi>;
 
@@ -77,6 +100,8 @@ const mockStatsStable: HealthMetricStats = {
 describe('HealthMetricDetailScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Default mocks for all tests - component calls all three APIs
+    mockedHealthMetricsApi.getRecentByType.mockResolvedValue([]);
   });
 
   it('renders header with metric name', async () => {
@@ -99,10 +124,10 @@ describe('HealthMetricDetailScreen', () => {
     // Act
     const { findByText } = render(<HealthMetricDetailScreen />);
 
-    // Assert
-    await findByText('7 Days');
-    await findByText('30 Days');
-    await findByText('90 Days');
+    // Assert - component uses shortened labels like '7D', '30D', '90D', '1Y'
+    await findByText('7D');
+    await findByText('30D');
+    await findByText('90D');
   });
 
   it('displays statistics (avg, min, max)', async () => {
@@ -183,8 +208,8 @@ describe('HealthMetricDetailScreen', () => {
     const { findByText, getByText } = render(<HealthMetricDetailScreen />);
     await findByText('Resting Heart Rate');
 
-    // Change date range
-    const sevenDaysButton = getByText('7 Days');
+    // Change date range - component uses '7D' not '7 Days'
+    const sevenDaysButton = getByText('7D');
     fireEvent.press(sevenDaysButton);
 
     // Assert - API should be called again with new range
@@ -289,6 +314,8 @@ describe('HealthMetricDetailScreen', () => {
 describe('HealthMetricDetailScreen - Invalid Metric Type', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Default mock for getRecentByType
+    mockedHealthMetricsApi.getRecentByType.mockResolvedValue([]);
     // Override useLocalSearchParams for invalid metric
     jest.doMock('expo-router', () => ({
       useRouter: () => ({

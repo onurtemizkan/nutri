@@ -185,7 +185,7 @@ async def get_prompt_suggestions(food_key: str, db: AsyncSession = Depends(get_d
 
 @router.post("/feedback/apply", response_model=ApplyPromptsResponse)
 async def apply_learned_prompts(
-    request: ApplyPromptsRequest = None, db: AsyncSession = Depends(get_db)
+    request: Optional[ApplyPromptsRequest] = None, db: AsyncSession = Depends(get_db)
 ):
     """
     Apply learned prompts to the CLIP classifier.
