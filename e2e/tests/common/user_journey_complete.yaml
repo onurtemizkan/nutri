@@ -1,0 +1,310 @@
+# Complete User Journey E2E Tests
+# End-to-end tests simulating realistic user workflows
+
+appId: host.exp.Exponent
+
+---
+
+# Test: New User Complete Journey - Sign Up and First Day Tracking
+- launchApp:
+    clearState: true
+
+# Start on welcome screen
+- assertVisible:
+    id: "welcome-screen"
+
+# Sign up as new user
+- tapOn:
+    id: "welcome-signup-button"
+
+- assertVisible:
+    id: "signup-screen"
+
+- tapOn:
+    id: "signup-name-input"
+- inputText: "Journey Test User"
+
+- tapOn:
+    id: "signup-email-input"
+- inputText: "journey-${timestamp}@nutri-e2e.local"
+
+- tapOn:
+    id: "signup-password-input"
+- inputText: "JourneyPass123!"
+
+- tapOn:
+    id: "signup-confirm-password-input"
+- inputText: "JourneyPass123!"
+
+- tapOn:
+    id: "signup-submit-button"
+
+# Should be on home after signup
+- assertVisible:
+    id: "home-screen"
+    timeout: 15000
+
+# Empty dashboard should show
+- assertVisible:
+    text: "No meals yet"
+    optional: true
+
+# Add first meal (breakfast)
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: "First Breakfast"
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: "400"
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: "25"
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: "45"
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: "15"
+
+- tapOn:
+    id: "add-meal-save-button"
+
+- assertVisible:
+    id: "home-screen"
+
+# Verify meal appears
+- assertVisible:
+    text: "First Breakfast"
+
+# Check health tab
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Check profile and set goals
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Return to home
+- tapOn:
+    id: "tab-home"
+
+- assertVisible:
+    id: "home-screen"
+
+---
+
+# Test: Returning User Daily Workflow
+- launchApp:
+    clearState: true
+
+# Sign in as existing user with data
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Check daily progress
+- assertVisible:
+    id: "home-calorie-summary"
+
+# Add breakfast
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: ${MEAL_BREAKFAST_NAME}
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: ${MEAL_BREAKFAST_CALORIES}
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: ${MEAL_BREAKFAST_PROTEIN}
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: ${MEAL_BREAKFAST_CARBS}
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: ${MEAL_BREAKFAST_FAT}
+
+- tapOn:
+    id: "add-meal-save-button"
+
+- assertVisible:
+    id: "home-screen"
+
+# Check health metrics
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Return to home and add lunch
+- tapOn:
+    id: "tab-home"
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: ${MEAL_LUNCH_NAME}
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: ${MEAL_LUNCH_CALORIES}
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: ${MEAL_LUNCH_PROTEIN}
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: ${MEAL_LUNCH_CARBS}
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: ${MEAL_LUNCH_FAT}
+
+- tapOn:
+    id: "add-meal-save-button"
+
+- assertVisible:
+    id: "home-screen"
+
+# Check progress - should show meals tracked
+- assertVisible:
+    id: "home-calorie-summary"
+
+---
+
+# Test: Pro User Feature Exploration
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in_pro_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Pro user has more data
+- assertVisible:
+    id: "home-meals-section"
+
+# Check health metrics (pro feature)
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Check supplements (pro feature)
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+- tapOn:
+    id: "profile-supplements-button"
+    optional: true
+
+# Should have access to supplements
+- assertVisible:
+    id: "supplements-screen"
+    optional: true
+
+---
+
+# Test: Athlete User High Volume Tracking
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in_athlete_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Athlete has higher goals - verify calorie display
+- assertVisible:
+    id: "home-calorie-summary"
+
+# Check health for detailed metrics
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Add a high-protein meal
+- tapOn:
+    id: "tab-home"
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: "Post-Workout Protein Shake"
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: "450"
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: "50"
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: "35"
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: "12"
+
+- tapOn:
+    id: "add-meal-save-button"
+
+- assertVisible:
+    id: "home-screen"
+
+# Verify meal was added
+- assertVisible:
+    text: "Post-Workout Protein Shake"

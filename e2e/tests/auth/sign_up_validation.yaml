@@ -6,15 +6,21 @@ appId: host.exp.Exponent
 ---
 
 # Test: Empty Fields Validation
-- launchApp:
-    clearState: true
+- runFlow: ../../flows/launch_app.yaml
 
-- assertVisible:
-    id: "welcome-screen"
+# Scroll down to make Create Account button fully visible
+- swipe:
+    start: "50%,90%"
+    end: "50%,70%"
+    duration: 300
+
 - tapOn:
-    id: "welcome-signup-button"
-- assertVisible:
-    id: "signup-screen"
+    text: "Create Account"
+
+- extendedWaitUntil:
+    visible:
+      id: "signup-screen"
+    timeout: 10000
 
 # Try to submit without entering anything
 - tapOn:
@@ -27,32 +33,42 @@ appId: host.exp.Exponent
 ---
 
 # Test: Password Mismatch
-- launchApp:
-    clearState: true
+- runFlow: ../../flows/launch_app.yaml
 
-- assertVisible:
-    id: "welcome-screen"
+# Scroll down to make Create Account button fully visible
+- swipe:
+    start: "50%,90%"
+    end: "50%,70%"
+    duration: 300
+
 - tapOn:
-    id: "welcome-signup-button"
-- assertVisible:
-    id: "signup-screen"
+    text: "Create Account"
+
+- extendedWaitUntil:
+    visible:
+      id: "signup-screen"
+    timeout: 10000
 
 # Fill form with mismatched passwords
 - tapOn:
     id: "signup-name-input"
 - inputText: "Test User"
+- hideKeyboard
 
 - tapOn:
     id: "signup-email-input"
 - inputText: "test@example.com"
+- hideKeyboard
 
 - tapOn:
     id: "signup-password-input"
 - inputText: "password123"
+- hideKeyboard
 
 - tapOn:
     id: "signup-confirm-password-input"
 - inputText: "different123"
+- hideKeyboard
 
 - tapOn:
     id: "signup-submit-button"
@@ -64,32 +80,42 @@ appId: host.exp.Exponent
 ---
 
 # Test: Weak Password
-- launchApp:
-    clearState: true
+- runFlow: ../../flows/launch_app.yaml
 
-- assertVisible:
-    id: "welcome-screen"
+# Scroll down to make Create Account button fully visible
+- swipe:
+    start: "50%,90%"
+    end: "50%,70%"
+    duration: 300
+
 - tapOn:
-    id: "welcome-signup-button"
-- assertVisible:
-    id: "signup-screen"
+    text: "Create Account"
+
+- extendedWaitUntil:
+    visible:
+      id: "signup-screen"
+    timeout: 10000
 
 # Fill form with weak password (no numbers)
 - tapOn:
     id: "signup-name-input"
 - inputText: "Test User"
+- hideKeyboard
 
 - tapOn:
     id: "signup-email-input"
 - inputText: "test@example.com"
+- hideKeyboard
 
 - tapOn:
     id: "signup-password-input"
 - inputText: "password"
+- hideKeyboard
 
 - tapOn:
     id: "signup-confirm-password-input"
 - inputText: "password"
+- hideKeyboard
 
 - tapOn:
     id: "signup-submit-button"
@@ -101,32 +127,42 @@ appId: host.exp.Exponent
 ---
 
 # Test: Short Password
-- launchApp:
-    clearState: true
+- runFlow: ../../flows/launch_app.yaml
 
-- assertVisible:
-    id: "welcome-screen"
+# Scroll down to make Create Account button fully visible
+- swipe:
+    start: "50%,90%"
+    end: "50%,70%"
+    duration: 300
+
 - tapOn:
-    id: "welcome-signup-button"
-- assertVisible:
-    id: "signup-screen"
+    text: "Create Account"
+
+- extendedWaitUntil:
+    visible:
+      id: "signup-screen"
+    timeout: 10000
 
 # Fill form with short password
 - tapOn:
     id: "signup-name-input"
 - inputText: "Test User"
+- hideKeyboard
 
 - tapOn:
     id: "signup-email-input"
 - inputText: "test@example.com"
+- hideKeyboard
 
 - tapOn:
     id: "signup-password-input"
 - inputText: "ab1"
+- hideKeyboard
 
 - tapOn:
     id: "signup-confirm-password-input"
 - inputText: "ab1"
+- hideKeyboard
 
 - tapOn:
     id: "signup-submit-button"
@@ -138,20 +174,28 @@ appId: host.exp.Exponent
 ---
 
 # Test: Navigation to Sign In
-- launchApp:
-    clearState: true
+- runFlow: ../../flows/launch_app.yaml
 
-- assertVisible:
-    id: "welcome-screen"
+# Scroll down to make Create Account button fully visible
+- swipe:
+    start: "50%,90%"
+    end: "50%,70%"
+    duration: 300
+
 - tapOn:
-    id: "welcome-signup-button"
-- assertVisible:
-    id: "signup-screen"
+    text: "Create Account"
+
+- extendedWaitUntil:
+    visible:
+      id: "signup-screen"
+    timeout: 10000
 
 # Tap sign in link
 - tapOn:
     id: "signup-signin-link"
 
 # Should navigate to sign in screen
-- assertVisible:
-    id: "signin-screen"
+- extendedWaitUntil:
+    visible:
+      id: "signin-screen"
+    timeout: 10000

@@ -1,0 +1,104 @@
+# Comprehensive Edit Meal E2E Tests
+# Tests meal editing and updating functionality
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Edit Existing Meal Name
+- launchApp:
+    clearState: true
+
+# Sign in with user that has meal data
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Find and tap on a meal to edit
+- tapOn:
+    id: "home-meals-section"
+
+# Look for the first meal card and tap it
+- tapOn:
+    id: "meal-card-0"
+    optional: true
+
+# If meal cards have swipe gestures, try swiping to reveal edit
+- swipe:
+    direction: LEFT
+    from:
+      id: "meal-card-0"
+    optional: true
+
+# Tap edit button if visible
+- tapOn:
+    id: "meal-edit-button"
+    optional: true
+
+# May navigate to edit meal screen
+- assertVisible:
+    id: "edit-meal-screen"
+    optional: true
+
+---
+
+# Test: Delete Meal via Swipe
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Swipe left on a meal card to reveal delete
+- swipe:
+    direction: LEFT
+    from:
+      id: "meal-card-0"
+    distance: 200
+    optional: true
+
+# Tap delete button if visible
+- tapOn:
+    id: "meal-delete-button"
+    optional: true
+
+# Confirm deletion if dialog appears
+- tapOn:
+    text: "Delete"
+    optional: true
+
+---
+
+# Test: Cancel Delete Meal
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Swipe left on a meal card to reveal delete
+- swipe:
+    direction: LEFT
+    from:
+      id: "meal-card-0"
+    distance: 200
+    optional: true
+
+# Tap delete button if visible
+- tapOn:
+    id: "meal-delete-button"
+    optional: true
+
+# Cancel deletion
+- tapOn:
+    text: "Cancel"
+    optional: true
+
+# Should stay on home
+- assertVisible:
+    id: "home-screen"

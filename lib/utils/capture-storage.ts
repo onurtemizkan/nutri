@@ -4,7 +4,7 @@
  * Manages storage for AR capture sessions, including frame data and exports.
  */
 
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import type { RGBDFrame, CaptureSession, ExportConfig, MLExportData } from '@/lib/types/ar-data';
 
 const CAPTURE_DIR = `${FileSystem.documentDirectory}captures/`;

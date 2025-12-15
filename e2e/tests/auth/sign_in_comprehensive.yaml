@@ -1,0 +1,262 @@
+# Comprehensive Sign In E2E Tests
+# Tests all sign in scenarios including different user types and edge cases
+
+appId: host.exp.Exponent
+
+env:
+  TEST_USER_EMAIL: "test@nutri-e2e.local"
+  TEST_USER_PASSWORD: "TestPass123!"
+  TEST_USER_NAME: "E2E Test User"
+  PRO_USER_EMAIL: "pro@nutri-e2e.local"
+  PRO_USER_PASSWORD: "ProPass123!"
+  EMPTY_USER_EMAIL: "empty@nutri-e2e.local"
+  EMPTY_USER_PASSWORD: "EmptyPass123!"
+  ATHLETE_USER_EMAIL: "athlete@nutri-e2e.local"
+  ATHLETE_USER_PASSWORD: "AthletePass123!"
+  WRONG_PASSWORD: "WrongPassword123!"
+  NONEXISTENT_EMAIL: "nonexistent@example.com"
+  INVALID_EMAIL: "not-an-email"
+
+---
+
+# Test: Sign In with Free User (Primary Test User)
+- runFlow: ../../flows/launch_app.yaml
+
+- tapOn:
+    text: "Sign In"
+
+- assertVisible:
+    id: "signin-screen"
+
+- tapOn:
+    id: "signin-email-input"
+- inputText: ${TEST_USER_EMAIL}
+
+- tapOn:
+    id: "signin-password-input"
+- inputText: ${TEST_USER_PASSWORD}
+
+- tapOn:
+    id: "signin-submit-button"
+
+# Dismiss iOS "Save Password?" dialog if it appears
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 30000
+
+---
+
+# Test: Sign In with Pro User
+- runFlow: ../../flows/launch_app.yaml
+
+- tapOn:
+    text: "Sign In"
+
+- assertVisible:
+    id: "signin-screen"
+
+- tapOn:
+    id: "signin-email-input"
+- inputText: ${PRO_USER_EMAIL}
+
+- tapOn:
+    id: "signin-password-input"
+- inputText: ${PRO_USER_PASSWORD}
+
+- tapOn:
+    id: "signin-submit-button"
+
+# Dismiss iOS "Save Password?" dialog if it appears
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 30000
+
+---
+
+# Test: Sign In with Empty User (Empty States)
+- runFlow: ../../flows/launch_app.yaml
+
+- tapOn:
+    text: "Sign In"
+
+- assertVisible:
+    id: "signin-screen"
+
+- tapOn:
+    id: "signin-email-input"
+- inputText: ${EMPTY_USER_EMAIL}
+
+- tapOn:
+    id: "signin-password-input"
+- inputText: ${EMPTY_USER_PASSWORD}
+
+- tapOn:
+    id: "signin-submit-button"
+
+# Dismiss iOS "Save Password?" dialog if it appears
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 30000
+
+---
+
+# Test: Sign In with Athlete User (High Data Volume)
+- runFlow: ../../flows/launch_app.yaml
+
+- tapOn:
+    text: "Sign In"
+
+- assertVisible:
+    id: "signin-screen"
+
+- tapOn:
+    id: "signin-email-input"
+- inputText: ${ATHLETE_USER_EMAIL}
+
+- tapOn:
+    id: "signin-password-input"
+- inputText: ${ATHLETE_USER_PASSWORD}
+
+- tapOn:
+    id: "signin-submit-button"
+
+# Dismiss iOS "Save Password?" dialog if it appears
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 30000
+
+---
+
+# Test: Sign In with Wrong Password
+- runFlow: ../../flows/launch_app.yaml
+
+- tapOn:
+    text: "Sign In"
+
+- assertVisible:
+    id: "signin-screen"
+
+- tapOn:
+    id: "signin-email-input"
+- inputText: ${TEST_USER_EMAIL}
+
+- tapOn:
+    id: "signin-password-input"
+- inputText: ${WRONG_PASSWORD}
+
+- tapOn:
+    id: "signin-submit-button"
+
+# Should stay on sign in screen with error
+- assertVisible:
+    id: "signin-screen"
+
+---
+
+# Test: Sign In with Non-existent Email
+- runFlow: ../../flows/launch_app.yaml
+
+- tapOn:
+    text: "Sign In"
+
+- assertVisible:
+    id: "signin-screen"
+
+- tapOn:
+    id: "signin-email-input"
+- inputText: ${NONEXISTENT_EMAIL}
+
+- tapOn:
+    id: "signin-password-input"
+- inputText: ${TEST_USER_PASSWORD}
+
+- tapOn:
+    id: "signin-submit-button"
+
+# Should stay on sign in screen
+- assertVisible:
+    id: "signin-screen"
+
+---
+
+# Test: Sign In with Invalid Email Format
+- runFlow: ../../flows/launch_app.yaml
+
+- tapOn:
+    text: "Sign In"
+
+- assertVisible:
+    id: "signin-screen"
+
+- tapOn:
+    id: "signin-email-input"
+- inputText: ${INVALID_EMAIL}
+
+- tapOn:
+    id: "signin-password-input"
+- inputText: ${TEST_USER_PASSWORD}
+
+- tapOn:
+    id: "signin-submit-button"
+
+# Should stay on sign in screen (validation error)
+- assertVisible:
+    id: "signin-screen"
+
+---
+
+# Test: Navigate to Forgot Password from Sign In
+- runFlow: ../../flows/launch_app.yaml
+
+- tapOn:
+    text: "Sign In"
+
+- assertVisible:
+    id: "signin-screen"
+
+# Tap forgot password link
+- tapOn:
+    id: "signin-forgot-password-link"
+
+# Should navigate to forgot password screen
+- assertVisible:
+    id: "forgot-password-screen"
+
+---
+
+# Test: Navigate to Sign Up from Sign In
+- runFlow: ../../flows/launch_app.yaml
+
+- tapOn:
+    text: "Sign In"
+
+- assertVisible:
+    id: "signin-screen"
+
+# Tap sign up link
+- tapOn:
+    id: "signin-signup-link"
+
+# Should navigate to sign up screen
+- assertVisible:
+    id: "signup-screen"

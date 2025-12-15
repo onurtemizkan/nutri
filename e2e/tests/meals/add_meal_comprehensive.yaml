@@ -1,0 +1,427 @@
+# Comprehensive Add Meal E2E Tests
+# Tests all meal creation scenarios with predefined data
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Add Breakfast Meal with Full Data
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Select breakfast type
+- tapOn:
+    id: "meal-type-breakfast"
+    optional: true
+
+# Fill in all meal details
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: ${MEAL_BREAKFAST_NAME}
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: ${MEAL_BREAKFAST_CALORIES}
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: ${MEAL_BREAKFAST_PROTEIN}
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: ${MEAL_BREAKFAST_CARBS}
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: ${MEAL_BREAKFAST_FAT}
+
+# Save the meal
+- tapOn:
+    id: "add-meal-save-button"
+
+# Should navigate back to home
+- assertVisible:
+    id: "home-screen"
+
+# Meal should appear in breakfast section
+- assertVisible:
+    text: ${MEAL_BREAKFAST_NAME}
+
+---
+
+# Test: Add Lunch Meal with Full Data
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Select lunch type
+- tapOn:
+    id: "meal-type-lunch"
+    optional: true
+
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: ${MEAL_LUNCH_NAME}
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: ${MEAL_LUNCH_CALORIES}
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: ${MEAL_LUNCH_PROTEIN}
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: ${MEAL_LUNCH_CARBS}
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: ${MEAL_LUNCH_FAT}
+
+- tapOn:
+    id: "add-meal-save-button"
+
+- assertVisible:
+    id: "home-screen"
+
+---
+
+# Test: Add Dinner Meal with Full Data
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Select dinner type
+- tapOn:
+    id: "meal-type-dinner"
+    optional: true
+
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: ${MEAL_DINNER_NAME}
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: ${MEAL_DINNER_CALORIES}
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: ${MEAL_DINNER_PROTEIN}
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: ${MEAL_DINNER_CARBS}
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: ${MEAL_DINNER_FAT}
+
+- tapOn:
+    id: "add-meal-save-button"
+
+- assertVisible:
+    id: "home-screen"
+
+---
+
+# Test: Add Snack with Full Data
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Select snack type
+- tapOn:
+    id: "meal-type-snack"
+    optional: true
+
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: ${MEAL_SNACK_NAME}
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: ${MEAL_SNACK_CALORIES}
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: ${MEAL_SNACK_PROTEIN}
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: ${MEAL_SNACK_CARBS}
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: ${MEAL_SNACK_FAT}
+
+- tapOn:
+    id: "add-meal-save-button"
+
+- assertVisible:
+    id: "home-screen"
+
+---
+
+# Test: Quick Add Meal (Minimal Data)
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Only fill required fields
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: ${MEAL_QUICK_NAME}
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: ${MEAL_QUICK_CALORIES}
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: ${MEAL_QUICK_PROTEIN}
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: ${MEAL_QUICK_CARBS}
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: ${MEAL_QUICK_FAT}
+
+- tapOn:
+    id: "add-meal-save-button"
+
+- assertVisible:
+    id: "home-screen"
+
+---
+
+# Test: Add Meal Empty Validation
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Try to save without filling anything
+- tapOn:
+    id: "add-meal-save-button"
+
+# Should stay on add meal screen (validation error)
+- assertVisible:
+    id: "add-meal-screen"
+
+---
+
+# Test: Add Meal Missing Name Validation
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Fill everything except name
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: "300"
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: "20"
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: "30"
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: "10"
+
+- tapOn:
+    id: "add-meal-save-button"
+
+# Should stay on add meal screen
+- assertVisible:
+    id: "add-meal-screen"
+
+---
+
+# Test: Cancel Add Meal
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Enter some data
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: "Test Cancel Meal"
+
+# Cancel
+- tapOn:
+    id: "add-meal-cancel-button"
+
+# Should be back on home
+- assertVisible:
+    id: "home-screen"
+
+---
+
+# Test: Add Multiple Meals in Sequence
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Add first meal
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: "First Meal"
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: "200"
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: "15"
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: "20"
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: "8"
+
+- tapOn:
+    id: "add-meal-save-button"
+
+- assertVisible:
+    id: "home-screen"
+
+# Add second meal
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: "Second Meal"
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: "350"
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: "25"
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: "40"
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: "12"
+
+- tapOn:
+    id: "add-meal-save-button"
+
+- assertVisible:
+    id: "home-screen"
+
+# Both meals should be visible
+- assertVisible:
+    text: "First Meal"
+
+- assertVisible:
+    text: "Second Meal"

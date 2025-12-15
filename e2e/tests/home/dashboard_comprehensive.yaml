@@ -1,0 +1,259 @@
+# Comprehensive Dashboard E2E Tests
+# Tests all home screen functionality with different user types
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Dashboard Elements for Populated User
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Verify all main dashboard elements
+- assertVisible:
+    id: "home-calorie-summary"
+
+- assertVisible:
+    id: "home-macros-container"
+
+- assertVisible:
+    id: "home-meals-section"
+
+- assertVisible:
+    id: "home-add-meal-fab"
+
+# Verify calorie ring shows values
+- assertVisible:
+    text: "Calories"
+
+# Verify macro cards
+- assertVisible:
+    text: "Protein"
+
+- assertVisible:
+    text: "Carbs"
+
+- assertVisible:
+    text: "Fat"
+
+---
+
+# Test: Dashboard Elements for Empty User (Empty States)
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in_empty_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Should show empty states
+- assertVisible:
+    text: "No meals yet"
+
+# Dashboard should still have calorie summary
+- assertVisible:
+    id: "home-calorie-summary"
+
+# Should show zeros for macros
+- assertVisible:
+    text: "0g"
+
+---
+
+# Test: Dashboard for Pro User with Full Data
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in_pro_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Pro user has lots of data - verify it loads
+- assertVisible:
+    id: "home-calorie-summary"
+
+- assertVisible:
+    id: "home-meals-section"
+
+# Should show Today's Meals with content
+- assertVisible:
+    text: "Today's Meals"
+
+---
+
+# Test: Dashboard for Athlete User (High Volume Data)
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in_athlete_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Athlete user has high calorie goals
+- assertVisible:
+    id: "home-calorie-summary"
+
+# Meals section should be populated
+- assertVisible:
+    id: "home-meals-section"
+
+---
+
+# Test: Pull to Refresh Dashboard
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Pull down to refresh
+- swipe:
+    direction: DOWN
+    from:
+      id: "home-calorie-summary"
+
+# Dashboard should still be visible after refresh
+- assertVisible:
+    id: "home-screen"
+
+- assertVisible:
+    id: "home-calorie-summary"
+
+---
+
+# Test: Navigate to Add Meal via FAB
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Go back
+- tapOn:
+    id: "add-meal-cancel-button"
+
+- assertVisible:
+    id: "home-screen"
+
+---
+
+# Test: Tab Navigation from Home
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to Health tab
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Navigate back to Home tab
+- tapOn:
+    id: "tab-home"
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to Profile tab
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Navigate back to Home tab
+- tapOn:
+    id: "tab-home"
+
+- assertVisible:
+    id: "home-screen"
+
+---
+
+# Test: View Meal Type Sections
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Check meal type sections are visible
+- assertVisible:
+    text: "Breakfast"
+
+- assertVisible:
+    text: "Lunch"
+
+- assertVisible:
+    text: "Dinner"
+
+- assertVisible:
+    text: "Snack"
+
+---
+
+# Test: Dashboard Scroll Behavior
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Scroll down to see all content
+- scroll:
+    direction: DOWN
+
+# FAB should remain visible
+- assertVisible:
+    id: "home-add-meal-fab"
+
+# Scroll back up
+- scroll:
+    direction: UP
+
+- assertVisible:
+    id: "home-calorie-summary"
+
+---
+
+# Test: Dashboard Date Display
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Should display today's date in some format
+# The date text format varies, so we'll just check the greeting
+- assertVisible:
+    text: "Hello"

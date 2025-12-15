@@ -231,18 +231,18 @@ export default function AddHealthMetricScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="add-health-metric-screen">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} disabled={isLoading}>
+          <TouchableOpacity onPress={() => router.back()} disabled={isLoading} testID="add-health-metric-cancel-button">
             <Text style={styles.cancelButton}>Cancel</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Add Health Metric</Text>
-          <TouchableOpacity onPress={handleSave} disabled={isLoading}>
+          <TouchableOpacity onPress={handleSave} disabled={isLoading} testID="add-health-metric-save-button">
             {isLoading ? (
               <ActivityIndicator color={colors.primary.main} />
             ) : (

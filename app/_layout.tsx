@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PortalProvider, PortalHost } from '@gorhom/portal';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -14,8 +15,21 @@ import { AuthProvider, useAuth } from '@/lib/context/AuthContext';
 import { AlertProvider } from '@/lib/components/CustomAlert';
 import { healthKitService } from '@/lib/services/healthkit';
 
-// Check if running in Expo Go (native modules for screen orientation not available)
+// Check if running in Expo Go or a dev build without native modules
+// Screen orientation native module is only available in production EAS builds
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+// Check if expo-screen-orientation native module is available
+// This is a safer check that works for both Expo Go and dev builds without the native module
+function isScreenOrientationAvailable(): boolean {
+  try {
+    // Try to access the native module registry
+    const { NativeModulesProxy } = require('expo-modules-core');
+    return NativeModulesProxy?.ExpoScreenOrientation != null;
+  } catch {
+    return false;
+  }
+}
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -53,7 +67,28 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
+        name="edit-meal/[id]"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right'
+        }}
+      />
+      <Stack.Screen
+        name="edit-health-metric/[id]"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right'
+        }}
+      />
+      <Stack.Screen
         name="scan-food"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_bottom'
+        }}
+      />
+      <Stack.Screen
+        name="scan-barcode"
         options={{
           headerShown: false,
           animation: 'slide_from_bottom'
@@ -74,7 +109,50 @@ function RootLayoutNav() {
           presentation: 'modal'
         }}
       />
-      <Stack.Screen name="+not-found" />
+      <Stack.Screen
+        name="health/[metricType]"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right'
+        }}
+      />
+      <Stack.Screen
+        name="health/add"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_bottom'
+        }}
+      />
+      <Stack.Screen
+        name="ar-scan-food"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_bottom',
+          presentation: 'modal'
+        }}
+      />
+      <Stack.Screen
+        name="terms"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right'
+        }}
+      />
+      <Stack.Screen
+        name="privacy"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right'
+        }}
+      />
+      <Stack.Screen
+        name="supplements"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right'
+        }}
+      />
+      <Stack.Screen name="+not-found" options={{ headerShown: false }} />
     </Stack>
   );
 }
@@ -86,12 +164,12 @@ export default function RootLayout() {
   });
 
   // Configure orientation: Portrait-only for iPhones, both orientations for iPads
-  // Note: expo-screen-orientation requires a development build (not available in Expo Go)
+  // Note: expo-screen-orientation requires a production EAS build (not available in Expo Go or dev builds without native module)
   useEffect(() => {
     async function configureOrientation() {
-      // Skip orientation setup in Expo Go - native module not available
-      if (isExpoGo) {
-        console.log('ScreenOrientation: Skipping in Expo Go (native module not available)');
+      // Skip if native module isn't available (Expo Go, dev builds without native module)
+      if (isExpoGo || !isScreenOrientationAvailable()) {
+        console.log('ScreenOrientation: Skipping (native module not available)');
         return;
       }
 
@@ -173,16 +251,18 @@ export default function RootLayout() {
   }
 
   return (
-    <PortalProvider>
-      <AlertProvider>
-        <AuthProvider>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <RootLayoutNav />
-            <StatusBar style="light" />
-          </ThemeProvider>
-        </AuthProvider>
-      </AlertProvider>
-      <PortalHost name="alert-portal" />
-    </PortalProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <PortalProvider>
+        <AlertProvider>
+          <AuthProvider>
+            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+              <RootLayoutNav />
+              <StatusBar style="light" />
+            </ThemeProvider>
+          </AuthProvider>
+        </AlertProvider>
+        <PortalHost name="alert-portal" />
+      </PortalProvider>
+    </GestureHandlerRootView>
   );
 }

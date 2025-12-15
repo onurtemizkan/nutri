@@ -21,6 +21,7 @@ interface AuthContextType {
   }) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (data: Partial<User>) => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -103,6 +104,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const deleteAccount = async () => {
+    try {
+      await authApi.deleteAccount();
+      setUser(null);
+    } catch (error) {
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -114,6 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         appleSignIn,
         logout,
         updateUser,
+        deleteAccount,
       }}
     >
       {children}

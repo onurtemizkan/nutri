@@ -1,0 +1,110 @@
+# Profile Test Suite - Optimized
+# Combines profile and logout tests
+# Signs in ONCE, runs profile tests, then logout
+# Expected time: ~1 minute (vs ~2 minutes running separately)
+
+appId: host.exp.Exponent
+
+env:
+  TEST_USER_EMAIL: "test@nutri-e2e.local"
+  TEST_USER_PASSWORD: "TestPass123!"
+
+---
+
+# === SETUP: Fresh Start with Sign In ===
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 15000
+
+# === TEST 1: View Profile Screen ===
+- tapOn:
+    point: "83%,95%"
+
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000
+
+- assertVisible:
+    id: "profile-header"
+    optional: true
+
+- assertVisible:
+    id: "profile-edit-goals-button"
+    optional: true
+
+# Scroll to see more content
+- swipe:
+    start: "50%,80%"
+    end: "50%,30%"
+    duration: 300
+
+- assertVisible:
+    id: "health-integration-button"
+    optional: true
+
+# === TEST 2: Navigate to Health Settings ===
+- tapOn:
+    id: "health-integration-button"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      id: "health-settings-screen"
+    timeout: 10000
+    optional: true
+
+# Go back to profile (use back button instead of swipe for reliability)
+- tapOn:
+    id: "health-settings-back-button"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000
+
+# === TEST 3: Cancel Logout ===
+# Scroll to logout button
+- swipe:
+    start: "50%,80%"
+    end: "50%,30%"
+    duration: 300
+
+- tapOn:
+    id: "profile-logout-button"
+
+- waitForAnimationToEnd
+
+# Tap Cancel (38%, 54%)
+- tapOn:
+    point: "38%,54%"
+
+# Should stay on profile
+- assertVisible:
+    id: "profile-screen"
+
+# === TEST 4: Confirm Logout ===
+# Scroll again if needed
+- swipe:
+    start: "50%,80%"
+    end: "50%,30%"
+    duration: 300
+
+- tapOn:
+    id: "profile-logout-button"
+
+- waitForAnimationToEnd
+
+# Confirm logout (73%, 54%)
+- tapOn:
+    point: "73%,54%"
+
+# Should navigate to welcome
+- extendedWaitUntil:
+    visible:
+      id: "welcome-screen"
+    timeout: 15000

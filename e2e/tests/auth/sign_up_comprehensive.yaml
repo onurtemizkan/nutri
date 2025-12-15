@@ -1,0 +1,275 @@
+# Comprehensive Sign Up E2E Tests
+# Tests all registration scenarios including validation and edge cases
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Successful Sign Up with Valid Data
+- runFlow: ../../flows/launch_app.yaml
+
+- tapOn:
+    id: "welcome-signup-button"
+
+- assertVisible:
+    id: "signup-screen"
+
+# Fill in all fields with valid data
+- tapOn:
+    id: "signup-name-input"
+- inputText: "Test New User"
+
+- tapOn:
+    id: "signup-email-input"
+- inputText: "new-user-${timestamp}@nutri-e2e.local"
+
+- tapOn:
+    id: "signup-password-input"
+- inputText: "NewUserPass123!"
+
+- tapOn:
+    id: "signup-confirm-password-input"
+- inputText: "NewUserPass123!"
+
+- tapOn:
+    id: "signup-submit-button"
+
+# Should navigate to home after successful registration
+- assertVisible:
+    id: "home-screen"
+    timeout: 15000
+
+---
+
+# Test: Sign Up with Existing Email
+- runFlow: ../../flows/launch_app.yaml
+
+- tapOn:
+    id: "welcome-signup-button"
+
+- assertVisible:
+    id: "signup-screen"
+
+- tapOn:
+    id: "signup-name-input"
+- inputText: "Duplicate User"
+
+# Use existing test user email
+- tapOn:
+    id: "signup-email-input"
+- inputText: ${TEST_USER_EMAIL}
+
+- tapOn:
+    id: "signup-password-input"
+- inputText: "SomePassword123!"
+
+- tapOn:
+    id: "signup-confirm-password-input"
+- inputText: "SomePassword123!"
+
+- tapOn:
+    id: "signup-submit-button"
+
+# Should stay on signup screen with error
+- assertVisible:
+    id: "signup-screen"
+
+# Error about existing email
+- assertVisible:
+    text: "already"
+    optional: true
+
+---
+
+# Test: Sign Up Password Mismatch
+- runFlow: ../../flows/launch_app.yaml
+
+- tapOn:
+    id: "welcome-signup-button"
+
+- assertVisible:
+    id: "signup-screen"
+
+- tapOn:
+    id: "signup-name-input"
+- inputText: "Mismatch User"
+
+- tapOn:
+    id: "signup-email-input"
+- inputText: "mismatch-${timestamp}@nutri-e2e.local"
+
+- tapOn:
+    id: "signup-password-input"
+- inputText: "Password123!"
+
+- tapOn:
+    id: "signup-confirm-password-input"
+- inputText: "DifferentPassword123!"
+
+- tapOn:
+    id: "signup-submit-button"
+
+# Should stay on signup screen
+- assertVisible:
+    id: "signup-screen"
+
+---
+
+# Test: Sign Up with Invalid Email Format
+- runFlow: ../../flows/launch_app.yaml
+
+- tapOn:
+    id: "welcome-signup-button"
+
+- assertVisible:
+    id: "signup-screen"
+
+- tapOn:
+    id: "signup-name-input"
+- inputText: "Invalid Email User"
+
+- tapOn:
+    id: "signup-email-input"
+- inputText: ${INVALID_EMAIL}
+
+- tapOn:
+    id: "signup-password-input"
+- inputText: "ValidPass123!"
+
+- tapOn:
+    id: "signup-confirm-password-input"
+- inputText: "ValidPass123!"
+
+- tapOn:
+    id: "signup-submit-button"
+
+# Should stay on signup screen (validation error)
+- assertVisible:
+    id: "signup-screen"
+
+---
+
+# Test: Sign Up with Weak Password
+- runFlow: ../../flows/launch_app.yaml
+
+- tapOn:
+    id: "welcome-signup-button"
+
+- assertVisible:
+    id: "signup-screen"
+
+- tapOn:
+    id: "signup-name-input"
+- inputText: "Weak Pass User"
+
+- tapOn:
+    id: "signup-email-input"
+- inputText: "weakpass-${timestamp}@nutri-e2e.local"
+
+# Weak password - too short
+- tapOn:
+    id: "signup-password-input"
+- inputText: ${INVALID_PASSWORD}
+
+- tapOn:
+    id: "signup-confirm-password-input"
+- inputText: ${INVALID_PASSWORD}
+
+- tapOn:
+    id: "signup-submit-button"
+
+# Should stay on signup screen
+- assertVisible:
+    id: "signup-screen"
+
+---
+
+# Test: Sign Up Empty Name Validation
+- runFlow: ../../flows/launch_app.yaml
+
+- tapOn:
+    id: "welcome-signup-button"
+
+- assertVisible:
+    id: "signup-screen"
+
+# Skip name input
+- tapOn:
+    id: "signup-email-input"
+- inputText: "noname-${timestamp}@nutri-e2e.local"
+
+- tapOn:
+    id: "signup-password-input"
+- inputText: "ValidPass123!"
+
+- tapOn:
+    id: "signup-confirm-password-input"
+- inputText: "ValidPass123!"
+
+- tapOn:
+    id: "signup-submit-button"
+
+# Should stay on signup screen
+- assertVisible:
+    id: "signup-screen"
+
+---
+
+# Test: Navigate to Sign In from Sign Up
+- runFlow: ../../flows/launch_app.yaml
+
+- tapOn:
+    id: "welcome-signup-button"
+
+- assertVisible:
+    id: "signup-screen"
+
+# Tap sign in link
+- tapOn:
+    id: "signup-signin-link"
+
+# Should navigate to sign in screen
+- assertVisible:
+    id: "signin-screen"
+
+---
+
+# Test: Navigate to Terms from Sign Up
+- runFlow: ../../flows/launch_app.yaml
+
+- tapOn:
+    id: "welcome-signup-button"
+
+- assertVisible:
+    id: "signup-screen"
+
+# Tap terms link if available
+- tapOn:
+    id: "signup-terms-link"
+    optional: true
+
+# Should show terms screen or modal
+- assertVisible:
+    id: "terms-screen"
+    optional: true
+
+---
+
+# Test: Navigate to Privacy from Sign Up
+- runFlow: ../../flows/launch_app.yaml
+
+- tapOn:
+    id: "welcome-signup-button"
+
+- assertVisible:
+    id: "signup-screen"
+
+# Tap privacy link if available
+- tapOn:
+    id: "signup-privacy-link"
+    optional: true
+
+# Should show privacy screen or modal
+- assertVisible:
+    id: "privacy-screen"
+    optional: true

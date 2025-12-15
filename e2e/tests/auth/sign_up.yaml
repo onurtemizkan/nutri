@@ -1,48 +1,77 @@
 # Sign Up E2E Tests
 # Tests the complete registration flow
+# Note: This test may be flaky due to iOS Automatic Strong Password feature
 
 appId: host.exp.Exponent
+
+env:
+  TEST_USER_NAME: "E2E Test User"
+  TEST_USER_PASSWORD: "TestPass123!"
 
 ---
 
 # Test: Successful Sign Up
-- launchApp:
-    clearState: true
+- runFlow: ../../flows/launch_app.yaml
 
-# Wait for welcome screen
-- assertVisible:
-    id: "welcome-screen"
+# Scroll down to make Create Account button fully visible
+- swipe:
+    start: "50%,90%"
+    end: "50%,70%"
+    duration: 300
 
 # Navigate to sign up
 - tapOn:
-    id: "welcome-signup-button"
+    text: "Create Account"
 
-# Verify sign up screen is visible
-- assertVisible:
-    id: "signup-screen"
+# Wait for sign up screen to load
+- extendedWaitUntil:
+    visible:
+      id: "signup-screen"
+    timeout: 10000
 
-# Fill in registration form
+# Fill in registration form - need to hideKeyboard between inputs
 - tapOn:
     id: "signup-name-input"
 - inputText: ${TEST_USER_NAME}
+- hideKeyboard
+
+# Generate a unique email using JavaScript
+- evalScript: ${output.email = 'e2e-test-' + Date.now() + '@nutri.local'}
 
 - tapOn:
     id: "signup-email-input"
-# Use unique email for each test run
-- inputText: "e2e-test-${timestamp}@nutri.local"
+- inputText: ${output.email}
+- hideKeyboard
 
+# For password fields, we need to handle iOS strong password feature
+# Clear any autofill suggestions first
 - tapOn:
     id: "signup-password-input"
+- eraseText
 - inputText: ${TEST_USER_PASSWORD}
+- hideKeyboard
 
 - tapOn:
     id: "signup-confirm-password-input"
+- eraseText
 - inputText: ${TEST_USER_PASSWORD}
+- hideKeyboard
 
 # Submit form
 - tapOn:
     id: "signup-submit-button"
 
+# Dismiss any error dialogs or iOS prompts
+- tapOn:
+    text: "OK"
+    optional: true
+
+- tapOn:
+    text: "Not Now"
+    optional: true
+
 # Verify navigation to home screen (successful registration)
-- assertVisible:
-    id: "home-screen"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 30000

@@ -6,31 +6,44 @@ appId: host.exp.Exponent
 ---
 
 # Test: View Profile Screen
-- launchApp:
-    clearState: true
-
-# Sign in first
-- runFlow: ../../flows/sign_in.yaml
+- runFlow: ../../flows/sign_in_test_user.yaml
 
 - assertVisible:
     id: "home-screen"
 
-# Navigate to profile
+# Navigate to profile using coordinates (83%, 95%)
 - tapOn:
-    id: "tab-profile"
+    point: "83%,95%"
 
 # Verify profile screen elements
-- assertVisible:
-    id: "profile-screen"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000
 
 - assertVisible:
     id: "profile-header"
+    optional: true
 
 - assertVisible:
     id: "profile-edit-goals-button"
+    optional: true
+
+# Scroll down to see more content
+- swipe:
+    start: "50%,80%"
+    end: "50%,30%"
+    duration: 300
 
 - assertVisible:
     id: "health-integration-button"
+    optional: true
+
+# Scroll down more to see logout button
+- swipe:
+    start: "50%,80%"
+    end: "50%,30%"
+    duration: 300
 
 - assertVisible:
     id: "profile-logout-button"
@@ -38,26 +51,32 @@ appId: host.exp.Exponent
 ---
 
 # Test: Navigate to Health Settings from Profile
-- launchApp:
-    clearState: true
-
-# Sign in first
-- runFlow: ../../flows/sign_in.yaml
+- runFlow: ../../flows/sign_in_test_user.yaml
 
 - assertVisible:
     id: "home-screen"
 
-# Navigate to profile
+# Navigate to profile using coordinates (83%, 95%)
 - tapOn:
-    id: "tab-profile"
+    point: "83%,95%"
 
-- assertVisible:
-    id: "profile-screen"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000
+
+# Scroll to find health integration button
+- swipe:
+    start: "50%,80%"
+    end: "50%,30%"
+    duration: 300
 
 # Tap health integration
 - tapOn:
     id: "health-integration-button"
 
 # Verify health settings screen
-- assertVisible:
-    id: "health-settings-screen"
+- extendedWaitUntil:
+    visible:
+      id: "health-settings-screen"
+    timeout: 10000

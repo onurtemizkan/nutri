@@ -103,6 +103,14 @@ export class AuthController {
 
     res.status(HTTP_STATUS.OK).json(result);
   });
+
+  deleteAccount = withErrorHandling<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
+    const result = await authService.deleteAccount(userId);
+    res.status(HTTP_STATUS.OK).json(result);
+  });
 }
 
 export const authController = new AuthController();

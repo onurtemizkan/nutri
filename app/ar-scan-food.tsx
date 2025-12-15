@@ -161,10 +161,10 @@ export default function ARScanFoodScreen() {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="ar-scan-food-screen">
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton} testID="ar-scan-food-back-button">
           <Ionicons name="arrow-back" size={24} color={colors.primary.main} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>AR Food Scanner</Text>
@@ -190,6 +190,7 @@ export default function ARScanFoodScreen() {
               value={foodName}
               onChangeText={setFoodName}
               placeholderTextColor={colors.text.disabled}
+              testID="ar-scan-food-name-input"
             />
 
             <TextInput
@@ -200,6 +201,7 @@ export default function ARScanFoodScreen() {
               multiline
               numberOfLines={3}
               placeholderTextColor={colors.text.disabled}
+              testID="ar-scan-food-notes-input"
             />
 
             <Text style={styles.sectionTitle}>Scan Mode</Text>
@@ -211,6 +213,7 @@ export default function ARScanFoodScreen() {
                   scanMode === 'photo' && styles.modeButtonActive,
                 ]}
                 onPress={() => setScanMode('photo')}
+                testID="ar-scan-food-photo-mode-button"
               >
                 <Ionicons
                   name="camera"
@@ -234,6 +237,7 @@ export default function ARScanFoodScreen() {
                   scanMode === 'video' && styles.modeButtonActive,
                 ]}
                 onPress={() => setScanMode('video')}
+                testID="ar-scan-food-video-mode-button"
               >
                 <Ionicons
                   name="videocam"
@@ -423,7 +427,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: colors.overlay.heavy,
     padding: spacing.lg,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -440,7 +444,7 @@ const styles = StyleSheet.create({
   },
   exportOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: colors.overlay.heavy,
     justifyContent: 'center',
     alignItems: 'center',
   },

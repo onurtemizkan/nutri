@@ -85,4 +85,11 @@ export const authApi = {
 
     return response.data;
   },
+
+  async deleteAccount(): Promise<{ message: string }> {
+    const response = await api.delete<{ message: string }>('/auth/account');
+    // Clear the token after successful deletion
+    await SecureStore.deleteItemAsync('authToken');
+    return response.data;
+  },
 };

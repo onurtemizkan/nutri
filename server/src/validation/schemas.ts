@@ -278,3 +278,77 @@ export const appleSignInSchema = z.object({
     })
     .optional(),
 });
+
+// ============================================================================
+// SUPPLEMENT SCHEMAS
+// ============================================================================
+
+/**
+ * Supplement Frequency
+ * Matches Prisma SupplementFrequency enum
+ */
+export const supplementFrequencySchema = z.enum([
+  'DAILY',
+  'TWICE_DAILY',
+  'THREE_TIMES_DAILY',
+  'WEEKLY',
+  'EVERY_OTHER_DAY',
+  'AS_NEEDED',
+]);
+
+/**
+ * Supplement Time of Day
+ * Matches Prisma SupplementTimeOfDay enum
+ */
+export const supplementTimeOfDaySchema = z.enum([
+  'MORNING',
+  'AFTERNOON',
+  'EVENING',
+  'BEFORE_BED',
+  'WITH_BREAKFAST',
+  'WITH_LUNCH',
+  'WITH_DINNER',
+  'EMPTY_STOMACH',
+]);
+
+/**
+ * Supplement Creation Schema
+ */
+export const createSupplementSchema = z.object({
+  name: nonEmptyStringSchema.max(100, 'Name must be 100 characters or less'),
+  brand: z.string().max(100).optional(),
+  dosageAmount: positiveNumberSchema,
+  dosageUnit: nonEmptyStringSchema.max(20, 'Unit must be 20 characters or less'),
+  frequency: supplementFrequencySchema.optional(),
+  timesPerDay: z.number().int().min(1).max(10).optional(),
+  timeOfDay: z.array(supplementTimeOfDaySchema).optional(),
+  withFood: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+  startDate: datetimeSchema.optional(),
+  endDate: datetimeSchema.optional().nullable(),
+  notes: z.string().max(500).optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color').optional(),
+});
+
+/**
+ * Supplement Update Schema
+ */
+export const updateSupplementSchema = createSupplementSchema.partial();
+
+/**
+ * Supplement Log Creation Schema
+ */
+export const createSupplementLogSchema = z.object({
+  supplementId: nonEmptyStringSchema,
+  takenAt: datetimeSchema.optional(),
+  dosageAmount: positiveNumberSchema.optional(),
+  notes: z.string().max(500).optional(),
+  skipped: z.boolean().optional(),
+});
+
+/**
+ * Bulk Supplement Log Creation Schema
+ */
+export const bulkCreateSupplementLogsSchema = z.object({
+  logs: z.array(createSupplementLogSchema).min(1, 'At least one log is required'),
+});

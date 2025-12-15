@@ -1,4 +1,4 @@
-import { Link, Stack } from 'expo-router';
+import { Link } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -12,9 +12,7 @@ export default function NotFoundScreen() {
   const responsiveSpacing = getSpacing();
 
   return (
-    <>
-      <Stack.Screen options={{ title: 'Oops!' }} />
-      <ThemedView style={styles.container}>
+    <ThemedView style={styles.container}>
         <View style={[
           styles.content,
           { paddingHorizontal: responsiveSpacing.horizontal },
@@ -26,7 +24,6 @@ export default function NotFoundScreen() {
           </Link>
         </View>
       </ThemedView>
-    </>
   );
 }
 

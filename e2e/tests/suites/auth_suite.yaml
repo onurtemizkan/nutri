@@ -1,0 +1,144 @@
+# Auth Test Suite - Optimized
+# Combines auth tests to minimize app launches
+# Expected time: ~1-2 minutes (vs ~2-3 minutes running separately)
+
+appId: host.exp.Exponent
+
+env:
+  TEST_EMAIL: "test@nutri-e2e.local"
+  TEST_PASSWORD: "TestPass123!"
+
+---
+
+# === TEST 1: Sign In Flow ===
+- runFlow: ../../flows/launch_app.yaml
+
+- tapOn:
+    text: "Sign In"
+
+- extendedWaitUntil:
+    visible:
+      id: "signin-screen"
+    timeout: 10000
+
+- tapOn:
+    id: "signin-email-input"
+- inputText: ${TEST_EMAIL}
+
+- tapOn:
+    id: "signin-password-input"
+- inputText: ${TEST_PASSWORD}
+
+- tapOn:
+    id: "signin-submit-button"
+
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 30000
+
+# Sign out to reset state for next test
+- tapOn:
+    point: "83%,95%"
+
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000
+
+- swipe:
+    start: "50%,80%"
+    end: "50%,30%"
+    duration: 300
+
+- tapOn:
+    id: "profile-logout-button"
+
+- waitForAnimationToEnd
+
+- tapOn:
+    point: "73%,54%"
+
+- extendedWaitUntil:
+    visible:
+      id: "welcome-screen"
+    timeout: 15000
+
+---
+
+# === TEST 2: Sign In Validation (Empty Fields) ===
+# App already on welcome screen from previous test - NO RELAUNCH NEEDED
+
+- tapOn:
+    text: "Sign In"
+
+- extendedWaitUntil:
+    visible:
+      id: "signin-screen"
+    timeout: 10000
+
+# Try to submit without entering anything
+- tapOn:
+    id: "signin-submit-button"
+
+# Should stay on sign in screen
+- assertVisible:
+    id: "signin-screen"
+
+# Go back to welcome for next test
+- tapOn:
+    id: "signin-back-button"
+    optional: true
+
+# If no back button, use swipe gesture
+- swipe:
+    direction: RIGHT
+    duration: 300
+
+- extendedWaitUntil:
+    visible:
+      id: "welcome-screen"
+    timeout: 10000
+
+---
+
+# === TEST 3: Forgot Password Flow ===
+# App already on welcome screen - NO RELAUNCH NEEDED
+
+- tapOn:
+    text: "Sign In"
+
+- extendedWaitUntil:
+    visible:
+      id: "signin-screen"
+    timeout: 10000
+
+- tapOn:
+    id: "signin-forgot-password-link"
+
+- extendedWaitUntil:
+    visible:
+      id: "forgot-password-screen"
+    timeout: 10000
+
+- tapOn:
+    id: "forgot-password-email-input"
+- inputText: "test@example.com"
+- hideKeyboard
+
+- tapOn:
+    id: "forgot-password-submit-button"
+
+# Dismiss any alert
+- tapOn:
+    text: "OK"
+    optional: true
+
+# Should show success or stay on screen
+- assertVisible:
+    id: "forgot-password-screen"
+    optional: true

@@ -139,9 +139,9 @@ print_info "Generating Prisma client..."
 npm run db:generate >/dev/null 2>&1
 print_success "Prisma client generated"
 
-# Push schema to database
+# Push schema to database (--accept-data-loss for non-interactive mode)
 print_info "Pushing schema to database..."
-npm run db:push >/dev/null 2>&1
+npx prisma db push --accept-data-loss >/dev/null 2>&1
 print_success "Database schema is up to date"
 
 cd ..

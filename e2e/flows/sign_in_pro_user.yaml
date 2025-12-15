@@ -1,0 +1,45 @@
+# Reusable flow: Sign in with Pro User
+# Signs in with the Pro subscription test user
+
+appId: host.exp.Exponent
+
+env:
+  PRO_USER_EMAIL: "pro@nutri-e2e.local"
+  PRO_USER_PASSWORD: "ProPass123!"
+
+---
+
+# Launch and navigate to app
+- runFlow: launch_app.yaml
+
+# Navigate to sign in
+- tapOn:
+    text: "Sign In"
+
+# Wait for sign in screen
+- assertVisible:
+    id: "signin-screen"
+
+# Enter Pro user credentials
+- tapOn:
+    id: "signin-email-input"
+- inputText: ${PRO_USER_EMAIL}
+
+- tapOn:
+    id: "signin-password-input"
+- inputText: ${PRO_USER_PASSWORD}
+
+# Submit form
+- tapOn:
+    id: "signin-submit-button"
+
+# Dismiss iOS "Save Password?" dialog if it appears
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+# Wait for navigation to home
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 30000

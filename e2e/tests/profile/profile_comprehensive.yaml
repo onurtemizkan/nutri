@@ -1,0 +1,342 @@
+# Comprehensive Profile E2E Tests
+# Tests profile screen functionality and goal editing
+
+appId: host.exp.Exponent
+
+---
+
+# Test: View Profile Screen with User Data
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Verify user info is displayed
+- assertVisible:
+    text: ${TEST_USER_NAME}
+    optional: true
+
+# Verify goals section
+- assertVisible:
+    text: "Goals"
+    optional: true
+
+---
+
+# Test: View Profile for Pro User
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in_pro_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Pro user info
+- assertVisible:
+    text: ${PRO_USER_NAME}
+    optional: true
+
+---
+
+# Test: View Profile for Athlete User
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in_athlete_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Athlete user info
+- assertVisible:
+    text: ${ATHLETE_USER_NAME}
+    optional: true
+
+---
+
+# Test: Edit Goals - Open and Cancel
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Tap edit goals
+- tapOn:
+    id: "profile-edit-goals-button"
+
+# Should show cancel and save buttons
+- assertVisible:
+    id: "profile-cancel-edit-button"
+
+- assertVisible:
+    id: "profile-save-goals-button"
+
+# Cancel editing
+- tapOn:
+    id: "profile-cancel-edit-button"
+
+# Should show edit button again
+- assertVisible:
+    id: "profile-edit-goals-button"
+
+---
+
+# Test: Edit and Save Goals
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Tap edit goals
+- tapOn:
+    id: "profile-edit-goals-button"
+
+# Wait for edit mode
+- assertVisible:
+    id: "profile-save-goals-button"
+
+# Save goals
+- tapOn:
+    id: "profile-save-goals-button"
+
+# Should show success and return to view mode
+- assertVisible:
+    id: "profile-edit-goals-button"
+
+---
+
+# Test: Navigate to Health Integration Settings
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Navigate to health integration
+- tapOn:
+    id: "health-integration-button"
+
+# Should show health settings
+- assertVisible:
+    id: "health-settings-screen"
+
+# Go back
+- tapOn:
+    id: "health-settings-back-button"
+
+- assertVisible:
+    id: "profile-screen"
+
+---
+
+# Test: Navigate to Privacy Policy
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Scroll to find privacy link if needed
+- scroll:
+    direction: DOWN
+
+# Navigate to privacy
+- tapOn:
+    id: "profile-privacy-link"
+    optional: true
+
+# Should show privacy screen
+- assertVisible:
+    id: "privacy-screen"
+    optional: true
+
+---
+
+# Test: Navigate to Terms of Service
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Scroll to find terms link if needed
+- scroll:
+    direction: DOWN
+
+# Navigate to terms
+- tapOn:
+    id: "profile-terms-link"
+    optional: true
+
+# Should show terms screen
+- assertVisible:
+    id: "terms-screen"
+    optional: true
+
+---
+
+# Test: Logout Flow
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Scroll to logout button
+- scroll:
+    direction: DOWN
+
+# Tap logout
+- tapOn:
+    id: "profile-logout-button"
+
+# Confirm logout if dialog appears
+- tapOn:
+    text: "Log Out"
+    optional: true
+
+- tapOn:
+    text: "Logout"
+    optional: true
+
+# Should be back on welcome screen
+- assertVisible:
+    id: "welcome-screen"
+
+---
+
+# Test: Profile Scroll Behavior
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Scroll down
+- scroll:
+    direction: DOWN
+
+# Scroll back up
+- scroll:
+    direction: UP
+
+- assertVisible:
+    id: "profile-screen"
+
+---
+
+# Test: Profile Tab Navigation
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Navigate to health
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Navigate back to profile
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Navigate to home
+- tapOn:
+    id: "tab-home"
+
+- assertVisible:
+    id: "home-screen"

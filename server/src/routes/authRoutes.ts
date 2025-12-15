@@ -15,5 +15,6 @@ router.post('/verify-reset-token', (req, res) => authController.verifyResetToken
 // Protected routes
 router.get('/profile', authenticate, (req, res) => authController.getProfile(req, res));
 router.put('/profile', authenticate, (req, res) => authController.updateProfile(req, res));
+router.delete('/account', authenticate, (req, res) => authController.deleteAccount(req, res));
 
 export default router;

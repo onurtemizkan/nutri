@@ -1,0 +1,157 @@
+# Comprehensive Barcode Scanner E2E Tests
+# Tests barcode scanning functionality
+# Note: Actual barcode scanning requires camera access and physical barcodes
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Navigate to Barcode Scanner from Add Meal
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Tap barcode scan button
+- tapOn:
+    id: "add-meal-scan-barcode-button"
+    optional: true
+
+# Should navigate to barcode scanner (may need permission)
+- assertVisible:
+    id: "scan-barcode-screen"
+    optional: true
+
+- assertVisible:
+    id: "scan-barcode-permission-screen"
+    optional: true
+
+---
+
+# Test: Barcode Scanner Permission Handling
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Tap barcode scan button
+- tapOn:
+    id: "add-meal-scan-barcode-button"
+    optional: true
+
+# If permission screen shows, verify elements
+- assertVisible:
+    id: "camera-permission-request"
+    optional: true
+
+# Should have allow and deny options
+- assertVisible:
+    text: "Allow"
+    optional: true
+
+---
+
+# Test: Cancel Barcode Scanner
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Tap barcode scan button
+- tapOn:
+    id: "add-meal-scan-barcode-button"
+    optional: true
+
+# If scanner opens, cancel/close it
+- tapOn:
+    id: "scan-barcode-close-button"
+    optional: true
+
+- tapOn:
+    id: "scan-barcode-cancel-button"
+    optional: true
+
+# Should return to add meal screen
+- assertVisible:
+    id: "add-meal-screen"
+    optional: true
+
+---
+
+# Test: Manual Barcode Entry (Alternative to Scanning)
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Tap barcode scan button
+- tapOn:
+    id: "add-meal-scan-barcode-button"
+    optional: true
+
+# Look for manual entry option
+- tapOn:
+    id: "scan-barcode-manual-entry-button"
+    optional: true
+
+- tapOn:
+    text: "Enter manually"
+    optional: true
+
+# If manual entry screen shows
+- assertVisible:
+    id: "barcode-manual-entry-screen"
+    optional: true
+
+---
+
+# Test: Barcode Scanner Flash Toggle (if available)
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Tap barcode scan button
+- tapOn:
+    id: "add-meal-scan-barcode-button"
+    optional: true
+
+# If scanner opens, try toggling flash
+- tapOn:
+    id: "scan-barcode-flash-toggle"
+    optional: true
+
+# Flash button should remain available
+- assertVisible:
+    id: "scan-barcode-flash-toggle"
+    optional: true

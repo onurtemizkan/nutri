@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,18 +8,25 @@ import {
   TextInput,
   ActivityIndicator,
   Platform,
+  Modal,
+  Image,
+  ActionSheetIOS,
 } from 'react-native';
+import type { SubscriptionTier } from '@/lib/types';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { useAuth } from '@/lib/context/AuthContext';
 import { useRouter } from 'expo-router';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import { showAlert } from '@/lib/utils/alert';
 import { useResponsive } from '@/hooks/useResponsive';
+import { getErrorMessage } from '@/lib/utils/errorHandling';
 
 export default function ProfileScreen() {
-  const { user, logout, updateUser } = useAuth();
+  const { user, logout, updateUser, deleteAccount } = useAuth();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -52,6 +59,139 @@ export default function ProfileScreen() {
   const [goalProtein, setGoalProtein] = useState(user?.goalProtein.toString() || '150');
   const [goalCarbs, setGoalCarbs] = useState(user?.goalCarbs.toString() || '200');
   const [goalFat, setGoalFat] = useState(user?.goalFat.toString() || '65');
+
+  // Delete account state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Profile picture state
+  const [isUploadingPicture, setIsUploadingPicture] = useState(false);
+  const [showPictureModal, setShowPictureModal] = useState(false);
+
+  const processAndUploadImage = async (uri: string) => {
+    setIsUploadingPicture(true);
+    try {
+      // Resize and compress the image
+      const manipulatedImage = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 400, height: 400 } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      );
+
+      if (!manipulatedImage.base64) {
+        throw new Error('Failed to process image');
+      }
+
+      // Create data URL
+      const dataUrl = `data:image/jpeg;base64,${manipulatedImage.base64}`;
+
+      // Update user profile with the new picture
+      await updateUser({ profilePicture: dataUrl });
+      showAlert('Success', 'Profile picture updated!');
+    } catch (error) {
+      showAlert('Error', getErrorMessage(error, 'Failed to update profile picture'));
+    } finally {
+      setIsUploadingPicture(false);
+      setShowPictureModal(false);
+    }
+  };
+
+  const pickImageFromLibrary = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      showAlert('Permission Required', 'Please allow access to your photo library to select a profile picture.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      await processAndUploadImage(result.assets[0].uri);
+    }
+  };
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      showAlert('Permission Required', 'Please allow access to your camera to take a profile picture.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      await processAndUploadImage(result.assets[0].uri);
+    }
+  };
+
+  const removeProfilePicture = async () => {
+    setIsUploadingPicture(true);
+    try {
+      await updateUser({ profilePicture: null });
+      showAlert('Success', 'Profile picture removed!');
+    } catch (error) {
+      showAlert('Error', getErrorMessage(error, 'Failed to remove profile picture'));
+    } finally {
+      setIsUploadingPicture(false);
+      setShowPictureModal(false);
+    }
+  };
+
+  const handleAvatarPress = () => {
+    if (Platform.OS === 'ios') {
+      const options = user?.profilePicture
+        ? ['Take Photo', 'Choose from Library', 'Remove Photo', 'Cancel']
+        : ['Take Photo', 'Choose from Library', 'Cancel'];
+      const destructiveButtonIndex = user?.profilePicture ? 2 : undefined;
+      const cancelButtonIndex = user?.profilePicture ? 3 : 2;
+
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex,
+          destructiveButtonIndex,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 0) {
+            takePhoto();
+          } else if (buttonIndex === 1) {
+            pickImageFromLibrary();
+          } else if (buttonIndex === 2 && user?.profilePicture) {
+            removeProfilePicture();
+          }
+        }
+      );
+    } else {
+      setShowPictureModal(true);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== 'DELETE') {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await deleteAccount();
+      setShowDeleteModal(false);
+      router.replace('/auth/signin');
+    } catch (error) {
+      showAlert('Error', getErrorMessage(error, 'Failed to delete account. Please try again.'));
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const handleSaveGoals = async () => {
     setIsLoading(true);
@@ -86,6 +226,63 @@ export default function ProfileScreen() {
     ]);
   };
 
+  // Subscription info
+  const subscriptionInfo = useMemo(() => {
+    const tier: SubscriptionTier = user?.subscriptionTier || 'FREE';
+    const endDate = user?.subscriptionEndDate ? new Date(user.subscriptionEndDate) : null;
+    const now = new Date();
+
+    // Calculate remaining days for trial
+    let remainingDays = 0;
+    if (tier === 'PRO_TRIAL' && endDate) {
+      remainingDays = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+    }
+
+    // Format end date
+    const formattedEndDate = endDate
+      ? endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : null;
+
+    // Format price
+    const formattedPrice = user?.subscriptionPrice
+      ? `$${user.subscriptionPrice.toFixed(2)}`
+      : null;
+
+    // Billing cycle label
+    const billingCycleLabel = user?.subscriptionBillingCycle === 'ANNUAL' ? 'Annual' : 'Monthly';
+
+    return {
+      tier,
+      remainingDays,
+      formattedEndDate,
+      formattedPrice,
+      billingCycleLabel,
+      isExpired: endDate ? endDate < now : false,
+    };
+  }, [user?.subscriptionTier, user?.subscriptionEndDate, user?.subscriptionPrice, user?.subscriptionBillingCycle]);
+
+  const getSubscriptionBadgeStyle = (tier: SubscriptionTier) => {
+    switch (tier) {
+      case 'PRO':
+        return { backgroundColor: colors.primary.main };
+      case 'PRO_TRIAL':
+        return { backgroundColor: colors.status.warning };
+      default:
+        return { backgroundColor: colors.text.disabled };
+    }
+  };
+
+  const getSubscriptionLabel = (tier: SubscriptionTier) => {
+    switch (tier) {
+      case 'PRO':
+        return 'Pro';
+      case 'PRO_TRIAL':
+        return 'Pro Trial';
+      default:
+        return 'Free';
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} testID="profile-screen">
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -96,21 +293,123 @@ export default function ProfileScreen() {
         ]}>
           {/* Profile Header */}
           <View style={styles.profileHeader} testID="profile-header">
-            <LinearGradient
-              colors={gradients.primary}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[
-                styles.avatar,
-                { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }
-              ]}
+            <TouchableOpacity
+              onPress={handleAvatarPress}
+              disabled={isUploadingPicture}
+              activeOpacity={0.8}
+              accessibilityLabel="Change profile picture"
+              testID="profile-avatar-button"
             >
-              <Text style={styles.avatarText}>
-                {user?.name.charAt(0).toUpperCase()}
-              </Text>
-            </LinearGradient>
+              <View style={styles.avatarContainer}>
+                {user?.profilePicture ? (
+                  <Image
+                    source={{ uri: user.profilePicture }}
+                    style={[
+                      styles.avatarImage,
+                      { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }
+                    ]}
+                  />
+                ) : (
+                  <LinearGradient
+                    colors={gradients.primary}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={[
+                      styles.avatar,
+                      { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }
+                    ]}
+                  >
+                    <Text style={styles.avatarText}>
+                      {user?.name.charAt(0).toUpperCase()}
+                    </Text>
+                  </LinearGradient>
+                )}
+                {isUploadingPicture ? (
+                  <View style={[styles.avatarOverlay, { borderRadius: avatarSize / 2 }]}>
+                    <ActivityIndicator color={colors.text.primary} />
+                  </View>
+                ) : (
+                  <View style={styles.avatarEditBadge}>
+                    <Ionicons name="camera" size={14} color={colors.text.primary} />
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
             <Text style={styles.name}>{user?.name}</Text>
             <Text style={styles.email}>{user?.email}</Text>
+          </View>
+
+          {/* Subscription */}
+          <View style={styles.section} testID="subscription-section">
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Subscription</Text>
+            </View>
+
+            <View style={styles.subscriptionCard}>
+              <View style={styles.subscriptionHeader}>
+                <View style={[styles.subscriptionBadge, getSubscriptionBadgeStyle(subscriptionInfo.tier)]}>
+                  <Text style={styles.subscriptionBadgeText}>
+                    {getSubscriptionLabel(subscriptionInfo.tier)}
+                  </Text>
+                </View>
+                {subscriptionInfo.tier === 'PRO' && (
+                  <View style={styles.subscriptionCycleBadge}>
+                    <Text style={styles.subscriptionCycleText}>{subscriptionInfo.billingCycleLabel}</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Free tier */}
+              {subscriptionInfo.tier === 'FREE' && (
+                <Text style={styles.subscriptionDescription}>
+                  Basic features included
+                </Text>
+              )}
+
+              {/* Pro Trial */}
+              {subscriptionInfo.tier === 'PRO_TRIAL' && (
+                <>
+                  <View style={styles.subscriptionDetailRow}>
+                    <Ionicons name="time-outline" size={16} color={colors.text.tertiary} />
+                    <Text style={styles.subscriptionDetailText}>
+                      {subscriptionInfo.remainingDays > 0
+                        ? `${subscriptionInfo.remainingDays} day${subscriptionInfo.remainingDays !== 1 ? 's' : ''} remaining`
+                        : 'Trial expired'}
+                    </Text>
+                  </View>
+                  {subscriptionInfo.formattedEndDate && (
+                    <View style={styles.subscriptionDetailRow}>
+                      <Ionicons name="calendar-outline" size={16} color={colors.text.tertiary} />
+                      <Text style={styles.subscriptionDetailText}>
+                        Ends {subscriptionInfo.formattedEndDate}
+                      </Text>
+                    </View>
+                  )}
+                </>
+              )}
+
+              {/* Pro */}
+              {subscriptionInfo.tier === 'PRO' && (
+                <>
+                  {subscriptionInfo.formattedEndDate && (
+                    <View style={styles.subscriptionDetailRow}>
+                      <Ionicons name="calendar-outline" size={16} color={colors.text.tertiary} />
+                      <Text style={styles.subscriptionDetailText}>
+                        {subscriptionInfo.isExpired ? 'Expired' : 'Renews'} {subscriptionInfo.formattedEndDate}
+                      </Text>
+                    </View>
+                  )}
+                  {subscriptionInfo.formattedPrice && (
+                    <View style={styles.subscriptionDetailRow}>
+                      <Ionicons name="card-outline" size={16} color={colors.text.tertiary} />
+                      <Text style={styles.subscriptionDetailText}>
+                        {subscriptionInfo.formattedPrice}/{subscriptionInfo.billingCycleLabel === 'Annual' ? 'year' : 'month'}
+                      </Text>
+                    </View>
+                  )}
+                </>
+              )}
+            </View>
           </View>
 
           {/* Daily Goals */}
@@ -275,6 +574,82 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* Supplements */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Supplements</Text>
+
+            <TouchableOpacity
+              style={[styles.menuItemWithArrow, styles.menuItemLast]}
+              onPress={() => router.push('/supplements')}
+              accessibilityLabel="Manage supplements"
+              testID="supplements-button"
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={styles.menuItemIcon}>
+                  <Ionicons
+                    name="medical"
+                    size={20}
+                    color={colors.primary.main}
+                  />
+                </View>
+                <View>
+                  <Text style={styles.menuItemText}>Manage Supplements</Text>
+                  <Text style={styles.menuItemSubtext}>Track your daily supplements</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Legal */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Legal</Text>
+
+            <TouchableOpacity
+              style={styles.menuItemWithArrow}
+              onPress={() => router.push('/terms')}
+              accessibilityLabel="View Terms and Conditions"
+              testID="terms-conditions-button"
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={styles.menuItemIcon}>
+                  <Ionicons
+                    name="document-text"
+                    size={20}
+                    color={colors.text.tertiary}
+                  />
+                </View>
+                <View>
+                  <Text style={styles.menuItemText}>Terms & Conditions</Text>
+                  <Text style={styles.menuItemSubtext}>View terms of service</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItemWithArrow}
+              onPress={() => router.push('/privacy')}
+              accessibilityLabel="View Privacy Policy"
+              testID="privacy-policy-button"
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={styles.menuItemIcon}>
+                  <Ionicons
+                    name="shield-checkmark"
+                    size={20}
+                    color={colors.text.tertiary}
+                  />
+                </View>
+                <View>
+                  <Text style={styles.menuItemText}>Privacy Policy</Text>
+                  <Text style={styles.menuItemSubtext}>How we handle your data</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+            </TouchableOpacity>
+          </View>
+
           {/* Account */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Account</Text>
@@ -282,9 +657,173 @@ export default function ProfileScreen() {
             <TouchableOpacity style={styles.menuItem} onPress={handleLogout} testID="profile-logout-button">
               <Text style={[styles.menuItemText, styles.logoutText]}>Logout</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.menuItem, styles.menuItemLast]}
+              onPress={() => setShowDeleteModal(true)}
+              testID="profile-delete-account-button"
+            >
+              <Text style={[styles.menuItemText, styles.deleteText]}>Delete Account</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
+
+      {/* Delete Account Confirmation Modal */}
+      <Modal
+        visible={showDeleteModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          if (!isDeleting) {
+            setShowDeleteModal(false);
+            setDeleteConfirmation('');
+          }
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalWarningIcon}>
+                <Ionicons name="warning" size={32} color={colors.status.error} />
+              </View>
+              <Text style={styles.modalTitle}>Delete Account</Text>
+            </View>
+
+            <Text style={styles.modalDescription}>
+              This action is permanent and cannot be undone. All your data will be permanently deleted, including:
+            </Text>
+
+            <View style={styles.modalList}>
+              <Text style={styles.modalListItem}>• All your meals and nutrition logs</Text>
+              <Text style={styles.modalListItem}>• Health metrics and activity data</Text>
+              <Text style={styles.modalListItem}>• ML insights and predictions</Text>
+              <Text style={styles.modalListItem}>• Account settings and preferences</Text>
+            </View>
+
+            <Text style={styles.modalConfirmText}>
+              Type <Text style={styles.modalConfirmHighlight}>DELETE</Text> to confirm:
+            </Text>
+
+            <View style={styles.modalInputWrapper}>
+              <TextInput
+                style={styles.modalInput}
+                value={deleteConfirmation}
+                onChangeText={setDeleteConfirmation}
+                placeholder="Type DELETE"
+                placeholderTextColor={colors.text.disabled}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                editable={!isDeleting}
+                testID="delete-confirmation-input"
+              />
+            </View>
+
+            <View style={styles.modalButtonRow}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmation('');
+                }}
+                disabled={isDeleting}
+                testID="delete-cancel-button"
+              >
+                <Text style={styles.modalCancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.modalDeleteButton,
+                  deleteConfirmation !== 'DELETE' && styles.modalDeleteButtonDisabled,
+                ]}
+                onPress={handleDeleteAccount}
+                disabled={deleteConfirmation !== 'DELETE' || isDeleting}
+                testID="delete-confirm-button"
+              >
+                {isDeleting ? (
+                  <ActivityIndicator color={colors.text.primary} size="small" />
+                ) : (
+                  <Text style={styles.modalDeleteButtonText}>Delete Forever</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Profile Picture Modal (Android) */}
+      <Modal
+        visible={showPictureModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          if (!isUploadingPicture) {
+            setShowPictureModal(false);
+          }
+        }}
+      >
+        <TouchableOpacity
+          style={styles.pictureModalOverlay}
+          activeOpacity={1}
+          onPress={() => !isUploadingPicture && setShowPictureModal(false)}
+        >
+          <View style={styles.pictureModalContent}>
+            <Text style={styles.pictureModalTitle}>Change Profile Picture</Text>
+
+            <TouchableOpacity
+              style={styles.pictureModalOption}
+              onPress={() => {
+                setShowPictureModal(false);
+                takePhoto();
+              }}
+              disabled={isUploadingPicture}
+            >
+              <View style={styles.pictureModalOptionIcon}>
+                <Ionicons name="camera" size={22} color={colors.primary.main} />
+              </View>
+              <Text style={styles.pictureModalOptionText}>Take Photo</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.pictureModalOption}
+              onPress={() => {
+                setShowPictureModal(false);
+                pickImageFromLibrary();
+              }}
+              disabled={isUploadingPicture}
+            >
+              <View style={styles.pictureModalOptionIcon}>
+                <Ionicons name="images" size={22} color={colors.primary.main} />
+              </View>
+              <Text style={styles.pictureModalOptionText}>Choose from Library</Text>
+            </TouchableOpacity>
+
+            {user?.profilePicture && (
+              <TouchableOpacity
+                style={styles.pictureModalOption}
+                onPress={removeProfilePicture}
+                disabled={isUploadingPicture}
+              >
+                <View style={styles.pictureModalOptionIcon}>
+                  <Ionicons name="trash" size={22} color={colors.status.error} />
+                </View>
+                <Text style={[styles.pictureModalOptionText, styles.pictureModalRemoveText]}>
+                  Remove Photo
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              style={styles.pictureModalCancelButton}
+              onPress={() => setShowPictureModal(false)}
+              disabled={isUploadingPicture}
+            >
+              <Text style={styles.pictureModalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -360,6 +899,56 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
     color: colors.primary.main,
+  },
+
+  // Subscription
+  subscriptionCard: {
+    backgroundColor: colors.background.elevated,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+  },
+  subscriptionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  subscriptionBadge: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+  },
+  subscriptionBadgeText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+  },
+  subscriptionCycleBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.background.tertiary,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+  },
+  subscriptionCycleText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+  },
+  subscriptionDescription: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.tertiary,
+    marginTop: spacing.xs,
+  },
+  subscriptionDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  subscriptionDetailText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
   },
 
   // Goals
@@ -485,5 +1074,215 @@ const styles = StyleSheet.create({
   logoutText: {
     color: colors.status.error,
     fontWeight: typography.fontWeight.semibold,
+  },
+  deleteText: {
+    color: colors.status.error,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  menuItemLast: {
+    borderBottomWidth: 0,
+  },
+
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
+    width: '100%',
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  modalWarningIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: `${colors.status.error}20`,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  modalTitle: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    textAlign: 'center',
+  },
+  modalDescription: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    lineHeight: typography.lineHeight.relaxed * typography.fontSize.sm,
+    marginBottom: spacing.md,
+  },
+  modalList: {
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  modalListItem: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.tertiary,
+    marginBottom: spacing.xs,
+  },
+  modalConfirmText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    marginBottom: spacing.sm,
+  },
+  modalConfirmHighlight: {
+    color: colors.status.error,
+    fontWeight: typography.fontWeight.bold,
+  },
+  modalInputWrapper: {
+    backgroundColor: colors.background.elevated,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+    marginBottom: spacing.lg,
+  },
+  modalInput: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    fontSize: typography.fontSize.md,
+    color: colors.text.primary,
+    height: 48,
+    textAlign: 'center',
+    letterSpacing: 2,
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  modalCancelButton: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: colors.border.primary,
+    height: 48,
+    justifyContent: 'center',
+  },
+  modalCancelButtonText: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.secondary,
+  },
+  modalDeleteButton: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    backgroundColor: colors.status.error,
+    height: 48,
+    justifyContent: 'center',
+  },
+  modalDeleteButtonDisabled: {
+    backgroundColor: colors.text.disabled,
+    opacity: 0.5,
+  },
+  modalDeleteButtonText: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+  },
+
+  // Avatar styles
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: spacing.md,
+  },
+  avatarImage: {
+    ...shadows.glow,
+  },
+  avatarOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarEditBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.primary.main,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.background.tertiary,
+  },
+
+  // Picture Modal styles
+  pictureModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'flex-end',
+  },
+  pictureModalContent: {
+    backgroundColor: colors.background.secondary,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    padding: spacing.lg,
+    paddingBottom: spacing['2xl'],
+  },
+  pictureModalTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
+  pictureModalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.secondary,
+  },
+  pictureModalOptionIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.background.tertiary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  pictureModalOptionText: {
+    fontSize: typography.fontSize.md,
+    color: colors.text.primary,
+  },
+  pictureModalRemoveText: {
+    color: colors.status.error,
+  },
+  pictureModalCancelButton: {
+    marginTop: spacing.lg,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+  },
+  pictureModalCancelText: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.tertiary,
   },
 });

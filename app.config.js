@@ -41,6 +41,13 @@ module.exports = {
           'Nutri needs access to your health data to track your activity, sleep, and heart rate for personalized nutrition recommendations.',
         NSHealthUpdateUsageDescription:
           'Nutri needs permission to save nutrition data to Apple Health.',
+        // ARKit world sensing for LiDAR depth capture
+        NSWorldSensingUsageDescription:
+          'Nutri uses LiDAR and ARKit to measure food portions accurately for nutrition tracking.',
+      },
+      // Enable ARKit capability
+      config: {
+        usesIAD: false,
       },
       entitlements: {
         'com.apple.developer.healthkit': true,

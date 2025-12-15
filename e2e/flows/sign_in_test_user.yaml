@@ -1,0 +1,45 @@
+# Reusable flow: Sign in with Primary Test User
+# Signs in with the primary (free tier) test user
+
+appId: host.exp.Exponent
+
+env:
+  TEST_USER_EMAIL: "test@nutri-e2e.local"
+  TEST_USER_PASSWORD: "TestPass123!"
+
+---
+
+# Launch and navigate to app
+- runFlow: launch_app.yaml
+
+# Navigate to sign in
+- tapOn:
+    text: "Sign In"
+
+# Wait for sign in screen
+- assertVisible:
+    id: "signin-screen"
+
+# Enter test user credentials
+- tapOn:
+    id: "signin-email-input"
+- inputText: ${TEST_USER_EMAIL}
+
+- tapOn:
+    id: "signin-password-input"
+- inputText: ${TEST_USER_PASSWORD}
+
+# Submit form
+- tapOn:
+    id: "signin-submit-button"
+
+# Dismiss iOS "Save Password?" dialog if it appears
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+# Wait for navigation to home
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 30000

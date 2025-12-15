@@ -7,6 +7,7 @@ import api from './client';
 import {
   HealthMetric,
   CreateHealthMetricInput,
+  UpdateHealthMetricInput,
   HealthMetricStats,
   TimeSeriesDataPoint,
   HealthMetricType,
@@ -21,7 +22,7 @@ import {
   BulkHealthMetricsResponse,
 } from '@/lib/types/healthkit';
 
-export type { HealthMetric, CreateHealthMetricInput, HealthMetricStats, TimeSeriesDataPoint };
+export type { HealthMetric, CreateHealthMetricInput, UpdateHealthMetricInput, HealthMetricStats, TimeSeriesDataPoint };
 
 /**
  * Query parameters for fetching health metrics
@@ -181,11 +182,34 @@ export const healthMetricsApi = {
   },
 
   /**
+   * Update a health metric
+   * PUT /health-metrics/:id
+   */
+  async update(id: string, data: UpdateHealthMetricInput): Promise<HealthMetric> {
+    const response = await api.put<HealthMetric>(`/health-metrics/${id}`, data);
+    return response.data;
+  },
+
+  /**
    * Delete a health metric
    * DELETE /health-metrics/:id
    */
   async delete(id: string): Promise<void> {
     await api.delete(`/health-metrics/${id}`);
+  },
+
+  /**
+   * Get recent metrics by type (for displaying individual entries)
+   * GET /health-metrics?metricType=X&limit=Y
+   */
+  async getRecentByType(metricType: HealthMetricType, limit: number = 20): Promise<HealthMetric[]> {
+    const response = await api.get('/health-metrics', {
+      params: {
+        metricType,
+        limit,
+      },
+    });
+    return response.data.healthMetrics || response.data;
   },
 
   /**

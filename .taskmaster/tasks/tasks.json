@@ -146,7 +146,7 @@
         "id": "5",
         "title": "Implement Apple HealthKit Integration",
         "description": "Enable automatic sync of comprehensive health data from Apple HealthKit including cardiovascular metrics (RHR, Heart Rate, HRV SDNN/RMSSD), sleep quality metrics (duration, deep sleep, REM, efficiency, score), respiratory data (respiratory rate, oxygen saturation), and VO2Max.",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           "3",
           "4"
@@ -161,9 +161,10 @@
             "description": "Add react-native-health dependency and configure iOS build settings with proper entitlements and Info.plist descriptions",
             "dependencies": [],
             "details": "Install react-native-health via npm/yarn. Update app.json with NSHealthShareUsageDescription explaining why the app needs read access to health data. Add HealthKit entitlement. Configure iOS build to include HealthKit framework. Test that the package builds correctly on iOS simulator/device.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify package installs without errors. Confirm iOS build succeeds. Check Info.plist contains correct health usage descriptions.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-11T20:30:33.391Z"
           },
           {
             "id": 2,
@@ -173,9 +174,10 @@
               1
             ],
             "details": "Create lib/services/healthkit/permissions.ts. Define permission sets for each metric category. Implement isAvailable() check for HealthKit. Implement requestPermissions() with granular permission requests. Handle partial permission grants gracefully. Store permission status in context/state.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Mock HealthKit permissions. Test all permission states (granted, denied, not determined). Test partial permission scenarios.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-11T20:30:33.786Z"
           },
           {
             "id": 3,
@@ -185,9 +187,10 @@
               2
             ],
             "details": "Implement syncCardiovascularMetrics() in healthkit.ts. Query HKQuantityTypeIdentifierRestingHeartRate for RHR. Query HKQuantityTypeIdentifierHeartRateVariabilitySDNN for HRV. Transform HealthKit samples to match HealthMetric API format. Handle unit conversions (HK returns bpm/ms). Include device metadata from sample source.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Mock HK cardiovascular queries. Verify correct transformation to RESTING_HEART_RATE and HEART_RATE_VARIABILITY_SDNN types. Test unit handling.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-11T20:30:33.979Z"
           },
           {
             "id": 4,
@@ -197,9 +200,10 @@
               2
             ],
             "details": "Implement syncRespiratoryMetrics() in healthkit.ts. Query HKQuantityTypeIdentifierRespiratoryRate, HKQuantityTypeIdentifierOxygenSaturation, and HKQuantityTypeIdentifierVO2Max. Transform to RESPIRATORY_RATE, OXYGEN_SATURATION, and VO2_MAX metric types. Handle different sample frequencies (VO2Max is less frequent).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Mock HK respiratory queries. Verify correct transformation to API format. Test handling of sparse VO2Max data.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-11T20:30:34.209Z"
           },
           {
             "id": 5,
@@ -209,9 +213,10 @@
               2
             ],
             "details": "Implement syncSleepMetrics() in healthkit.ts. Query HKCategoryTypeIdentifierSleepAnalysis. Parse sleep stages (asleepCore→DEEP_SLEEP, asleepDeep→DEEP_SLEEP, asleepREM→REM_SLEEP). Calculate total SLEEP_DURATION. Calculate SLEEP_EFFICIENCY (asleep time / in bed time). Handle fragmented sleep sessions.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Mock HK sleep analysis with various stage combinations. Verify correct duration calculations. Test efficiency calculation accuracy. Test fragmented sleep handling.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-11T20:30:34.351Z"
           },
           {
             "id": 6,
@@ -221,9 +226,10 @@
               2
             ],
             "details": "Implement syncActivityMetrics() in healthkit.ts. Query HKQuantityTypeIdentifierStepCount and HKQuantityTypeIdentifierActiveEnergyBurned. Aggregate daily totals. Transform to STEPS and ACTIVE_CALORIES metric types. Handle timezone boundaries for daily aggregation.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Mock HK activity queries. Verify daily aggregation logic. Test timezone handling for day boundaries.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-11T20:30:34.528Z"
           },
           {
             "id": 7,
@@ -236,9 +242,10 @@
               6
             ],
             "details": "Create syncAllHealthData() coordinator function. Implement incremental sync using stored lastSyncTimestamp from SecureStore. Batch API uploads using bulkCreateHealthMetricsSchema (50 items per request). Handle partial failures and retry logic. Update lastSyncTimestamp per metric category on success.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test full sync orchestration flow. Verify batch chunking at 50 items. Test incremental sync with stored timestamps. Test error handling and retry.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-11T20:30:34.685Z"
           },
           {
             "id": 8,
@@ -248,15 +255,16 @@
               7
             ],
             "details": "Create app/settings/health.tsx screen or add section to app/profile.tsx. Display Connect/Disconnect Apple Health button. Show permission status per metric category with toggle indicators. Display last sync timestamp and synced data counts. Add manual Sync Now button with progress indicator. Show sync status (syncing/synced/error) with appropriate feedback.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test UI component rendering. Test connect/disconnect flow. Test sync button interaction and loading states. Test error state display.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-11T20:30:34.823Z"
           }
         ],
         "complexity": 8,
         "recommendedSubtasks": 7,
         "expansionPrompt": "Break down the Apple HealthKit integration into implementation phases:\n\n1. **Library Setup & Configuration**: Install react-native-health or expo-health-connect, configure iOS entitlements in app.json (NSHealthShareUsageDescription), and set up the Expo plugin. Research which library works best with Expo SDK 52.\n\n2. **HealthKit Service Core**: Create `lib/services/healthkit.ts` with typed interfaces matching the existing TypeScript patterns in `lib/types/index.ts`. Implement the base service structure with permission request methods.\n\n3. **Data Fetching Implementation**: Implement data fetching for each metric type mapping HealthKit identifiers to the existing HealthMetricType enum (RESTING_HEART_RATE, HEART_RATE_VARIABILITY_SDNN, SLEEP_DURATION, STEPS, ACTIVE_CALORIES). Note: Add ACTIVE_HEART_RATE to schema.prisma for instantaneous HR.\n\n4. **Activity Sync Implementation**: Map HKWorkoutType to the existing ActivityType enum (RUNNING, CYCLING, SWIMMING, etc.) in schema.prisma. Handle activity data transformation.\n\n5. **Sync Logic & State Management**: Implement initial sync (30 days), incremental sync with lastSyncTimestamp stored in SecureStore (pattern from lib/api/client.ts), batch API calls (50 items/request), and leverage the existing bulk endpoint at `/api/health-metrics/bulk`.\n\n6. **Profile UI Integration**: Extend the existing `app/(tabs)/profile.tsx` with a Health Integration section. Add Connect/Disconnect Apple Health button, sync status indicators, last sync timestamp display, and manual sync button following the existing design patterns.\n\n7. **Testing & Error Handling**: Mock HealthKit data for simulator, test permission flows, data transformation, sync error handling/retry logic, and UI state updates. Follow existing error handling patterns in lib/utils/errorHandling.ts.",
-        "updatedAt": "2025-12-04T21:22:52.954Z"
+        "updatedAt": "2025-12-11T20:30:34.823Z"
       },
       {
         "id": "6",
@@ -635,10 +643,11 @@
         "description": "Add barcode scanning capability to the food logging flow using the device camera and integrate with Open Food Facts API for instant nutrition lookup. This addresses a critical competitive gap - MyFitnessPal's barcode scanner is one of their most-used features.",
         "details": "## Overview\nBarcode scanning is the #1 most requested feature for calorie tracking apps. Users expect instant food lookup by simply pointing their camera at a product barcode.\n\n## Technical Implementation\n\n### 1. Camera Barcode Scanner\n- Use `expo-camera` with barcode scanning enabled\n- Support EAN-13, EAN-8, UPC-A, UPC-E formats (standard food barcodes)\n- Implement scanning UI with viewfinder overlay and haptic feedback\n- Handle low-light conditions with torch toggle\n\n### 2. Open Food Facts API Integration\n- API endpoint: https://world.openfoodfacts.org/api/v0/product/{barcode}.json\n- Free, open-source database with 2M+ products\n- No API key required (rate limit: be respectful)\n- Implement caching layer to reduce API calls\n- Store successfully scanned products locally for offline access\n\n### 3. Data Mapping\nMap Open Food Facts response to Nutri's nutrition schema:\n- nutriments.energy-kcal_100g → calories (per 100g)\n- nutriments.proteins_100g → protein\n- nutriments.carbohydrates_100g → carbs\n- nutriments.fat_100g → fat\n- nutriments.fiber_100g → fiber\n- nutriments.sugars_100g → sugar\n- nutriments.sodium_100g → sodium\n- serving_size → portion reference\n\n### 4. UI/UX Flow\n1. User taps barcode icon in add-meal screen\n2. Camera opens with scanning viewfinder\n3. Barcode detected → API lookup\n4. Results shown: product name, image, nutrition per serving\n5. User can adjust serving size\n6. One-tap to add to meal log\n\n### 5. Fallback Handling\n- Product not found: Offer manual entry or AI food scanner\n- Network error: Check local cache first\n- Invalid barcode: Show helpful error message\n\n### 6. Files to Create/Modify\n- `app/scan-barcode.tsx` - New barcode scanner screen\n- `lib/api/openfoodfacts.ts` - API client\n- `lib/types/barcode.ts` - Type definitions\n- `app/add-meal.tsx` - Add barcode scanner button\n- `server/src/routes/foods.ts` - Cache endpoint (optional)\n\n## Success Metrics\n- Scanner accuracy: >95% successful reads\n- API hit rate: >80% products found\n- User adoption: 50%+ of food logs use barcode\n\n## Dependencies\n- expo-camera (already installed)\n- expo-haptics (for feedback)",
         "testStrategy": "1. Unit tests for Open Food Facts API client (mock responses)\n2. Unit tests for nutrition data mapping\n3. Integration tests for barcode detection\n4. E2E test: scan sample barcode → verify nutrition displayed\n5. Test offline caching behavior\n6. Test fallback flows (product not found, network error)",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
-        "subtasks": []
+        "subtasks": [],
+        "updatedAt": "2025-12-11T18:26:51.696Z"
       },
       {
         "id": "15",
@@ -680,9 +689,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-11T17:18:50.515Z",
+      "lastModified": "2025-12-11T20:30:34.824Z",
       "taskCount": 16,
-      "completedCount": 3,
+      "completedCount": 5,
       "tags": [
         "master"
       ]

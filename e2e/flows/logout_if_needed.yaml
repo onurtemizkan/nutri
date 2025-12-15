@@ -1,0 +1,45 @@
+# Logout flow - called when already logged in
+# Navigates to profile and logs out
+
+appId: host.exp.Exponent
+
+---
+
+# Navigate to profile tab
+- tapOn:
+    id: "tab-profile"
+
+# Wait for profile screen
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000
+
+# Scroll down to find logout button
+- swipe:
+    start: "50%,80%"
+    end: "50%,30%"
+    duration: 300
+
+# Tap logout button
+- tapOn:
+    id: "profile-logout-button"
+
+# Confirm logout if there's a confirmation dialog
+- tapOn:
+    text: "Log Out"
+    optional: true
+
+- tapOn:
+    text: "Logout"
+    optional: true
+
+- tapOn:
+    text: "Yes"
+    optional: true
+
+# Wait for welcome screen after logout
+- extendedWaitUntil:
+    visible:
+      id: "welcome-screen"
+    timeout: 10000

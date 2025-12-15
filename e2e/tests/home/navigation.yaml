@@ -6,44 +6,41 @@ appId: host.exp.Exponent
 ---
 
 # Test: Navigate to Profile Tab
-- launchApp:
-    clearState: true
-
-# Sign in first
-- runFlow: ../../flows/sign_in.yaml
+- runFlow: ../../flows/sign_in_test_user.yaml
 
 - assertVisible:
     id: "home-screen"
 
-# Tap profile tab
+# Tap profile tab using coordinates (tabs have complex accessibility labels)
+# Profile tab is at approximately 83% from left, 95% from top
 - tapOn:
-    id: "tab-profile"
+    point: "83%,95%"
 
 # Verify profile screen
-- assertVisible:
-    id: "profile-screen"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000
 
 ---
 
 # Test: Navigate Back to Home Tab
-- launchApp:
-    clearState: true
-
-# Sign in first
-- runFlow: ../../flows/sign_in.yaml
+- runFlow: ../../flows/sign_in_test_user.yaml
 
 - assertVisible:
     id: "home-screen"
 
-# Go to profile
+# Go to profile (83%, 95%)
 - tapOn:
-    id: "tab-profile"
-- assertVisible:
-    id: "profile-screen"
+    point: "83%,95%"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000
 
-# Go back to home
+# Go back to home (17%, 95%)
 - tapOn:
-    id: "tab-home"
+    point: "17%,95%"
 
 # Verify home screen
 - assertVisible:
@@ -52,11 +49,7 @@ appId: host.exp.Exponent
 ---
 
 # Test: Navigate to Add Meal and Back
-- launchApp:
-    clearState: true
-
-# Sign in first
-- runFlow: ../../flows/sign_in.yaml
+- runFlow: ../../flows/sign_in_test_user.yaml
 
 - assertVisible:
     id: "home-screen"
@@ -65,13 +58,22 @@ appId: host.exp.Exponent
 - tapOn:
     id: "home-add-meal-fab"
 
-- assertVisible:
-    id: "add-meal-screen"
+- extendedWaitUntil:
+    visible:
+      id: "add-meal-screen"
+    timeout: 10000
 
 # Cancel and go back
 - tapOn:
     id: "add-meal-cancel-button"
+    optional: true
+
+- tapOn:
+    text: "Cancel"
+    optional: true
 
 # Should be back on home
-- assertVisible:
-    id: "home-screen"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 10000

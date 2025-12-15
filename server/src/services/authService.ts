@@ -223,6 +223,25 @@ export class AuthService {
     return { valid: true, email: user.email };
   }
 
+  async deleteAccount(userId: string) {
+    // Verify user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Delete user - Prisma will cascade delete all related data
+    // (meals, health metrics, activities, etc.) due to onDelete: Cascade
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+
+    return { message: 'Account deleted successfully' };
+  }
+
   async appleSignIn(data: {
     identityToken: string;
     authorizationCode: string;

@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: borderRadius.md,
-    backgroundColor: 'rgba(255, 45, 85, 0.1)',
+    backgroundColor: colors.special.appleHealthLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.md,
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
   warningBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+    backgroundColor: colors.special.warningLight,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     marginTop: spacing.sm,

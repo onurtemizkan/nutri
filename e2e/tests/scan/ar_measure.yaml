@@ -1,0 +1,214 @@
+# AR Measurement E2E Tests
+# Tests AR-based food portion measurement (requires device with AR/LiDAR capabilities)
+# Note: These tests are marked optional as AR features require specific hardware
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Navigate to AR Measure Screen
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate through scan food flow
+- tapOn:
+    id: "home-add-meal-button"
+    optional: true
+
+- assertVisible:
+    id: "add-meal-screen"
+    optional: true
+
+# Tap scan food option
+- tapOn:
+    id: "scan-food-button"
+    optional: true
+
+- assertVisible:
+    id: "scan-food-screen"
+    optional: true
+
+# Tap AR measure option
+- tapOn:
+    id: "ar-measure-button"
+    optional: true
+
+# Should show AR measure screen
+- assertVisible:
+    id: "ar-measure-screen"
+    optional: true
+
+---
+
+# Test: AR Measure Mode Switch to Manual
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-button"
+    optional: true
+
+- assertVisible:
+    id: "add-meal-screen"
+    optional: true
+
+- tapOn:
+    id: "scan-food-button"
+    optional: true
+
+- assertVisible:
+    id: "scan-food-screen"
+    optional: true
+
+- tapOn:
+    id: "ar-measure-button"
+    optional: true
+
+- assertVisible:
+    id: "ar-measure-screen"
+    optional: true
+
+# Switch to manual mode
+- tapOn:
+    id: "ar-measure-switch-to-manual-button"
+    optional: true
+
+# If permission denied, try use manual button
+- tapOn:
+    id: "ar-measure-use-manual-button"
+    optional: true
+
+---
+
+# Test: AR Measure Manual Mode - Remeasure
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-button"
+    optional: true
+
+- assertVisible:
+    id: "add-meal-screen"
+    optional: true
+
+- tapOn:
+    id: "scan-food-button"
+    optional: true
+
+- assertVisible:
+    id: "scan-food-screen"
+    optional: true
+
+- tapOn:
+    id: "ar-measure-button"
+    optional: true
+
+- assertVisible:
+    id: "ar-measure-screen"
+    optional: true
+
+# If in manual mode with measurement, test remeasure
+- tapOn:
+    id: "ar-measure-remeasure-button"
+    optional: true
+
+---
+
+# Test: AR Measure Manual Mode - Confirm Measurement
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-button"
+    optional: true
+
+- assertVisible:
+    id: "add-meal-screen"
+    optional: true
+
+- tapOn:
+    id: "scan-food-button"
+    optional: true
+
+- assertVisible:
+    id: "scan-food-screen"
+    optional: true
+
+- tapOn:
+    id: "ar-measure-button"
+    optional: true
+
+- assertVisible:
+    id: "ar-measure-screen"
+    optional: true
+
+# If measurement ready, confirm it
+- tapOn:
+    id: "ar-measure-confirm-button"
+    optional: true
+
+---
+
+# Test: AR Measure Switch Between AR and Manual Modes
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-button"
+    optional: true
+
+- assertVisible:
+    id: "add-meal-screen"
+    optional: true
+
+- tapOn:
+    id: "scan-food-button"
+    optional: true
+
+- assertVisible:
+    id: "scan-food-screen"
+    optional: true
+
+- tapOn:
+    id: "ar-measure-button"
+    optional: true
+
+- assertVisible:
+    id: "ar-measure-screen"
+    optional: true
+
+# Switch to manual
+- tapOn:
+    id: "ar-measure-switch-to-manual-button"
+    optional: true
+
+# Try switching back to AR (if available)
+- tapOn:
+    id: "ar-measure-switch-to-ar-button"
+    optional: true

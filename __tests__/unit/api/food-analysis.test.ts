@@ -4,7 +4,7 @@
 
 import axios from 'axios';
 import { FoodAnalysisAPI, foodAnalysisApi } from '@/lib/api/food-analysis';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import {
   fixtures,
   createMockFormData,
@@ -14,7 +14,7 @@ import {
 
 // Mock dependencies
 jest.mock('axios');
-jest.mock('expo-file-system');
+jest.mock('expo-file-system/legacy');
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 const mockedFileSystem = FileSystem as jest.Mocked<typeof FileSystem>;

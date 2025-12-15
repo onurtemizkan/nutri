@@ -69,7 +69,8 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   // Add timeout to prevent hanging requests
-  timeout: 10000, // 10 seconds
+  // 30 seconds is more appropriate for mobile networks and cold starts
+  timeout: 30000, // 30 seconds
 });
 
 // Add auth token to requests

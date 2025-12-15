@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LineChart } from 'react-native-chart-kit';
 import { healthMetricsApi } from '@/lib/api/health-metrics';
 import {
+  HealthMetric,
   HealthMetricStats,
   TimeSeriesDataPoint,
   HealthMetricType,
@@ -21,11 +22,14 @@ import {
   METRIC_CONFIG,
   SOURCE_CONFIG,
 } from '@/lib/types/health-metrics';
+import { SwipeableHealthMetricCard } from '@/lib/components/SwipeableHealthMetricCard';
+import { showAlert } from '@/lib/utils/alert';
+import { getErrorMessage } from '@/lib/utils/errorHandling';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import { useResponsive } from '@/hooks/useResponsive';
 import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 
-type DateRange = '7d' | '30d' | '90d';
+type DateRange = '7d' | '30d' | '90d' | '1y';
 
 export default function HealthMetricDetailScreen() {
   const { metricType } = useLocalSearchParams<{ metricType: string }>();
@@ -41,6 +45,7 @@ export default function HealthMetricDetailScreen() {
 
   const [timeSeries, setTimeSeries] = useState<TimeSeriesDataPoint[]>([]);
   const [stats, setStats] = useState<HealthMetricStats | null>(null);
+  const [recentMetrics, setRecentMetrics] = useState<HealthMetric[]>([]);
   const [dateRange, setDateRange] = useState<DateRange>('30d');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +62,8 @@ export default function HealthMetricDetailScreen() {
         return 30;
       case '90d':
         return 90;
+      case '1y':
+        return 365;
     }
   };
 
@@ -79,13 +86,15 @@ export default function HealthMetricDetailScreen() {
       const startDate = getStartDate(dateRange);
       const endDate = new Date().toISOString();
 
-      const [timeSeriesData, statsData] = await Promise.all([
+      const [timeSeriesData, statsData, recentData] = await Promise.all([
         healthMetricsApi.getTimeSeries(validMetricType, startDate, endDate),
         healthMetricsApi.getStats(validMetricType, getDaysFromRange(dateRange)),
+        healthMetricsApi.getRecentByType(validMetricType, 20),
       ]);
 
       setTimeSeries(timeSeriesData);
       setStats(statsData);
+      setRecentMetrics(recentData);
     } catch (err) {
       console.error('Failed to load metric data:', err);
       setError('Failed to load data');
@@ -99,7 +108,7 @@ export default function HealthMetricDetailScreen() {
     loadData();
   }, [loadData]);
 
-  const dateRanges: DateRange[] = ['7d', '30d', '90d'];
+  const dateRanges: DateRange[] = ['7d', '30d', '90d', '1y'];
 
   const formatValue = (value: number): string => {
     if (!config) return value.toString();
@@ -153,6 +162,33 @@ export default function HealthMetricDetailScreen() {
       default:
         return colors.text.tertiary;
     }
+  };
+
+  const handleEditMetric = (metric: HealthMetric) => {
+    router.push(`/edit-health-metric/${metric.id}`);
+  };
+
+  const handleDeleteMetric = (metric: HealthMetric) => {
+    showAlert(
+      'Delete Entry',
+      `Are you sure you want to delete this ${config?.shortName || 'metric'} entry?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await healthMetricsApi.delete(metric.id);
+              // Refresh data after deletion
+              loadData();
+            } catch (err) {
+              showAlert('Error', getErrorMessage(err, 'Failed to delete entry'));
+            }
+          },
+        },
+      ]
+    );
   };
 
   // Prepare chart data
@@ -213,10 +249,10 @@ export default function HealthMetricDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="health-metric-detail-screen">
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerBackButton}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.headerBackButton} testID="health-metric-detail-back-button">
           <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>
@@ -252,13 +288,13 @@ export default function HealthMetricDetailScreen() {
                     style={styles.dateRangeButtonActive}
                   >
                     <Text style={styles.dateRangeTextActive}>
-                      {range === '7d' ? '7 Days' : range === '30d' ? '30 Days' : '90 Days'}
+                      {range === '7d' ? '7D' : range === '30d' ? '30D' : range === '90d' ? '90D' : '1Y'}
                     </Text>
                   </LinearGradient>
                 ) : (
                   <View style={styles.dateRangeButtonInactive}>
                     <Text style={styles.dateRangeText}>
-                      {range === '7d' ? '7 Days' : range === '30d' ? '30 Days' : '90 Days'}
+                      {range === '7d' ? '7D' : range === '30d' ? '30D' : range === '90d' ? '90D' : '1Y'}
                     </Text>
                   </View>
                 )}
@@ -349,10 +385,12 @@ export default function HealthMetricDetailScreen() {
                     size={20}
                     color={getTrendColor(stats.trend)}
                   />
-                  <Text style={[styles.trendPercentage, { color: getTrendColor(stats.trend) }]}>
-                    {stats.percentChange >= 0 ? '+' : ''}
-                    {stats.percentChange.toFixed(1)}%
-                  </Text>
+                  {stats.percentChange !== undefined && (
+                    <Text style={[styles.trendPercentage, { color: getTrendColor(stats.trend) }]}>
+                      {stats.percentChange >= 0 ? '+' : ''}
+                      {stats.percentChange.toFixed(1)}%
+                    </Text>
+                  )}
                 </View>
               </View>
               <Text style={styles.trendDescription}>
@@ -386,6 +424,24 @@ export default function HealthMetricDetailScreen() {
             <View style={styles.descriptionCard}>
               <Text style={styles.descriptionTitle}>About {config.shortName}</Text>
               <Text style={styles.descriptionText}>{config.description}</Text>
+            </View>
+          )}
+
+          {/* Recent Entries */}
+          {!isLoading && !error && recentMetrics.length > 0 && (
+            <View style={styles.recentEntriesSection}>
+              <Text style={styles.recentEntriesTitle}>Recent Entries</Text>
+              <Text style={styles.recentEntriesHint}>
+                Swipe left or long-press to edit or delete
+              </Text>
+              {recentMetrics.map((metric) => (
+                <SwipeableHealthMetricCard
+                  key={metric.id}
+                  metric={metric}
+                  onEdit={handleEditMetric}
+                  onDelete={handleDeleteMetric}
+                />
+              ))}
             </View>
           )}
         </View>
@@ -689,5 +745,21 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.text.tertiary,
     lineHeight: 20,
+  },
+
+  // Recent Entries
+  recentEntriesSection: {
+    marginTop: spacing.lg,
+  },
+  recentEntriesTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
+  recentEntriesHint: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+    marginBottom: spacing.md,
   },
 });

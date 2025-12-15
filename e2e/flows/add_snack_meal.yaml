@@ -1,0 +1,48 @@
+# Reusable flow: Add a Snack
+# Adds a predefined snack using test data from config
+
+appId: host.exp.Exponent
+
+---
+
+# Assumes already on home screen and authenticated
+
+# Open add meal screen
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Select snack meal type
+- tapOn:
+    id: "meal-type-snack"
+
+# Fill meal details
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: ${MEAL_SNACK_NAME}
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: ${MEAL_SNACK_CALORIES}
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: ${MEAL_SNACK_PROTEIN}
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: ${MEAL_SNACK_CARBS}
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: ${MEAL_SNACK_FAT}
+
+# Save the meal
+- tapOn:
+    id: "add-meal-save-button"
+
+# Should navigate back to home
+- assertVisible:
+    id: "home-screen"

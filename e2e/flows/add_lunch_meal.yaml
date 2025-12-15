@@ -1,0 +1,48 @@
+# Reusable flow: Add a Lunch Meal
+# Adds a predefined lunch meal using test data from config
+
+appId: host.exp.Exponent
+
+---
+
+# Assumes already on home screen and authenticated
+
+# Open add meal screen
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Select lunch meal type
+- tapOn:
+    id: "meal-type-lunch"
+
+# Fill meal details
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: ${MEAL_LUNCH_NAME}
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: ${MEAL_LUNCH_CALORIES}
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: ${MEAL_LUNCH_PROTEIN}
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: ${MEAL_LUNCH_CARBS}
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: ${MEAL_LUNCH_FAT}
+
+# Save the meal
+- tapOn:
+    id: "add-meal-save-button"
+
+# Should navigate back to home
+- assertVisible:
+    id: "home-screen"

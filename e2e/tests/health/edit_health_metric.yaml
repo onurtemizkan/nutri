@@ -1,0 +1,180 @@
+# Edit Health Metric E2E Tests
+# Tests editing existing health metric entries
+
+appId: host.exp.Exponent
+
+env:
+  UPDATED_WEIGHT_VALUE: "73.0"
+  UPDATED_RHR_VALUE: "62"
+
+---
+
+# Test: Navigate to Edit Health Metric Screen
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to health tab
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Tap on a health metric card to view details
+- tapOn:
+    id: "health-metric-rhr"
+    optional: true
+
+# Should show detail view
+- assertVisible:
+    id: "health-metric-detail-screen"
+    optional: true
+
+# Tap on an existing entry to edit
+- tapOn:
+    id: "health-metric-entry-0"
+    optional: true
+
+# Should show edit screen
+- assertVisible:
+    id: "edit-health-metric-screen"
+    optional: true
+
+---
+
+# Test: Edit Health Metric and Save
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Navigate to metric detail
+- tapOn:
+    id: "health-metric-rhr"
+    optional: true
+
+- assertVisible:
+    id: "health-metric-detail-screen"
+    optional: true
+
+# Tap entry to edit
+- tapOn:
+    id: "health-metric-entry-0"
+    optional: true
+
+- assertVisible:
+    id: "edit-health-metric-screen"
+    optional: true
+
+# Clear and update value
+- tapOn:
+    id: "edit-health-metric-value-input"
+    optional: true
+
+- eraseText:
+    charactersToErase: 10
+
+- inputText: ${UPDATED_RHR_VALUE}
+
+# Save the edited metric
+- tapOn:
+    id: "edit-health-metric-save-button"
+    optional: true
+
+# Should return to detail screen
+- assertVisible:
+    id: "health-metric-detail-screen"
+    optional: true
+
+---
+
+# Test: Edit Health Metric and Cancel
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Navigate to metric detail
+- tapOn:
+    id: "health-metric-rhr"
+    optional: true
+
+- assertVisible:
+    id: "health-metric-detail-screen"
+    optional: true
+
+# Tap entry to edit
+- tapOn:
+    id: "health-metric-entry-0"
+    optional: true
+
+- assertVisible:
+    id: "edit-health-metric-screen"
+    optional: true
+
+# Cancel editing
+- tapOn:
+    id: "edit-health-metric-back-button"
+    optional: true
+
+# Should return to detail screen without saving
+- assertVisible:
+    id: "health-metric-detail-screen"
+    optional: true
+
+---
+
+# Test: Edit Health Metric Back Navigation
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Navigate to metric detail
+- tapOn:
+    id: "health-metric-rhr"
+    optional: true
+
+- assertVisible:
+    id: "health-metric-detail-screen"
+    optional: true
+
+# Go back to health screen
+- tapOn:
+    id: "health-metric-detail-back-button"
+    optional: true
+
+- assertVisible:
+    id: "health-screen"

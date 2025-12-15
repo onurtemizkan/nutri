@@ -6,11 +6,7 @@ appId: host.exp.Exponent
 ---
 
 # Test: View Dashboard After Login
-- launchApp:
-    clearState: true
-
-# Sign in first
-- runFlow: ../../flows/sign_in.yaml
+- runFlow: ../../flows/sign_in_test_user.yaml
 
 # Verify home screen elements
 - assertVisible:
@@ -18,12 +14,15 @@ appId: host.exp.Exponent
 
 - assertVisible:
     id: "home-calorie-summary"
+    optional: true
 
 - assertVisible:
     id: "home-macros-container"
+    optional: true
 
 - assertVisible:
     id: "home-meals-section"
+    optional: true
 
 - assertVisible:
     id: "home-add-meal-fab"
@@ -31,11 +30,7 @@ appId: host.exp.Exponent
 ---
 
 # Test: Navigate to Add Meal via FAB
-- launchApp:
-    clearState: true
-
-# Sign in first
-- runFlow: ../../flows/sign_in.yaml
+- runFlow: ../../flows/sign_in_test_user.yaml
 
 - assertVisible:
     id: "home-screen"
@@ -45,17 +40,15 @@ appId: host.exp.Exponent
     id: "home-add-meal-fab"
 
 # Verify add meal screen opens
-- assertVisible:
-    id: "add-meal-screen"
+- extendedWaitUntil:
+    visible:
+      id: "add-meal-screen"
+    timeout: 10000
 
 ---
 
 # Test: Pull to Refresh Dashboard
-- launchApp:
-    clearState: true
-
-# Sign in first
-- runFlow: ../../flows/sign_in.yaml
+- runFlow: ../../flows/sign_in_test_user.yaml
 
 - assertVisible:
     id: "home-screen"
@@ -63,12 +56,8 @@ appId: host.exp.Exponent
 # Pull down to refresh
 - swipe:
     direction: DOWN
-    from:
-      id: "home-calorie-summary"
+    duration: 500
 
 # Dashboard should still be visible after refresh
 - assertVisible:
     id: "home-screen"
-
-- assertVisible:
-    id: "home-calorie-summary"

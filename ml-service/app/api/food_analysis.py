@@ -3,6 +3,7 @@ Food Analysis API endpoints.
 Handles food scanning, classification, and nutrition estimation.
 """
 import logging
+import hashlib
 from typing import Optional
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException
 from fastapi.responses import JSONResponse
@@ -19,6 +20,11 @@ from app.schemas.food_analysis import (
 from app.services.food_analysis_service import food_analysis_service
 
 logger = logging.getLogger(__name__)
+
+
+def compute_image_hash(image_bytes: bytes) -> str:
+    """Compute SHA-256 hash of image for feedback deduplication."""
+    return hashlib.sha256(image_bytes).hexdigest()
 
 router = APIRouter()
 
@@ -67,6 +73,9 @@ async def analyze_food(
             raise HTTPException(
                 status_code=413, detail="Image file too large (max 10MB)"
             )
+
+        # Compute image hash for feedback support
+        image_hash = compute_image_hash(contents)
 
         # Validate file type
         if image.content_type not in ["image/jpeg", "image/png", "image/jpg"]:
@@ -141,6 +150,7 @@ async def analyze_food(
             measurement_quality=measurement_quality,
             processing_time=processing_time,
             suggestions=suggestions if suggestions else None,
+            image_hash=image_hash,
         )
 
     except HTTPException:

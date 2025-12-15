@@ -20,9 +20,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Dimensions,
-  PanResponder,
   Animated,
-  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -31,8 +29,23 @@ import {
   borderRadius,
   typography,
 } from '@/lib/theme/colors';
-import LiDARModule from '@/lib/modules/LiDARModule';
 import type { ARMeasurement } from '@/lib/types/food-analysis';
+import type { CameraIntrinsics, LiDARCapture } from '@/lib/types/ar-data';
+import {
+  measureFoodDimensions,
+  fallbackMeasurement,
+  getAverageDepthInRegion,
+  calculateMeasurementConfidence,
+  validateDimensions,
+  FALLBACK_DEPTH_CM,
+  type ScreenPoint,
+} from '@/lib/utils/depth-projection';
+import {
+  estimateWeight,
+  calculateVolume,
+  applyShapeFactor,
+  DEFAULT_SHAPE_FACTOR_BY_CATEGORY,
+} from '@/lib/utils/portion-estimation';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -78,29 +91,10 @@ export interface ARMeasurementOverlayProps {
   getDepthAtPoint?: (x: number, y: number) => Promise<number>;
   /** Whether the view is active */
   isActive: boolean;
-}
-
-/**
- * Default depth estimation based on typical phone distance
- */
-const DEFAULT_DEPTH_CM = 30;
-
-/**
- * Pixels per cm at typical phone distance (rough estimate)
- * This is calibrated for typical arm's length viewing distance
- */
-const PIXELS_PER_CM_AT_30CM = 12;
-
-/**
- * Calculate real-world distance from screen pixels
- */
-function screenToWorld(
-  pixelDistance: number,
-  depthCm: number
-): number {
-  // Scale factor increases with depth
-  const scaleFactor = depthCm / 30; // Normalized to 30cm reference distance
-  return (pixelDistance / PIXELS_PER_CM_AT_30CM) * scaleFactor;
+  /** Optional: current LiDAR capture for depth lookup and intrinsics */
+  lidarCapture?: LiDARCapture | null;
+  /** Optional: food name for weight estimation */
+  foodName?: string;
 }
 
 /**
@@ -112,6 +106,8 @@ export function ARMeasurementOverlay({
   onCancel,
   getDepthAtPoint,
   isActive,
+  lidarCapture,
+  foodName,
 }: ARMeasurementOverlayProps): React.ReactElement {
   const [measurementState, setMeasurementState] = useState<MeasurementState>({
     point1: null,
@@ -119,7 +115,7 @@ export function ARMeasurementOverlay({
     point3: null,
     step: 'place-first',
     planeDetected: false,
-    averageDepth: DEFAULT_DEPTH_CM,
+    averageDepth: FALLBACK_DEPTH_CM,
   });
 
   // Animated values for point indicators
@@ -167,18 +163,32 @@ export function ARMeasurementOverlay({
 
   /**
    * Get depth at a screen point
+   * Uses LiDAR capture with regional averaging for robustness,
+   * falls back to getDepthAtPoint function, then to default
    */
   const getDepth = useCallback(async (x: number, y: number): Promise<number> => {
+    // First try: Use LiDAR capture with regional averaging (most accurate)
+    if (lidarCapture && lidarCapture.depthBuffer.data.length > 0) {
+      const depth = getAverageDepthInRegion(lidarCapture, x, y, 3);
+      if (depth > 0 && depth < 500) {
+        return depth;
+      }
+    }
+
+    // Second try: Use provided depth function
     if (getDepthAtPoint) {
       try {
         const depth = await getDepthAtPoint(x, y);
-        return depth > 0 ? depth : DEFAULT_DEPTH_CM;
+        if (depth > 0 && depth < 500) {
+          return depth;
+        }
       } catch {
-        return DEFAULT_DEPTH_CM;
+        // Fall through to default
       }
     }
-    return DEFAULT_DEPTH_CM;
-  }, [getDepthAtPoint]);
+
+    return FALLBACK_DEPTH_CM;
+  }, [getDepthAtPoint, lidarCapture]);
 
   /**
    * Handle tap to place measurement point
@@ -248,51 +258,122 @@ export function ARMeasurementOverlay({
   }, [isActive, measurementState.step, measurementState.averageDepth, getDepth, point1Scale, point2Scale, point3Scale]);
 
   /**
-   * Calculate final measurement from placed points
+   * Calculate final measurement from placed points using proper 3D projection
    */
   const calculateMeasurement = useCallback((): ARMeasurement | null => {
     const { point1, point2, point3, averageDepth, planeDetected } = measurementState;
 
     if (!point1 || !point2) return null;
 
-    // Calculate width and height from screen coordinates
-    const pixelWidth = Math.abs(point2.x - point1.x);
-    const pixelHeight = Math.abs(point2.y - point1.y);
+    // Create screen points with depth for 3D projection
+    const screenPoint1: ScreenPoint = {
+      x: point1.x,
+      y: point1.y,
+      depth: point1.depth,
+    };
+    const screenPoint2: ScreenPoint = {
+      x: point2.x,
+      y: point2.y,
+      depth: point2.depth,
+    };
+    const screenPoint3: ScreenPoint | undefined = point3
+      ? { x: point3.x, y: point3.y, depth: point3.depth }
+      : undefined;
 
-    const width = screenToWorld(pixelWidth, averageDepth);
-    const height = screenToWorld(pixelHeight, averageDepth);
+    // Get camera intrinsics from LiDAR capture if available
+    const intrinsics = lidarCapture?.cameraIntrinsics;
 
-    // Calculate depth from third point or estimate
-    let depth: number;
-    if (point3) {
-      // Use vertical distance from point3 to the baseline
-      const pixelDepth = Math.abs(point3.y - (point1.y + point2.y) / 2);
-      depth = screenToWorld(pixelDepth, averageDepth);
+    // Calculate dimensions using proper 3D projection
+    let width: number, height: number, depth: number;
+
+    if (hasLiDAR && intrinsics) {
+      // Use accurate 3D projection with camera intrinsics
+      const dimensions = measureFoodDimensions(
+        screenPoint1,
+        screenPoint2,
+        screenPoint3,
+        intrinsics
+      );
+      width = dimensions.width;
+      height = dimensions.height;
+      depth = dimensions.depth;
     } else {
-      // Estimate depth as smaller of width/height
-      depth = Math.min(width, height) * 0.7;
+      // Fallback to pixel-based estimation
+      const pixelWidth = Math.abs(point2.x - point1.x);
+      const pixelHeight = Math.abs(point2.y - point1.y);
+      const dimensions = fallbackMeasurement(pixelWidth, pixelHeight, averageDepth);
+      width = dimensions.width;
+      height = dimensions.height;
+      depth = dimensions.depth;
     }
 
-    // Determine confidence based on measurement quality
+    // Validate dimensions
+    const validation = validateDimensions(width, height, depth);
+    if (!validation.valid) {
+      console.warn('Invalid measurement:', validation.reason);
+      // Apply bounds to make measurements reasonable
+      width = Math.max(0.5, Math.min(50, width));
+      height = Math.max(0.5, Math.min(50, height));
+      depth = Math.max(0.5, Math.min(50, depth));
+    }
+
+    // Calculate confidence using LiDAR data quality
     let confidence: 'high' | 'medium' | 'low';
-    if (hasLiDAR && planeDetected && point3) {
-      confidence = 'high';
-    } else if (hasLiDAR || (planeDetected && point3)) {
+    if (hasLiDAR && lidarCapture) {
+      confidence = calculateMeasurementConfidence(
+        lidarCapture,
+        screenPoint1,
+        screenPoint2,
+        screenPoint3
+      );
+    } else if (planeDetected && point3) {
       confidence = 'medium';
     } else {
       confidence = 'low';
     }
 
+    // Calculate volume (raw cuboid)
+    const volume = calculateVolume(width, height, depth);
+
+    // Apply default shape factor for unknown food (0.7)
+    const shapeFactor = DEFAULT_SHAPE_FACTOR_BY_CATEGORY.unknown;
+    const volumeAdjusted = applyShapeFactor(volume, shapeFactor);
+
+    // Estimate weight if food name is provided
+    let estimatedWeight: number | undefined;
+    let weightConfidence: number | undefined;
+
+    if (foodName) {
+      const weightEstimate = estimateWeight(width, height, depth, foodName);
+      estimatedWeight = weightEstimate.weight;
+      weightConfidence = weightEstimate.confidence;
+
+      // Adjust weight confidence based on AR measurement confidence
+      const arMultiplier =
+        confidence === 'high' ? 1.0 :
+        confidence === 'medium' ? 0.85 : 0.7;
+      weightConfidence = Math.round(weightConfidence * arMultiplier * 100) / 100;
+    } else {
+      // Use generic density for unknown food
+      const genericDensity = 0.7; // g/cm³
+      estimatedWeight = Math.round(volumeAdjusted * genericDensity);
+      weightConfidence = confidence === 'high' ? 0.5 : confidence === 'medium' ? 0.35 : 0.2;
+    }
+
     return {
-      width: Math.round(width * 10) / 10, // Round to 1 decimal
+      width: Math.round(width * 10) / 10,
       height: Math.round(height * 10) / 10,
       depth: Math.round(depth * 10) / 10,
       distance: Math.round(averageDepth),
       confidence,
       planeDetected,
       timestamp: new Date(),
+      volume: Math.round(volume * 10) / 10,
+      volumeAdjusted: Math.round(volumeAdjusted * 10) / 10,
+      estimatedWeight,
+      weightConfidence,
     };
-  }, [measurementState, hasLiDAR]);
+  }, [measurementState, hasLiDAR, lidarCapture, foodName]);
 
   /**
    * Handle confirm measurement
@@ -314,7 +395,7 @@ export function ARMeasurementOverlay({
       point3: null,
       step: 'place-first',
       planeDetected: measurementState.planeDetected,
-      averageDepth: DEFAULT_DEPTH_CM,
+      averageDepth: FALLBACK_DEPTH_CM,
     });
     point1Scale.setValue(0);
     point2Scale.setValue(0);
@@ -534,6 +615,25 @@ export function ARMeasurementOverlay({
                 <Text style={styles.summaryValue}>{measurement.depth} cm</Text>
               </View>
             </View>
+            {/* Volume and Weight estimates */}
+            <View style={styles.estimatesRow}>
+              <View style={styles.estimateItem}>
+                <Ionicons name="cube-outline" size={16} color={colors.text.tertiary} />
+                <Text style={styles.estimateLabel}>Volume</Text>
+                <Text style={styles.estimateValue}>
+                  {measurement.volumeAdjusted ?? measurement.volume ?? 0} cm³
+                </Text>
+              </View>
+              <View style={styles.estimateDivider} />
+              <View style={styles.estimateItem}>
+                <Ionicons name="scale-outline" size={16} color={colors.text.tertiary} />
+                <Text style={styles.estimateLabel}>Est. Weight</Text>
+                <Text style={styles.estimateValue}>
+                  {measurement.estimatedWeight ?? 0}g
+                </Text>
+              </View>
+            </View>
+
             <View style={styles.confidenceRow}>
               <Ionicons
                 name={
@@ -555,7 +655,10 @@ export function ARMeasurementOverlay({
               <Text style={styles.confidenceText}>
                 {measurement.confidence.charAt(0).toUpperCase() +
                   measurement.confidence.slice(1)}{' '}
-                confidence measurement
+                confidence
+                {measurement.weightConfidence
+                  ? ` • Weight: ${Math.round(measurement.weightConfidence * 100)}%`
+                  : ''}
               </Text>
             </View>
           </View>
@@ -629,7 +732,7 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: colors.overlay.light,
     paddingHorizontal: 4,
     borderRadius: 2,
   },
@@ -641,11 +744,11 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.primary.main,
     borderStyle: 'dashed',
-    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    backgroundColor: colors.special.highlight,
   },
   dimensionLabel: {
     position: 'absolute',
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    backgroundColor: colors.overlay.heavy,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.sm,
@@ -665,7 +768,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: colors.overlay.light,
   },
   backButton: {
     padding: spacing.xs,
@@ -692,7 +795,7 @@ const styles = StyleSheet.create({
     right: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    backgroundColor: colors.overlay.heavy,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     gap: spacing.sm,
@@ -709,7 +812,7 @@ const styles = StyleSheet.create({
     right: 0,
     padding: spacing.md,
     paddingBottom: spacing.xl,
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    backgroundColor: colors.overlay.heavy,
   },
   summaryCard: {
     backgroundColor: colors.background.tertiary,
@@ -741,6 +844,34 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.primary.main,
+  },
+  estimatesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.sm,
+  },
+  estimateItem: {
+    alignItems: 'center',
+    gap: spacing.xs,
+    flex: 1,
+  },
+  estimateLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+  },
+  estimateValue: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  estimateDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: colors.border.secondary,
   },
   confidenceRow: {
     flexDirection: 'row',

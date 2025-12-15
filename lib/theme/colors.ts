@@ -67,6 +67,17 @@ export const colors = {
     glass: 'rgba(30, 35, 48, 0.7)', // Glassmorphism
     highlight: 'rgba(139, 92, 246, 0.1)', // Subtle purple highlight
     shimmer: 'rgba(255, 255, 255, 0.1)', // Shimmer effect
+    warningLight: 'rgba(245, 158, 11, 0.1)', // Warning background
+    appleHealth: '#FF2D55', // Apple Health brand color
+    appleHealthLight: 'rgba(255, 45, 85, 0.1)', // Apple Health background
+  },
+
+  // Camera colors (for visibility against camera feed)
+  camera: {
+    button: 'rgba(255, 255, 255, 0.3)', // Semi-transparent white
+    buttonInner: '#FFFFFF', // Solid white for capture button
+    textLight: 'rgba(255, 255, 255, 0.8)', // Visible text on dark/camera
+    textDim: 'rgba(255, 255, 255, 0.5)', // Dimmer text on camera
   },
 } as const;
 
@@ -145,6 +156,7 @@ export const borderRadius = {
   md: 12,
   lg: 16,
   xl: 24,
+  '2xl': 32,
   full: 9999,
 } as const;
 

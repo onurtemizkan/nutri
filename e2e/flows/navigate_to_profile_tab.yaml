@@ -1,0 +1,16 @@
+# Reusable flow: Navigate to Profile Tab
+# Navigates from any screen to the Profile tab
+
+appId: host.exp.Exponent
+
+---
+
+# Tap on profile tab using coordinates (83%, 95%)
+- tapOn:
+    point: "83%,95%"
+
+# Wait for profile screen to load
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000

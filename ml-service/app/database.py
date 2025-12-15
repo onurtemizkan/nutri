@@ -87,6 +87,7 @@ async def init_db() -> None:
     async with engine.begin() as conn:
         # Import all models here to ensure they're registered
         from app.models import health_metric, activity, meal, user  # noqa: F401
+        from app.models import food_feedback  # noqa: F401
 
         # Create all tables (only for development)
         if settings.environment == "development":

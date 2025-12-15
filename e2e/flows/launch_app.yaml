@@ -8,40 +8,59 @@ appId: host.exp.Exponent
 # Launch Expo Go first
 - launchApp:
     clearState: true
+    clearKeychain: true
 
 # Wait for Expo Go to be ready
-- assertVisible:
-    text: "Expo Go"
+- extendedWaitUntil:
+    visible:
+      text: "Expo Go"
+    timeout: 30000
 
 # Open the dev server URL
 - openLink: "exp://localhost:8081"
 
-# Wait for the bundle to load - either dev menu or welcome screen will appear
+# Wait for the bundle to load and dev menu to appear
+# The Expo Go dev menu doesn't expose text to accessibility
+# We wait for the "nutri" app title in the header which IS exposed
 - extendedWaitUntil:
     visible:
-      text: "Continue"
-    timeout: 90000
+      text: "nutri"
+    timeout: 120000
 
-# Dismiss the developer menu
+# Swipe down on the dev menu modal to dismiss it
+# The modal is a bottom sheet that can be swiped away
+# Try swiping down multiple times to ensure dismissal
+- swipe:
+    start: "50%,65%"
+    end: "50%,98%"
+    duration: 300
+
+- swipe:
+    start: "50%,65%"
+    end: "50%,98%"
+    duration: 300
+
+- swipe:
+    start: "50%,65%"
+    end: "50%,98%"
+    duration: 300
+
+# Dismiss any iOS system dialogs (like "Save Password?")
 - tapOn:
-    text: "Continue"
+    text: "Not Now"
+    optional: true
 
-# Wait for the welcome screen to appear
-- extendedWaitUntil:
-    visible:
-      id: "welcome-screen"
-    timeout: 10000
-
-# Dismiss the React Native element inspector by tapping the Inspect button at bottom-left
-# The inspector shows "Inspect" tab at bottom-left - tap it to toggle off
 - tapOn:
-    point: "10%,95%"
+    text: "Cancel"
+    optional: true
 
-# Wait a moment for inspector to dismiss
+# Wait a moment for any transitions
 - swipe:
     direction: DOWN
-    duration: 50
+    duration: 500
 
-# Tap again to ensure inspection mode is off
-- tapOn:
-    point: "50%,50%"
+# At this point, app should show either welcome screen OR home screen
+# Check for welcome screen first
+- assertVisible:
+    id: "welcome-screen"
+    optional: true
