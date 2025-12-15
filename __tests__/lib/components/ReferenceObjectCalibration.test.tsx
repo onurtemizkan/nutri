@@ -24,17 +24,7 @@ jest.mock('@expo/vector-icons', () => ({
   Ionicons: 'Ionicons',
 }));
 
-// Mock DeviceEventEmitter (needed since tests might import ar-measure indirectly)
-jest.mock('react-native', () => {
-  const RN = jest.requireActual('react-native');
-  RN.DeviceEventEmitter = {
-    emit: jest.fn(),
-    addListener: jest.fn(() => ({ remove: jest.fn() })),
-    removeListener: jest.fn(),
-    removeAllListeners: jest.fn(),
-  };
-  return RN;
-});
+// Note: DeviceEventEmitter is mocked globally in jest.setup.js
 
 describe('ReferenceObjectCalibration', () => {
   const mockOnCalibrate = jest.fn();
