@@ -10,6 +10,7 @@ from .predictions import router as predictions_router
 from .interpretability import router as interpretability_router
 from .food_analysis import router as food_analysis_router
 from .food_feedback import router as food_feedback_router
+from .sensitivity import router as sensitivity_router
 
 # Main API router
 api_router = APIRouter(prefix="/api")
@@ -27,5 +28,8 @@ api_router.include_router(
 )
 api_router.include_router(food_analysis_router, prefix="/food", tags=["food-analysis"])
 api_router.include_router(food_feedback_router, prefix="/food", tags=["food-feedback"])
+api_router.include_router(
+    sensitivity_router, prefix="/sensitivity", tags=["sensitivity-detection"]
+)
 
 __all__ = ["api_router"]

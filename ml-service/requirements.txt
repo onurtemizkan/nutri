@@ -55,6 +55,9 @@ feature-engine==1.6.2
 joblib==1.3.2
 cloudpickle==3.0.0
 
+# Text Processing & Fuzzy Matching
+rapidfuzz==3.6.1  # Fast fuzzy string matching for ingredient detection
+
 # Utilities
 python-dotenv==1.0.0
 python-jose[cryptography]==3.3.0
