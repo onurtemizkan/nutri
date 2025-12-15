@@ -3,6 +3,18 @@
  * Global mocks and configurations for all tests
  */
 
+// Use fake timers to prevent cleanup errors from timers firing after test teardown
+// This prevents the "importing after Jest environment torn down" errors
+jest.useFakeTimers();
+
+// Run pending timers and clean up after each test
+afterEach(() => {
+  // Run any pending timers to completion
+  jest.runOnlyPendingTimers();
+  // Clear any remaining timers
+  jest.clearAllTimers();
+});
+
 // Mock react-native with DeviceEventEmitter and enhanced Animated
 jest.mock('react-native', () => {
   const RN = jest.requireActual('react-native');
