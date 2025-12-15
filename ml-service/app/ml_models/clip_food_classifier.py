@@ -45,7 +45,6 @@ FOOD_PROMPTS: Dict[str, List[str]] = {
     "raspberry": ["fresh raspberries", "red raspberries", "raspberry fruit"],
     "strawberry": ["fresh strawberries", "red strawberry", "ripe strawberries"],
     "watermelon": ["watermelon slices", "fresh watermelon", "watermelon fruit"],
-
     # === VEGETABLES ===
     "asparagus": ["fresh asparagus spears", "green asparagus", "asparagus vegetable"],
     "bell_pepper": [
@@ -72,7 +71,6 @@ FOOD_PROMPTS: Dict[str, List[str]] = {
     "tomato": ["a fresh tomato", "red tomatoes", "ripe tomato"],
     "zucchini": ["fresh zucchini", "green zucchini", "sliced zucchini"],
     "beets": ["fresh beets", "red beets", "beetroot"],
-
     # === NUTS & SEEDS ===
     "almonds": ["whole almonds", "raw almonds", "almond nuts"],
     "cashews": ["cashew nuts", "raw cashews", "roasted cashews"],
@@ -82,7 +80,6 @@ FOOD_PROMPTS: Dict[str, List[str]] = {
     "chia_seeds": ["chia seeds", "black chia seeds"],
     "flax_seeds": ["flaxseeds", "ground flaxseed"],
     "sunflower_seeds": ["sunflower seeds", "shelled sunflower seeds"],
-
     # === PROTEINS ===
     "chicken": ["grilled chicken breast", "roasted chicken", "cooked chicken meat"],
     "beef": ["cooked beef", "grilled steak", "beef meat"],
@@ -108,7 +105,6 @@ FOOD_PROMPTS: Dict[str, List[str]] = {
         "pan fried eggs",
     ],
     "tofu": ["tofu cubes", "fried tofu", "silken tofu"],
-
     # === DAIRY ===
     "cheese": [
         "cheese wedge on plate",
@@ -122,7 +118,6 @@ FOOD_PROMPTS: Dict[str, List[str]] = {
     "milk": ["glass of milk", "white milk", "pouring milk"],
     "yogurt": ["yogurt in a bowl", "greek yogurt", "plain yogurt"],
     "butter": ["butter block", "sliced butter"],
-
     # === GRAINS & CARBS ===
     "rice": ["cooked white rice", "steamed rice", "rice bowl"],
     "pasta": ["cooked pasta", "spaghetti noodles", "pasta dish"],
@@ -136,7 +131,6 @@ FOOD_PROMPTS: Dict[str, List[str]] = {
         "porridge with fruit",
     ],
     "quinoa": ["cooked quinoa", "quinoa grain"],
-
     # === PREPARED DISHES ===
     "burger": ["a hamburger", "cheeseburger", "beef burger with bun"],
     "pizza": ["a slice of pizza", "whole pizza", "pepperoni pizza"],
@@ -148,7 +142,6 @@ FOOD_PROMPTS: Dict[str, List[str]] = {
     "soup": ["a bowl of soup", "hot soup", "vegetable soup"],
     "stew": ["beef stew", "hearty stew", "meat stew"],
     "curry": ["curry dish", "chicken curry", "curry with rice"],
-
     # === BREAKFAST ===
     "pancake": ["stack of pancakes", "pancakes with syrup", "fluffy pancakes"],
     "waffle": [
@@ -173,14 +166,12 @@ FOOD_PROMPTS: Dict[str, List[str]] = {
     ],
     "muffin": ["a muffin", "blueberry muffin", "breakfast muffin"],
     "toast": ["buttered toast", "toast slices", "toasted bread"],
-
     # === DESSERTS ===
     "chocolate": ["chocolate bar", "chocolate pieces", "dark chocolate"],
     "ice_cream": ["ice cream scoop", "ice cream cone", "vanilla ice cream"],
     "cake": ["slice of cake", "birthday cake", "chocolate cake"],
     "cookies": ["chocolate chip cookies", "baked cookies", "cookies"],
     "pie": ["a slice of pie", "fruit pie", "apple pie"],
-
     # === BEVERAGES ===
     "coffee": ["cup of coffee", "black coffee", "latte"],
     "tea": ["cup of tea", "hot tea", "green tea"],
@@ -190,7 +181,6 @@ FOOD_PROMPTS: Dict[str, List[str]] = {
     "water": ["glass of water", "bottled water", "drinking water"],
     "beer": ["glass of beer", "beer mug", "draft beer"],
     "wine": ["glass of wine", "red wine", "white wine"],
-
     # === CONDIMENTS & EXTRAS ===
     "honey": ["honey jar", "golden honey", "dripping honey"],
     "olive_oil": ["olive oil bottle", "extra virgin olive oil"],
@@ -198,7 +188,6 @@ FOOD_PROMPTS: Dict[str, List[str]] = {
     "hummus": ["hummus dip", "bowl of hummus", "chickpea hummus"],
     "guacamole": ["guacamole dip", "fresh guacamole", "avocado dip"],
     "salsa": ["tomato salsa", "fresh salsa", "salsa dip"],
-
     # === ASIAN DISHES ===
     "ramen": [
         "bowl of ramen noodles with broth",
@@ -213,7 +202,6 @@ FOOD_PROMPTS: Dict[str, List[str]] = {
     "dumplings": ["steamed dumplings", "asian dumplings", "pot stickers"],
     "spring_rolls": ["spring rolls", "fried spring rolls", "vietnamese spring rolls"],
     "pad_thai": ["pad thai noodles", "thai pad thai", "stir fried noodles"],
-
     # === SNACKS ===
     "chips": ["potato chips", "tortilla chips", "crispy chips"],
     "popcorn": ["popcorn", "buttered popcorn", "movie popcorn"],
@@ -223,8 +211,7 @@ FOOD_PROMPTS: Dict[str, List[str]] = {
 
 # Simplified prompts for faster matching
 SIMPLE_FOOD_PROMPTS: Dict[str, str] = {
-    key: f"a photo of {key.replace('_', ' ')}"
-    for key in FOOD_PROMPTS.keys()
+    key: f"a photo of {key.replace('_', ' ')}" for key in FOOD_PROMPTS.keys()
 }
 
 
@@ -240,7 +227,7 @@ class CLIPFoodClassifier:
         self,
         model_name: str = "openai/clip-vit-base-patch32",
         device: Optional[str] = None,
-        use_detailed_prompts: bool = True
+        use_detailed_prompts: bool = True,
     ):
         """
         Initialize CLIP food classifier.
@@ -261,7 +248,9 @@ class CLIPFoodClassifier:
         self._loaded = False
         self._text_features_cache: Dict[str, torch.Tensor] = {}
 
-        logger.info(f"CLIPFoodClassifier initialized (model: {model_name}, device: {self.device})")
+        logger.info(
+            f"CLIPFoodClassifier initialized (model: {model_name}, device: {self.device})"
+        )
 
     def _detect_device(self) -> str:
         """Detect best available device."""
@@ -305,12 +294,16 @@ class CLIPFoodClassifier:
             for food_key, prompts in FOOD_PROMPTS.items():
                 features_list = []
                 for prompt in prompts:
-                    inputs = self._processor(text=[prompt], return_tensors="pt", padding=True)
+                    inputs = self._processor(
+                        text=[prompt], return_tensors="pt", padding=True
+                    )
                     inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
                     with torch.no_grad():
                         text_features = self._model.get_text_features(**inputs)
-                        text_features = text_features / text_features.norm(dim=-1, keepdim=True)
+                        text_features = text_features / text_features.norm(
+                            dim=-1, keepdim=True
+                        )
                         features_list.append(text_features)
 
                 # Average the features from all prompts
@@ -320,22 +313,28 @@ class CLIPFoodClassifier:
         else:
             # Use simple prompts (faster)
             for food_key, prompt in SIMPLE_FOOD_PROMPTS.items():
-                inputs = self._processor(text=[prompt], return_tensors="pt", padding=True)
+                inputs = self._processor(
+                    text=[prompt], return_tensors="pt", padding=True
+                )
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
                 with torch.no_grad():
                     text_features = self._model.get_text_features(**inputs)
-                    text_features = text_features / text_features.norm(dim=-1, keepdim=True)
+                    text_features = text_features / text_features.norm(
+                        dim=-1, keepdim=True
+                    )
                     self._text_features_cache[food_key] = text_features
 
-        logger.info(f"Pre-computed features for {len(self._text_features_cache)} food categories")
+        logger.info(
+            f"Pre-computed features for {len(self._text_features_cache)} food categories"
+        )
 
     @torch.no_grad()
     def classify(
         self,
         image: Image.Image,
         candidate_foods: Optional[List[str]] = None,
-        top_k: int = 5
+        top_k: int = 5,
     ) -> List[Tuple[str, float]]:
         """
         Classify a food image using CLIP.
@@ -364,7 +363,9 @@ class CLIPFoodClassifier:
 
         # Determine which foods to classify against
         if candidate_foods:
-            foods_to_check = [f for f in candidate_foods if f in self._text_features_cache]
+            foods_to_check = [
+                f for f in candidate_foods if f in self._text_features_cache
+            ]
         else:
             foods_to_check = list(self._text_features_cache.keys())
 
@@ -394,10 +395,7 @@ class CLIPFoodClassifier:
 
     @torch.no_grad()
     def classify_with_prompts(
-        self,
-        image: Image.Image,
-        custom_prompts: List[str],
-        top_k: int = 5
+        self, image: Image.Image, custom_prompts: List[str], top_k: int = 5
     ) -> List[Tuple[str, float]]:
         """
         Classify using custom text prompts (for dynamic classification).
@@ -423,7 +421,9 @@ class CLIPFoodClassifier:
         image_features = image_features / image_features.norm(dim=-1, keepdim=True)
 
         # Get text features for all prompts
-        text_inputs = self._processor(text=custom_prompts, return_tensors="pt", padding=True)
+        text_inputs = self._processor(
+            text=custom_prompts, return_tensors="pt", padding=True
+        )
         text_inputs = {k: v.to(self.device) for k, v in text_inputs.items()}
         text_features = self._model.get_text_features(**text_inputs)
         text_features = text_features / text_features.norm(dim=-1, keepdim=True)
@@ -460,14 +460,12 @@ _clip_classifier_instance: Optional[CLIPFoodClassifier] = None
 
 
 def get_clip_classifier(
-    model_name: str = "openai/clip-vit-base-patch32",
-    use_detailed_prompts: bool = True
+    model_name: str = "openai/clip-vit-base-patch32", use_detailed_prompts: bool = True
 ) -> CLIPFoodClassifier:
     """Get singleton CLIP classifier instance."""
     global _clip_classifier_instance
     if _clip_classifier_instance is None:
         _clip_classifier_instance = CLIPFoodClassifier(
-            model_name=model_name,
-            use_detailed_prompts=use_detailed_prompts
+            model_name=model_name, use_detailed_prompts=use_detailed_prompts
         )
     return _clip_classifier_instance

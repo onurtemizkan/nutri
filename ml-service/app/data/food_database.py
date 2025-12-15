@@ -1679,7 +1679,13 @@ FOOD_DATABASE: Dict[str, FoodEntry] = {
         lysine=45,  # mg per 28g - USDA FDC
         arginine=80,  # mg per 28g - USDA FDC
         fdc_id="170575",
-        aliases=["roasted chestnuts", "sweet chestnuts", "marron", "castagna", "kestane"],
+        aliases=[
+            "roasted chestnuts",
+            "sweet chestnuts",
+            "marron",
+            "castagna",
+            "kestane",
+        ],
         default_cooking_method=CookingMethod.ROASTED,
     ),
     "hazelnuts": FoodEntry(
@@ -2472,7 +2478,14 @@ FOOD_DATABASE: Dict[str, FoodEntry] = {
         fiber=2,
         sugar=4,
         fdc_id="1103139",
-        aliases=["pepper", "sweet pepper", "capsicum", "red pepper", "green pepper", "yellow pepper"],
+        aliases=[
+            "pepper",
+            "sweet pepper",
+            "capsicum",
+            "red pepper",
+            "green pepper",
+            "yellow pepper",
+        ],
     ),
     "naan": FoodEntry(
         name="naan",

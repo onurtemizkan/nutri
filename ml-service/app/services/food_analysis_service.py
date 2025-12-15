@@ -58,7 +58,11 @@ class FoodAnalysisService:
         self._food_detector: Optional[FoodDetector] = None
         self._use_ensemble = use_ensemble
         self._enable_multi_food = enable_multi_food
-        self.model_name = "Ensemble Food Classifier" if use_ensemble else "nateraw/food (ViT-Food-101)"
+        self.model_name = (
+            "Ensemble Food Classifier"
+            if use_ensemble
+            else "nateraw/food (ViT-Food-101)"
+        )
         self._food_classes = list(FOOD_DATABASE.keys())
         logger.info(
             f"Initialized FoodAnalysisService with {'ensemble' if use_ensemble else 'single'} model, "
@@ -108,7 +112,11 @@ class FoodAnalysisService:
         """
         start_time = time.time()
         suggestions = []
-        use_multi_food = enable_multi_food if enable_multi_food is not None else self._enable_multi_food
+        use_multi_food = (
+            enable_multi_food
+            if enable_multi_food is not None
+            else self._enable_multi_food
+        )
 
         try:
             # Step 1: Detect food regions if multi-food is enabled
@@ -117,18 +125,21 @@ class FoodAnalysisService:
                 try:
                     detector = self._get_food_detector()
                     detection_result: DetectionResult = detector.detect(
-                        image,
-                        confidence_threshold=self.MULTI_FOOD_CONFIDENCE_THRESHOLD
+                        image, confidence_threshold=self.MULTI_FOOD_CONFIDENCE_THRESHOLD
                     )
                     detected_regions = detection_result.regions
-                    logger.info(f"Multi-food detection found {len(detected_regions)} food regions")
+                    logger.info(
+                        f"Multi-food detection found {len(detected_regions)} food regions"
+                    )
 
                     if len(detected_regions) > 1:
                         suggestions.append(
                             f"Detected {len(detected_regions)} food items in image"
                         )
                 except Exception as e:
-                    logger.warning(f"Multi-food detection failed, falling back to single: {e}")
+                    logger.warning(
+                        f"Multi-food detection failed, falling back to single: {e}"
+                    )
                     detected_regions = []
 
             # Step 2: Process foods (multi or single)
@@ -137,35 +148,33 @@ class FoodAnalysisService:
             if len(detected_regions) > 1:
                 # Multi-food mode: classify each detected region
                 food_items = await self._analyze_multi_food(
-                    detected_regions,
-                    dimensions,
-                    cooking_method,
-                    suggestions
+                    detected_regions, dimensions, cooking_method, suggestions
                 )
             elif len(detected_regions) == 1:
                 # Single food detected by OWL-ViT: use the hint for better classification
                 region = detected_regions[0]
-                logger.info(f"Single food mode with OWL-ViT hint: '{region.query_label}'")
+                logger.info(
+                    f"Single food mode with OWL-ViT hint: '{region.query_label}'"
+                )
                 food_item = await self._analyze_single_food(
                     image,
                     dimensions,
                     cooking_method,
                     suggestions,
-                    query_hint=region.query_label
+                    query_hint=region.query_label,
                 )
                 food_items = [food_item]
             else:
                 # No OWL-ViT detection: classify the whole image without hint
                 food_item = await self._analyze_single_food(
-                    image,
-                    dimensions,
-                    cooking_method,
-                    suggestions
+                    image, dimensions, cooking_method, suggestions
                 )
                 food_items = [food_item]
 
             # Assess overall measurement quality
-            measurement_quality = self._assess_measurement_quality(dimensions) if dimensions else "low"
+            measurement_quality = (
+                self._assess_measurement_quality(dimensions) if dimensions else "low"
+            )
 
             processing_time = (time.time() - start_time) * 1000  # Convert to ms
 
@@ -208,24 +217,22 @@ class FoodAnalysisService:
             try:
                 # Classify the cropped region with OWL-ViT query hint
                 food_class, confidence, alternatives = await self._classify_food(
-                    region.cropped_image,
-                    query_hint=region.query_label
+                    region.cropped_image, query_hint=region.query_label
                 )
 
                 food_entry = get_food_entry(food_class)
-                cooking_method_enum = self._parse_cooking_method(cooking_method, food_entry)
+                cooking_method_enum = self._parse_cooking_method(
+                    cooking_method, food_entry
+                )
 
                 # Estimate portion for this region
                 if dimensions:
                     # Calculate proportional dimensions based on region size
                     region_dimensions = self._scale_dimensions_for_region(
-                        dimensions,
-                        region
+                        dimensions, region
                     )
                     portion_result = self._estimate_portion_from_dimensions(
-                        region_dimensions,
-                        food_class,
-                        cooking_method_enum
+                        region_dimensions, food_class, cooking_method_enum
                     )
                     portion_weight = portion_result["weight"]
                 else:
@@ -243,7 +250,9 @@ class FoodAnalysisService:
 
                 food_item = FoodItem(
                     name=self._format_food_name(food_class, cooking_method_enum),
-                    confidence=round(confidence * region.confidence, 2),  # Combine confidences
+                    confidence=round(
+                        confidence * region.confidence, 2
+                    ),  # Combine confidences
                     portion_size=portion_size,
                     portion_weight=portion_weight,
                     nutrition=nutrition_info,
@@ -331,7 +340,9 @@ class FoodAnalysisService:
             Single FoodItem object
         """
         # Classify food using ensemble (with query_hint if available)
-        food_class, confidence, alternatives = await self._classify_food(image, query_hint=query_hint)
+        food_class, confidence, alternatives = await self._classify_food(
+            image, query_hint=query_hint
+        )
 
         food_entry = get_food_entry(food_class)
         cooking_method_enum = self._parse_cooking_method(cooking_method, food_entry)
@@ -342,7 +353,9 @@ class FoodAnalysisService:
                 dimensions, food_class, cooking_method_enum
             )
             portion_weight = portion_result["weight"]
-            _measurement_quality = self._assess_measurement_quality(dimensions)  # noqa: F841
+            _measurement_quality = self._assess_measurement_quality(
+                dimensions
+            )  # noqa: F841
 
             validation = validate_portion(
                 portion_weight,
@@ -357,9 +370,7 @@ class FoodAnalysisService:
         else:
             portion_weight = food_entry.serving_weight if food_entry else 100
             _measurement_quality = "low"  # noqa: F841
-            suggestions.append(
-                "No measurements provided - using standard serving size"
-            )
+            suggestions.append("No measurements provided - using standard serving size")
 
         # Calculate nutrition
         nutrition_info = self._calculate_nutrition(
@@ -439,14 +450,18 @@ class FoodAnalysisService:
                     image=image,
                     database_keys=self._food_classes,
                     top_k=3,
-                    query_hint=query_hint
+                    query_hint=query_hint,
                 )
 
                 # Build alternatives list from ensemble result
                 alternatives = []
                 for alt_class, alt_conf in result.alternatives:
                     alt_entry = get_food_entry(alt_class)
-                    display_name = alt_entry.display_name if alt_entry else alt_class.replace("_", " ").title()
+                    display_name = (
+                        alt_entry.display_name
+                        if alt_entry
+                        else alt_class.replace("_", " ").title()
+                    )
                     alternatives.append(
                         FoodItemAlternative(
                             name=display_name,
@@ -464,16 +479,22 @@ class FoodAnalysisService:
             else:
                 # Single model classification (Food-101 only)
                 classifier = self._get_classifier()
-                primary_class, confidence, alt_predictions = classifier.classify_with_database_mapping(
-                    image=image,
-                    database_keys=self._food_classes,
-                    top_k=3
+                (
+                    primary_class,
+                    confidence,
+                    alt_predictions,
+                ) = classifier.classify_with_database_mapping(
+                    image=image, database_keys=self._food_classes, top_k=3
                 )
 
                 alternatives = []
                 for alt_class, alt_conf in alt_predictions:
                     alt_entry = get_food_entry(alt_class)
-                    display_name = alt_entry.display_name if alt_entry else alt_class.replace("_", " ").title()
+                    display_name = (
+                        alt_entry.display_name
+                        if alt_entry
+                        else alt_class.replace("_", " ").title()
+                    )
                     alternatives.append(
                         FoodItemAlternative(
                             name=display_name,
@@ -481,7 +502,9 @@ class FoodAnalysisService:
                         )
                     )
 
-                logger.info(f"ViT classified as: {primary_class} (confidence: {confidence:.2f})")
+                logger.info(
+                    f"ViT classified as: {primary_class} (confidence: {confidence:.2f})"
+                )
                 return primary_class, round(confidence, 2), alternatives
 
         except Exception as e:
@@ -837,7 +860,9 @@ class FoodAnalysisService:
                 "version": "5.0.0",  # Bumped for multi-food support
                 "accuracy": 0.92,
                 "num_classes": len(self._food_classes),
-                "categories": list(set(e.category.value for e in FOOD_DATABASE.values())),
+                "categories": list(
+                    set(e.category.value for e in FOOD_DATABASE.values())
+                ),
                 "model_type": "Ensemble (Multi-Model) + Multi-Food Detection",
                 "strategy": "OWL-ViT detection + cascading ensemble classification",
                 "multi_food_detection": self._enable_multi_food,
@@ -865,7 +890,9 @@ class FoodAnalysisService:
                 "accuracy": 0.90,
                 "num_classes": len(self._food_classes),
                 "food_101_classes": 101,
-                "categories": list(set(e.category.value for e in FOOD_DATABASE.values())),
+                "categories": list(
+                    set(e.category.value for e in FOOD_DATABASE.values())
+                ),
                 "model_type": "Vision Transformer (ViT)",
                 "dataset": "Food-101",
                 "multi_food_detection": self._enable_multi_food,

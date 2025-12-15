@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 class ModelType(Enum):
     """Types of specialized classifiers."""
+
     CLIP = "clip"  # Primary - zero-shot with excellent raw produce
     FOOD_101 = "food_101"  # Secondary - prepared dishes backup
     FRUITS_VEGETABLES = "fruits_vegetables"
@@ -35,6 +36,7 @@ class ModelType(Enum):
 @dataclass
 class ClassificationResult:
     """Result from a single classifier."""
+
     model_type: ModelType
     class_name: str
     confidence: float
@@ -44,6 +46,7 @@ class ClassificationResult:
 @dataclass
 class EnsembleResult:
     """Combined result from ensemble."""
+
     primary_class: str
     confidence: float
     alternatives: List[Tuple[str, float]]
@@ -54,30 +57,101 @@ class EnsembleResult:
 # Fruit and Vegetable class mappings
 # Based on common fruit/vegetable datasets
 FRUITS_VEGETABLES_CLASSES = [
-    "apple", "banana", "orange", "grape", "strawberry", "blueberry", "raspberry",
-    "mango", "pineapple", "watermelon", "cantaloupe", "peach", "pear", "plum",
-    "cherry", "kiwi", "lemon", "lime", "grapefruit", "pomegranate", "papaya",
-    "coconut", "avocado", "tomato", "cucumber", "carrot", "broccoli", "spinach",
-    "lettuce", "cabbage", "cauliflower", "potato", "sweet_potato", "onion",
-    "garlic", "ginger", "bell_pepper", "chili_pepper", "corn", "peas", "beans",
-    "mushroom", "eggplant", "zucchini", "squash", "pumpkin", "beet", "radish",
-    "turnip", "celery", "asparagus", "artichoke",
+    "apple",
+    "banana",
+    "orange",
+    "grape",
+    "strawberry",
+    "blueberry",
+    "raspberry",
+    "mango",
+    "pineapple",
+    "watermelon",
+    "cantaloupe",
+    "peach",
+    "pear",
+    "plum",
+    "cherry",
+    "kiwi",
+    "lemon",
+    "lime",
+    "grapefruit",
+    "pomegranate",
+    "papaya",
+    "coconut",
+    "avocado",
+    "tomato",
+    "cucumber",
+    "carrot",
+    "broccoli",
+    "spinach",
+    "lettuce",
+    "cabbage",
+    "cauliflower",
+    "potato",
+    "sweet_potato",
+    "onion",
+    "garlic",
+    "ginger",
+    "bell_pepper",
+    "chili_pepper",
+    "corn",
+    "peas",
+    "beans",
+    "mushroom",
+    "eggplant",
+    "zucchini",
+    "squash",
+    "pumpkin",
+    "beet",
+    "radish",
+    "turnip",
+    "celery",
+    "asparagus",
+    "artichoke",
 ]
 
 # Generic fallback terms that indicate the classifier couldn't identify the food
 # Expanded to catch more common false positives from brutal testing
 GENERIC_FALLBACKS = {
     # Common false positives from Food-101 model
-    "apple", "bread", "rice", "unknown", "cheese", "potato",
-    "baked potato", "baked_potato", "milk", "tofu", "mixed salad",
-    "mixed_salad", "grilled_eggplant", "grilled eggplant",
-    "roasted pork", "roasted_pork", "grilled chicken", "grilled_chicken",
-    "boiled egg", "boiled_egg", "fruit",
+    "apple",
+    "bread",
+    "rice",
+    "unknown",
+    "cheese",
+    "potato",
+    "baked potato",
+    "baked_potato",
+    "milk",
+    "tofu",
+    "mixed salad",
+    "mixed_salad",
+    "grilled_eggplant",
+    "grilled eggplant",
+    "roasted pork",
+    "roasted_pork",
+    "grilled chicken",
+    "grilled_chicken",
+    "boiled egg",
+    "boiled_egg",
+    "fruit",
     # Additional common false positives from testing
-    "cucumber", "lettuce", "boiled chickpeas", "boiled_chickpeas",
-    "boiled pasta", "boiled_pasta", "grilled chicken breast",
-    "grilled_chicken_breast", "grilled beef", "grilled_beef",
-    "baked_potato", "fish", "generic fish", "orange", "watermelon",
+    "cucumber",
+    "lettuce",
+    "boiled chickpeas",
+    "boiled_chickpeas",
+    "boiled pasta",
+    "boiled_pasta",
+    "grilled chicken breast",
+    "grilled_chicken_breast",
+    "grilled beef",
+    "grilled_beef",
+    "baked_potato",
+    "fish",
+    "generic fish",
+    "orange",
+    "watermelon",
 }
 
 # OWL-ViT query keywords that indicate raw produce (should force specialist consultation)
@@ -85,41 +159,143 @@ GENERIC_FALLBACKS = {
 # EXPANDED to cover all fruits/vegetables that failed in brutal testing
 RAW_PRODUCE_KEYWORDS = {
     # Fruits (expanded)
-    "banana", "orange", "strawberry", "strawberries", "apple fruit", "grapes", "grape",
-    "watermelon", "pineapple", "mango", "berries", "fruit", "kiwi", "kiwi fruit",
-    "peach", "pear", "plum", "cherry", "cherries", "blueberry", "blueberries",
-    "raspberry", "raspberries", "blackberry", "blackberries", "melon", "cantaloupe",
-    "honeydew", "papaya", "passion fruit", "pomegranate", "lemon", "lime", "grapefruit",
-    "avocado", "coconut",
+    "banana",
+    "orange",
+    "strawberry",
+    "strawberries",
+    "apple fruit",
+    "grapes",
+    "grape",
+    "watermelon",
+    "pineapple",
+    "mango",
+    "berries",
+    "fruit",
+    "kiwi",
+    "kiwi fruit",
+    "peach",
+    "pear",
+    "plum",
+    "cherry",
+    "cherries",
+    "blueberry",
+    "blueberries",
+    "raspberry",
+    "raspberries",
+    "blackberry",
+    "blackberries",
+    "melon",
+    "cantaloupe",
+    "honeydew",
+    "papaya",
+    "passion fruit",
+    "pomegranate",
+    "lemon",
+    "lime",
+    "grapefruit",
+    "avocado",
+    "coconut",
     # Vegetables (expanded)
-    "broccoli", "carrot", "carrots", "celery", "cucumber", "tomato", "tomatoes",
-    "lettuce", "spinach", "cauliflower", "corn", "mushroom", "mushrooms", "vegetables",
-    "asparagus", "zucchini", "bell pepper", "bell peppers", "peppers", "eggplant",
-    "aubergine", "kale", "cabbage", "brussels sprouts", "artichoke", "onion", "garlic",
-    "green beans", "peas", "beets", "radish", "turnip",
+    "broccoli",
+    "carrot",
+    "carrots",
+    "celery",
+    "cucumber",
+    "tomato",
+    "tomatoes",
+    "lettuce",
+    "spinach",
+    "cauliflower",
+    "corn",
+    "mushroom",
+    "mushrooms",
+    "vegetables",
+    "asparagus",
+    "zucchini",
+    "bell pepper",
+    "bell peppers",
+    "peppers",
+    "eggplant",
+    "aubergine",
+    "kale",
+    "cabbage",
+    "brussels sprouts",
+    "artichoke",
+    "onion",
+    "garlic",
+    "green beans",
+    "peas",
+    "beets",
+    "radish",
+    "turnip",
     # Nuts & Seeds
-    "almonds", "walnuts", "peanuts", "cashews", "pistachios", "hazelnuts", "pecans",
-    "macadamia", "chestnuts", "nuts", "seeds",
+    "almonds",
+    "walnuts",
+    "peanuts",
+    "cashews",
+    "pistachios",
+    "hazelnuts",
+    "pecans",
+    "macadamia",
+    "chestnuts",
+    "nuts",
+    "seeds",
 }
 
 # Ingredient/nut class mappings
 INGREDIENT_CLASSES = [
     # Nuts
-    "almond", "walnut", "cashew", "peanut", "pistachio", "hazelnut", "pecan",
-    "macadamia", "brazil_nut", "chestnut", "pine_nut", "mixed_nuts",
+    "almond",
+    "walnut",
+    "cashew",
+    "peanut",
+    "pistachio",
+    "hazelnut",
+    "pecan",
+    "macadamia",
+    "brazil_nut",
+    "chestnut",
+    "pine_nut",
+    "mixed_nuts",
     # Seeds
-    "sunflower_seed", "pumpkin_seed", "chia_seed", "flax_seed", "sesame_seed",
+    "sunflower_seed",
+    "pumpkin_seed",
+    "chia_seed",
+    "flax_seed",
+    "sesame_seed",
     "hemp_seed",
     # Grains
-    "rice", "quinoa", "oats", "wheat", "barley", "couscous",
+    "rice",
+    "quinoa",
+    "oats",
+    "wheat",
+    "barley",
+    "couscous",
     # Legumes
-    "lentils", "chickpeas", "black_beans", "kidney_beans",
+    "lentils",
+    "chickpeas",
+    "black_beans",
+    "kidney_beans",
     # Dairy
-    "cheese", "milk", "yogurt", "butter", "cream",
+    "cheese",
+    "milk",
+    "yogurt",
+    "butter",
+    "cream",
     # Proteins
-    "egg", "chicken", "beef", "pork", "fish", "salmon", "tuna", "shrimp",
+    "egg",
+    "chicken",
+    "beef",
+    "pork",
+    "fish",
+    "salmon",
+    "tuna",
+    "shrimp",
     # Others
-    "bread", "pasta", "tofu", "tempeh",
+    "bread",
+    "pasta",
+    "tofu",
+    "tempeh",
 ]
 
 # Mapping from various model outputs to our database keys
@@ -432,7 +608,7 @@ class FruitVegetableClassifier(SpecializedClassifier):
         # Using a fruits and vegetables classifier
         super().__init__(
             model_name="jazzmacedo/fruits-and-vegetables-detector-36",
-            model_type=ModelType.FRUITS_VEGETABLES
+            model_type=ModelType.FRUITS_VEGETABLES,
         )
 
     def load_model(self) -> None:
@@ -446,13 +622,17 @@ class FruitVegetableClassifier(SpecializedClassifier):
 
             # Use Auto classes to correctly detect model architecture (ResNet, not ViT)
             self._processor = AutoImageProcessor.from_pretrained(self.model_name)
-            self._model = AutoModelForImageClassification.from_pretrained(self.model_name)
+            self._model = AutoModelForImageClassification.from_pretrained(
+                self.model_name
+            )
             self._model = self._model.to(self.device)
             self._model.eval()
 
             self._loaded = True
             logger.info(f"Fruits/vegetables classifier loaded on {self.device}")
-            logger.info(f"Model labels: {list(self._model.config.id2label.values())[:10]}...")
+            logger.info(
+                f"Model labels: {list(self._model.config.id2label.values())[:10]}..."
+            )
 
         except Exception as e:
             logger.warning(f"Could not load fruits/vegetables classifier: {e}")
@@ -481,7 +661,9 @@ class FruitVegetableClassifier(SpecializedClassifier):
             results = []
             for prob, idx in zip(top_probs, top_indices):
                 # Get label from model config
-                label = self._model.config.id2label.get(idx.item(), f"class_{idx.item()}")
+                label = self._model.config.id2label.get(
+                    idx.item(), f"class_{idx.item()}"
+                )
                 results.append((label, prob.item()))
 
             return results
@@ -502,7 +684,7 @@ class IngredientClassifier(SpecializedClassifier):
     def __init__(self):
         super().__init__(
             model_name="Kaludi/food-category-classification-v2.0",
-            model_type=ModelType.INGREDIENTS
+            model_type=ModelType.INGREDIENTS,
         )
 
     def load_model(self) -> None:
@@ -515,7 +697,9 @@ class IngredientClassifier(SpecializedClassifier):
             logger.info(f"Loading ingredient classifier: {self.model_name}")
 
             self._processor = AutoImageProcessor.from_pretrained(self.model_name)
-            self._model = AutoModelForImageClassification.from_pretrained(self.model_name)
+            self._model = AutoModelForImageClassification.from_pretrained(
+                self.model_name
+            )
             self._model = self._model.to(self.device)
             self._model.eval()
 
@@ -547,7 +731,9 @@ class IngredientClassifier(SpecializedClassifier):
 
             results = []
             for prob, idx in zip(top_probs, top_indices):
-                label = self._model.config.id2label.get(idx.item(), f"class_{idx.item()}")
+                label = self._model.config.id2label.get(
+                    idx.item(), f"class_{idx.item()}"
+                )
                 results.append((label, prob.item()))
 
             return results
@@ -588,6 +774,7 @@ class EnsembleFoodClassifier:
         """Get CLIP classifier (lazy load) - PRIMARY classifier."""
         if self._clip_classifier is None:
             from app.ml_models.clip_food_classifier import CLIPFoodClassifier
+
             self._clip_classifier = CLIPFoodClassifier(use_detailed_prompts=True)
             self._clip_classifier.load_model()
         return self._clip_classifier
@@ -596,6 +783,7 @@ class EnsembleFoodClassifier:
         """Get Food-101 classifier (lazy load) - SECONDARY/fallback classifier."""
         if self._food_101_classifier is None:
             from app.ml_models.food_classifier import get_food_classifier
+
             self._food_101_classifier = get_food_classifier()
         return self._food_101_classifier
 
@@ -626,7 +814,7 @@ class EnsembleFoodClassifier:
         image: Image.Image,
         database_keys: List[str],
         top_k: int = 5,
-        query_hint: Optional[str] = None
+        query_hint: Optional[str] = None,
     ) -> EnsembleResult:
         """
         Classify food image using CLIP-first ensemble.
@@ -662,7 +850,10 @@ class EnsembleFoodClassifier:
                     # Try to find matching database key
                     clip_class_lower = clip_class.lower().replace(" ", "_")
                     for db_key in database_keys:
-                        if db_key.lower() == clip_class_lower or clip_class_lower in db_key.lower():
+                        if (
+                            db_key.lower() == clip_class_lower
+                            or clip_class_lower in db_key.lower()
+                        ):
                             clip_class = db_key
                             break
 
@@ -670,7 +861,7 @@ class EnsembleFoodClassifier:
                     model_type=ModelType.CLIP,
                     class_name=clip_class,
                     confidence=clip_conf,
-                    raw_class=clip_predictions[0][0]
+                    raw_class=clip_predictions[0][0],
                 )
                 contributing_models.append("CLIP (openai/clip-vit-base-patch32)")
 
@@ -678,23 +869,32 @@ class EnsembleFoodClassifier:
 
                 # Build alternatives from CLIP predictions
                 alternatives = []
-                for cls, conf in clip_predictions[1:top_k+1]:
+                for cls, conf in clip_predictions[1 : top_k + 1]:
                     if cls != clip_class:
                         # Map to database key
                         mapped_cls = cls
                         cls_lower = cls.lower().replace(" ", "_")
                         for db_key in database_keys:
-                            if db_key.lower() == cls_lower or cls_lower in db_key.lower():
+                            if (
+                                db_key.lower() == cls_lower
+                                or cls_lower in db_key.lower()
+                            ):
                                 mapped_cls = db_key
                                 break
                         alternatives.append((mapped_cls, conf))
 
                 # 2. FALLBACK: Only consult Food-101 if CLIP confidence is very low
                 if clip_conf < self.CONFIDENCE_THRESHOLD:
-                    logger.info(f"CLIP confidence {clip_conf:.2f} < {self.CONFIDENCE_THRESHOLD}, consulting Food-101 backup...")
+                    logger.info(
+                        f"CLIP confidence {clip_conf:.2f} < {self.CONFIDENCE_THRESHOLD}, consulting Food-101 backup..."
+                    )
                     try:
                         food_101 = self._get_food_101()
-                        f101_class, f101_conf, _ = food_101.classify_with_database_mapping(
+                        (
+                            f101_class,
+                            f101_conf,
+                            _,
+                        ) = food_101.classify_with_database_mapping(
                             image, database_keys, top_k=3
                         )
 
@@ -702,7 +902,7 @@ class EnsembleFoodClassifier:
                             model_type=ModelType.FOOD_101,
                             class_name=f101_class,
                             confidence=f101_conf,
-                            raw_class=f101_class
+                            raw_class=f101_class,
                         )
                         contributing_models.append("Food-101 ViT (backup)")
 
@@ -710,13 +910,16 @@ class EnsembleFoodClassifier:
 
                         # If Food-101 is significantly more confident, use it
                         if f101_conf > clip_conf + 0.15:
-                            logger.info(f"Food-101 more confident ({f101_conf:.2f} vs {clip_conf:.2f}), using Food-101")
+                            logger.info(
+                                f"Food-101 more confident ({f101_conf:.2f} vs {clip_conf:.2f}), using Food-101"
+                            )
                             return EnsembleResult(
                                 primary_class=f101_class,
                                 confidence=f101_conf,
-                                alternatives=[(clip_class, clip_conf)] + alternatives[:top_k-1],
+                                alternatives=[(clip_class, clip_conf)]
+                                + alternatives[: top_k - 1],
                                 contributing_models=contributing_models,
-                                all_predictions=all_predictions
+                                all_predictions=all_predictions,
                             )
 
                     except Exception as e:
@@ -728,7 +931,7 @@ class EnsembleFoodClassifier:
                     confidence=clip_conf,
                     alternatives=alternatives,
                     contributing_models=contributing_models,
-                    all_predictions=all_predictions
+                    all_predictions=all_predictions,
                 )
 
         except Exception as e:
@@ -747,7 +950,7 @@ class EnsembleFoodClassifier:
                 model_type=ModelType.FOOD_101,
                 class_name=f101_class,
                 confidence=f101_conf,
-                raw_class=f101_class
+                raw_class=f101_class,
             )
             contributing_models.append("Food-101 ViT (fallback)")
 
@@ -756,7 +959,7 @@ class EnsembleFoodClassifier:
                 confidence=f101_conf,
                 alternatives=f101_alts[:top_k],
                 contributing_models=contributing_models,
-                all_predictions=all_predictions
+                all_predictions=all_predictions,
             )
 
         except Exception as e:
@@ -768,10 +971,12 @@ class EnsembleFoodClassifier:
             confidence=0.0,
             alternatives=[],
             contributing_models=["none"],
-            all_predictions={}
+            all_predictions={},
         )
 
-    def _extract_food_from_hint(self, query_hint: str, database_keys: List[str]) -> Optional[str]:
+    def _extract_food_from_hint(
+        self, query_hint: str, database_keys: List[str]
+    ) -> Optional[str]:
         """Extract food name from OWL-ViT query hint and match to database."""
         if not query_hint:
             return None
@@ -783,7 +988,7 @@ class EnsembleFoodClassifier:
         food_part = hint_lower
         for prefix in ["a photo of ", "photo of ", "a picture of ", "picture of "]:
             if food_part.startswith(prefix):
-                food_part = food_part[len(prefix):]
+                food_part = food_part[len(prefix) :]
                 break
 
         # First, try direct database key matching (more general approach)
@@ -795,7 +1000,7 @@ class EnsembleFoodClassifier:
                 logger.info(f"Direct hint match: '{db_key}' found in '{food_part}'")
                 return db_key
             # Check plural forms (strawberries -> strawberry)
-            if db_lower + 's' in food_part or db_lower + 'es' in food_part:
+            if db_lower + "s" in food_part or db_lower + "es" in food_part:
                 logger.info(f"Plural hint match: '{db_key}' found in '{food_part}'")
                 return db_key
 
@@ -810,7 +1015,7 @@ class EnsembleFoodClassifier:
                 if keyword in database_keys:
                     return keyword
                 # Try singular form
-                singular = keyword.rstrip('s')
+                singular = keyword.rstrip("s")
                 if singular in database_keys:
                     return singular
         return None
@@ -822,7 +1027,7 @@ class EnsembleFoodClassifier:
         database_keys: List[str],
         top_k: int,
         is_raw_produce: bool = False,
-        query_hint: Optional[str] = None
+        query_hint: Optional[str] = None,
     ) -> Tuple[str, float, List[Tuple[str, float]]]:
         """
         Combine predictions from multiple models.
@@ -841,7 +1046,9 @@ class EnsembleFoodClassifier:
         if query_hint:
             hint_food = self._extract_food_from_hint(query_hint, database_keys)
             if hint_food:
-                logger.info(f"Extracted food '{hint_food}' from query hint '{query_hint}'")
+                logger.info(
+                    f"Extracted food '{hint_food}' from query hint '{query_hint}'"
+                )
 
         # Check if ALL specialist results are also fallbacks
         all_specialists_failed = True
@@ -851,23 +1058,38 @@ class EnsembleFoodClassifier:
                 break
 
         # If we have a valid hint_food and all classifiers failed, trust OWL-ViT completely
-        if hint_food and hint_food in database_keys and primary_is_fallback and all_specialists_failed:
-            logger.info(f"All classifiers failed - trusting OWL-ViT hint: '{hint_food}'")
+        if (
+            hint_food
+            and hint_food in database_keys
+            and primary_is_fallback
+            and all_specialists_failed
+        ):
+            logger.info(
+                f"All classifiers failed - trusting OWL-ViT hint: '{hint_food}'"
+            )
             return hint_food, 0.85, []  # Return hint_food with good confidence
 
         # NEW: If Food-101 returns something SPECIFIC (not a fallback) but all specialists
         # only return fallbacks, trust Food-101. This handles cases like "strawberry" where
         # Food-101 correctly identifies via strawberry_shortcake but specialists (which don't
         # have strawberry in their labels) return garbage like "apple" or "Fruit".
-        if not primary_is_fallback and all_specialists_failed and primary_result.class_name in database_keys:
-            logger.info(f"Food-101 specific '{primary_result.class_name}' with all specialists returning fallbacks - trusting Food-101")
+        if (
+            not primary_is_fallback
+            and all_specialists_failed
+            and primary_result.class_name in database_keys
+        ):
+            logger.info(
+                f"Food-101 specific '{primary_result.class_name}' with all specialists returning fallbacks - trusting Food-101"
+            )
             return primary_result.class_name, primary_result.confidence, []
 
         # Add primary prediction (penalize heavily for raw produce or fallbacks)
         if is_raw_produce or primary_is_fallback:
             # For raw produce, Food-101 (trained on dishes) is unreliable - reduce to 5%
             primary_weight = primary_result.confidence * 0.05
-            logger.info(f"Primary '{primary_result.class_name}' penalized (raw_produce={is_raw_produce}, fallback={primary_is_fallback})")
+            logger.info(
+                f"Primary '{primary_result.class_name}' penalized (raw_produce={is_raw_produce}, fallback={primary_is_fallback})"
+            )
         else:
             primary_weight = primary_result.confidence
         class_scores[primary_result.class_name] = primary_weight
@@ -878,9 +1100,13 @@ class EnsembleFoodClassifier:
             if is_raw_produce and result.class_name not in GENERIC_FALLBACKS:
                 # For raw produce, trust specialist 200% more
                 weighted_conf = result.confidence * 2.0
-                logger.info(f"Specialist '{result.class_name}' boosted for raw produce: {result.confidence:.2f} -> {weighted_conf:.2f}")
+                logger.info(
+                    f"Specialist '{result.class_name}' boosted for raw produce: {result.confidence:.2f} -> {weighted_conf:.2f}"
+                )
             elif primary_is_fallback and result.class_name not in GENERIC_FALLBACKS:
-                weighted_conf = result.confidence * 1.5  # 150% weight for specific specialist results
+                weighted_conf = (
+                    result.confidence * 1.5
+                )  # 150% weight for specific specialist results
             else:
                 weighted_conf = result.confidence * self.SPECIALIST_WEIGHT
 
@@ -902,11 +1128,7 @@ class EnsembleFoodClassifier:
             logger.info(f"Hint food '{hint_food}' boosted by {hint_boost}")
 
         # Sort by score
-        sorted_classes = sorted(
-            class_scores.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )
+        sorted_classes = sorted(class_scores.items(), key=lambda x: x[1], reverse=True)
 
         if not sorted_classes:
             return primary_result.class_name, primary_result.confidence, []
@@ -916,22 +1138,21 @@ class EnsembleFoodClassifier:
 
         # Normalize confidence
         total_score = sum(s for _, s in sorted_classes)
-        final_conf = min(final_score / total_score if total_score > 0 else final_score, 0.99)
+        final_conf = min(
+            final_score / total_score if total_score > 0 else final_score, 0.99
+        )
 
         # Alternatives (excluding primary)
         alternatives = [
             (cls, score / total_score if total_score > 0 else score)
-            for cls, score in sorted_classes[1:top_k + 1]
+            for cls, score in sorted_classes[1 : top_k + 1]
             if cls != final_class
         ]
 
         return final_class, round(final_conf, 2), alternatives
 
     def _map_to_database(
-        self,
-        class_name: str,
-        mapping: Dict[str, str],
-        database_keys: List[str]
+        self, class_name: str, mapping: Dict[str, str], database_keys: List[str]
     ) -> str:
         """Map a model class to database key."""
         # Normalize class name
@@ -972,7 +1193,7 @@ class EnsembleFoodClassifier:
                 "type": "backup",
                 "specialty": "Prepared dishes (used when CLIP confidence low)",
                 "accuracy": 0.64,
-            }
+            },
         ]
 
         return {

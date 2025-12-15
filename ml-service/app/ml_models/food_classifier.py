@@ -19,26 +19,107 @@ _model_loaded = False
 
 # Food-101 class labels - 101 categories from the dataset
 FOOD_101_CLASSES = [
-    "apple_pie", "baby_back_ribs", "baklava", "beef_carpaccio", "beef_tartare",
-    "beet_salad", "beignets", "bibimbap", "bread_pudding", "breakfast_burrito",
-    "bruschetta", "caesar_salad", "cannoli", "caprese_salad", "carrot_cake",
-    "ceviche", "cheesecake", "cheese_plate", "chicken_curry", "chicken_quesadilla",
-    "chicken_wings", "chocolate_cake", "chocolate_mousse", "churros", "clam_chowder",
-    "club_sandwich", "crab_cakes", "creme_brulee", "croque_madame", "cup_cakes",
-    "deviled_eggs", "donuts", "dumplings", "edamame", "eggs_benedict",
-    "escargots", "falafel", "filet_mignon", "fish_and_chips", "foie_gras",
-    "french_fries", "french_onion_soup", "french_toast", "fried_calamari", "fried_rice",
-    "frozen_yogurt", "garlic_bread", "gnocchi", "greek_salad", "grilled_cheese_sandwich",
-    "grilled_salmon", "guacamole", "gyoza", "hamburger", "hot_and_sour_soup",
-    "hot_dog", "huevos_rancheros", "hummus", "ice_cream", "lasagna",
-    "lobster_bisque", "lobster_roll_sandwich", "macaroni_and_cheese", "macarons", "miso_soup",
-    "mussels", "nachos", "omelette", "onion_rings", "oysters",
-    "pad_thai", "paella", "pancakes", "panna_cotta", "peking_duck",
-    "pho", "pizza", "pork_chop", "poutine", "prime_rib",
-    "pulled_pork_sandwich", "ramen", "ravioli", "red_velvet_cake", "risotto",
-    "samosa", "sashimi", "scallops", "seaweed_salad", "shrimp_and_grits",
-    "spaghetti_bolognese", "spaghetti_carbonara", "spring_rolls", "steak", "strawberry_shortcake",
-    "sushi", "tacos", "takoyaki", "tiramisu", "tuna_tartare", "waffles",
+    "apple_pie",
+    "baby_back_ribs",
+    "baklava",
+    "beef_carpaccio",
+    "beef_tartare",
+    "beet_salad",
+    "beignets",
+    "bibimbap",
+    "bread_pudding",
+    "breakfast_burrito",
+    "bruschetta",
+    "caesar_salad",
+    "cannoli",
+    "caprese_salad",
+    "carrot_cake",
+    "ceviche",
+    "cheesecake",
+    "cheese_plate",
+    "chicken_curry",
+    "chicken_quesadilla",
+    "chicken_wings",
+    "chocolate_cake",
+    "chocolate_mousse",
+    "churros",
+    "clam_chowder",
+    "club_sandwich",
+    "crab_cakes",
+    "creme_brulee",
+    "croque_madame",
+    "cup_cakes",
+    "deviled_eggs",
+    "donuts",
+    "dumplings",
+    "edamame",
+    "eggs_benedict",
+    "escargots",
+    "falafel",
+    "filet_mignon",
+    "fish_and_chips",
+    "foie_gras",
+    "french_fries",
+    "french_onion_soup",
+    "french_toast",
+    "fried_calamari",
+    "fried_rice",
+    "frozen_yogurt",
+    "garlic_bread",
+    "gnocchi",
+    "greek_salad",
+    "grilled_cheese_sandwich",
+    "grilled_salmon",
+    "guacamole",
+    "gyoza",
+    "hamburger",
+    "hot_and_sour_soup",
+    "hot_dog",
+    "huevos_rancheros",
+    "hummus",
+    "ice_cream",
+    "lasagna",
+    "lobster_bisque",
+    "lobster_roll_sandwich",
+    "macaroni_and_cheese",
+    "macarons",
+    "miso_soup",
+    "mussels",
+    "nachos",
+    "omelette",
+    "onion_rings",
+    "oysters",
+    "pad_thai",
+    "paella",
+    "pancakes",
+    "panna_cotta",
+    "peking_duck",
+    "pho",
+    "pizza",
+    "pork_chop",
+    "poutine",
+    "prime_rib",
+    "pulled_pork_sandwich",
+    "ramen",
+    "ravioli",
+    "red_velvet_cake",
+    "risotto",
+    "samosa",
+    "sashimi",
+    "scallops",
+    "seaweed_salad",
+    "shrimp_and_grits",
+    "spaghetti_bolognese",
+    "spaghetti_carbonara",
+    "spring_rolls",
+    "steak",
+    "strawberry_shortcake",
+    "sushi",
+    "tacos",
+    "takoyaki",
+    "tiramisu",
+    "tuna_tartare",
+    "waffles",
 ]
 
 # Mapping from Food-101 classes to our food database keys
@@ -151,9 +232,28 @@ FOOD_101_TO_DATABASE: Dict[str, str] = {
 
 # Additional common foods that might need custom handling
 COMMON_FOOD_PATTERNS = {
-    "nut": ["chestnuts", "almonds", "walnuts", "cashews", "peanuts", "hazelnuts",
-            "pecans", "pistachios", "macadamia_nuts", "brazil_nuts", "pine_nuts", "mixed_nuts"],
-    "seed": ["chia_seeds", "flax_seeds", "pumpkin_seeds", "sesame_seeds", "hemp_seeds", "sunflower_seeds"],
+    "nut": [
+        "chestnuts",
+        "almonds",
+        "walnuts",
+        "cashews",
+        "peanuts",
+        "hazelnuts",
+        "pecans",
+        "pistachios",
+        "macadamia_nuts",
+        "brazil_nuts",
+        "pine_nuts",
+        "mixed_nuts",
+    ],
+    "seed": [
+        "chia_seeds",
+        "flax_seeds",
+        "pumpkin_seeds",
+        "sesame_seeds",
+        "hemp_seeds",
+        "sunflower_seeds",
+    ],
     "fruit": ["apple", "banana", "orange", "grape", "strawberry", "blueberry", "mango"],
     "vegetable": ["broccoli", "carrot", "spinach", "potato", "tomato", "cucumber"],
 }
@@ -179,7 +279,13 @@ def get_model():
         _model = ViTForImageClassification.from_pretrained(model_name)
 
         # Move to GPU if available
-        device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+        device = (
+            "cuda"
+            if torch.cuda.is_available()
+            else "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
+        )
         _model = _model.to(device)
         _model.eval()
 
@@ -248,11 +354,7 @@ class FoodClassifier:
             raise
 
     @torch.no_grad()
-    def classify(
-        self,
-        image: Image.Image,
-        top_k: int = 5
-    ) -> List[Tuple[str, float]]:
+    def classify(self, image: Image.Image, top_k: int = 5) -> List[Tuple[str, float]]:
         """
         Classify a food image.
 
@@ -280,7 +382,9 @@ class FoodClassifier:
 
         # Get top-k predictions
         probs = torch.softmax(logits, dim=-1)
-        top_probs, top_indices = torch.topk(probs[0], k=min(top_k, len(FOOD_101_CLASSES)))
+        top_probs, top_indices = torch.topk(
+            probs[0], k=min(top_k, len(FOOD_101_CLASSES))
+        )
 
         results = []
         for prob, idx in zip(top_probs, top_indices):
@@ -291,10 +395,7 @@ class FoodClassifier:
         return results
 
     def classify_with_database_mapping(
-        self,
-        image: Image.Image,
-        database_keys: List[str],
-        top_k: int = 3
+        self, image: Image.Image, database_keys: List[str], top_k: int = 3
     ) -> Tuple[str, float, List[Tuple[str, float]]]:
         """
         Classify food and map to nutrition database keys.

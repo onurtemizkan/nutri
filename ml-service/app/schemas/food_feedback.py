@@ -10,6 +10,7 @@ from datetime import datetime
 
 # === Request Schemas ===
 
+
 class FeedbackSubmitRequest(BaseModel):
     """Request to submit a classification correction."""
 
@@ -17,37 +18,27 @@ class FeedbackSubmitRequest(BaseModel):
         ...,
         min_length=1,
         max_length=100,
-        description="The original prediction from the classifier"
+        description="The original prediction from the classifier",
     )
     original_confidence: float = Field(
-        ...,
-        ge=0.0,
-        le=1.0,
-        description="Confidence score of original prediction"
+        ..., ge=0.0, le=1.0, description="Confidence score of original prediction"
     )
     corrected_label: str = Field(
-        ...,
-        min_length=1,
-        max_length=100,
-        description="The correct food label"
+        ..., min_length=1, max_length=100, description="The correct food label"
     )
     image_hash: str = Field(
-        ...,
-        min_length=64,
-        max_length=64,
-        description="SHA-256 hash of the image"
+        ..., min_length=64, max_length=64, description="SHA-256 hash of the image"
     )
     alternatives: Optional[List[Dict[str, Any]]] = Field(
-        None,
-        description="Top alternative predictions at time of classification"
+        None, description="Top alternative predictions at time of classification"
     )
     user_description: Optional[str] = Field(
         None,
         max_length=500,
-        description="Optional description of the food for prompt learning"
+        description="Optional description of the food for prompt learning",
     )
 
-    @field_validator('corrected_label')
+    @field_validator("corrected_label")
     @classmethod
     def normalize_label(cls, v: str) -> str:
         """Normalize the corrected label."""
@@ -56,26 +47,30 @@ class FeedbackSubmitRequest(BaseModel):
 
 class PromptSuggestionRequest(BaseModel):
     """Request to get prompt suggestions for a food."""
+
     food_key: str = Field(..., description="The food category key")
 
 
 class ApplyPromptsRequest(BaseModel):
     """Request to apply learned prompts to the classifier."""
+
     food_keys: Optional[List[str]] = Field(
         None,
-        description="Specific food keys to apply. If None, applies all pending prompts."
+        description="Specific food keys to apply. If None, applies all pending prompts.",
     )
     min_feedback_count: int = Field(
         3,
         ge=1,
-        description="Minimum number of feedback entries before applying prompts"
+        description="Minimum number of feedback entries before applying prompts",
     )
 
 
 # === Response Schemas ===
 
+
 class FeedbackSubmitResponse(BaseModel):
     """Response after submitting feedback."""
+
     success: bool
     feedback_id: int
     message: str
@@ -84,6 +79,7 @@ class FeedbackSubmitResponse(BaseModel):
 
 class FeedbackStatsResponse(BaseModel):
     """Overall feedback statistics."""
+
     total_feedback: int
     pending_feedback: int
     approved_feedback: int
@@ -91,20 +87,17 @@ class FeedbackStatsResponse(BaseModel):
 
     # Accuracy metrics
     correction_rate: float = Field(
-        ...,
-        description="Percentage of predictions that were corrected"
+        ..., description="Percentage of predictions that were corrected"
     )
 
     # Top misclassifications
     top_misclassifications: List[Dict[str, Any]] = Field(
-        default_factory=list,
-        description="Most common prediction -> correction pairs"
+        default_factory=list, description="Most common prediction -> correction pairs"
     )
 
     # Foods needing attention
     problem_foods: List[Dict[str, Any]] = Field(
-        default_factory=list,
-        description="Foods with highest correction rates"
+        default_factory=list, description="Foods with highest correction rates"
     )
 
     # Learned prompts
@@ -114,6 +107,7 @@ class FeedbackStatsResponse(BaseModel):
 
 class FeedbackItem(BaseModel):
     """Individual feedback item."""
+
     id: int
     image_hash: str
     original_prediction: str
@@ -126,6 +120,7 @@ class FeedbackItem(BaseModel):
 
 class FeedbackListResponse(BaseModel):
     """List of feedback items."""
+
     items: List[FeedbackItem]
     total: int
     page: int
@@ -134,6 +129,7 @@ class FeedbackListResponse(BaseModel):
 
 class PromptSuggestion(BaseModel):
     """A suggested prompt for a food category."""
+
     prompt: str
     source: str  # 'user_description', 'auto_generated', 'pattern'
     confidence: float
@@ -142,6 +138,7 @@ class PromptSuggestion(BaseModel):
 
 class PromptSuggestionsResponse(BaseModel):
     """Prompt suggestions for improving a food category."""
+
     food_key: str
     current_prompts: List[str]
     suggested_prompts: List[PromptSuggestion]
@@ -151,6 +148,7 @@ class PromptSuggestionsResponse(BaseModel):
 
 class ApplyPromptsResponse(BaseModel):
     """Response after applying prompts."""
+
     success: bool
     prompts_applied: int
     foods_updated: List[str]
@@ -159,6 +157,7 @@ class ApplyPromptsResponse(BaseModel):
 
 class CorrectionPattern(BaseModel):
     """Pattern of corrections for analytics."""
+
     original: str
     corrected: str
     count: int
@@ -168,6 +167,7 @@ class CorrectionPattern(BaseModel):
 
 class AnalyticsResponse(BaseModel):
     """Detailed analytics for feedback-driven learning."""
+
     time_period: str
     total_predictions: int
     total_corrections: int

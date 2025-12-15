@@ -65,8 +65,7 @@ class FoodAnalysisResponse(BaseModel):
     suggestions: Optional[List[str]] = None
     error: Optional[str] = None
     image_hash: Optional[str] = Field(
-        None,
-        description="SHA-256 hash of the analyzed image (for feedback submission)"
+        None, description="SHA-256 hash of the analyzed image (for feedback submission)"
     )
 
 

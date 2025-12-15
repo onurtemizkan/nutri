@@ -35,8 +35,7 @@ router = APIRouter()
 
 @router.post("/feedback", response_model=FeedbackSubmitResponse)
 async def submit_feedback(
-    request: FeedbackSubmitRequest,
-    db: AsyncSession = Depends(get_db)
+    request: FeedbackSubmitRequest, db: AsyncSession = Depends(get_db)
 ):
     """
     Submit feedback when food classification is incorrect.
@@ -72,7 +71,7 @@ async def submit_feedback(
             original_confidence=request.original_confidence,
             corrected_label=request.corrected_label,
             alternatives=request.alternatives,
-            user_description=request.user_description
+            user_description=request.user_description,
         )
 
         if feedback_id == -1:
@@ -80,14 +79,14 @@ async def submit_feedback(
                 success=True,
                 feedback_id=0,
                 message="Feedback already recorded for this image",
-                prompt_suggestions=None
+                prompt_suggestions=None,
             )
 
         return FeedbackSubmitResponse(
             success=True,
             feedback_id=feedback_id,
             message="Thank you! Your feedback helps improve food recognition.",
-            prompt_suggestions=suggestions if suggestions else None
+            prompt_suggestions=suggestions if suggestions else None,
         )
 
     except Exception as e:
@@ -96,9 +95,7 @@ async def submit_feedback(
 
 
 @router.get("/feedback/stats", response_model=FeedbackStatsResponse)
-async def get_feedback_stats(
-    db: AsyncSession = Depends(get_db)
-):
+async def get_feedback_stats(db: AsyncSession = Depends(get_db)):
     """
     Get overall feedback statistics.
 
@@ -122,7 +119,7 @@ async def list_feedback(
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
     status: Optional[str] = Query(None, description="Filter by status"),
     food_key: Optional[str] = Query(None, description="Filter by food"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     List feedback items with pagination.
@@ -133,29 +130,24 @@ async def list_feedback(
     """
     try:
         items, total = await feedback_service.get_feedback_list(
-            db=db,
-            page=page,
-            page_size=page_size,
-            status=status,
-            food_key=food_key
+            db=db, page=page, page_size=page_size, status=status, food_key=food_key
         )
 
         return FeedbackListResponse(
             items=[FeedbackItem(**item) for item in items],
             total=total,
             page=page,
-            page_size=page_size
+            page_size=page_size,
         )
     except Exception as e:
         logger.error(f"List error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to list feedback")
 
 
-@router.get("/feedback/suggestions/{food_key}", response_model=PromptSuggestionsResponse)
-async def get_prompt_suggestions(
-    food_key: str,
-    db: AsyncSession = Depends(get_db)
-):
+@router.get(
+    "/feedback/suggestions/{food_key}", response_model=PromptSuggestionsResponse
+)
+async def get_prompt_suggestions(food_key: str, db: AsyncSession = Depends(get_db)):
     """
     Get prompt suggestions for a specific food category.
 
@@ -179,12 +171,12 @@ async def get_prompt_suggestions(
                     prompt=s["prompt"],
                     source=s["source"],
                     confidence=s["confidence"],
-                    feedback_count=s["feedback_count"]
+                    feedback_count=s["feedback_count"],
                 )
                 for s in result["suggested_prompts"]
             ],
             feedback_count=result["feedback_count"],
-            common_corrections=result["common_corrections"]
+            common_corrections=result["common_corrections"],
         )
     except Exception as e:
         logger.error(f"Suggestions error: {e}", exc_info=True)
@@ -193,8 +185,7 @@ async def get_prompt_suggestions(
 
 @router.post("/feedback/apply", response_model=ApplyPromptsResponse)
 async def apply_learned_prompts(
-    request: ApplyPromptsRequest = None,
-    db: AsyncSession = Depends(get_db)
+    request: ApplyPromptsRequest = None, db: AsyncSession = Depends(get_db)
 ):
     """
     Apply learned prompts to the CLIP classifier.
@@ -215,14 +206,14 @@ async def apply_learned_prompts(
         prompts_applied, foods_updated = await feedback_service.apply_learned_prompts(
             db=db,
             food_keys=request.food_keys,
-            min_feedback_count=request.min_feedback_count
+            min_feedback_count=request.min_feedback_count,
         )
 
         return ApplyPromptsResponse(
             success=True,
             prompts_applied=prompts_applied,
             foods_updated=foods_updated,
-            message=f"Applied {prompts_applied} new prompts to {len(foods_updated)} food categories"
+            message=f"Applied {prompts_applied} new prompts to {len(foods_updated)} food categories",
         )
     except Exception as e:
         logger.error(f"Apply prompts error: {e}", exc_info=True)
@@ -232,7 +223,7 @@ async def apply_learned_prompts(
 @router.get("/feedback/analytics", response_model=AnalyticsResponse)
 async def get_analytics(
     days: int = Query(30, ge=1, le=365, description="Days to analyze"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get detailed analytics for feedback-driven learning.
@@ -254,7 +245,7 @@ async def get_analytics(
             correction_patterns=[
                 CorrectionPattern(**p) for p in analytics["correction_patterns"]
             ],
-            improvement_opportunities=analytics["improvement_opportunities"]
+            improvement_opportunities=analytics["improvement_opportunities"],
         )
     except Exception as e:
         logger.error(f"Analytics error: {e}", exc_info=True)
@@ -265,7 +256,7 @@ async def get_analytics(
 async def update_feedback_status(
     feedback_id: int,
     status: str = Query(..., regex="^(pending|approved|rejected)$"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Update the status of a feedback item.
@@ -292,7 +283,7 @@ async def update_feedback_status(
 @router.get("/feedback/export")
 async def export_feedback(
     format: str = Query("json", regex="^(json|csv)$"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Export all feedback data for analysis.
@@ -303,9 +294,7 @@ async def export_feedback(
     """
     try:
         items, total = await feedback_service.get_feedback_list(
-            db=db,
-            page=1,
-            page_size=10000  # Get all
+            db=db, page=1, page_size=10000  # Get all
         )
 
         if format == "csv":
@@ -317,10 +306,15 @@ async def export_feedback(
             writer = csv.DictWriter(
                 output,
                 fieldnames=[
-                    "id", "image_hash", "original_prediction",
-                    "original_confidence", "corrected_label",
-                    "user_description", "status", "created_at"
-                ]
+                    "id",
+                    "image_hash",
+                    "original_prediction",
+                    "original_confidence",
+                    "corrected_label",
+                    "user_description",
+                    "status",
+                    "created_at",
+                ],
             )
             writer.writeheader()
             writer.writerows(items)
@@ -329,7 +323,9 @@ async def export_feedback(
             return StreamingResponse(
                 iter([output.getvalue()]),
                 media_type="text/csv",
-                headers={"Content-Disposition": "attachment; filename=feedback_export.csv"}
+                headers={
+                    "Content-Disposition": "attachment; filename=feedback_export.csv"
+                },
             )
 
         return {"items": items, "total": total}

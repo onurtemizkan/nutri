@@ -48,7 +48,7 @@ class FeedbackService:
         corrected_label: str,
         alternatives: Optional[List[Dict]] = None,
         user_description: Optional[str] = None,
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
     ) -> Tuple[int, List[str]]:
         """
         Submit user feedback for a misclassification.
@@ -65,7 +65,7 @@ class FeedbackService:
             select(FoodFeedback).where(
                 and_(
                     FoodFeedback.image_hash == image_hash,
-                    FoodFeedback.corrected_label == corrected_label
+                    FoodFeedback.corrected_label == corrected_label,
                 )
             )
         )
@@ -82,7 +82,7 @@ class FeedbackService:
             alternatives=json.dumps(alternatives) if alternatives else None,
             user_description=user_description,
             user_id=user_id,
-            status="pending"
+            status="pending",
         )
 
         db.add(feedback)
@@ -97,9 +97,7 @@ class FeedbackService:
             # Store as learned prompts
             for prompt in suggestions:
                 learned = LearnedPrompt(
-                    food_key=corrected_label,
-                    prompt=prompt,
-                    source="user_description"
+                    food_key=corrected_label, prompt=prompt, source="user_description"
                 )
                 db.add(learned)
 
@@ -114,9 +112,7 @@ class FeedbackService:
         return feedback.id, suggestions
 
     def _generate_prompts_from_description(
-        self,
-        food_key: str,
-        description: str
+        self, food_key: str, description: str
     ) -> List[str]:
         """Generate CLIP prompts from a user description."""
         prompts = []
@@ -150,8 +146,9 @@ class FeedbackService:
 
         # Total counts by status
         status_counts = await db.execute(
-            select(FoodFeedback.status, func.count(FoodFeedback.id))
-            .group_by(FoodFeedback.status)
+            select(FoodFeedback.status, func.count(FoodFeedback.id)).group_by(
+                FoodFeedback.status
+            )
         )
         counts = dict(status_counts.fetchall())
 
@@ -165,18 +162,14 @@ class FeedbackService:
             select(
                 FoodFeedback.original_prediction,
                 FoodFeedback.corrected_label,
-                func.count(FoodFeedback.id).label("count")
+                func.count(FoodFeedback.id).label("count"),
             )
             .group_by(FoodFeedback.original_prediction, FoodFeedback.corrected_label)
             .order_by(desc("count"))
             .limit(10)
         )
         top_misclassifications = [
-            {
-                "original": row[0],
-                "corrected": row[1],
-                "count": row[2]
-            }
+            {"original": row[0], "corrected": row[1], "count": row[2]}
             for row in misclass_query.fetchall()
         ]
 
@@ -185,7 +178,7 @@ class FeedbackService:
             select(
                 FoodFeedback.original_prediction,
                 func.count(FoodFeedback.id).label("correction_count"),
-                func.avg(FoodFeedback.original_confidence).label("avg_confidence")
+                func.avg(FoodFeedback.original_confidence).label("avg_confidence"),
             )
             .group_by(FoodFeedback.original_prediction)
             .order_by(desc("correction_count"))
@@ -195,7 +188,7 @@ class FeedbackService:
             {
                 "food": row[0],
                 "correction_count": row[1],
-                "avg_confidence": round(float(row[2]) if row[2] else 0, 2)
+                "avg_confidence": round(float(row[2]) if row[2] else 0, 2),
             }
             for row in problem_query.fetchall()
         ]
@@ -204,7 +197,7 @@ class FeedbackService:
         prompts_query = await db.execute(
             select(
                 func.count(LearnedPrompt.id).label("total"),
-                func.sum(LearnedPrompt.is_active).label("active")
+                func.sum(LearnedPrompt.is_active).label("active"),
             )
         )
         prompts_row = prompts_query.fetchone()
@@ -220,7 +213,7 @@ class FeedbackService:
             "top_misclassifications": top_misclassifications,
             "problem_foods": problem_foods,
             "learned_prompts_count": learned_count,
-            "active_prompts_count": active_count or 0
+            "active_prompts_count": active_count or 0,
         }
 
         # Cache results
@@ -235,7 +228,7 @@ class FeedbackService:
         page: int = 1,
         page_size: int = 20,
         status: Optional[str] = None,
-        food_key: Optional[str] = None
+        food_key: Optional[str] = None,
     ) -> Tuple[List[Dict], int]:
         """Get paginated list of feedback items."""
         query = select(FoodFeedback)
@@ -246,7 +239,7 @@ class FeedbackService:
             query = query.where(
                 or_(
                     FoodFeedback.original_prediction == food_key,
-                    FoodFeedback.corrected_label == food_key
+                    FoodFeedback.corrected_label == food_key,
                 )
             )
 
@@ -268,7 +261,7 @@ class FeedbackService:
                 "corrected_label": fb.corrected_label,
                 "user_description": fb.user_description,
                 "status": fb.status,
-                "created_at": fb.created_at.isoformat() if fb.created_at else None
+                "created_at": fb.created_at.isoformat() if fb.created_at else None,
             }
             for fb in result.scalars()
         ]
@@ -276,9 +269,7 @@ class FeedbackService:
         return items, total
 
     async def get_prompt_suggestions(
-        self,
-        db: AsyncSession,
-        food_key: str
+        self, db: AsyncSession, food_key: str
     ) -> Dict[str, Any]:
         """
         Get prompt suggestions for a food category based on feedback.
@@ -298,8 +289,10 @@ class FeedbackService:
             {
                 "prompt": lp.prompt,
                 "source": lp.source,
-                "confidence": (lp.success_count / max(lp.times_used, 1)) if lp.times_used > 0 else 0.5,
-                "feedback_count": lp.times_used
+                "confidence": (lp.success_count / max(lp.times_used, 1))
+                if lp.times_used > 0
+                else 0.5,
+                "feedback_count": lp.times_used,
             }
             for lp in learned_query.scalars()
         ]
@@ -308,7 +301,7 @@ class FeedbackService:
         corrections_query = await db.execute(
             select(
                 FoodFeedback.original_prediction,
-                func.count(FoodFeedback.id).label("count")
+                func.count(FoodFeedback.id).label("count"),
             )
             .where(FoodFeedback.corrected_label == food_key)
             .group_by(FoodFeedback.original_prediction)
@@ -327,8 +320,9 @@ class FeedbackService:
 
         # Count total feedback for this food
         feedback_count = await db.execute(
-            select(func.count(FoodFeedback.id))
-            .where(FoodFeedback.corrected_label == food_key)
+            select(func.count(FoodFeedback.id)).where(
+                FoodFeedback.corrected_label == food_key
+            )
         )
         count = feedback_count.scalar() or 0
 
@@ -337,13 +331,11 @@ class FeedbackService:
             "current_prompts": current_prompts,
             "suggested_prompts": learned_prompts + auto_suggestions,
             "feedback_count": count,
-            "common_corrections": common_corrections
+            "common_corrections": common_corrections,
         }
 
     def _generate_disambiguation_prompts(
-        self,
-        food_key: str,
-        confusion_pairs: List[Dict]
+        self, food_key: str, confusion_pairs: List[Dict]
     ) -> List[Dict]:
         """
         Generate prompts that help distinguish this food from confused items.
@@ -359,16 +351,18 @@ class FeedbackService:
             prompts = [
                 f"a {food_name}, not {confused_with}",
                 f"clearly a {food_name}",
-                f"a photo showing {food_name} specifically"
+                f"a photo showing {food_name} specifically",
             ]
 
             for prompt in prompts:
-                suggestions.append({
-                    "prompt": prompt,
-                    "source": "auto_generated",
-                    "confidence": min(0.7, count / 10),
-                    "feedback_count": count
-                })
+                suggestions.append(
+                    {
+                        "prompt": prompt,
+                        "source": "auto_generated",
+                        "confidence": min(0.7, count / 10),
+                        "feedback_count": count,
+                    }
+                )
 
         return suggestions
 
@@ -376,7 +370,7 @@ class FeedbackService:
         self,
         db: AsyncSession,
         food_keys: Optional[List[str]] = None,
-        min_feedback_count: int = 3
+        min_feedback_count: int = 3,
     ) -> Tuple[int, List[str]]:
         """
         Apply learned prompts to the CLIP classifier.
@@ -405,8 +399,9 @@ class FeedbackService:
         for food_key, prompts in prompts_by_food.items():
             # Check feedback count
             feedback_count = await db.execute(
-                select(func.count(FoodFeedback.id))
-                .where(FoodFeedback.corrected_label == food_key)
+                select(func.count(FoodFeedback.id)).where(
+                    FoodFeedback.corrected_label == food_key
+                )
             )
             count = feedback_count.scalar() or 0
 
@@ -416,7 +411,9 @@ class FeedbackService:
                     existing = set(FOOD_PROMPTS[food_key])
                     new_prompts = [p for p in prompts if p not in existing]
                     if new_prompts:
-                        FOOD_PROMPTS[food_key].extend(new_prompts[:3])  # Limit additions
+                        FOOD_PROMPTS[food_key].extend(
+                            new_prompts[:3]
+                        )  # Limit additions
                         updated_foods.append(food_key)
                         total_prompts += len(new_prompts[:3])
                 else:
@@ -431,24 +428,21 @@ class FeedbackService:
                 classifier = get_clip_classifier()
                 if classifier._loaded:
                     classifier._precompute_text_features()
-                    logger.info(f"Rebuilt CLIP text features for {len(updated_foods)} foods")
+                    logger.info(
+                        f"Rebuilt CLIP text features for {len(updated_foods)} foods"
+                    )
             except Exception as e:
                 logger.error(f"Failed to rebuild CLIP features: {e}")
 
         return total_prompts, updated_foods
 
-    async def get_analytics(
-        self,
-        db: AsyncSession,
-        days: int = 30
-    ) -> Dict[str, Any]:
+    async def get_analytics(self, db: AsyncSession, days: int = 30) -> Dict[str, Any]:
         """Get detailed analytics for feedback-driven learning."""
         cutoff = datetime.now() - timedelta(days=days)
 
         # Get all feedback in period
         feedback_query = await db.execute(
-            select(FoodFeedback)
-            .where(FoodFeedback.created_at >= cutoff)
+            select(FoodFeedback).where(FoodFeedback.created_at >= cutoff)
         )
         feedbacks = list(feedback_query.scalars())
 
@@ -462,10 +456,12 @@ class FeedbackService:
         for fb in feedbacks:
             by_category[fb.corrected_label]["corrections"] += 1
             if len(by_category[fb.corrected_label]["examples"]) < 3:
-                by_category[fb.corrected_label]["examples"].append({
-                    "from": fb.original_prediction,
-                    "confidence": fb.original_confidence
-                })
+                by_category[fb.corrected_label]["examples"].append(
+                    {
+                        "from": fb.original_prediction,
+                        "confidence": fb.original_confidence,
+                    }
+                )
 
         # Correction patterns
         pattern_counts: Dict[Tuple[str, str], int] = defaultdict(int)
@@ -477,13 +473,13 @@ class FeedbackService:
                 "original": orig,
                 "corrected": corr,
                 "count": count,
-                "percentage": count / total_corrections * 100 if total_corrections > 0 else 0,
-                "suggested_action": self._suggest_action(orig, corr, count)
+                "percentage": count / total_corrections * 100
+                if total_corrections > 0
+                else 0,
+                "suggested_action": self._suggest_action(orig, corr, count),
             }
             for (orig, corr), count in sorted(
-                pattern_counts.items(),
-                key=lambda x: x[1],
-                reverse=True
+                pattern_counts.items(), key=lambda x: x[1], reverse=True
             )[:20]
         ]
 
@@ -491,16 +487,18 @@ class FeedbackService:
         opportunities = []
         for (orig, corr), count in pattern_counts.items():
             if count >= 3:
-                opportunities.append({
-                    "type": "add_prompt",
-                    "food_key": corr,
-                    "reason": f"Confused with {orig} {count} times",
-                    "priority": count,
-                    "suggested_prompts": [
-                        f"a {corr.replace('_', ' ')}, not {orig.replace('_', ' ')}",
-                        f"clearly {corr.replace('_', ' ')} food"
-                    ]
-                })
+                opportunities.append(
+                    {
+                        "type": "add_prompt",
+                        "food_key": corr,
+                        "reason": f"Confused with {orig} {count} times",
+                        "priority": count,
+                        "suggested_prompts": [
+                            f"a {corr.replace('_', ' ')}, not {orig.replace('_', ' ')}",
+                            f"clearly {corr.replace('_', ' ')} food",
+                        ],
+                    }
+                )
 
         opportunities.sort(key=lambda x: x["priority"], reverse=True)
 
@@ -511,7 +509,7 @@ class FeedbackService:
             "accuracy_rate": 0.0,  # Would need total predictions
             "by_category": dict(by_category),
             "correction_patterns": patterns,
-            "improvement_opportunities": opportunities[:10]
+            "improvement_opportunities": opportunities[:10],
         }
 
     def _suggest_action(self, original: str, corrected: str, count: int) -> str:
@@ -524,10 +522,7 @@ class FeedbackService:
             return "Monitor - may need prompt adjustments"
 
     async def update_feedback_status(
-        self,
-        db: AsyncSession,
-        feedback_id: int,
-        status: str
+        self, db: AsyncSession, feedback_id: int, status: str
     ) -> bool:
         """Update the status of a feedback item."""
         result = await db.execute(

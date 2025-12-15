@@ -25,7 +25,6 @@ FOOD_QUERIES = [
     "a photo of a meal",
     "a photo of a dish",
     "a photo of a plate of food",
-
     # === PROTEINS (MEAT) ===
     "a photo of meat",
     "a photo of steak",
@@ -43,7 +42,6 @@ FOOD_QUERIES = [
     "a photo of fried egg",
     "a photo of scrambled eggs",
     "a photo of omelette",
-
     # === SEAFOOD (CRITICAL - was 0% accuracy) ===
     "a photo of seafood",
     "a photo of fish",
@@ -63,7 +61,6 @@ FOOD_QUERIES = [
     "a photo of sashimi",
     "a photo of grilled fish",
     "a photo of fried fish",
-
     # === CARBS/GRAINS ===
     "a photo of rice",
     "a photo of bread",
@@ -76,7 +73,6 @@ FOOD_QUERIES = [
     "a photo of french fries",
     "a photo of mashed potatoes",
     "a photo of baked potato",
-
     # === VEGETABLES (EXPANDED) ===
     "a photo of vegetables",
     "a photo of salad",
@@ -108,7 +104,6 @@ FOOD_QUERIES = [
     "a photo of beets",
     "a photo of radish",
     "a photo of turnip",
-
     # === FRUITS (EXPANDED) ===
     "a photo of fruit",
     "a photo of berries",
@@ -141,7 +136,6 @@ FOOD_QUERIES = [
     "a photo of grapefruit",
     "a photo of avocado",
     "a photo of coconut",
-
     # === NUTS & SEEDS (EXPANDED) ===
     "a photo of nuts",
     "a photo of almonds",
@@ -156,7 +150,6 @@ FOOD_QUERIES = [
     "a photo of seeds",
     "a photo of sunflower seeds",
     "a photo of pumpkin seeds",
-
     # === DAIRY ===
     "a photo of cheese",
     "a photo of dairy",
@@ -164,7 +157,6 @@ FOOD_QUERIES = [
     "a photo of yogurt",
     "a photo of butter",
     "a photo of cream",
-
     # === PREPARED DISHES (CRITICAL for accuracy) ===
     "a photo of pizza",
     "a photo of hamburger",
@@ -199,7 +191,6 @@ FOOD_QUERIES = [
     "a photo of pita bread",
     "a photo of naan bread",
     "a photo of fish and chips",
-
     # === ASIAN CUISINE (EXPANDED) ===
     "a photo of dim sum",
     "a photo of dumplings",
@@ -221,7 +212,6 @@ FOOD_QUERIES = [
     "a photo of tofu",
     "a photo of bao bun",
     "a photo of steamed bun",
-
     # === INDIAN CUISINE ===
     "a photo of indian curry",
     "a photo of butter chicken",
@@ -233,7 +223,6 @@ FOOD_QUERIES = [
     "a photo of naan",
     "a photo of dal",
     "a photo of paneer",
-
     # === BREAKFAST (EXPANDED) ===
     "a photo of pancakes",
     "a photo of waffles",
@@ -250,7 +239,6 @@ FOOD_QUERIES = [
     "a photo of smoothie",
     "a photo of smoothie bowl",
     "a photo of acai bowl",
-
     # === SOUP ===
     "a photo of soup",
     "a photo of stew",
@@ -258,7 +246,6 @@ FOOD_QUERIES = [
     "a photo of chowder",
     "a photo of bisque",
     "a photo of broth",
-
     # === DESSERTS (EXPANDED) ===
     "a photo of dessert",
     "a photo of cake",
@@ -282,7 +269,6 @@ FOOD_QUERIES = [
     "a photo of tart",
     "a photo of macaron",
     "a photo of cinnamon roll",
-
     # === BEVERAGES ===
     "a photo of coffee",
     "a photo of tea",
@@ -291,14 +277,12 @@ FOOD_QUERIES = [
     "a photo of milkshake",
     "a photo of latte",
     "a photo of cappuccino",
-
     # === LEGUMES ===
     "a photo of beans",
     "a photo of lentils",
     "a photo of chickpeas",
     "a photo of black beans",
     "a photo of kidney beans",
-
     # === OTHER ===
     "a photo of snack",
     "a photo of appetizer",
@@ -313,6 +297,7 @@ FOOD_QUERIES = [
 @dataclass
 class DetectedRegion:
     """A detected food region in the image."""
+
     bbox: Tuple[int, int, int, int]  # (x1, y1, x2, y2)
     confidence: float
     query_label: str  # Which query matched
@@ -322,6 +307,7 @@ class DetectedRegion:
 @dataclass
 class DetectionResult:
     """Results from multi-food detection."""
+
     regions: List[DetectedRegion]
     num_foods_detected: int
     detection_confidence: float  # Overall confidence
@@ -419,11 +405,7 @@ class FoodDetector:
             image = image.convert("RGB")
 
         # Process image with all food queries
-        inputs = self._processor(
-            text=FOOD_QUERIES,
-            images=image,
-            return_tensors="pt"
-        )
+        inputs = self._processor(text=FOOD_QUERIES, images=image, return_tensors="pt")
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         # Run detection
@@ -431,7 +413,9 @@ class FoodDetector:
 
         # Post-process to get boxes - always on CPU to avoid MPS float64 issues
         # The processor.post_process_object_detection uses float64 internally which MPS doesn't support
-        target_sizes = torch.tensor([image.size[::-1]], dtype=torch.float32)  # CPU, (height, width)
+        target_sizes = torch.tensor(
+            [image.size[::-1]], dtype=torch.float32
+        )  # CPU, (height, width)
 
         # Create a simple namespace with CPU tensors
         class OutputsCPU:
@@ -441,13 +425,11 @@ class FoodDetector:
 
         outputs_cpu = OutputsCPU(
             logits=outputs.logits.detach().cpu(),
-            pred_boxes=outputs.pred_boxes.detach().cpu()
+            pred_boxes=outputs.pred_boxes.detach().cpu(),
         )
 
         results = self._processor.post_process_object_detection(
-            outputs=outputs_cpu,
-            threshold=threshold,
-            target_sizes=target_sizes
+            outputs=outputs_cpu, threshold=threshold, target_sizes=target_sizes
         )[0]
 
         # Extract detections
@@ -475,14 +457,18 @@ class FoodDetector:
             # Crop the region
             cropped = image.crop((x1, y1, x2, y2))
 
-            query_label = FOOD_QUERIES[label_idx] if label_idx < len(FOOD_QUERIES) else "food"
+            query_label = (
+                FOOD_QUERIES[label_idx] if label_idx < len(FOOD_QUERIES) else "food"
+            )
 
-            regions.append(DetectedRegion(
-                bbox=(x1, y1, x2, y2),
-                confidence=float(score),
-                query_label=query_label,
-                cropped_image=cropped
-            ))
+            regions.append(
+                DetectedRegion(
+                    bbox=(x1, y1, x2, y2),
+                    confidence=float(score),
+                    query_label=query_label,
+                    cropped_image=cropped,
+                )
+            )
 
         # Apply non-maximum suppression to remove overlapping detections
         regions = self._non_max_suppression(regions)
@@ -498,12 +484,11 @@ class FoodDetector:
         return DetectionResult(
             regions=regions,
             num_foods_detected=len(regions),
-            detection_confidence=overall_confidence
+            detection_confidence=overall_confidence,
         )
 
     def _non_max_suppression(
-        self,
-        regions: List[DetectedRegion]
+        self, regions: List[DetectedRegion]
     ) -> List[DetectedRegion]:
         """
         Apply non-maximum suppression to remove overlapping detections.
@@ -527,16 +512,15 @@ class FoodDetector:
 
             # Remove regions that overlap too much with the best one
             regions = [
-                r for r in regions
+                r
+                for r in regions
                 if self._calculate_iou(best.bbox, r.bbox) < self.NMS_THRESHOLD
             ]
 
         return keep
 
     def _calculate_iou(
-        self,
-        box1: Tuple[int, int, int, int],
-        box2: Tuple[int, int, int, int]
+        self, box1: Tuple[int, int, int, int], box2: Tuple[int, int, int, int]
     ) -> float:
         """
         Calculate Intersection over Union (IoU) of two bounding boxes.
