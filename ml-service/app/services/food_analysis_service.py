@@ -342,7 +342,7 @@ class FoodAnalysisService:
                 dimensions, food_class, cooking_method_enum
             )
             portion_weight = portion_result["weight"]
-            measurement_quality = self._assess_measurement_quality(dimensions)
+            _measurement_quality = self._assess_measurement_quality(dimensions)  # noqa: F841
 
             validation = validate_portion(
                 portion_weight,

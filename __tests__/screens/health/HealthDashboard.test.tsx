@@ -34,8 +34,20 @@ jest.mock('@/lib/context/AuthContext', () => ({
     user: { id: 'user-1', name: 'Test User' },
   }),
 }));
+jest.mock('@/hooks/useResponsive', () => ({
+  useResponsive: () => ({
+    isTablet: false,
+    isLandscape: false,
+    deviceCategory: 'medium',
+    getResponsiveValue: (values: Record<string, number>) => values.default ?? values.medium ?? 16,
+    width: 375,
+  }),
+}));
 jest.mock('expo-linear-gradient', () => ({
   LinearGradient: ({ children }: { children: React.ReactNode }) => children,
+}));
+jest.mock('react-native-safe-area-context', () => ({
+  SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
 }));
 jest.mock('@expo/vector-icons', () => ({
   Ionicons: ({ name, ...props }: { name: string; [key: string]: unknown }) => {
@@ -72,10 +84,15 @@ const createMockStats = (): HealthMetricStats => ({
   percentChange: -3.5,
 });
 
+// Helper to create a null metric entry
+const createNullEntry = () => ({ latest: null, stats: null });
+
+// Mock dashboard data with specific metrics having values
 const mockDashboardData: Record<
   HealthMetricType,
   { latest: HealthMetric | null; stats: HealthMetricStats | null }
 > = {
+  // Cardiovascular - with data for RHR and HRV
   RESTING_HEART_RATE: {
     latest: createMockMetric('RESTING_HEART_RATE', 62, 'bpm'),
     stats: createMockStats(),
@@ -84,25 +101,79 @@ const mockDashboardData: Record<
     latest: createMockMetric('HEART_RATE_VARIABILITY_SDNN', 45, 'ms'),
     stats: createMockStats(),
   },
+  HEART_RATE_VARIABILITY_RMSSD: createNullEntry(),
+  BLOOD_PRESSURE_SYSTOLIC: createNullEntry(),
+  BLOOD_PRESSURE_DIASTOLIC: createNullEntry(),
+  RESPIRATORY_RATE: createNullEntry(),
+  OXYGEN_SATURATION: createNullEntry(),
+  VO2_MAX: createNullEntry(),
+  // Sleep - with data for SLEEP_DURATION
   SLEEP_DURATION: {
     latest: createMockMetric('SLEEP_DURATION', 7.5, 'hours'),
     stats: createMockStats(),
   },
+  DEEP_SLEEP_DURATION: createNullEntry(),
+  REM_SLEEP_DURATION: createNullEntry(),
+  SLEEP_EFFICIENCY: createNullEntry(),
+  SLEEP_SCORE: createNullEntry(),
+  // Activity - no data
+  STEPS: createNullEntry(),
+  ACTIVE_CALORIES: createNullEntry(),
+  TOTAL_CALORIES: createNullEntry(),
+  EXERCISE_MINUTES: createNullEntry(),
+  STANDING_HOURS: createNullEntry(),
+  // Recovery - with data for RECOVERY_SCORE
   RECOVERY_SCORE: {
     latest: createMockMetric('RECOVERY_SCORE', 85, '%'),
     stats: createMockStats(),
   },
-} as Record<HealthMetricType, { latest: HealthMetric | null; stats: HealthMetricStats | null }>;
+  STRAIN_SCORE: createNullEntry(),
+  READINESS_SCORE: createNullEntry(),
+  STRESS_LEVEL: createNullEntry(),
+  // Body Composition - no data
+  BODY_FAT_PERCENTAGE: createNullEntry(),
+  MUSCLE_MASS: createNullEntry(),
+  BONE_MASS: createNullEntry(),
+  WATER_PERCENTAGE: createNullEntry(),
+  SKIN_TEMPERATURE: createNullEntry(),
+  // Other - no data
+  BLOOD_GLUCOSE: createNullEntry(),
+};
 
+// Empty dashboard data with all metrics having null values
 const emptyDashboardData: Record<
   HealthMetricType,
   { latest: HealthMetric | null; stats: HealthMetricStats | null }
 > = {
-  RESTING_HEART_RATE: { latest: null, stats: null },
-  HEART_RATE_VARIABILITY_SDNN: { latest: null, stats: null },
-  SLEEP_DURATION: { latest: null, stats: null },
-  RECOVERY_SCORE: { latest: null, stats: null },
-} as Record<HealthMetricType, { latest: HealthMetric | null; stats: HealthMetricStats | null }>;
+  RESTING_HEART_RATE: createNullEntry(),
+  HEART_RATE_VARIABILITY_SDNN: createNullEntry(),
+  HEART_RATE_VARIABILITY_RMSSD: createNullEntry(),
+  BLOOD_PRESSURE_SYSTOLIC: createNullEntry(),
+  BLOOD_PRESSURE_DIASTOLIC: createNullEntry(),
+  RESPIRATORY_RATE: createNullEntry(),
+  OXYGEN_SATURATION: createNullEntry(),
+  VO2_MAX: createNullEntry(),
+  SLEEP_DURATION: createNullEntry(),
+  DEEP_SLEEP_DURATION: createNullEntry(),
+  REM_SLEEP_DURATION: createNullEntry(),
+  SLEEP_EFFICIENCY: createNullEntry(),
+  SLEEP_SCORE: createNullEntry(),
+  STEPS: createNullEntry(),
+  ACTIVE_CALORIES: createNullEntry(),
+  TOTAL_CALORIES: createNullEntry(),
+  EXERCISE_MINUTES: createNullEntry(),
+  STANDING_HOURS: createNullEntry(),
+  RECOVERY_SCORE: createNullEntry(),
+  STRAIN_SCORE: createNullEntry(),
+  READINESS_SCORE: createNullEntry(),
+  STRESS_LEVEL: createNullEntry(),
+  BODY_FAT_PERCENTAGE: createNullEntry(),
+  MUSCLE_MASS: createNullEntry(),
+  BONE_MASS: createNullEntry(),
+  WATER_PERCENTAGE: createNullEntry(),
+  SKIN_TEMPERATURE: createNullEntry(),
+  BLOOD_GLUCOSE: createNullEntry(),
+};
 
 describe('HealthDashboard', () => {
   beforeEach(() => {
@@ -131,14 +202,18 @@ describe('HealthDashboard', () => {
     mockedHealthMetricsApi.getDashboardData.mockResolvedValueOnce(mockDashboardData);
 
     // Act
-    const { getByText, findByText } = render(<HealthScreen />);
+    const { findByText, findAllByText } = render(<HealthScreen />);
 
     // Assert
     await findByText('Health');
     await findByText('RHR');
     await findByText('HRV');
-    await findByText('Sleep');
-    await findByText('Recovery');
+    // 'Sleep' appears twice: as category title and as metric shortName
+    const sleepTexts = await findAllByText('Sleep');
+    expect(sleepTexts.length).toBeGreaterThanOrEqual(1);
+    // 'Recovery' may appear twice: as category title and as metric shortName
+    const recoveryTexts = await findAllByText('Recovery');
+    expect(recoveryTexts.length).toBeGreaterThanOrEqual(1);
     expect(await findByText('62')).toBeTruthy();
   });
 
