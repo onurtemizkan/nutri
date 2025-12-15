@@ -356,7 +356,7 @@ class FoodAnalysisService:
                 suggestions.extend(validation["warnings"])
         else:
             portion_weight = food_entry.serving_weight if food_entry else 100
-            measurement_quality = "low"
+            _measurement_quality = "low"  # noqa: F841
             suggestions.append(
                 "No measurements provided - using standard serving size"
             )

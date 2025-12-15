@@ -5,12 +5,9 @@ Uses nateraw/food model - a ViT fine-tuned on Food-101 dataset with 101 food cla
 Achieves ~90%+ accuracy on food classification.
 """
 import logging
-import os
 from typing import List, Tuple, Dict, Optional
-from functools import lru_cache
 
 import torch
-import numpy as np
 from PIL import Image
 
 logger = logging.getLogger(__name__)

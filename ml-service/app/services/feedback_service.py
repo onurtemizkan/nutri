@@ -15,7 +15,6 @@ from datetime import datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc, and_, or_
-from sqlalchemy.dialects.postgresql import insert
 
 from app.models.food_feedback import FoodFeedback, LearnedPrompt
 from app.ml_models.clip_food_classifier import FOOD_PROMPTS, get_clip_classifier

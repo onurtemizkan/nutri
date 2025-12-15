@@ -26,6 +26,7 @@ def compute_image_hash(image_bytes: bytes) -> str:
     """Compute SHA-256 hash of image for feedback deduplication."""
     return hashlib.sha256(image_bytes).hexdigest()
 
+
 router = APIRouter()
 
 

@@ -8,7 +8,7 @@ requiring training on specific food classes.
 Model: google/owlvit-base-patch32
 """
 import logging
-from typing import List, Tuple, Optional, NamedTuple
+from typing import List, Tuple, Optional
 from dataclasses import dataclass
 
 import torch

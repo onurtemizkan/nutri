@@ -12,10 +12,8 @@ Prompt engineering is critical for accuracy.
 """
 import logging
 from typing import List, Tuple, Dict, Optional
-from functools import lru_cache
 
 import torch
-import numpy as np
 from PIL import Image
 
 logger = logging.getLogger(__name__)

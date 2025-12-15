@@ -20,6 +20,15 @@ jest.mock('expo-router', () => ({
     back: jest.fn(),
   }),
 }));
+jest.mock('@react-navigation/native', () => ({
+  useFocusEffect: (callback: () => void) => {
+    // Execute the callback immediately in tests
+    const { useEffect } = require('react');
+    useEffect(() => {
+      callback();
+    }, [callback]);
+  },
+}));
 jest.mock('@/lib/context/AuthContext', () => ({
   useAuth: () => ({
     user: { id: 'user-1', name: 'Test User' },

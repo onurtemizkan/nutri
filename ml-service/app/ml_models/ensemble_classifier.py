@@ -14,7 +14,7 @@ food categories. CLIP especially excels at raw produce (100% vs 40%).
 Uses cascading fallback: if primary confidence is low, consults specialists.
 """
 import logging
-from typing import List, Tuple, Dict, Optional, NamedTuple
+from typing import List, Tuple, Dict, Optional
 from dataclasses import dataclass
 from enum import Enum
 
