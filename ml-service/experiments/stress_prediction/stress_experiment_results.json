@@ -1,0 +1,279 @@
+{
+  "metadata": {
+    "start_time": "2025-12-14T10:35:05.564273",
+    "device": "cpu",
+    "num_personas": 12,
+    "days_per_persona": 730,
+    "sequence_length": 14,
+    "end_time": "2025-12-14T10:42:05.034703"
+  },
+  "persona_stats": {
+    "elite_athlete": {
+      "stress_score_mean": 42.64183947755553,
+      "stress_score_std": 9.067588900541018,
+      "hrv_rmssd_mean": 69.42419270709047,
+      "rhr_mean": 60.58919382180361,
+      "sleep_duration_mean": 8.354795766840938,
+      "low_stress_pct": 12.602739726027398,
+      "moderate_stress_pct": 87.26027397260275,
+      "high_stress_pct": 0.136986301369863
+    },
+    "recreational_runner": {
+      "stress_score_mean": 47.21777416896805,
+      "stress_score_std": 11.012351156389922,
+      "hrv_rmssd_mean": 48.51711193805009,
+      "rhr_mean": 71.66957835731436,
+      "sleep_duration_mean": 7.179521084669923,
+      "low_stress_pct": 10.95890410958904,
+      "moderate_stress_pct": 87.67123287671232,
+      "high_stress_pct": 1.36986301369863
+    },
+    "sedentary_office": {
+      "stress_score_mean": 53.97863741843955,
+      "stress_score_std": 11.490500654118042,
+      "hrv_rmssd_mean": 24.765876053948116,
+      "rhr_mean": 87.52390407420239,
+      "sleep_duration_mean": 6.346708935013691,
+      "low_stress_pct": 5.205479452054795,
+      "moderate_stress_pct": 80.95890410958904,
+      "high_stress_pct": 13.835616438356164
+    },
+    "stressed_executive": {
+      "stress_score_mean": 57.740323383556934,
+      "stress_score_std": 10.566969243014846,
+      "hrv_rmssd_mean": 17.99514893891409,
+      "rhr_mean": 96.2177472790699,
+      "sleep_duration_mean": 5.326020042460911,
+      "low_stress_pct": 1.643835616438356,
+      "moderate_stress_pct": 73.97260273972603,
+      "high_stress_pct": 24.383561643835616
+    },
+    "health_enthusiast": {
+      "stress_score_mean": 43.76702624503899,
+      "stress_score_std": 11.411799371528597,
+      "hrv_rmssd_mean": 47.23918871894963,
+      "rhr_mean": 72.57643058069414,
+      "sleep_duration_mean": 7.531386077917215,
+      "low_stress_pct": 15.342465753424658,
+      "moderate_stress_pct": 84.10958904109589,
+      "high_stress_pct": 0.547945205479452
+    },
+    "night_shift_nurse": {
+      "stress_score_mean": 53.08320751272215,
+      "stress_score_std": 13.314817996371133,
+      "hrv_rmssd_mean": 26.528427389161898,
+      "rhr_mean": 83.55279066797023,
+      "sleep_duration_mean": 5.848990994918433,
+      "low_stress_pct": 7.9452054794520555,
+      "moderate_stress_pct": 73.6986301369863,
+      "high_stress_pct": 18.356164383561644
+    },
+    "college_student_exams": {
+      "stress_score_mean": 56.11514459840514,
+      "stress_score_std": 11.093583006551363,
+      "hrv_rmssd_mean": 34.29125627466915,
+      "rhr_mean": 81.88804864841693,
+      "sleep_duration_mean": 5.843338578877941,
+      "low_stress_pct": 2.4657534246575343,
+      "moderate_stress_pct": 75.75342465753425,
+      "high_stress_pct": 21.78082191780822
+    },
+    "new_parent": {
+      "stress_score_mean": 55.2746677786978,
+      "stress_score_std": 12.371507891017473,
+      "hrv_rmssd_mean": 28.90109371787981,
+      "rhr_mean": 86.59268163854989,
+      "sleep_duration_mean": 5.349878491200422,
+      "low_stress_pct": 4.657534246575342,
+      "moderate_stress_pct": 73.15068493150685,
+      "high_stress_pct": 22.19178082191781
+    },
+    "retired_active": {
+      "stress_score_mean": 44.06439374158367,
+      "stress_score_std": 12.384453581933993,
+      "hrv_rmssd_mean": 31.640493789121926,
+      "rhr_mean": 73.72966027221908,
+      "sleep_duration_mean": 6.787097461380741,
+      "low_stress_pct": 18.493150684931507,
+      "moderate_stress_pct": 79.31506849315069,
+      "high_stress_pct": 2.191780821917808
+    },
+    "yoga_practitioner": {
+      "stress_score_mean": 40.9058843220882,
+      "stress_score_std": 9.960389683689815,
+      "hrv_rmssd_mean": 58.0772027557857,
+      "rhr_mean": 66.97995031629894,
+      "sleep_duration_mean": 7.659892969727569,
+      "low_stress_pct": 16.43835616438356,
+      "moderate_stress_pct": 83.56164383561644,
+      "high_stress_pct": 0.0
+    },
+    "chronic_stress": {
+      "stress_score_mean": 61.00300011065865,
+      "stress_score_std": 10.234404446232102,
+      "hrv_rmssd_mean": 14.860258289772084,
+      "rhr_mean": 100.14284196492717,
+      "sleep_duration_mean": 4.845107782871296,
+      "low_stress_pct": 1.2328767123287672,
+      "moderate_stress_pct": 59.589041095890416,
+      "high_stress_pct": 39.178082191780824
+    },
+    "recovering_burnout": {
+      "stress_score_mean": 50.30719927218307,
+      "stress_score_std": 12.11894554682339,
+      "hrv_rmssd_mean": 23.59027592852498,
+      "rhr_mean": 85.86373028719652,
+      "sleep_duration_mean": 7.357692912290165,
+      "low_stress_pct": 8.63013698630137,
+      "moderate_stress_pct": 86.43835616438355,
+      "high_stress_pct": 4.931506849315069
+    }
+  },
+  "model_results": {
+    "random_forest_regression": {
+      "mae": 8.557775025264016,
+      "rmse": 10.498966811933949,
+      "r2": 0.3496478720106492
+    },
+    "random_forest_classification": {
+      "accuracy": 0.8122575640031032,
+      "f1_macro": 0.45805553525983217,
+      "f1_weighted": 0.756076051850535
+    },
+    "gradient_boosting_regression": {
+      "mae": 8.624339963991527,
+      "rmse": 10.566364537287589,
+      "r2": 0.34127124892912253
+    },
+    "lstm_regression": {
+      "mae": 9.784893035888672,
+      "rmse": 12.381673227362272,
+      "r2": 0.09548842906951904
+    },
+    "lstm_classification": {
+      "accuracy": 0.743211792086889,
+      "f1_macro": 0.5041225179293006,
+      "f1_weighted": 0.7373403808885466
+    },
+    "transformer_regression": {
+      "mae": 9.229625701904297,
+      "rmse": 11.608636968675858,
+      "r2": 0.20490705966949463
+    },
+    "transformer_classification": {
+      "accuracy": 0.7858805275407292,
+      "f1_macro": 0.5117517277634437,
+      "f1_weighted": 0.760169584474602
+    }
+  },
+  "feature_importance": {
+    "sleep_debt": 0.016801012782761252,
+    "late_eating": 0.0060553835527901905,
+    "rhr_7d_avg": 0.004821752832987065,
+    "hrv_lf_hf_ratio": 0.00289424530606502,
+    "sleep_efficiency": 0.0028795872384033265,
+    "pnn50": 0.0028770967513910505,
+    "deep_sleep_pct": 0.0027635213182206665,
+    "activity_load": 0.002755877172311749,
+    "hrv_sdnn": 0.0027427149749890286,
+    "meal_regularity": 0.00271541140726188,
+    "nutrition_score": 0.002661414030470029,
+    "sleep_quality": 0.002623885924186413,
+    "sleep_duration": 0.0025893876560759374,
+    "cumulative_stress": 0.002588967925736886,
+    "hrv_rmssd": 0.0025870919030395356,
+    "training_load_7d": 0.0021339906450945265,
+    "workout_duration": 0.0020917272490942394,
+    "hrv_rmssd_7d_avg": 0.0020733628950800323,
+    "stress_event": 0.0017369700849277016,
+    "rhr_deviation": 0.0015106473083470353,
+    "rhr": 0.0014214468345302492,
+    "is_weekend": 0.00010307563480761569
+  },
+  "per_persona_results": {
+    "elite_athlete": {
+      "mae": 4.203295693451895,
+      "rmse": 5.297617257734723,
+      "r2": 0.5980750289742285,
+      "actual_mean": 43.136308416528884,
+      "predicted_mean": 43.214460232046335
+    },
+    "recreational_runner": {
+      "mae": 5.092750853203722,
+      "rmse": 6.501073861716765,
+      "r2": 0.6173887433175596,
+      "actual_mean": 47.676474143504294,
+      "predicted_mean": 47.83427970850272
+    },
+    "sedentary_office": {
+      "mae": 4.722924120866297,
+      "rmse": 6.067377787580896,
+      "r2": 0.7021882550518324,
+      "actual_mean": 54.37211668502139,
+      "predicted_mean": 54.74181006412155
+    },
+    "stressed_executive": {
+      "mae": 4.7771341433921535,
+      "rmse": 6.046001999697364,
+      "r2": 0.6601491867139198,
+      "actual_mean": 58.026411537970745,
+      "predicted_mean": 57.367176908259914
+    },
+    "health_enthusiast": {
+      "mae": 5.351057480731406,
+      "rmse": 6.566510979627282,
+      "r2": 0.6390469822896587,
+      "actual_mean": 44.244732825684586,
+      "predicted_mean": 43.89843182894639
+    },
+    "night_shift_nurse": {
+      "mae": 5.619508505189721,
+      "rmse": 7.060048469492908,
+      "r2": 0.7061847717454439,
+      "actual_mean": 53.47515241198867,
+      "predicted_mean": 53.95490348401748
+    },
+    "college_student_exams": {
+      "mae": 5.026898213907067,
+      "rmse": 6.2286416817045795,
+      "r2": 0.6734671515024786,
+      "actual_mean": 56.35678311732531,
+      "predicted_mean": 55.939656445683184
+    },
+    "new_parent": {
+      "mae": 5.616539630009111,
+      "rmse": 6.9878072715194195,
+      "r2": 0.6795080826146549,
+      "actual_mean": 55.39425446639859,
+      "predicted_mean": 55.85341905270028
+    },
+    "retired_active": {
+      "mae": 5.799194886607849,
+      "rmse": 7.442971205283176,
+      "r2": 0.6166798838292078,
+      "actual_mean": 44.473348853942326,
+      "predicted_mean": 44.48214204247639
+    },
+    "yoga_practitioner": {
+      "mae": 4.110173997422147,
+      "rmse": 5.296247454404564,
+      "r2": 0.688836062833789,
+      "actual_mean": 41.34204312944726,
+      "predicted_mean": 42.018826681541434
+    },
+    "chronic_stress": {
+      "mae": 4.574637322113854,
+      "rmse": 5.870276602721112,
+      "r2": 0.6667511849656415,
+      "actual_mean": 61.13016754955146,
+      "predicted_mean": 60.47902912715795
+    },
+    "recovering_burnout": {
+      "mae": 4.988514292415157,
+      "rmse": 6.517245085970272,
+      "r2": 0.6935791579801971,
+      "actual_mean": 50.71770252390051,
+      "predicted_mean": 51.1628758337408
+    }
+  }
+}
