@@ -11,7 +11,7 @@
  * - Returns measurement data to calling screen
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,8 @@ import {
   TouchableOpacity,
   Platform,
   ActivityIndicator,
+  DeviceEventEmitter,
+  Dimensions,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -36,6 +38,9 @@ import {
 } from '@/lib/components/ReferenceObjectCalibration';
 import LiDARModule from '@/lib/modules/LiDARModule';
 import type { ARMeasurement } from '@/lib/types/food-analysis';
+import type { LiDARCapture } from '@/lib/types/ar-data';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 type MeasurementMode = 'ar' | 'manual' | 'loading' | 'calibration';
 
@@ -52,6 +57,9 @@ export default function ARMeasureScreen() {
   const [isLiDARAvailable, setIsLiDARAvailable] = useState(false);
   const [measurement, setMeasurement] = useState<ARMeasurement | null>(null);
   const [calibration, setCalibration] = useState<CalibrationResult | null>(null);
+  const [isARSessionActive, setIsARSessionActive] = useState(false);
+  const lastDepthCapture = useRef<LiDARCapture | null>(null);
+  const depthCaptureInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Check LiDAR availability on mount
   useEffect(() => {
@@ -94,6 +102,103 @@ export default function ARMeasureScreen() {
     }
   }, [permission, requestPermission, mode]);
 
+  // Start/stop AR session based on mode
+  useEffect(() => {
+    async function startARSession() {
+      if (mode === 'ar' && hasLiDAR && LiDARModule.isAvailable && !isARSessionActive) {
+        try {
+          console.log('Starting LiDAR AR session...');
+          await LiDARModule.startARSession('lidar');
+          setIsARSessionActive(true);
+
+          // Start capturing depth frames periodically
+          depthCaptureInterval.current = setInterval(async () => {
+            try {
+              const capture = await LiDARModule.captureDepthFrame();
+              lastDepthCapture.current = capture;
+            } catch (err) {
+              // Silently handle capture errors (e.g., session not ready)
+              console.debug('Depth capture error:', err);
+            }
+          }, 100); // Capture every 100ms (10 FPS for depth)
+
+          console.log('LiDAR AR session started successfully');
+        } catch (err) {
+          console.error('Failed to start AR session:', err);
+        }
+      }
+    }
+
+    async function stopARSession() {
+      if (isARSessionActive) {
+        try {
+          // Stop depth capture interval
+          if (depthCaptureInterval.current) {
+            clearInterval(depthCaptureInterval.current);
+            depthCaptureInterval.current = null;
+          }
+
+          await LiDARModule.stopARSession();
+          setIsARSessionActive(false);
+          lastDepthCapture.current = null;
+          console.log('LiDAR AR session stopped');
+        } catch (err) {
+          console.error('Failed to stop AR session:', err);
+        }
+      }
+    }
+
+    if (mode === 'ar' && hasLiDAR && LiDARModule.isAvailable) {
+      startARSession();
+    } else {
+      stopARSession();
+    }
+
+    // Cleanup on unmount
+    return () => {
+      stopARSession();
+    };
+  }, [mode, hasLiDAR, isARSessionActive]);
+
+  /**
+   * Get depth at a specific screen coordinate (in cm)
+   * Uses the latest depth capture from LiDAR
+   */
+  const getDepthAtPoint = useCallback(async (screenX: number, screenY: number): Promise<number> => {
+    const capture = lastDepthCapture.current;
+
+    if (!capture || !capture.depthBuffer.data || capture.depthBuffer.data.length === 0) {
+      // No depth data available, return default distance
+      return 30; // Default 30cm
+    }
+
+    const { depthBuffer } = capture;
+    const { width, height, data } = depthBuffer;
+
+    // Map screen coordinates to depth buffer coordinates
+    const depthX = Math.floor((screenX / SCREEN_WIDTH) * width);
+    const depthY = Math.floor((screenY / SCREEN_HEIGHT) * height);
+
+    // Clamp to valid range
+    const clampedX = Math.max(0, Math.min(width - 1, depthX));
+    const clampedY = Math.max(0, Math.min(height - 1, depthY));
+
+    // Get depth value (in meters)
+    const index = clampedY * width + clampedX;
+    const depthMeters = data[index];
+
+    // Convert to centimeters
+    const depthCm = depthMeters * 100;
+
+    // Validate depth value (LiDAR range is typically 0.2m - 5m)
+    if (depthCm > 0 && depthCm < 500) {
+      return depthCm;
+    }
+
+    // Invalid depth, return default
+    return 30;
+  }, []);
+
   /**
    * Handle AR measurement completion
    */
@@ -135,13 +240,9 @@ export default function ARMeasureScreen() {
 
     // Use a slight delay to ensure navigation completes
     setTimeout(() => {
-      // Dispatch event with measurement data
+      // Emit event with measurement data using React Native's DeviceEventEmitter
       // This can be picked up by the calling screen
-      if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
-        window.dispatchEvent(
-          new CustomEvent('ar-measurement-complete', { detail: measurement })
-        );
-      }
+      DeviceEventEmitter.emit('ar-measurement-complete', measurement);
     }, 100);
   }, [measurement, router]);
 
@@ -185,7 +286,7 @@ export default function ARMeasureScreen() {
   // Loading state
   if (mode === 'loading') {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} testID="ar-measure-screen">
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary.main} />
           <Text style={styles.loadingText}>Checking device capabilities...</Text>
@@ -197,7 +298,7 @@ export default function ARMeasureScreen() {
   // Calibration mode
   if (mode === 'calibration') {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.container} edges={['top']} testID="ar-measure-screen">
         <ReferenceObjectCalibration
           onCalibrate={handleCalibrationComplete}
           onCancel={handleCalibrationCancel}
@@ -209,13 +310,14 @@ export default function ARMeasureScreen() {
   // Manual mode - show size picker
   if (mode === 'manual') {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.container} edges={['top']} testID="ar-measure-screen">
         {/* Mode switcher (only if AR is available) */}
         {isLiDARAvailable && (
           <View style={styles.modeSwitcher}>
             <TouchableOpacity
               style={styles.modeSwitchButton}
               onPress={handleSwitchMode}
+              testID="ar-measure-switch-to-ar-button"
             >
               <Ionicons name="camera-outline" size={20} color={colors.primary.main} />
               <Text style={styles.modeSwitchText}>Switch to AR Mode</Text>
@@ -270,6 +372,7 @@ export default function ARMeasureScreen() {
               <TouchableOpacity
                 style={[styles.actionButton, styles.secondaryButton]}
                 onPress={handleClearMeasurement}
+                testID="ar-measure-remeasure-button"
               >
                 <Text style={styles.secondaryButtonText}>Remeasure</Text>
               </TouchableOpacity>
@@ -277,6 +380,7 @@ export default function ARMeasureScreen() {
               <TouchableOpacity
                 style={[styles.actionButton, styles.primaryButton]}
                 onPress={handleConfirm}
+                testID="ar-measure-confirm-button"
               >
                 <LinearGradient
                   colors={gradients.primary}
@@ -307,7 +411,7 @@ export default function ARMeasureScreen() {
   // Check camera permission
   if (!permission?.granted) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} testID="ar-measure-screen">
         <View style={styles.permissionContainer}>
           <Ionicons name="camera-outline" size={64} color={colors.text.tertiary} />
           <Text style={styles.permissionTitle}>Camera Access Required</Text>
@@ -331,6 +435,7 @@ export default function ARMeasureScreen() {
           <TouchableOpacity
             style={styles.fallbackButton}
             onPress={() => setMode('manual')}
+            testID="ar-measure-use-manual-button"
           >
             <Text style={styles.fallbackButtonText}>Use Manual Mode Instead</Text>
           </TouchableOpacity>
@@ -340,7 +445,7 @@ export default function ARMeasureScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="ar-measure-screen">
       {/* Camera preview */}
       <CameraView style={styles.camera} facing="back">
         {/* AR Measurement Overlay */}
@@ -350,6 +455,9 @@ export default function ARMeasureScreen() {
             onMeasurementComplete={handleARMeasurementComplete}
             onCancel={handleCancel}
             isActive={true}
+            getDepthAtPoint={hasLiDAR && isARSessionActive ? getDepthAtPoint : undefined}
+            lidarCapture={hasLiDAR && isARSessionActive ? lastDepthCapture.current : null}
+            foodName={params.foodName}
           />
         )}
 
@@ -375,10 +483,28 @@ export default function ARMeasureScreen() {
                   </View>
                 </View>
 
+                {/* Volume and Weight estimates */}
+                <View style={styles.estimatesRowOverlay}>
+                  <View style={styles.estimateItemOverlay}>
+                    <Ionicons name="cube-outline" size={18} color={colors.text.tertiary} />
+                    <Text style={styles.estimateLabelOverlay}>
+                      {measurement.volumeAdjusted ?? measurement.volume ?? 0} cm³
+                    </Text>
+                  </View>
+                  <View style={styles.estimateDividerOverlay} />
+                  <View style={styles.estimateItemOverlay}>
+                    <Ionicons name="scale-outline" size={18} color={colors.text.tertiary} />
+                    <Text style={styles.estimateLabelOverlay}>
+                      ~{measurement.estimatedWeight ?? 0}g
+                    </Text>
+                  </View>
+                </View>
+
                 <View style={styles.resultOverlayActions}>
                   <TouchableOpacity
                     style={[styles.actionButton, styles.outlineButton]}
                     onPress={handleClearMeasurement}
+                    testID="ar-measure-remeasure-overlay-button"
                   >
                     <Text style={styles.outlineButtonText}>Remeasure</Text>
                   </TouchableOpacity>
@@ -386,6 +512,7 @@ export default function ARMeasureScreen() {
                   <TouchableOpacity
                     style={[styles.actionButton, styles.primaryButton]}
                     onPress={handleConfirm}
+                    testID="ar-measure-confirm-overlay-button"
                   >
                     <LinearGradient
                       colors={gradients.primary}
@@ -410,6 +537,7 @@ export default function ARMeasureScreen() {
             <TouchableOpacity
               style={styles.manualModeButton}
               onPress={handleSwitchMode}
+              testID="ar-measure-switch-to-manual-button"
             >
               <Ionicons name="resize-outline" size={20} color={colors.text.secondary} />
               <Text style={styles.manualModeText}>Switch to Manual Mode</Text>
@@ -614,7 +742,7 @@ const styles = StyleSheet.create({
   },
   measurementResultOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: colors.overlay.medium,
     justifyContent: 'flex-end',
   },
   resultOverlayContent: {
@@ -641,12 +769,37 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     marginTop: spacing.lg,
   },
+  estimatesRowOverlay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.lg,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.sm,
+    backgroundColor: colors.background.elevated,
+    borderRadius: borderRadius.sm,
+  },
+  estimateItemOverlay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  estimateLabelOverlay: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    fontWeight: typography.fontWeight.medium,
+  },
+  estimateDividerOverlay: {
+    width: 1,
+    height: 20,
+    backgroundColor: colors.border.secondary,
+  },
   bottomBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: colors.overlay.light,
   },
   manualModeButton: {
     flexDirection: 'row',

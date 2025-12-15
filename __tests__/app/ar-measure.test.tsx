@@ -53,24 +53,7 @@ jest.mock('@/lib/modules/LiDARModule', () => ({
   },
 }));
 
-// Mock Animated
-jest.mock('react-native', () => {
-  const RN = jest.requireActual('react-native');
-  RN.Animated.timing = () => ({
-    start: jest.fn((cb?: () => void) => cb && cb()),
-  });
-  RN.Animated.spring = () => ({
-    start: jest.fn((cb?: () => void) => cb && cb()),
-  });
-  RN.Animated.loop = () => ({
-    start: jest.fn(),
-    stop: jest.fn(),
-  });
-  RN.Animated.sequence = () => ({
-    start: jest.fn((cb?: () => void) => cb && cb()),
-  });
-  return RN;
-});
+// Note: DeviceEventEmitter and Animated are mocked globally in jest.setup.js
 
 // Import after mocks
 import ARMeasureScreen from '@/app/ar-measure';

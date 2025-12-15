@@ -6,72 +6,76 @@ appId: host.exp.Exponent
 ---
 
 # Test: Logout Flow
-- launchApp:
-    clearState: true
-
-# Sign in first
-- runFlow: ../../flows/sign_in.yaml
+- runFlow: ../../flows/sign_in_test_user.yaml
 
 - assertVisible:
     id: "home-screen"
 
-# Navigate to profile
+# Navigate to profile using coordinates (83%, 95%)
 - tapOn:
-    id: "tab-profile"
+    point: "83%,95%"
 
-- assertVisible:
-    id: "profile-screen"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000
 
-# Scroll down to find logout button if needed
-- scrollUntilVisible:
-    element:
-      id: "profile-logout-button"
-    direction: DOWN
+# Scroll down to find logout button
+- swipe:
+    start: "50%,80%"
+    end: "50%,30%"
+    duration: 300
 
 # Tap logout
 - tapOn:
     id: "profile-logout-button"
 
-# Confirm logout in alert
+# Wait a moment for modal to appear
+- waitForAnimationToEnd
+
+# Confirm logout - tap the red Logout button in the modal (73% x, 54% y)
 - tapOn:
-    text: "Logout"
+    point: "73%,54%"
 
 # Should navigate to welcome screen
-- assertVisible:
-    id: "welcome-screen"
+- extendedWaitUntil:
+    visible:
+      id: "welcome-screen"
+    timeout: 15000
 
 ---
 
 # Test: Cancel Logout
-- launchApp:
-    clearState: true
-
-# Sign in first
-- runFlow: ../../flows/sign_in.yaml
+- runFlow: ../../flows/sign_in_test_user.yaml
 
 - assertVisible:
     id: "home-screen"
 
-# Navigate to profile
+# Navigate to profile using coordinates (83%, 95%)
 - tapOn:
-    id: "tab-profile"
+    point: "83%,95%"
 
-- assertVisible:
-    id: "profile-screen"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000
 
-# Scroll down to find logout button if needed
-- scrollUntilVisible:
-    element:
-      id: "profile-logout-button"
-    direction: DOWN
+# Scroll down to find logout button
+- swipe:
+    start: "50%,80%"
+    end: "50%,30%"
+    duration: 300
 
 # Tap logout
 - tapOn:
     id: "profile-logout-button"
 
-# Cancel logout in alert
+# Wait a moment for modal to appear
+- waitForAnimationToEnd
+
+# Cancel logout - tap Cancel button in the modal (38% x, 54% y)
 - tapOn:
-    text: "Cancel"
+    point: "38%,54%"
 
 # Should stay on profile screen
 - assertVisible:

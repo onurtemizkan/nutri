@@ -1,12 +1,54 @@
 import axios, { AxiosError } from 'axios';
-import * as FileSystem from 'expo-file-system';
-import Constants from 'expo-constants';
+import api from './client';
 import {
   FoodAnalysisRequest,
   FoodAnalysisResponse,
   FoodAnalysisErrorResponse,
   MLServiceConfig,
+  FoodItem,
+  NutritionInfo,
 } from '@/lib/types/food-analysis';
+
+/**
+ * Transform ML service response (snake_case) to TypeScript types (camelCase)
+ */
+function transformMLResponse(data: Record<string, unknown>): FoodAnalysisResponse {
+  const foodItems = (data.food_items as Record<string, unknown>[]) || [];
+
+  return {
+    foodItems: foodItems.map((item): FoodItem => {
+      const nutrition = item.nutrition as Record<string, unknown>;
+      return {
+        name: item.name as string,
+        confidence: item.confidence as number,
+        portionSize: item.portion_size as string,
+        portionWeight: item.portion_weight as number,
+        nutrition: {
+          calories: nutrition.calories as number,
+          protein: nutrition.protein as number,
+          carbs: nutrition.carbs as number,
+          fat: nutrition.fat as number,
+          fiber: nutrition.fiber as number | undefined,
+          sugar: nutrition.sugar as number | undefined,
+          sodium: nutrition.sodium as number | undefined,
+          saturatedFat: nutrition.saturated_fat as number | undefined,
+          lysine: nutrition.lysine as number | undefined,
+          arginine: nutrition.arginine as number | undefined,
+        } as NutritionInfo,
+        category: item.category as string | undefined,
+        alternatives: item.alternatives ? (item.alternatives as Record<string, unknown>[]).map(alt => ({
+          name: alt.name as string,
+          confidence: alt.confidence as number,
+        })) : undefined,
+      };
+    }),
+    measurementQuality: data.measurement_quality as 'high' | 'medium' | 'low',
+    processingTime: data.processing_time as number,
+    suggestions: data.suggestions as string[] | undefined,
+    error: data.error as string | undefined,
+    imageHash: data.image_hash as string | undefined,
+  };
+}
 
 /**
  * Custom error class for Food Analysis errors
@@ -22,36 +64,23 @@ export class FoodAnalysisError extends Error {
   }
 }
 
-// ML Service configuration
-// For physical devices: Set ML_SERVICE_URL=http://192.168.1.69:8000 npx expo start
-// For simulator: Automatically uses localhost:8000
-let ML_SERVICE_URL = 'http://localhost:8000'; // Default for simulator
-
-// Check if ML_SERVICE_URL is set in environment variables (via app.config.js)
-if (Constants.expoConfig?.extra?.mlServiceUrl) {
-  ML_SERVICE_URL = Constants.expoConfig.extra.mlServiceUrl;
-} else if (__DEV__) {
-  // For development on physical device, try to use machine IP
-  // This can be overridden with ML_SERVICE_URL environment variable
-  ML_SERVICE_URL = 'http://localhost:8000';
-}
-
+// Food Analysis configuration
+// Uses the backend API which proxies to the ML service
 const config: MLServiceConfig = {
-  baseUrl: ML_SERVICE_URL,
+  baseUrl: '', // Will use the api client's baseURL
   timeout: 30000, // 30 seconds
   maxRetries: 2,
 };
 
 /**
  * Food Analysis API client
+ * Routes requests through the backend API which proxies to the ML service
  */
 class FoodAnalysisAPI {
-  private baseUrl: string;
   private timeout: number;
   private maxRetries: number;
 
   constructor(cfg: MLServiceConfig) {
-    this.baseUrl = cfg.baseUrl;
     this.timeout = cfg.timeout;
     this.maxRetries = cfg.maxRetries;
   }
@@ -63,14 +92,22 @@ class FoodAnalysisAPI {
     request: FoodAnalysisRequest
   ): Promise<FoodAnalysisResponse> {
     try {
-      // Read image file as base64
-      const imageBase64 = await FileSystem.readAsStringAsync(request.imageUri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
+      // Determine file extension and MIME type from URI
+      const extension = request.imageUri.split('.').pop()?.toLowerCase() || 'jpg';
+      const mimeType = extension === 'png' ? 'image/png' : 'image/jpeg';
 
-      // Create form data
+      // Create form data for the backend API
       const formData = new FormData();
-      formData.append('image', imageBase64);
+
+      // Create a blob-like object for React Native
+      // React Native's FormData accepts objects with uri, type, name properties
+      const imageFile = {
+        uri: request.imageUri,
+        type: mimeType,
+        name: `food.${extension}`,
+      } as unknown as Blob;
+
+      formData.append('image', imageFile);
 
       // Add measurements if available
       if (request.measurements) {
@@ -79,7 +116,6 @@ class FoodAnalysisAPI {
           height: request.measurements.height,
           depth: request.measurements.depth,
         }));
-        formData.append('confidence', request.measurements.confidence);
       }
 
       // Add cooking method if specified
@@ -87,9 +123,9 @@ class FoodAnalysisAPI {
         formData.append('cooking_method', request.cookingMethod);
       }
 
-      // Make request with retry logic
-      const response = await this.makeRequestWithRetry<FoodAnalysisResponse>(
-        '/api/food/analyze',
+      // Make request through backend API with retry logic
+      const response = await this.makeRequestWithRetry<Record<string, unknown>>(
+        '/food/analyze',
         {
           method: 'POST',
           data: formData,
@@ -100,8 +136,19 @@ class FoodAnalysisAPI {
         }
       );
 
-      return response.data;
+      // Transform snake_case ML service response to camelCase TypeScript types
+      return transformMLResponse(response.data);
     } catch (error) {
+      // Log the actual error for debugging
+      console.error('Food analysis request failed:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('Axios error details:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message,
+          code: error.code,
+        });
+      }
       throw this.handleError(error);
     }
   }
@@ -112,7 +159,7 @@ class FoodAnalysisAPI {
   async searchNutritionDB(query: string): Promise<unknown[]> {
     try {
       const response = await this.makeRequestWithRetry<{ results: unknown[] }>(
-        '/api/food/nutrition-db/search',
+        '/food/nutrition-db/search',
         {
           method: 'GET',
           params: { q: query },
@@ -137,7 +184,7 @@ class FoodAnalysisAPI {
       const response = await this.makeRequestWithRetry<{
         available_models: string[];
         active_model: string;
-      }>('/api/food/models/info', {
+      }>('/food/models/info', {
         method: 'GET',
         timeout: 5000,
       });
@@ -156,7 +203,7 @@ class FoodAnalysisAPI {
       const response = await this.makeRequestWithRetry<{
         cooking_methods: string[];
         total: number;
-      }>('/api/food/cooking-methods', {
+      }>('/food/cooking-methods', {
         method: 'GET',
         timeout: 5000,
       });
@@ -168,21 +215,21 @@ class FoodAnalysisAPI {
   }
 
   /**
-   * Check ML service health
+   * Check food analysis service health (through backend)
    */
   async checkHealth(): Promise<boolean> {
     try {
-      const response = await axios.get(`${this.baseUrl}/health`, {
+      const response = await api.get('/food/health', {
         timeout: 5000,
       });
-      return response.status === 200;
+      return response.status === 200 && response.data?.status === 'healthy';
     } catch {
       return false;
     }
   }
 
   /**
-   * Make request with retry logic
+   * Make request with retry logic using the backend API client
    */
   private async makeRequestWithRetry<T>(
     endpoint: string,
@@ -195,7 +242,6 @@ class FoodAnalysisAPI {
     }
   ): Promise<{ data: T }> {
     let lastError: Error | null = null;
-    const url = `${this.baseUrl}${endpoint}`;
 
     for (let attempt = 0; attempt < this.maxRetries; attempt++) {
       try {
@@ -206,20 +252,19 @@ class FoodAnalysisAPI {
           params: config.params,
         };
 
-        // Use specific axios methods based on HTTP method
+        // Use the api client (already configured with auth and base URL)
         if (config.method === 'POST') {
-          response = await axios.post(url, config.data, axiosConfig);
+          response = await api.post(endpoint, config.data, axiosConfig);
         } else if (config.method === 'GET') {
-          response = await axios.get(url, axiosConfig);
+          response = await api.get(endpoint, axiosConfig);
         } else if (config.method === 'PUT') {
-          response = await axios.put(url, config.data, axiosConfig);
+          response = await api.put(endpoint, config.data, axiosConfig);
         } else if (config.method === 'DELETE') {
-          response = await axios.delete(url, axiosConfig);
+          response = await api.delete(endpoint, axiosConfig);
         } else {
-          // Fallback to generic axios call
-          response = await axios({
+          response = await api.request({
             ...config,
-            url,
+            url: endpoint,
           });
         }
 

@@ -1,32 +1,39 @@
 # Reusable flow: Logout from the app
-# Assumes user is on any authenticated screen
+# Assumes user is on any authenticated screen (home, health, or profile)
 
 appId: host.exp.Exponent
 
 ---
 
-# Navigate to profile tab
+# Navigate to profile tab using coordinates (83%, 95%)
 - tapOn:
-    id: "tab-profile"
+    point: "83%,95%"
 
 # Wait for profile screen
-- assertVisible:
-    id: "profile-screen"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000
 
 # Scroll down to find logout button
-- scrollUntilVisible:
-    element:
-      id: "logout-button"
-    direction: DOWN
+- swipe:
+    start: "50%,80%"
+    end: "50%,30%"
+    duration: 300
 
 # Tap logout button
 - tapOn:
-    id: "logout-button"
+    id: "profile-logout-button"
 
-# Confirm logout in alert
+# Wait for modal animation
+- waitForAnimationToEnd
+
+# Confirm logout - tap the red Logout button in the modal (73%, 54%)
 - tapOn:
-    text: "Logout"
+    point: "73%,54%"
 
 # Verify we're back at welcome screen
-- assertVisible:
-    id: "welcome-screen"
+- extendedWaitUntil:
+    visible:
+      id: "welcome-screen"
+    timeout: 15000

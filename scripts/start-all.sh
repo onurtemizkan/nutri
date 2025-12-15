@@ -50,7 +50,7 @@ print_info "Running start-dev.sh to start Docker services..."
 # ============================================================================
 # Step 2: Start Backend API
 # ============================================================================
-print_header "🚀 Step 6: Starting Backend API"
+print_header "🚀 Step 2: Starting Backend API"
 
 cd server
 
@@ -82,7 +82,47 @@ fi
 cd ..
 
 # ============================================================================
-# Step 3: Get Network Info
+# Step 3: Start ML Service
+# ============================================================================
+print_header "🧠 Step 3: Starting ML Service"
+
+# Check if already running
+if lsof -ti:8000 >/dev/null 2>&1; then
+    print_warning "ML Service is already running on port 8000"
+else
+    print_info "Starting ML Service on port 8000..."
+
+    # Check if venv exists
+    if [ ! -f "ml-service/venv/bin/uvicorn" ]; then
+        print_warning "ML Service venv not set up. Installing dependencies..."
+        cd ml-service
+        python3 -m venv venv 2>/dev/null || true
+        ./venv/bin/pip install -r requirements.txt > ../logs/ml-service-install.log 2>&1
+        cd ..
+        print_success "ML Service dependencies installed"
+    fi
+
+    # Start ML service in background
+    cd ml-service
+    ./venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 > ../logs/ml-service.log 2>&1 &
+    ML_PID=$!
+    echo $ML_PID > ../logs/ml-service.pid
+    cd ..
+
+    # Wait for server to start
+    sleep 5
+
+    # Check if it's running
+    if lsof -ti:8000 >/dev/null 2>&1; then
+        print_success "ML Service started (PID: $ML_PID)"
+        print_info "Logs: tail -f logs/ml-service.log"
+    else
+        print_warning "ML Service may still be starting. Check logs/ml-service.log"
+    fi
+fi
+
+# ============================================================================
+# Step 4: Get Network Info
 # ============================================================================
 print_header "📱 Network Configuration"
 
@@ -98,11 +138,11 @@ print_success "Backend API: http://localhost:3000"
 print_success "Health Check: http://localhost:3000/health"
 
 # ============================================================================
-# Step 4: Test Backend API
+# Step 5: Test Services
 # ============================================================================
-print_header "🔍 Testing Backend API"
+print_header "🔍 Testing Services"
 
-print_info "Checking health endpoint..."
+print_info "Checking Backend API health endpoint..."
 sleep 2  # Give server a moment to fully start
 
 if curl -s http://localhost:3000/health >/dev/null 2>&1; then
@@ -110,7 +150,16 @@ if curl -s http://localhost:3000/health >/dev/null 2>&1; then
     print_success "Backend API is healthy!"
     echo "    Response: $HEALTH_RESPONSE"
 else
-    print_warning "Health check failed. Server may still be starting..."
+    print_warning "Backend API health check failed. Server may still be starting..."
+fi
+
+print_info "Checking ML Service health endpoint..."
+if curl -s http://localhost:8000/health >/dev/null 2>&1; then
+    ML_HEALTH_RESPONSE=$(curl -s http://localhost:8000/health)
+    print_success "ML Service is healthy!"
+    echo "    Response: $ML_HEALTH_RESPONSE"
+else
+    print_warning "ML Service health check failed. Server may still be starting..."
 fi
 
 # ============================================================================
@@ -125,11 +174,14 @@ echo "🎉 ${GREEN}SUCCESS!${NC} All services are running!"
 echo ""
 echo "📊 Service URLs:"
 echo "  • Backend API:     ${BLUE}http://localhost:3000${NC}"
+echo "  • ML Service:      ${BLUE}http://localhost:8000${NC}"
 echo "  • Health Check:    ${BLUE}http://localhost:3000/health${NC}"
+echo "  • ML Health:       ${BLUE}http://localhost:8000/health${NC}"
 echo "  • For Simulator:   ${YELLOW}http://$LOCAL_IP:3000/api${NC}"
 echo ""
 echo "📝 Logs:"
 echo "  • Backend API:     ${BLUE}tail -f logs/backend.log${NC}"
+echo "  • ML Service:      ${BLUE}tail -f logs/ml-service.log${NC}"
 echo "  • Docker:          ${BLUE}docker-compose logs -f${NC}"
 echo ""
 echo "🛑 Stop all services:"

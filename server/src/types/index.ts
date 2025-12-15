@@ -28,6 +28,9 @@ export type ActivityLevel =
   | 'active'
   | 'veryActive';
 
+export type SubscriptionTier = 'FREE' | 'PRO_TRIAL' | 'PRO';
+export type BillingCycle = 'MONTHLY' | 'ANNUAL';
+
 export interface CreateMealInput {
   name: string;
   mealType: MealType;
@@ -58,6 +61,7 @@ export interface UpdateMealInput {
 
 export interface UpdateUserProfileInput {
   name?: string;
+  profilePicture?: string | null;
   goalCalories?: number;
   goalProtein?: number;
   goalCarbs?: number;

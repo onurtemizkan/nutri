@@ -9,6 +9,7 @@ import {
   Animated,
   Platform,
   ScrollView,
+  DeviceEventEmitter,
 } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
@@ -20,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { foodAnalysisApi } from '@/lib/api/food-analysis';
 import { showAlert } from '@/lib/utils/alert';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
+import FeedbackCorrectionModal from '@/lib/components/FeedbackCorrectionModal';
 import { useResponsive } from '@/hooks/useResponsive';
 import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 import LiDARModule from '@/lib/modules/LiDARModule';
@@ -43,6 +45,7 @@ export default function ScanFoodScreen() {
   const [showGuide, setShowGuide] = useState(true);
   const [arMeasurement, setArMeasurement] = useState<ARMeasurement | null>(null);
   const [hasARSupport, setHasARSupport] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const cameraRef = useRef<CameraView>(null);
   const router = useRouter();
   const { isTablet, getSpacing } = useResponsive();
@@ -68,16 +71,16 @@ export default function ScanFoodScreen() {
 
   // Listen for AR measurement results from the ar-measure screen
   useEffect(() => {
-    const handleMeasurement = (event: CustomEvent<ARMeasurement>) => {
-      setArMeasurement(event.detail);
-    };
+    const subscription = DeviceEventEmitter.addListener(
+      'ar-measurement-complete',
+      (measurement: ARMeasurement) => {
+        setArMeasurement(measurement);
+      }
+    );
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('ar-measurement-complete', handleMeasurement as EventListener);
-      return () => {
-        window.removeEventListener('ar-measurement-complete', handleMeasurement as EventListener);
-      };
-    }
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   // Pulsing animation for the analyzing spinner
@@ -239,7 +242,7 @@ export default function ScanFoodScreen() {
   if (!permission) {
     return (
       <View style={styles.permissionContainer}>
-        <ActivityIndicator size="large" color="#3b5998" />
+        <ActivityIndicator size="large" color={colors.primary.main} />
       </View>
     );
   }
@@ -247,7 +250,7 @@ export default function ScanFoodScreen() {
   if (!permission.granted) {
     return (
       <View style={styles.permissionContainer} testID="scan-food-permission-screen">
-        <Ionicons name="camera-outline" size={64} color="#ccc" />
+        <Ionicons name="camera-outline" size={64} color={colors.text.disabled} />
         <Text style={styles.permissionText}>Camera access is required</Text>
         <Text style={styles.permissionSubtext}>
           We need camera access to scan and analyze your food
@@ -337,9 +340,11 @@ export default function ScanFoodScreen() {
                 <View key={index} style={styles.foodItem}>
                   <View style={styles.foodItemHeader}>
                     <Text style={styles.foodName}>{item.name}</Text>
-                    <Text style={styles.confidence}>
-                      {Math.round(item.confidence * 100)}% confident
-                    </Text>
+                    <View style={styles.confidenceContainer}>
+                      <Text style={styles.confidence}>
+                        {Math.round(item.confidence * 100)}% confident
+                      </Text>
+                    </View>
                   </View>
 
                   <Text style={styles.portionSize}>{item.portionSize}</Text>
@@ -370,6 +375,22 @@ export default function ScanFoodScreen() {
                       <Text style={styles.nutritionLabel}>fat</Text>
                     </View>
                   </View>
+
+                  {/* Feedback Button */}
+                  {index === 0 && (
+                    <TouchableOpacity
+                      style={styles.feedbackButton}
+                      onPress={() => setShowFeedbackModal(true)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons
+                        name="help-circle-outline"
+                        size={18}
+                        color={colors.text.tertiary}
+                      />
+                      <Text style={styles.feedbackButtonText}>Not right?</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               ))}
 
@@ -482,6 +503,21 @@ export default function ScanFoodScreen() {
             </TouchableOpacity>
           )}
         </View>
+
+        {/* Feedback Correction Modal */}
+        {scanResult && scanResult.foodItems.length > 0 && (
+          <FeedbackCorrectionModal
+            visible={showFeedbackModal}
+            onClose={() => setShowFeedbackModal(false)}
+            originalPrediction={scanResult.foodItems[0].name}
+            originalConfidence={scanResult.foodItems[0].confidence}
+            alternatives={scanResult.foodItems[0].alternatives}
+            imageHash={scanResult.imageHash || ''}
+            onFeedbackSubmitted={() => {
+              // Could show a toast or update UI here
+            }}
+          />
+        )}
       </SafeAreaView>
     );
   }
@@ -601,8 +637,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
   },
   closeButton: {
     width: 44,
@@ -612,38 +648,38 @@ const styles = StyleSheet.create({
   },
   cameraControls: {
     flexDirection: 'row',
-    gap: 16,
+    gap: spacing.md,
   },
   controlButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: colors.overlay.light,
     justifyContent: 'center',
     alignItems: 'center',
   },
   guideOverlay: {
     position: 'absolute',
     top: '40%',
-    left: 20,
-    right: 20,
+    left: spacing.lg,
+    right: spacing.lg,
     alignItems: 'center',
   },
   guideBox: {
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    padding: 20,
-    borderRadius: 16,
+    backgroundColor: colors.overlay.medium,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
   },
   guideText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
+    color: colors.text.primary,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   guideSubtext: {
-    color: '#ccc',
-    fontSize: 14,
+    color: colors.text.tertiary,
+    fontSize: typography.fontSize.sm,
     textAlign: 'center',
   },
   captureContainer: {
@@ -657,7 +693,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: colors.camera.button,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -665,7 +701,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#fff',
+    backgroundColor: colors.camera.buttonInner,
   },
   header: {
     flexDirection: 'row',
@@ -783,10 +819,30 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     flex: 1,
   },
+  confidenceContainer: {
+    backgroundColor: colors.primary.main + '20',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+  },
   confidence: {
     fontSize: typography.fontSize.xs,
     color: colors.primary.main,
     fontWeight: typography.fontWeight.semibold,
+  },
+  feedbackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border.secondary,
+  },
+  feedbackButtonText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.tertiary,
   },
   portionSize: {
     fontSize: typography.fontSize.sm,

@@ -6,14 +6,11 @@ appId: host.exp.Exponent
 ---
 
 # Test: Empty Fields Validation
-- launchApp:
-    clearState: true
+- runFlow: ../../flows/launch_app.yaml
 
 # Navigate to sign in
-- assertVisible:
-    id: "welcome-screen"
 - tapOn:
-    id: "welcome-signin-button"
+    text: "Sign In"
 - assertVisible:
     id: "signin-screen"
 
@@ -28,13 +25,10 @@ appId: host.exp.Exponent
 ---
 
 # Test: Invalid Email Format
-- launchApp:
-    clearState: true
+- runFlow: ../../flows/launch_app.yaml
 
-- assertVisible:
-    id: "welcome-screen"
 - tapOn:
-    id: "welcome-signin-button"
+    text: "Sign In"
 - assertVisible:
     id: "signin-screen"
 
@@ -57,13 +51,10 @@ appId: host.exp.Exponent
 ---
 
 # Test: Navigation to Sign Up
-- launchApp:
-    clearState: true
+- runFlow: ../../flows/launch_app.yaml
 
-- assertVisible:
-    id: "welcome-screen"
 - tapOn:
-    id: "welcome-signin-button"
+    text: "Sign In"
 - assertVisible:
     id: "signin-screen"
 
@@ -78,13 +69,10 @@ appId: host.exp.Exponent
 ---
 
 # Test: Navigation to Forgot Password
-- launchApp:
-    clearState: true
+- runFlow: ../../flows/launch_app.yaml
 
-- assertVisible:
-    id: "welcome-screen"
 - tapOn:
-    id: "welcome-signin-button"
+    text: "Sign In"
 - assertVisible:
     id: "signin-screen"
 

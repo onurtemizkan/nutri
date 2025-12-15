@@ -34,6 +34,11 @@ export interface ARMeasurement {
   confidence: 'high' | 'medium' | 'low';
   planeDetected: boolean;
   timestamp: Date;
+  // Volume and weight estimates (computed from dimensions)
+  volume?: number; // cm³ (raw cuboid volume)
+  volumeAdjusted?: number; // cm³ (adjusted for food shape)
+  estimatedWeight?: number; // grams
+  weightConfidence?: number; // 0-1
 }
 
 export interface FoodAnalysisRequest {
@@ -75,6 +80,7 @@ export interface FoodAnalysisResponse {
   processingTime: number; // milliseconds
   suggestions?: string[];
   error?: string;
+  imageHash?: string; // SHA-256 hash for feedback submission
 }
 
 export interface FoodScanResult extends FoodAnalysisResponse {

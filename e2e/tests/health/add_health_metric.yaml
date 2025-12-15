@@ -1,0 +1,104 @@
+# Add Health Metric E2E Tests
+# Tests manually adding health metrics
+
+appId: host.exp.Exponent
+
+env:
+  HEALTH_WEIGHT_VALUE: "72.5"
+  HEALTH_RHR_VALUE: "65"
+  HEALTH_STEPS_VALUE: "8500"
+
+---
+
+# Test: Navigate to Health Tab
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Tap Health tab using coordinates (50%, 95%)
+- tapOn:
+    point: "50%,95%"
+
+- extendedWaitUntil:
+    visible:
+      id: "health-screen"
+    timeout: 10000
+
+---
+
+# Test: Add Weight Record
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Tap Health tab using coordinates (50%, 95%)
+- tapOn:
+    point: "50%,95%"
+
+- extendedWaitUntil:
+    visible:
+      id: "health-screen"
+    timeout: 10000
+
+# Tap add health metric button if available
+- tapOn:
+    id: "health-add-metric-button"
+    optional: true
+
+# Select weight type
+- tapOn:
+    id: "health-metric-type-weight"
+    optional: true
+
+# Enter weight value
+- tapOn:
+    id: "health-metric-value-input"
+    optional: true
+- inputText: ${HEALTH_WEIGHT_VALUE}
+
+# Save
+- tapOn:
+    id: "health-metric-save-button"
+    optional: true
+
+# Should return to health screen
+- assertVisible:
+    id: "health-screen"
+    optional: true
+
+---
+
+# Test: Cancel Adding Health Metric
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Tap Health tab using coordinates (50%, 95%)
+- tapOn:
+    point: "50%,95%"
+
+- extendedWaitUntil:
+    visible:
+      id: "health-screen"
+    timeout: 10000
+
+# Tap add health metric button
+- tapOn:
+    id: "health-add-metric-button"
+    optional: true
+
+# Cancel
+- tapOn:
+    id: "health-metric-cancel-button"
+    optional: true
+
+- tapOn:
+    text: "Cancel"
+    optional: true
+
+# Should return to health screen
+- assertVisible:
+    id: "health-screen"

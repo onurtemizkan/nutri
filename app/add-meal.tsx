@@ -21,6 +21,28 @@ import { colors, gradients, spacing, borderRadius, typography } from '@/lib/them
 import { showAlert } from '@/lib/utils/alert';
 import { useResponsive } from '@/hooks/useResponsive';
 import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
+import { TimePicker } from '@/lib/components/TimePicker';
+
+/**
+ * Determines the appropriate meal type based on the current local time
+ * - Breakfast: 5:00 AM - 10:59 AM
+ * - Lunch: 11:00 AM - 2:59 PM
+ * - Dinner: 3:00 PM - 8:59 PM
+ * - Snack: 9:00 PM - 4:59 AM
+ */
+function getMealTypeByTime(): 'breakfast' | 'lunch' | 'dinner' | 'snack' {
+  const hour = new Date().getHours();
+
+  if (hour >= 5 && hour < 11) {
+    return 'breakfast';
+  } else if (hour >= 11 && hour < 15) {
+    return 'lunch';
+  } else if (hour >= 15 && hour < 21) {
+    return 'dinner';
+  } else {
+    return 'snack';
+  }
+}
 
 export default function AddMealScreen() {
   const params = useLocalSearchParams<{
@@ -32,9 +54,10 @@ export default function AddMealScreen() {
     fiber?: string;
     servingSize?: string;
     fromScan?: string;
+    barcode?: string;
   }>();
 
-  const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('lunch');
+  const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>(getMealTypeByTime);
   const [name, setName] = useState('');
   const [calories, setCalories] = useState('');
   const [protein, setProtein] = useState('');
@@ -43,6 +66,7 @@ export default function AddMealScreen() {
   const [fiber, setFiber] = useState('');
   const [servingSize, setServingSize] = useState('');
   const [notes, setNotes] = useState('');
+  const [consumedAt, setConsumedAt] = useState(new Date());
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { isTablet, getSpacing } = useResponsive();
@@ -86,18 +110,14 @@ export default function AddMealScreen() {
         fiber: fiber ? parseFloat(fiber) : undefined,
         servingSize: servingSize || undefined,
         notes: notes || undefined,
+        consumedAt: consumedAt.toISOString(),
       };
 
       await mealsApi.createMeal(mealData);
-      showAlert('Success', 'Meal added successfully!', [
-        {
-          text: 'OK',
-          onPress: () => router.back(),
-        },
-      ]);
+      // Navigate back to home immediately after success
+      router.replace('/');
     } catch (error) {
       showAlert('Error', getErrorMessage(error, 'Failed to add meal'));
-    } finally {
       setIsLoading(false);
     }
   };
@@ -109,8 +129,15 @@ export default function AddMealScreen() {
         style={styles.keyboardView}
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} testID="add-meal-cancel-button">
-            <Text style={styles.cancelButton}>Cancel</Text>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            testID="add-meal-cancel-button"
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+            style={styles.backButton}
+          >
+            <Ionicons name="chevron-back" size={24} color={colors.primary.main} />
+            <Text style={styles.cancelButton}>Back</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Add Meal</Text>
           <TouchableOpacity
@@ -154,13 +181,23 @@ export default function AddMealScreen() {
                         end={{ x: 1, y: 0 }}
                         style={styles.mealTypeButtonGradient}
                       >
-                        <Text style={styles.mealTypeTextActive}>
+                        <Text
+                          style={styles.mealTypeTextActive}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.8}
+                        >
                           {type.charAt(0).toUpperCase() + type.slice(1)}
                         </Text>
                       </LinearGradient>
                     ) : (
                       <View style={styles.mealTypeButtonInactive}>
-                        <Text style={styles.mealTypeText}>
+                        <Text
+                          style={styles.mealTypeText}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.8}
+                        >
                           {type.charAt(0).toUpperCase() + type.slice(1)}
                         </Text>
                       </View>
@@ -169,6 +206,15 @@ export default function AddMealScreen() {
                 ))}
               </View>
             </View>
+
+            {/* Time Picker */}
+            <TimePicker
+              value={consumedAt}
+              onChange={setConsumedAt}
+              label="Time"
+              disabled={isLoading}
+              testID="add-meal-time-picker"
+            />
 
             {/* Scan Food Button */}
             <TouchableOpacity
@@ -183,6 +229,24 @@ export default function AddMealScreen() {
                 <Text style={styles.scanButtonTitle}>Scan Food with Camera</Text>
                 <Text style={styles.scanButtonSubtitle}>
                   Automatically estimate nutrition using AI
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+            </TouchableOpacity>
+
+            {/* Barcode Scanner Button */}
+            <TouchableOpacity
+              style={styles.scanButton}
+              onPress={() => router.push('/scan-barcode')}
+              disabled={isLoading}
+              activeOpacity={0.8}
+              testID="add-meal-scan-barcode-button"
+            >
+              <Ionicons name="barcode-outline" size={24} color={colors.primary.main} />
+              <View style={styles.scanButtonText}>
+                <Text style={styles.scanButtonTitle}>Scan Product Barcode</Text>
+                <Text style={styles.scanButtonSubtitle}>
+                  Look up nutrition from 2M+ products
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
@@ -359,9 +423,14 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border.secondary,
     backgroundColor: colors.background.secondary,
   },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: -spacing.xs,
+  },
   cancelButton: {
     fontSize: typography.fontSize.md,
-    color: colors.text.secondary,
+    color: colors.primary.main,
   },
   headerTitle: {
     fontSize: typography.fontSize.lg,
@@ -414,12 +483,13 @@ const styles = StyleSheet.create({
   },
   mealTypeButtonGradient: {
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     alignItems: 'center',
+    borderRadius: borderRadius.md,
   },
   mealTypeButtonInactive: {
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     backgroundColor: colors.background.tertiary,
     alignItems: 'center',
     borderRadius: borderRadius.md,
@@ -427,12 +497,12 @@ const styles = StyleSheet.create({
     borderColor: colors.border.secondary,
   },
   mealTypeText: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text.tertiary,
   },
   mealTypeTextActive: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text.primary,
   },

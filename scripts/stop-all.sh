@@ -66,7 +66,39 @@ if lsof -ti:3000 >/dev/null 2>&1; then
 fi
 
 # ============================================================================
-# Step 2: Stop Docker Services
+# Step 2: Stop ML Service
+# ============================================================================
+print_header "🧠 Step 2: Stopping ML Service"
+
+# Check for PID file
+if [ -f "logs/ml-service.pid" ]; then
+    ML_PID=$(cat logs/ml-service.pid)
+    if kill -0 $ML_PID 2>/dev/null; then
+        print_info "Stopping ML Service (PID: $ML_PID)..."
+        kill -15 $ML_PID 2>/dev/null || true
+        sleep 2
+        # Force kill if still running
+        if kill -0 $ML_PID 2>/dev/null; then
+            kill -9 $ML_PID 2>/dev/null || true
+        fi
+        print_success "ML Service stopped"
+    else
+        print_info "ML Service is not running"
+    fi
+    rm -f logs/ml-service.pid
+else
+    print_info "No ML Service PID file found"
+fi
+
+# Also try to kill by port (in case PID file is missing)
+if lsof -ti:8000 >/dev/null 2>&1; then
+    print_info "Stopping process on port 8000..."
+    kill -9 $(lsof -ti:8000) 2>/dev/null || true
+    print_success "Stopped process on port 8000"
+fi
+
+# ============================================================================
+# Step 3: Stop Docker Services
 # ============================================================================
 print_info "Running stop-dev.sh to stop Docker services..."
 ./scripts/stop-dev.sh

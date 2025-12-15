@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,8 +18,11 @@ import {
   HealthMetric,
   HealthMetricStats,
   HealthMetricType,
+  MetricCategory,
   METRIC_CONFIG,
-  DASHBOARD_METRICS,
+  HEALTH_METRIC_TYPES,
+  getMetricsByCategory,
+  CATEGORY_DISPLAY_NAMES,
 } from '@/lib/types/health-metrics';
 import { useAuth } from '@/lib/context/AuthContext';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
@@ -75,7 +79,8 @@ export default function HealthScreen() {
 
     try {
       setError(null);
-      const data = await healthMetricsApi.getDashboardData(DASHBOARD_METRICS);
+      // Fetch data for all metric types to show any metrics with data
+      const data = await healthMetricsApi.getDashboardData(HEALTH_METRIC_TYPES);
       setMetrics(data);
     } catch (err) {
       console.error('Failed to load health data:', err);
@@ -91,9 +96,13 @@ export default function HealthScreen() {
     setRefreshing(false);
   }, [loadHealthData]);
 
-  useEffect(() => {
-    loadHealthData();
-  }, [loadHealthData]);
+  // Use useFocusEffect to reload data when screen comes into focus
+  // This ensures data is refreshed after adding/editing a metric
+  useFocusEffect(
+    useCallback(() => {
+      loadHealthData();
+    }, [loadHealthData])
+  );
 
   const timeRanges: TimeRange[] = ['today', 'week', 'month'];
 
@@ -151,7 +160,7 @@ export default function HealthScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} testID="health-screen">
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary.main} />
         </View>
@@ -160,7 +169,7 @@ export default function HealthScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="health-screen">
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -204,13 +213,23 @@ export default function HealthScreen() {
                     end={{ x: 1, y: 0 }}
                     style={styles.timeRangeButtonActive}
                   >
-                    <Text style={styles.timeRangeTextActive}>
+                    <Text
+                      style={styles.timeRangeTextActive}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                    >
                       {range.charAt(0).toUpperCase() + range.slice(1)}
                     </Text>
                   </LinearGradient>
                 ) : (
                   <View style={styles.timeRangeButtonInactive}>
-                    <Text style={styles.timeRangeText}>
+                    <Text
+                      style={styles.timeRangeText}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                    >
                       {range.charAt(0).toUpperCase() + range.slice(1)}
                     </Text>
                   </View>
@@ -255,69 +274,89 @@ export default function HealthScreen() {
             </View>
           )}
 
-          {/* Metric Cards Grid */}
+          {/* Metric Cards Grid - Grouped by Category */}
           {!error && hasAnyData && (
-            <View style={[styles.metricsGrid, { gap: gridGap }]}>
-              {DASHBOARD_METRICS.map((metricType) => {
-                const config = METRIC_CONFIG[metricType];
-                const data = metrics[metricType];
-                const value = data?.latest?.value;
-                const trend = data?.stats?.trend;
-                const percentChange = data?.stats?.percentChange;
+            <View>
+              {(Object.keys(getMetricsByCategory()) as MetricCategory[]).map((category) => {
+                const categoryMetrics = getMetricsByCategory()[category];
+                // Filter to only show metrics that have data
+                const metricsWithData = categoryMetrics.filter(
+                  (metricType) => metrics[metricType]?.latest !== null
+                );
+
+                // Skip categories with no data
+                if (metricsWithData.length === 0) return null;
 
                 return (
-                  <TouchableOpacity
-                    key={metricType}
-                    style={[styles.metricCard, { width: cardWidth }]}
-                    onPress={() => router.push(`/health/${metricType}` as `/health/${string}`)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.metricHeader}>
-                      <View style={styles.metricIconContainer}>
-                        <Ionicons
-                          name={config.icon as keyof typeof Ionicons.glyphMap}
-                          size={20}
-                          color={colors.primary.main}
-                        />
-                      </View>
-                      {trend && (
-                        <View style={styles.trendContainer}>
-                          <Ionicons
-                            name={getTrendIcon(trend)}
-                            size={16}
-                            color={getTrendColor(trend, metricType)}
-                          />
-                          {percentChange !== undefined && (
-                            <Text
-                              style={[
-                                styles.trendText,
-                                { color: getTrendColor(trend, metricType) },
-                              ]}
-                            >
-                              {Math.abs(percentChange).toFixed(1)}%
-                            </Text>
-                          )}
-                        </View>
-                      )}
+                  <View key={category} style={styles.categorySection}>
+                    <Text style={styles.categorySectionTitle}>
+                      {CATEGORY_DISPLAY_NAMES[category]}
+                    </Text>
+                    <View style={[styles.metricsGrid, { gap: gridGap }]}>
+                      {metricsWithData.map((metricType) => {
+                        const config = METRIC_CONFIG[metricType];
+                        const data = metrics[metricType];
+                        const value = data?.latest?.value;
+                        const trend = data?.stats?.trend;
+                        const percentChange = data?.stats?.percentChange;
+
+                        return (
+                          <TouchableOpacity
+                            key={metricType}
+                            style={[styles.metricCard, { width: cardWidth }]}
+                            onPress={() => router.push(`/health/${metricType}` as `/health/${string}`)}
+                            activeOpacity={0.7}
+                          >
+                            <View style={styles.metricHeader}>
+                              <View style={styles.metricIconContainer}>
+                                <Ionicons
+                                  name={config.icon as keyof typeof Ionicons.glyphMap}
+                                  size={20}
+                                  color={colors.primary.main}
+                                />
+                              </View>
+                              {trend && (
+                                <View style={styles.trendContainer}>
+                                  <Ionicons
+                                    name={getTrendIcon(trend)}
+                                    size={16}
+                                    color={getTrendColor(trend, metricType)}
+                                  />
+                                  {percentChange !== undefined && (
+                                    <Text
+                                      style={[
+                                        styles.trendText,
+                                        { color: getTrendColor(trend, metricType) },
+                                      ]}
+                                    >
+                                      {Math.abs(percentChange).toFixed(1)}%
+                                    </Text>
+                                  )}
+                                </View>
+                              )}
+                            </View>
+
+                            <Text style={styles.metricLabel}>{config.shortName}</Text>
+
+                            <View style={styles.metricValueContainer}>
+                              <Text style={styles.metricValue}>
+                                {formatValue(value, metricType)}
+                              </Text>
+                              {value !== undefined && (
+                                <Text style={styles.metricUnit}>{config.unit}</Text>
+                              )}
+                            </View>
+
+                            {data?.stats && (
+                              <Text style={styles.metricAverage}>
+                                Avg: {formatValue(data.stats.average, metricType)} {config.unit}
+                              </Text>
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
                     </View>
-
-                    <Text style={styles.metricLabel}>{config.shortName}</Text>
-
-                    <View style={styles.metricValueContainer}>
-                      <Text style={styles.metricValue}>
-                        {formatValue(value, metricType)}
-                      </Text>
-                      {value !== undefined && (
-                        <Text style={styles.metricUnit}>{config.unit}</Text>
-                      )}
-                    </View>
-
-                    {data?.stats && (
-                      <Text style={styles.metricAverage}>
-                        Avg: {formatValue(data.stats.average, metricType)} {config.unit}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
+                  </View>
                 );
               })}
             </View>
@@ -498,12 +537,24 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
 
+  // Category Section
+  categorySection: {
+    marginBottom: spacing.lg,
+  },
+  categorySectionTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.md,
+    letterSpacing: -0.3,
+  },
+
   // Metrics Grid
   metricsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     // gap applied dynamically
-    marginBottom: spacing.xl,
+    marginBottom: spacing.sm,
   },
   metricCard: {
     // width calculated dynamically based on columns

@@ -26,6 +26,7 @@ model User {
   resetTokenExpiresAt DateTime?
 
   // User profile data
+  profilePicture  String?  // Base64 data URL for profile picture
   goalCalories    Int      @default(2000)
   goalProtein     Float    @default(150)
   goalCarbs       Float    @default(200)
@@ -34,6 +35,13 @@ model User {
   goalWeight      Float?
   height          Float?
   activityLevel   String   @default("moderate") // sedentary, light, moderate, active, veryActive
+
+  // Subscription
+  subscriptionTier        SubscriptionTier @default(FREE)
+  subscriptionBillingCycle BillingCycle?   // Only set for PRO tier
+  subscriptionStartDate   DateTime?        // When the current subscription started
+  subscriptionEndDate     DateTime?        // When trial/subscription ends
+  subscriptionPrice       Float?           // Price paid for Pro subscription
 
   meals           Meal[]
   waterIntakes    WaterIntake[]
@@ -46,6 +54,10 @@ model User {
   mlPredictions   MLPrediction[]
   mlInsights      MLInsight[]
   mlProfile       UserMLProfile?
+
+  // Supplements
+  supplements     Supplement[]
+  supplementLogs  SupplementLog[]
 
   @@index([email])
   @@index([appleId])
@@ -306,8 +318,107 @@ model UserMLProfile {
 }
 
 // ============================================================================
+// SUPPLEMENT TRACKING
+// ============================================================================
+
+// Supplement - Definition of a supplement the user takes
+model Supplement {
+  id              String              @id @default(cuid())
+  userId          String
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Basic info
+  name            String              // e.g., "Vitamin D3", "Fish Oil", "Magnesium"
+  brand           String?             // Optional brand name
+
+  // Dosage
+  dosageAmount    Float               // e.g., 1000, 2, 500
+  dosageUnit      String              // e.g., "IU", "mg", "mcg", "g", "capsules", "tablets"
+
+  // Schedule
+  frequency       SupplementFrequency @default(DAILY)
+  timesPerDay     Int                 @default(1) // How many times per day (for DAILY frequency)
+  timeOfDay       SupplementTimeOfDay[] // When to take (morning, afternoon, evening, etc.)
+  withFood        Boolean             @default(false) // Should be taken with food
+
+  // Status
+  isActive        Boolean             @default(true) // Currently taking this supplement
+  startDate       DateTime            @default(now())
+  endDate         DateTime?           // When they stopped taking it (null if still active)
+
+  // Additional info
+  notes           String?             // Any notes about the supplement
+  color           String?             // Optional color for UI display (hex code)
+
+  // Relations
+  logs            SupplementLog[]
+
+  // Audit
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([userId, isActive])
+  @@index([userId, createdAt])
+}
+
+// SupplementLog - Record of when a supplement was taken
+model SupplementLog {
+  id              String      @id @default(cuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  supplementId    String
+  supplement      Supplement  @relation(fields: [supplementId], references: [id], onDelete: Cascade)
+
+  // When it was taken
+  takenAt         DateTime    @default(now())
+
+  // Optional details
+  dosageAmount    Float?      // Override if different from standard dose
+  notes           String?     // Any notes for this specific dose
+  skipped         Boolean     @default(false) // Marked as intentionally skipped
+
+  // Audit
+  createdAt       DateTime    @default(now())
+
+  @@index([userId, takenAt])
+  @@index([supplementId, takenAt])
+  @@index([userId, supplementId, takenAt])
+}
+
+// ============================================================================
 // ENUMS
 // ============================================================================
+
+enum SupplementFrequency {
+  DAILY
+  TWICE_DAILY
+  THREE_TIMES_DAILY
+  WEEKLY
+  EVERY_OTHER_DAY
+  AS_NEEDED
+}
+
+enum SupplementTimeOfDay {
+  MORNING
+  AFTERNOON
+  EVENING
+  BEFORE_BED
+  WITH_BREAKFAST
+  WITH_LUNCH
+  WITH_DINNER
+  EMPTY_STOMACH
+}
+
+enum SubscriptionTier {
+  FREE
+  PRO_TRIAL
+  PRO
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
+}
 
 enum HealthMetricType {
   // Cardiovascular

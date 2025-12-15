@@ -7,6 +7,11 @@
 #   maestro test e2e/tests/auth/        # Run auth tests only
 #   maestro test --parallel e2e/tests/  # Run in parallel (faster)
 #
+# Before running tests:
+#   1. Start the backend: cd server && npm run dev
+#   2. Seed test data: cd server && npm run db:seed
+#   3. Start Expo: npx expo start
+#
 # Configuration
 # -------------
 
@@ -16,20 +21,172 @@ appId: host.exp.Exponent  # Expo Go app ID (for development)
 
 # Environment variables for tests
 env:
-  # Test user credentials (created in test backend)
+  # ===========================================
+  # PRIMARY TEST USER (Free tier)
+  # ===========================================
   TEST_USER_EMAIL: test@nutri-e2e.local
   TEST_USER_PASSWORD: TestPass123!
   TEST_USER_NAME: E2E Test User
 
-  # API configuration
+  # ===========================================
+  # PRO TEST USER (Pro subscription)
+  # ===========================================
+  PRO_USER_EMAIL: pro@nutri-e2e.local
+  PRO_USER_PASSWORD: ProPass123!
+  PRO_USER_NAME: Pro Test User
+
+  # ===========================================
+  # TRIAL TEST USER (Pro trial)
+  # ===========================================
+  TRIAL_USER_EMAIL: trial@nutri-e2e.local
+  TRIAL_USER_PASSWORD: TrialPass123!
+  TRIAL_USER_NAME: Trial Test User
+
+  # ===========================================
+  # EMPTY TEST USER (No data - for empty states)
+  # ===========================================
+  EMPTY_USER_EMAIL: empty@nutri-e2e.local
+  EMPTY_USER_PASSWORD: EmptyPass123!
+  EMPTY_USER_NAME: Empty Test User
+
+  # ===========================================
+  # ATHLETE TEST USER (High activity, Pro tier)
+  # ===========================================
+  ATHLETE_USER_EMAIL: athlete@nutri-e2e.local
+  ATHLETE_USER_PASSWORD: AthletePass123!
+  ATHLETE_USER_NAME: Athlete Test User
+
+  # ===========================================
+  # PREDEFINED TEST DATA - MEALS
+  # ===========================================
+  # Breakfast
+  MEAL_BREAKFAST_NAME: Oatmeal with Berries
+  MEAL_BREAKFAST_CALORIES: "350"
+  MEAL_BREAKFAST_PROTEIN: "12"
+  MEAL_BREAKFAST_CARBS: "55"
+  MEAL_BREAKFAST_FAT: "8"
+  MEAL_BREAKFAST_FIBER: "6"
+  MEAL_BREAKFAST_SUGAR: "12"
+  MEAL_BREAKFAST_SERVING: 1 bowl
+  MEAL_BREAKFAST_NOTES: Added honey and fresh blueberries
+
+  # Lunch
+  MEAL_LUNCH_NAME: Grilled Chicken Salad
+  MEAL_LUNCH_CALORIES: "450"
+  MEAL_LUNCH_PROTEIN: "42"
+  MEAL_LUNCH_CARBS: "18"
+  MEAL_LUNCH_FAT: "24"
+  MEAL_LUNCH_FIBER: "6"
+  MEAL_LUNCH_SUGAR: "8"
+  MEAL_LUNCH_SERVING: 350g
+  MEAL_LUNCH_NOTES: Mixed greens with balsamic dressing
+
+  # Dinner
+  MEAL_DINNER_NAME: Grilled Salmon with Rice
+  MEAL_DINNER_CALORIES: "620"
+  MEAL_DINNER_PROTEIN: "45"
+  MEAL_DINNER_CARBS: "48"
+  MEAL_DINNER_FAT: "28"
+  MEAL_DINNER_FIBER: "4"
+  MEAL_DINNER_SUGAR: "2"
+  MEAL_DINNER_SERVING: 400g
+  MEAL_DINNER_NOTES: Wild-caught salmon with brown rice
+
+  # Snack
+  MEAL_SNACK_NAME: Protein Bar
+  MEAL_SNACK_CALORIES: "220"
+  MEAL_SNACK_PROTEIN: "20"
+  MEAL_SNACK_CARBS: "25"
+  MEAL_SNACK_FAT: "8"
+  MEAL_SNACK_FIBER: "3"
+  MEAL_SNACK_SUGAR: "6"
+  MEAL_SNACK_SERVING: 1 bar
+  MEAL_SNACK_NOTES: Quest Bar - Cookies and Cream
+
+  # Quick add meal
+  MEAL_QUICK_NAME: Apple with Peanut Butter
+  MEAL_QUICK_CALORIES: "280"
+  MEAL_QUICK_PROTEIN: "8"
+  MEAL_QUICK_CARBS: "32"
+  MEAL_QUICK_FAT: "14"
+
+  # ===========================================
+  # PREDEFINED TEST DATA - HEALTH METRICS
+  # ===========================================
+  HEALTH_WEIGHT_VALUE: "75.5"
+  HEALTH_WEIGHT_UNIT: kg
+
+  HEALTH_RHR_VALUE: "62"
+  HEALTH_RHR_UNIT: bpm
+
+  HEALTH_HRV_VALUE: "45"
+  HEALTH_HRV_UNIT: ms
+
+  HEALTH_SLEEP_VALUE: "7.5"
+  HEALTH_SLEEP_UNIT: hours
+
+  HEALTH_STEPS_VALUE: "8500"
+  HEALTH_STEPS_UNIT: steps
+
+  HEALTH_ACTIVE_CAL_VALUE: "450"
+  HEALTH_ACTIVE_CAL_UNIT: kcal
+
+  # ===========================================
+  # PREDEFINED TEST DATA - SUPPLEMENTS
+  # ===========================================
+  SUPPLEMENT_1_NAME: Vitamin D3
+  SUPPLEMENT_1_BRAND: NOW Foods
+  SUPPLEMENT_1_DOSAGE: "5000"
+  SUPPLEMENT_1_UNIT: IU
+  SUPPLEMENT_1_NOTES: Take with fatty meal for absorption
+
+  SUPPLEMENT_2_NAME: Omega-3 Fish Oil
+  SUPPLEMENT_2_BRAND: Nordic Naturals
+  SUPPLEMENT_2_DOSAGE: "1000"
+  SUPPLEMENT_2_UNIT: mg
+  SUPPLEMENT_2_NOTES: EPA/DHA for heart health
+
+  SUPPLEMENT_3_NAME: Magnesium Glycinate
+  SUPPLEMENT_3_BRAND: Doctor's Best
+  SUPPLEMENT_3_DOSAGE: "200"
+  SUPPLEMENT_3_UNIT: mg
+  SUPPLEMENT_3_NOTES: Take before bed for sleep
+
+  # ===========================================
+  # PREDEFINED TEST DATA - PROFILE/GOALS
+  # ===========================================
+  GOAL_CALORIES: "2200"
+  GOAL_PROTEIN: "165"
+  GOAL_CARBS: "220"
+  GOAL_FAT: "70"
+  GOAL_WEIGHT: "72"
+  CURRENT_WEIGHT: "75"
+  HEIGHT: "175"
+
+  # ===========================================
+  # API CONFIGURATION
+  # ===========================================
   API_BASE_URL: http://localhost:3000/api
 
-  # Timeouts (in milliseconds)
+  # ===========================================
+  # TIMEOUTS (in milliseconds)
+  # ===========================================
   DEFAULT_TIMEOUT: 10000
   LONG_TIMEOUT: 30000
+  NETWORK_TIMEOUT: 15000
 
-  # Test data prefixes (for cleanup)
+  # ===========================================
+  # TEST DATA PREFIXES
+  # ===========================================
   TEST_DATA_PREFIX: e2e_test_
+
+  # ===========================================
+  # INVALID TEST DATA (for error testing)
+  # ===========================================
+  INVALID_EMAIL: notanemail
+  INVALID_PASSWORD: short
+  NONEXISTENT_EMAIL: nonexistent@nutri-e2e.local
+  WRONG_PASSWORD: WrongPassword123!
 
 # Hooks
 # -----

@@ -1,0 +1,261 @@
+# Scan Test Suite - Optimized
+# Tests scan functionality with single sign-in
+# Expected time: ~1 minute
+
+appId: host.exp.Exponent
+
+env:
+  TEST_USER_EMAIL: "test@nutri-e2e.local"
+  TEST_USER_PASSWORD: "TestPass123!"
+
+---
+
+# === SETUP: Fresh Start with Sign In ===
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 15000
+
+# === TEST 1: Open Scan Food Screen ===
+- tapOn:
+    id: "home-add-meal-fab"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-meal-screen"
+    timeout: 10000
+
+- tapOn:
+    id: "add-meal-scan-food-button"
+
+# Handle Expo permission dialog for camera
+- tapOn:
+    text: "Allow"
+    optional: true
+
+# Handle iOS system camera permission
+- tapOn:
+    text: "Allow"
+    optional: true
+
+# Camera/permission screen (optional due to permissions)
+- assertVisible:
+    id: "scan-food-camera-screen"
+    optional: true
+
+- assertVisible:
+    id: "scan-food-permission-screen"
+    optional: true
+
+# Close scan screen if open - try back button first
+- tapOn:
+    id: "scan-food-back-button"
+    optional: true
+
+- tapOn:
+    id: "scan-food-close-button"
+    optional: true
+
+# Back to add meal
+- assertVisible:
+    id: "add-meal-screen"
+    optional: true
+
+# Cancel add meal - try back button first
+- tapOn:
+    id: "add-meal-back-button"
+    optional: true
+
+- tapOn:
+    id: "add-meal-cancel-button"
+    optional: true
+
+# Return to home
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 10000
+
+# === TEST 2: Barcode Scanner ===
+- tapOn:
+    id: "home-add-meal-fab"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-meal-screen"
+    timeout: 10000
+
+- tapOn:
+    id: "add-meal-scan-barcode-button"
+    optional: true
+
+# Handle Expo permission dialog for camera
+- tapOn:
+    text: "Allow"
+    optional: true
+
+# Handle iOS system camera permission
+- tapOn:
+    text: "Allow"
+    optional: true
+
+# Barcode screen (optional due to permissions)
+- assertVisible:
+    id: "scan-barcode-screen"
+    optional: true
+
+- assertVisible:
+    id: "scan-barcode-permission-screen"
+    optional: true
+
+# Close if open - try back button first
+- tapOn:
+    id: "scan-barcode-back-button"
+    optional: true
+
+- tapOn:
+    id: "scan-barcode-close-button"
+    optional: true
+
+- tapOn:
+    id: "scan-barcode-cancel-button"
+    optional: true
+
+# Return to add meal or home
+- assertVisible:
+    id: "add-meal-screen"
+    optional: true
+
+# Go back to home
+- tapOn:
+    id: "add-meal-back-button"
+    optional: true
+
+- tapOn:
+    id: "add-meal-cancel-button"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 10000
+
+# === TEST 3: AR Scan Food (Optional - Requires AR Hardware) ===
+- tapOn:
+    id: "home-add-meal-fab"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-meal-screen"
+    timeout: 10000
+
+# Tap AR scan option if available
+- tapOn:
+    id: "ar-scan-button"
+    optional: true
+
+# AR scan screen (optional - requires AR hardware)
+- assertVisible:
+    id: "ar-scan-food-screen"
+    optional: true
+
+# Test photo mode button if visible
+- tapOn:
+    id: "ar-scan-food-photo-mode-button"
+    optional: true
+
+# Test video mode button if visible
+- tapOn:
+    id: "ar-scan-food-video-mode-button"
+    optional: true
+
+# Go back from AR scan
+- tapOn:
+    id: "ar-scan-food-back-button"
+    optional: true
+
+# Return to add meal or home
+- assertVisible:
+    id: "add-meal-screen"
+    optional: true
+
+- tapOn:
+    id: "add-meal-back-button"
+    optional: true
+
+- tapOn:
+    id: "add-meal-cancel-button"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 10000
+
+# === TEST 4: AR Measure (Optional - Requires AR Hardware) ===
+- tapOn:
+    id: "home-add-meal-fab"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-meal-screen"
+    timeout: 10000
+
+- tapOn:
+    id: "add-meal-scan-food-button"
+    optional: true
+
+# Handle permissions
+- tapOn:
+    text: "Allow"
+    optional: true
+
+- assertVisible:
+    id: "scan-food-camera-screen"
+    optional: true
+
+# Tap AR measure option if available
+- tapOn:
+    id: "ar-measure-button"
+    optional: true
+
+# AR measure screen
+- assertVisible:
+    id: "ar-measure-screen"
+    optional: true
+
+# Try switching to manual mode
+- tapOn:
+    id: "ar-measure-switch-to-manual-button"
+    optional: true
+
+- tapOn:
+    id: "ar-measure-use-manual-button"
+    optional: true
+
+# Navigate back to home - try multiple methods
+- tapOn:
+    id: "scan-food-back-button"
+    optional: true
+
+- tapOn:
+    id: "ar-measure-back-button"
+    optional: true
+
+- tapOn:
+    id: "add-meal-back-button"
+    optional: true
+
+- tapOn:
+    id: "add-meal-cancel-button"
+    optional: true
+
+# Fallback: Use tab bar to navigate to home
+- tapOn:
+    point: "17%,95%"
+
+- assertVisible:
+    id: "home-screen"
+    optional: true

@@ -64,6 +64,9 @@ class FoodAnalysisResponse(BaseModel):
     processing_time: float  # milliseconds
     suggestions: Optional[List[str]] = None
     error: Optional[str] = None
+    image_hash: Optional[str] = Field(
+        None, description="SHA-256 hash of the analyzed image (for feedback submission)"
+    )
 
 
 class ModelInfo(BaseModel):
@@ -74,6 +77,10 @@ class ModelInfo(BaseModel):
     accuracy: Optional[float] = None
     num_classes: int
     description: str
+    model_type: Optional[str] = None
+    strategy: Optional[str] = None
+    multi_food_detection: Optional[bool] = None
+    detector: Optional[dict] = None
 
 
 class ModelsInfoResponse(BaseModel):

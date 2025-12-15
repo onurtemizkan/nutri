@@ -352,6 +352,7 @@ For physical devices, use your computer's IP address instead of localhost.
 - **No hardcoded strings** - use i18n
 - **No missing accessibility props** - always add accessibilityLabel
 - **No prop drilling >3 levels** - use Context or state management
+- **No native navigation headers** - all screens use custom headers; register new screens in `app/_layout.tsx` with `headerShown: false`
 
 ---
 
@@ -491,6 +492,16 @@ This starts: PostgreSQL (5432), Redis (6379), Backend API (3000)
 ├── hooks/             # Automation hooks (nutri-post-edit.sh, nutri-pre-bash.sh)
 └── settings.json      # Claude Code settings
 ```
+
+### MCP Configuration
+
+**iOS Simulator MCP:** This project uses `ios-simulator-eyes-mcp` from a local clone.
+- **DO NOT** suggest or switch to `ios-simulator-mcp` (npm public package) or any other iOS simulator MCP
+- Location: `~/Projects/ios-simulator-eyes-mcp`
+- If the MCP fails or needs updating:
+  ```bash
+  cd ~/Projects/ios-simulator-eyes-mcp && git pull && npm install && npm run build
+  ```
 
 ### Best Practices
 

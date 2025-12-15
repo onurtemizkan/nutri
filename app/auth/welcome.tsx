@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Alert, ScrollView } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -60,12 +60,15 @@ export default function WelcomeScreen() {
   return (
     <SafeAreaView style={styles.container} testID="welcome-screen">
       <LinearGradient colors={gradients.dark} style={styles.gradient}>
-        <View
-          style={[
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[
             styles.content,
             { paddingHorizontal: responsiveSpacing.horizontal },
             isTablet && styles.tabletContent
           ]}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
           testID="welcome-content"
         >
           {/* Header Section */}
@@ -144,10 +147,18 @@ export default function WelcomeScreen() {
 
             {/* Footer text */}
             <Text style={styles.footerText}>
-              By continuing, you agree to our Terms & Privacy Policy
+              By continuing, you agree to our{' '}
+              <Text
+                style={styles.footerLink}
+                onPress={() => router.push('/terms')}
+                accessibilityRole="link"
+                accessibilityLabel="View Terms and Conditions"
+              >
+                Terms & Privacy Policy
+              </Text>
             </Text>
           </View>
-        </View>
+        </ScrollView>
       </LinearGradient>
     </SafeAreaView>
   );
@@ -161,12 +172,16 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  content: {
+    flexGrow: 1,
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing['3xl'],
-    paddingBottom: spacing.xl,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.lg,
+    minHeight: '100%',
   },
   tabletContent: {
     maxWidth: FORM_MAX_WIDTH,
@@ -177,7 +192,7 @@ const styles = StyleSheet.create({
   // Header
   header: {
     alignItems: 'center',
-    marginTop: spacing['2xl'],
+    marginTop: spacing.lg,
   },
   logoContainer: {
     marginBottom: spacing.lg,
@@ -250,7 +265,7 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: colors.text.primary,
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
     letterSpacing: 0.5,
   },
@@ -267,7 +282,7 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     color: colors.text.primary,
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
     letterSpacing: 0.5,
   },
@@ -297,5 +312,9 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.xs,
     marginTop: spacing.sm,
     lineHeight: typography.lineHeight.relaxed * typography.fontSize.xs,
+  },
+  footerLink: {
+    color: colors.primary.main,
+    textDecorationLine: 'underline',
   },
 });

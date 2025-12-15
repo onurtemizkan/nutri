@@ -83,6 +83,16 @@ export interface CreateHealthMetricInput {
 }
 
 /**
+ * Input for updating an existing health metric
+ */
+export interface UpdateHealthMetricInput {
+  value?: number;
+  unit?: string;
+  recordedAt?: string; // ISO 8601 datetime string
+  metadata?: Record<string, unknown>;
+}
+
+/**
  * Statistics for a health metric type
  */
 export interface HealthMetricStats {

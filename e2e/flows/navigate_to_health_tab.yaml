@@ -1,0 +1,16 @@
+# Reusable flow: Navigate to Health Tab
+# Navigates from any screen to the Health tab
+
+appId: host.exp.Exponent
+
+---
+
+# Tap on health tab using coordinates (50%, 95%)
+- tapOn:
+    point: "50%,95%"
+
+# Wait for health screen to load
+- extendedWaitUntil:
+    visible:
+      id: "health-screen"
+    timeout: 10000

@@ -31,6 +31,11 @@ torch==2.4.1  # LSTM neural networks for RHR/HRV prediction (native M1/M2/M3 sup
 torchvision==0.19.1  # PyTorch vision utilities
 torchaudio==2.4.1  # PyTorch audio utilities
 
+# Hugging Face Transformers (FOOD CLASSIFICATION)
+transformers==4.36.2  # State-of-the-art ViT models for food recognition
+accelerate==0.25.0  # Optimized model loading and inference
+safetensors==0.4.1  # Safe and efficient model serialization
+
 # Model Interpretability (Phase 3)
 shap==0.44.1  # SHAP explanations for feature importance
 lime==0.2.0.1  # Local Interpretable Model-agnostic Explanations

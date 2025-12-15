@@ -1,0 +1,389 @@
+# Comprehensive Supplements E2E Tests
+# Tests supplement tracking functionality (Pro/Trial feature)
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Navigate to Supplements Screen (Pro User)
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in_pro_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to supplements (usually via profile or dedicated tab)
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Navigate to supplements section
+- tapOn:
+    id: "profile-supplements-button"
+    optional: true
+
+# Should show supplements screen
+- assertVisible:
+    id: "supplements-screen"
+    optional: true
+
+---
+
+# Test: View Existing Supplements (Pro User)
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in_pro_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+- tapOn:
+    id: "profile-supplements-button"
+    optional: true
+
+- assertVisible:
+    id: "supplements-screen"
+    optional: true
+
+# Pro user should have existing supplements from seed data
+- assertVisible:
+    text: "Vitamin D3"
+    optional: true
+
+- assertVisible:
+    text: "Omega-3"
+    optional: true
+
+---
+
+# Test: Add New Supplement (Pro User)
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in_pro_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+- tapOn:
+    id: "profile-supplements-button"
+    optional: true
+
+- assertVisible:
+    id: "supplements-screen"
+    optional: true
+
+# Tap add supplement button
+- tapOn:
+    id: "supplements-add-button"
+    optional: true
+
+# Should show add supplement form
+- assertVisible:
+    id: "add-supplement-screen"
+    optional: true
+
+# Fill in supplement details
+- tapOn:
+    id: "supplement-name-input"
+    optional: true
+- inputText: ${SUPPLEMENT_1_NAME}
+
+- tapOn:
+    id: "supplement-brand-input"
+    optional: true
+- inputText: ${SUPPLEMENT_1_BRAND}
+
+- tapOn:
+    id: "supplement-dosage-input"
+    optional: true
+- inputText: ${SUPPLEMENT_1_DOSAGE}
+
+- tapOn:
+    id: "supplement-unit-input"
+    optional: true
+- inputText: ${SUPPLEMENT_1_UNIT}
+
+# Save supplement
+- tapOn:
+    id: "supplement-save-button"
+    optional: true
+
+# Should return to supplements list
+- assertVisible:
+    id: "supplements-screen"
+    optional: true
+
+---
+
+# Test: Log Supplement Taken
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in_pro_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+- tapOn:
+    id: "profile-supplements-button"
+    optional: true
+
+- assertVisible:
+    id: "supplements-screen"
+    optional: true
+
+# Tap on a supplement card to log it
+- tapOn:
+    id: "supplement-card-0"
+    optional: true
+
+# Or tap log button if visible
+- tapOn:
+    id: "supplement-log-button"
+    optional: true
+
+# Should show confirmation or update
+- assertVisible:
+    text: "Logged"
+    optional: true
+
+---
+
+# Test: View Supplement Details
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in_pro_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+- tapOn:
+    id: "profile-supplements-button"
+    optional: true
+
+- assertVisible:
+    id: "supplements-screen"
+    optional: true
+
+# Tap on supplement to view details
+- tapOn:
+    id: "supplement-card-0"
+    optional: true
+
+# Should show supplement details
+- assertVisible:
+    id: "supplement-detail-screen"
+    optional: true
+
+---
+
+# Test: Edit Supplement
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in_pro_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+- tapOn:
+    id: "profile-supplements-button"
+    optional: true
+
+- assertVisible:
+    id: "supplements-screen"
+    optional: true
+
+# Navigate to supplement detail
+- tapOn:
+    id: "supplement-card-0"
+    optional: true
+
+# Tap edit button
+- tapOn:
+    id: "supplement-edit-button"
+    optional: true
+
+# Should show edit form
+- assertVisible:
+    id: "edit-supplement-screen"
+    optional: true
+
+---
+
+# Test: Delete Supplement
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in_pro_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+- tapOn:
+    id: "profile-supplements-button"
+    optional: true
+
+- assertVisible:
+    id: "supplements-screen"
+    optional: true
+
+# Swipe to delete or tap delete button
+- swipe:
+    direction: LEFT
+    from:
+      id: "supplement-card-0"
+    optional: true
+
+- tapOn:
+    id: "supplement-delete-button"
+    optional: true
+
+# Confirm deletion
+- tapOn:
+    text: "Delete"
+    optional: true
+
+---
+
+# Test: Cancel Add Supplement
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in_pro_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+- tapOn:
+    id: "profile-supplements-button"
+    optional: true
+
+- assertVisible:
+    id: "supplements-screen"
+    optional: true
+
+# Tap add supplement button
+- tapOn:
+    id: "supplements-add-button"
+    optional: true
+
+# Cancel
+- tapOn:
+    id: "supplement-cancel-button"
+    optional: true
+
+# Should return to supplements list
+- assertVisible:
+    id: "supplements-screen"
+    optional: true
+
+---
+
+# Test: Supplements Empty State (Empty User)
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in_empty_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+- tapOn:
+    id: "profile-supplements-button"
+    optional: true
+
+# Empty user should see empty state
+- assertVisible:
+    text: "No supplements"
+    optional: true
+
+# Add button should be visible
+- assertVisible:
+    id: "supplements-add-button"
+    optional: true
+
+---
+
+# Test: Supplements Feature for Free User (Paywall)
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+- tapOn:
+    id: "profile-supplements-button"
+    optional: true
+
+# Free user may see upgrade prompt
+- assertVisible:
+    text: "Upgrade"
+    optional: true
+
+- assertVisible:
+    text: "Pro"
+    optional: true

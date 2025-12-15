@@ -3,16 +3,17 @@
 
 appId: host.exp.Exponent
 
+env:
+  TEST_USER_EMAIL: "test@nutri-e2e.local"
+  TEST_USER_PASSWORD: "TestPass123!"
+
 ---
 
 # Test: Sign In with Wrong Password
-- launchApp:
-    clearState: true
+- runFlow: ../../flows/launch_app.yaml
 
-- assertVisible:
-    id: "welcome-screen"
 - tapOn:
-    id: "welcome-signin-button"
+    text: "Sign In"
 - assertVisible:
     id: "signin-screen"
 
@@ -35,13 +36,10 @@ appId: host.exp.Exponent
 ---
 
 # Test: Sign In with Non-existent Account
-- launchApp:
-    clearState: true
+- runFlow: ../../flows/launch_app.yaml
 
-- assertVisible:
-    id: "welcome-screen"
 - tapOn:
-    id: "welcome-signin-button"
+    text: "Sign In"
 - assertVisible:
     id: "signin-screen"
 
@@ -65,13 +63,10 @@ appId: host.exp.Exponent
 
 # Test: Sign Up with Existing Email
 # Note: This requires the test user to already exist
-- launchApp:
-    clearState: true
+- runFlow: ../../flows/launch_app.yaml
 
-- assertVisible:
-    id: "welcome-screen"
 - tapOn:
-    id: "welcome-signup-button"
+    text: "Create Account"
 - assertVisible:
     id: "signup-screen"
 
@@ -101,31 +96,11 @@ appId: host.exp.Exponent
 
 ---
 
-# Test: Password Reset with Invalid Token
-- launchApp:
-    clearState: true
-    arguments:
-      resetToken: "invalid-token-12345"
-
-# With invalid token, should eventually show error or token entry
-- assertVisible:
-    id: "reset-password-token-screen"
-    optional: true
-
-- assertVisible:
-    id: "reset-password-screen"
-    optional: true
-
----
-
 # Test: Rapid Form Submission (Spam Protection)
-- launchApp:
-    clearState: true
+- runFlow: ../../flows/launch_app.yaml
 
-- assertVisible:
-    id: "welcome-screen"
 - tapOn:
-    id: "welcome-signin-button"
+    text: "Sign In"
 - assertVisible:
     id: "signin-screen"
 

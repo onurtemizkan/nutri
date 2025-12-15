@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { mealsApi } from '@/lib/api/meals';
@@ -16,6 +17,9 @@ import { DailySummary, Meal } from '@/lib/types';
 import { useAuth } from '@/lib/context/AuthContext';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import { useResponsive } from '@/hooks/useResponsive';
+import { SwipeableMealCard } from '@/lib/components/SwipeableMealCard';
+import { showAlert } from '@/lib/utils/alert';
+import { getErrorMessage } from '@/lib/utils/errorHandling';
 
 export default function HomeScreen() {
   const [summary, setSummary] = useState<DailySummary | null>(null);
@@ -71,9 +75,13 @@ export default function HomeScreen() {
     setRefreshing(false);
   }, [loadSummary]);
 
-  useEffect(() => {
-    loadSummary();
-  }, [loadSummary]);
+  // Use useFocusEffect to reload data when screen comes into focus
+  // This ensures data is refreshed after adding/editing a meal
+  useFocusEffect(
+    useCallback(() => {
+      loadSummary();
+    }, [loadSummary])
+  );
 
   const calorieProgress =
     summary && summary.goals
@@ -82,6 +90,36 @@ export default function HomeScreen() {
 
   const getMealsByType = (type: string) => {
     return summary?.meals.filter((meal) => meal.mealType === type) || [];
+  };
+
+  const handleEditMeal = (meal: Meal) => {
+    router.push(`/edit-meal/${meal.id}`);
+  };
+
+  const handleDeleteMeal = (meal: Meal) => {
+    showAlert(
+      'Delete Meal',
+      `Are you sure you want to delete "${meal.name}"?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await mealsApi.deleteMeal(meal.id);
+              // Refresh the summary to reflect changes
+              await loadSummary();
+            } catch (error) {
+              showAlert('Error', getErrorMessage(error, 'Failed to delete meal'));
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (isLoading) {
@@ -224,15 +262,12 @@ export default function HomeScreen() {
                   </Text>
                   {meals.length > 0 ? (
                     meals.map((meal: Meal) => (
-                      <View key={meal.id} style={styles.mealCard}>
-                        <View style={styles.mealInfo}>
-                          <Text style={styles.mealName}>{meal.name}</Text>
-                          <Text style={styles.mealMacros}>
-                            P: {Math.round(meal.protein)}g • C: {Math.round(meal.carbs)}g • F: {Math.round(meal.fat)}g
-                          </Text>
-                        </View>
-                        <Text style={styles.mealCalories}>{Math.round(meal.calories)} cal</Text>
-                      </View>
+                      <SwipeableMealCard
+                        key={meal.id}
+                        meal={meal}
+                        onEdit={handleEditMeal}
+                        onDelete={handleDeleteMeal}
+                      />
                     ))
                   ) : (
                     <Text style={styles.noMeals}>No meals yet</Text>

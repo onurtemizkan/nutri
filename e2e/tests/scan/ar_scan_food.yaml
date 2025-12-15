@@ -1,0 +1,177 @@
+# AR Food Scanning E2E Tests
+# Tests AR-based food scanning with LiDAR (requires device with AR capabilities)
+# Note: These tests are marked optional as AR features require specific hardware
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Navigate to AR Scan Food Screen
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to scan food (usually from home or add meal)
+- tapOn:
+    id: "home-add-meal-button"
+    optional: true
+
+- assertVisible:
+    id: "add-meal-screen"
+    optional: true
+
+# Tap AR scan option if available
+- tapOn:
+    id: "ar-scan-button"
+    optional: true
+
+# Should show AR scan screen
+- assertVisible:
+    id: "ar-scan-food-screen"
+    optional: true
+
+---
+
+# Test: AR Scan Food Screen Back Navigation
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-button"
+    optional: true
+
+- assertVisible:
+    id: "add-meal-screen"
+    optional: true
+
+- tapOn:
+    id: "ar-scan-button"
+    optional: true
+
+- assertVisible:
+    id: "ar-scan-food-screen"
+    optional: true
+
+# Go back
+- tapOn:
+    id: "ar-scan-food-back-button"
+    optional: true
+
+# Should return to previous screen
+- assertVisible:
+    id: "add-meal-screen"
+    optional: true
+
+---
+
+# Test: AR Scan Food Mode Selection - Photo Mode
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-button"
+    optional: true
+
+- assertVisible:
+    id: "add-meal-screen"
+    optional: true
+
+- tapOn:
+    id: "ar-scan-button"
+    optional: true
+
+- assertVisible:
+    id: "ar-scan-food-screen"
+    optional: true
+
+# Select photo mode
+- tapOn:
+    id: "ar-scan-food-photo-mode-button"
+    optional: true
+
+---
+
+# Test: AR Scan Food Mode Selection - Video Mode
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-button"
+    optional: true
+
+- assertVisible:
+    id: "add-meal-screen"
+    optional: true
+
+- tapOn:
+    id: "ar-scan-button"
+    optional: true
+
+- assertVisible:
+    id: "ar-scan-food-screen"
+    optional: true
+
+# Select video mode
+- tapOn:
+    id: "ar-scan-food-video-mode-button"
+    optional: true
+
+---
+
+# Test: AR Scan Food Input Fields
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "home-add-meal-button"
+    optional: true
+
+- assertVisible:
+    id: "add-meal-screen"
+    optional: true
+
+- tapOn:
+    id: "ar-scan-button"
+    optional: true
+
+- assertVisible:
+    id: "ar-scan-food-screen"
+    optional: true
+
+# Enter food name
+- tapOn:
+    id: "ar-scan-food-name-input"
+    optional: true
+
+- inputText: "Apple"
+
+# Enter notes
+- tapOn:
+    id: "ar-scan-food-notes-input"
+    optional: true
+
+- inputText: "Medium sized red apple"

@@ -6,11 +6,7 @@ appId: host.exp.Exponent
 ---
 
 # Test: Add Meal with All Required Fields
-- launchApp:
-    clearState: true
-
-# Sign in first
-- runFlow: ../../flows/sign_in.yaml
+- runFlow: ../../flows/sign_in_test_user.yaml
 
 - assertVisible:
     id: "home-screen"
@@ -19,46 +15,57 @@ appId: host.exp.Exponent
 - tapOn:
     id: "home-add-meal-fab"
 
-- assertVisible:
-    id: "add-meal-screen"
+- extendedWaitUntil:
+    visible:
+      id: "add-meal-screen"
+    timeout: 10000
 
-# Fill in meal details
+# Scroll down to reach meal name input
+- swipe:
+    start: "50%,70%"
+    end: "50%,40%"
+    duration: 300
+
+# Fill in meal details - need to hideKeyboard between inputs
 - tapOn:
     id: "add-meal-name-input"
 - inputText: "Grilled Chicken Salad"
+- hideKeyboard
 
 - tapOn:
     id: "add-meal-calories-input"
 - inputText: "450"
+- hideKeyboard
 
 - tapOn:
     id: "add-meal-protein-input"
 - inputText: "35"
+- hideKeyboard
 
 - tapOn:
     id: "add-meal-carbs-input"
 - inputText: "20"
+- hideKeyboard
 
 - tapOn:
     id: "add-meal-fat-input"
 - inputText: "22"
+- hideKeyboard
 
 # Save the meal
 - tapOn:
     id: "add-meal-save-button"
 
 # Should navigate back to home after success
-- assertVisible:
-    id: "home-screen"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 15000
 
 ---
 
 # Test: Add Meal Validation - Empty Fields
-- launchApp:
-    clearState: true
-
-# Sign in first
-- runFlow: ../../flows/sign_in.yaml
+- runFlow: ../../flows/sign_in_test_user.yaml
 
 - assertVisible:
     id: "home-screen"
@@ -67,12 +74,19 @@ appId: host.exp.Exponent
 - tapOn:
     id: "home-add-meal-fab"
 
-- assertVisible:
-    id: "add-meal-screen"
+- extendedWaitUntil:
+    visible:
+      id: "add-meal-screen"
+    timeout: 10000
 
 # Try to save without filling required fields
 - tapOn:
     id: "add-meal-save-button"
+
+# Should show error alert - dismiss it
+- tapOn:
+    text: "OK"
+    optional: true
 
 # Should stay on add meal screen
 - assertVisible:
@@ -81,11 +95,7 @@ appId: host.exp.Exponent
 ---
 
 # Test: Cancel Adding Meal
-- launchApp:
-    clearState: true
-
-# Sign in first
-- runFlow: ../../flows/sign_in.yaml
+- runFlow: ../../flows/sign_in_test_user.yaml
 
 - assertVisible:
     id: "home-screen"
@@ -94,50 +104,29 @@ appId: host.exp.Exponent
 - tapOn:
     id: "home-add-meal-fab"
 
-- assertVisible:
-    id: "add-meal-screen"
+- extendedWaitUntil:
+    visible:
+      id: "add-meal-screen"
+    timeout: 10000
+
+# Scroll down to reach meal name input
+- swipe:
+    start: "50%,70%"
+    end: "50%,40%"
+    duration: 300
 
 # Fill some data
 - tapOn:
     id: "add-meal-name-input"
 - inputText: "Test Meal"
+- hideKeyboard
 
-# Cancel
+# Cancel using back button
 - tapOn:
     id: "add-meal-cancel-button"
 
 # Should be back on home
-- assertVisible:
-    id: "home-screen"
-
----
-
-# Test: Navigate to Scan Food from Add Meal
-- launchApp:
-    clearState: true
-
-# Sign in first
-- runFlow: ../../flows/sign_in.yaml
-
-- assertVisible:
-    id: "home-screen"
-
-# Open add meal screen
-- tapOn:
-    id: "home-add-meal-fab"
-
-- assertVisible:
-    id: "add-meal-screen"
-
-# Tap scan food button
-- tapOn:
-    id: "add-meal-scan-food-button"
-
-# Should open scan food screen (may need permission)
-- assertVisible:
-    id: "scan-food-camera-screen"
-    optional: true
-
-- assertVisible:
-    id: "scan-food-permission-screen"
-    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 10000

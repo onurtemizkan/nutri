@@ -1,68 +1,112 @@
 # Session Persistence E2E Tests
 # Tests that user sessions are maintained correctly
+# Note: With Expo Go, session persistence is maintained via Expo's URL reload
 
 appId: host.exp.Exponent
 
 ---
 
-# Test: Session Persists After App Restart
-- launchApp:
-    clearState: true
-
-# Sign in
-- runFlow: ../../flows/sign_in.yaml
+# Test: Session Persists After App Reload
+# Sign in with test user
+- runFlow: ../../flows/sign_in_test_user.yaml
 
 - assertVisible:
     id: "home-screen"
 
-# Background and foreground the app
+# Stop and restart app, then reload via URL (Expo Go requirement)
 - stopApp
 - launchApp
 
-# Should still be on home screen (session persisted)
+# Need to re-open the dev URL since we're using Expo Go
 - assertVisible:
-    id: "home-screen"
+    text: "Expo Go"
+
+- openLink: exp://localhost:8081
+
+# Wait for app to load and check session persistence
+- assertVisible:
+    text: "nutri"
+
+# Session should persist - should go straight to home (not welcome)
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 30000
 
 ---
 
 # Test: Session Cleared After Logout
-- launchApp:
-    clearState: true
-
-# Sign in
-- runFlow: ../../flows/sign_in.yaml
+# Sign in with test user
+- runFlow: ../../flows/sign_in_test_user.yaml
 
 - assertVisible:
     id: "home-screen"
 
-# Logout
-- runFlow: ../../flows/logout.yaml
+# Navigate to profile and logout
+- tapOn:
+    point: "83%,95%"
+
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000
+
+# Scroll down to find logout button
+- swipe:
+    start: "50%,80%"
+    end: "50%,30%"
+    duration: 300
+
+# Tap logout
+- tapOn:
+    id: "profile-logout-button"
+
+# Wait for modal
+- waitForAnimationToEnd
+
+# Confirm logout (73%, 54%)
+- tapOn:
+    point: "73%,54%"
 
 # Verify on welcome screen
-- assertVisible:
-    id: "welcome-screen"
+- extendedWaitUntil:
+    visible:
+      id: "welcome-screen"
+    timeout: 15000
 
-# Restart app
+# Stop and restart app
 - stopApp
 - launchApp
 
-# Should still be on welcome screen (session cleared)
+# Re-open the dev URL
 - assertVisible:
-    id: "welcome-screen"
+    text: "Expo Go"
+
+- openLink: exp://localhost:8081
+
+- assertVisible:
+    text: "nutri"
+
+# Should show welcome screen (session was cleared by logout)
+- extendedWaitUntil:
+    visible:
+      id: "welcome-screen"
+    timeout: 30000
 
 ---
 
 # Test: Fresh Install Shows Welcome
-- launchApp:
-    clearState: true
+- runFlow: ../../flows/launch_app.yaml
 
 # First launch should show welcome
-- assertVisible:
-    id: "welcome-screen"
+- extendedWaitUntil:
+    visible:
+      id: "welcome-screen"
+    timeout: 15000
 
-# Verify sign in and sign up buttons are visible
+# Verify sign in and sign up buttons are visible by text
 - assertVisible:
-    id: "welcome-signin-button"
+    text: "Sign In"
 
 - assertVisible:
-    id: "welcome-signup-button"
+    text: "Sign Up"

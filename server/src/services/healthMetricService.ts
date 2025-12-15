@@ -207,7 +207,7 @@ export class HealthMetricService {
     });
 
     return metrics.map((m) => ({
-      timestamp: m.recordedAt,
+      date: m.recordedAt,
       value: m.value,
       unit: m.unit,
       source: m.source,

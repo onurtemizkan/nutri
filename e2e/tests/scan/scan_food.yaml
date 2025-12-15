@@ -6,11 +6,7 @@ appId: host.exp.Exponent
 ---
 
 # Test: Open Scan Food Screen
-- launchApp:
-    clearState: true
-
-# Sign in first
-- runFlow: ../../flows/sign_in.yaml
+- runFlow: ../../flows/sign_in_test_user.yaml
 
 - assertVisible:
     id: "home-screen"
@@ -39,11 +35,7 @@ appId: host.exp.Exponent
 
 # Test: Camera Permission Screen Elements
 # Note: This test runs when camera permission is not granted
-- launchApp:
-    clearState: true
-
-# Sign in first
-- runFlow: ../../flows/sign_in.yaml
+- runFlow: ../../flows/sign_in_test_user.yaml
 
 - assertVisible:
     id: "home-screen"
@@ -72,11 +64,7 @@ appId: host.exp.Exponent
 
 # Test: Camera Screen Elements (when permission granted)
 # Note: This test requires camera permission to be pre-granted
-- launchApp:
-    clearState: true
-
-# Sign in first
-- runFlow: ../../flows/sign_in.yaml
+- runFlow: ../../flows/sign_in_test_user.yaml
 
 - assertVisible:
     id: "home-screen"
@@ -108,11 +96,7 @@ appId: host.exp.Exponent
 ---
 
 # Test: Close Scan Food Screen
-- launchApp:
-    clearState: true
-
-# Sign in first
-- runFlow: ../../flows/sign_in.yaml
+- runFlow: ../../flows/sign_in_test_user.yaml
 
 - assertVisible:
     id: "home-screen"

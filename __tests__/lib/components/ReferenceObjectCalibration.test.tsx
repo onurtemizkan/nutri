@@ -24,6 +24,8 @@ jest.mock('@expo/vector-icons', () => ({
   Ionicons: 'Ionicons',
 }));
 
+// Note: DeviceEventEmitter is mocked globally in jest.setup.js
+
 describe('ReferenceObjectCalibration', () => {
   const mockOnCalibrate = jest.fn();
   const mockOnCancel = jest.fn();

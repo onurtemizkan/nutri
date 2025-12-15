@@ -1,0 +1,257 @@
+# Comprehensive Health Screen E2E Tests
+# Tests health tab functionality and metrics display
+
+appId: host.exp.Exponent
+
+---
+
+# Test: View Health Screen with Data
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to health tab
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Should display health metrics
+- assertVisible:
+    id: "health-metrics-container"
+    optional: true
+
+---
+
+# Test: View Health Screen for Pro User (Full Features)
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in_pro_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Pro user should have more features
+- assertVisible:
+    id: "health-metrics-container"
+    optional: true
+
+---
+
+# Test: View Health Screen for Empty User (Empty States)
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in_empty_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Should show empty state or prompt to connect
+- assertVisible:
+    text: "No health data"
+    optional: true
+
+---
+
+# Test: Health Screen Navigation to Settings
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Tap settings or gear icon
+- tapOn:
+    id: "health-settings-button"
+    optional: true
+
+# Should navigate to health settings
+- assertVisible:
+    id: "health-settings-screen"
+    optional: true
+
+---
+
+# Test: View Resting Heart Rate Details
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Tap on RHR metric card if available
+- tapOn:
+    id: "health-metric-rhr"
+    optional: true
+
+# Should show detail view
+- assertVisible:
+    id: "health-metric-detail-screen"
+    optional: true
+
+---
+
+# Test: View HRV Details
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Tap on HRV metric card if available
+- tapOn:
+    id: "health-metric-hrv"
+    optional: true
+
+# Should show detail view
+- assertVisible:
+    id: "health-metric-detail-screen"
+    optional: true
+
+---
+
+# Test: View Sleep Duration Details
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Tap on sleep metric card if available
+- tapOn:
+    id: "health-metric-sleep"
+    optional: true
+
+# Should show detail view
+- assertVisible:
+    id: "health-metric-detail-screen"
+    optional: true
+
+---
+
+# Test: View Steps Details
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Tap on steps metric card if available
+- tapOn:
+    id: "health-metric-steps"
+    optional: true
+
+# Should show detail view
+- assertVisible:
+    id: "health-metric-detail-screen"
+    optional: true
+
+---
+
+# Test: Pull to Refresh Health Screen
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Pull to refresh
+- swipe:
+    direction: DOWN
+    from:
+      id: "health-screen"
+
+# Should still show health screen
+- assertVisible:
+    id: "health-screen"
+
+---
+
+# Test: Health Screen Tab Navigation Back to Home
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Navigate back to home
+- tapOn:
+    id: "tab-home"
+
+- assertVisible:
+    id: "home-screen"

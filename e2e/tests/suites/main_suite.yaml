@@ -1,0 +1,202 @@
+# Main Test Suite - Optimized
+# Combines dashboard, navigation, meals, and health tests
+# Signs in ONCE, then runs all tests sequentially
+# Expected time: ~2-3 minutes (vs ~5-6 minutes running separately)
+
+appId: host.exp.Exponent
+
+env:
+  TEST_USER_EMAIL: "test@nutri-e2e.local"
+  TEST_USER_PASSWORD: "TestPass123!"
+
+---
+
+# === SETUP: Sign In Once ===
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 15000
+
+# === TEST 1: Dashboard Elements ===
+- assertVisible:
+    id: "home-greeting"
+    optional: true
+
+- assertVisible:
+    id: "home-calorie-progress"
+    optional: true
+
+- assertVisible:
+    id: "home-macro-summary"
+    optional: true
+
+- assertVisible:
+    id: "home-add-meal-fab"
+
+# === TEST 2: Navigation to Health Tab ===
+- tapOn:
+    point: "50%,95%"
+
+- extendedWaitUntil:
+    visible:
+      id: "health-screen"
+    timeout: 10000
+
+# === TEST 3: Navigation to Profile Tab ===
+- tapOn:
+    point: "83%,95%"
+
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000
+
+# === TEST 4: Navigation Back to Home ===
+- tapOn:
+    point: "17%,95%"
+
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 10000
+
+# === TEST 5: Add Meal Flow ===
+- tapOn:
+    id: "home-add-meal-fab"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-meal-screen"
+    timeout: 10000
+
+# Scroll down to reach inputs
+- swipe:
+    start: "50%,70%"
+    end: "50%,40%"
+    duration: 300
+
+# Fill meal details
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: "Test Meal Suite"
+- hideKeyboard
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: "350"
+- hideKeyboard
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: "25"
+- hideKeyboard
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: "30"
+- hideKeyboard
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: "15"
+- hideKeyboard
+
+# Save meal
+- tapOn:
+    id: "add-meal-save-button"
+
+# Should return to home
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 15000
+
+# === TEST 6: Add Health Metric Flow ===
+# Navigate to Health tab
+- tapOn:
+    point: "50%,95%"
+
+- extendedWaitUntil:
+    visible:
+      id: "health-screen"
+    timeout: 10000
+
+# Tap add health metric button
+- tapOn:
+    id: "health-add-metric-button"
+    optional: true
+
+# If button found, continue with metric entry
+- tapOn:
+    id: "health-metric-type-selector"
+    optional: true
+
+# Select weight metric type if available
+- tapOn:
+    text: "Weight"
+    optional: true
+
+- tapOn:
+    id: "health-metric-value-input"
+    optional: true
+- inputText: "70"
+- hideKeyboard
+
+- tapOn:
+    id: "health-metric-save-button"
+    optional: true
+
+# Return to health screen
+- assertVisible:
+    id: "health-screen"
+    optional: true
+
+# === TEST 7: Navigate back to Home ===
+- tapOn:
+    point: "17%,95%"
+
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 10000
+
+# === TEST 8: Health Metric Detail View ===
+# Navigate to Health tab
+- tapOn:
+    point: "50%,95%"
+
+- extendedWaitUntil:
+    visible:
+      id: "health-screen"
+    timeout: 10000
+
+# Tap on a health metric card to view details
+- tapOn:
+    id: "health-metric-rhr"
+    optional: true
+
+- assertVisible:
+    id: "health-metric-detail-screen"
+    optional: true
+
+# Go back to health screen
+- tapOn:
+    id: "health-metric-detail-back-button"
+    optional: true
+
+- assertVisible:
+    id: "health-screen"
+    optional: true
+
+# === TEST 9: Navigate back to Home ===
+- tapOn:
+    point: "17%,95%"
+
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 10000
+
+# Suite complete - user still signed in

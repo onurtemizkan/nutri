@@ -70,6 +70,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) => <IconSymbol size={iconSize} name="house.fill" color={color} />,
+          tabBarTestID: 'tab-home',
         }}
       />
       <Tabs.Screen
@@ -77,6 +78,7 @@ export default function TabLayout() {
         options={{
           title: 'Health',
           tabBarIcon: ({ color }) => <IconSymbol size={iconSize} name="heart.fill" color={color} />,
+          tabBarTestID: 'tab-health',
         }}
       />
       <Tabs.Screen
@@ -84,6 +86,7 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color }) => <IconSymbol size={iconSize} name="person.fill" color={color} />,
+          tabBarTestID: 'tab-profile',
         }}
       />
     </Tabs>

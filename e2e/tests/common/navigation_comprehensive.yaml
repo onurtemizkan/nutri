@@ -1,0 +1,253 @@
+# Comprehensive Navigation E2E Tests
+# Tests app-wide navigation flows and tab behavior
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Complete Tab Navigation Cycle
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Home -> Health
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Health -> Profile
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Profile -> Home
+- tapOn:
+    id: "tab-home"
+
+- assertVisible:
+    id: "home-screen"
+
+---
+
+# Test: Deep Navigation and Back
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to add meal
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+# Cancel to go back
+- tapOn:
+    id: "add-meal-cancel-button"
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to profile
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Navigate to health settings
+- tapOn:
+    id: "health-integration-button"
+
+- assertVisible:
+    id: "health-settings-screen"
+
+# Go back
+- tapOn:
+    id: "health-settings-back-button"
+
+- assertVisible:
+    id: "profile-screen"
+
+---
+
+# Test: Navigation After Adding Meal
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Add a meal
+- tapOn:
+    id: "home-add-meal-fab"
+
+- assertVisible:
+    id: "add-meal-screen"
+
+- tapOn:
+    id: "add-meal-name-input"
+- inputText: "Navigation Test Meal"
+
+- tapOn:
+    id: "add-meal-calories-input"
+- inputText: "300"
+
+- tapOn:
+    id: "add-meal-protein-input"
+- inputText: "20"
+
+- tapOn:
+    id: "add-meal-carbs-input"
+- inputText: "30"
+
+- tapOn:
+    id: "add-meal-fat-input"
+- inputText: "10"
+
+- tapOn:
+    id: "add-meal-save-button"
+
+# Should be back on home
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to health
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Navigate back to home - meal should still be there
+- tapOn:
+    id: "tab-home"
+
+- assertVisible:
+    id: "home-screen"
+
+- assertVisible:
+    text: "Navigation Test Meal"
+
+---
+
+# Test: Tab State Persistence
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to profile
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Start editing goals
+- tapOn:
+    id: "profile-edit-goals-button"
+
+- assertVisible:
+    id: "profile-save-goals-button"
+
+# Cancel editing
+- tapOn:
+    id: "profile-cancel-edit-button"
+
+# Navigate to home and back
+- tapOn:
+    id: "tab-home"
+
+- assertVisible:
+    id: "home-screen"
+
+- tapOn:
+    id: "tab-profile"
+
+- assertVisible:
+    id: "profile-screen"
+
+# Should be in view mode (not edit mode)
+- assertVisible:
+    id: "profile-edit-goals-button"
+
+---
+
+# Test: Rapid Tab Switching
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Rapidly switch tabs
+- tapOn:
+    id: "tab-health"
+- tapOn:
+    id: "tab-profile"
+- tapOn:
+    id: "tab-home"
+- tapOn:
+    id: "tab-health"
+- tapOn:
+    id: "tab-profile"
+
+# Should end on profile
+- assertVisible:
+    id: "profile-screen"
+
+---
+
+# Test: Navigation with Pull to Refresh
+- launchApp:
+    clearState: true
+
+- runFlow: ../../flows/sign_in.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Pull to refresh on home
+- swipe:
+    direction: DOWN
+    from:
+      id: "home-calorie-summary"
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to health
+- tapOn:
+    id: "tab-health"
+
+- assertVisible:
+    id: "health-screen"
+
+# Pull to refresh on health
+- swipe:
+    direction: DOWN
+    from:
+      id: "health-screen"
+
+- assertVisible:
+    id: "health-screen"
