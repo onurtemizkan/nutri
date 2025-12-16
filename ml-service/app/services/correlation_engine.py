@@ -170,9 +170,9 @@ class CorrelationEngineService:
             strongest_negative=strongest_negative,
             data_quality_score=quality_score,
             missing_days=missing_days,
-            warning=None
-            if quality_score > 0.7
-            else "Data quality is low (< 70% complete)",
+            warning=(
+                None if quality_score > 0.7 else "Data quality is low (< 70% complete)"
+            ),
         )
 
     def _compute_correlation(

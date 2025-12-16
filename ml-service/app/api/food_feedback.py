@@ -7,6 +7,7 @@ Endpoints for:
 3. Managing learned prompts
 4. Applying improvements to the classifier
 """
+
 import logging
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query

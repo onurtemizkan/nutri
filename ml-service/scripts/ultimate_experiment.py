@@ -17,14 +17,11 @@ Run with: python scripts/ultimate_experiment.py
 
 import gc
 import json
-import os
 import sys
-import time
 import warnings
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, date
+from datetime import datetime, date
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -33,10 +30,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.model_selection import TimeSeriesSplit
 from sklearn.preprocessing import StandardScaler, RobustScaler
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 # Add parent to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -44,16 +40,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from app.data.synthetic_generator import (
     SyntheticDataGenerator,
     UserPersona,
-    PERSONA_CONFIGS,
     PersonaConfig,
 )
 from app.ml_models.advanced_lstm import (
-    AdvancedLSTMConfig,
-    EnhancedLSTMWithAttention,
-    BiLSTMWithResiduals,
-    TemporalConvNet,
     ModelFactory,
-    TCNConfig,
     TemporalAttention,
     MultiHeadTemporalAttention,
 )
@@ -61,8 +51,9 @@ from app.ml_models.advanced_lstm import (
 # Try importing optuna
 try:
     import optuna
-    from optuna.pruners import MedianPruner, HyperbandPruner
+    from optuna.pruners import MedianPruner
     from optuna.samplers import TPESampler
+
     OPTUNA_AVAILABLE = True
 except ImportError:
     OPTUNA_AVAILABLE = False
@@ -72,6 +63,7 @@ except ImportError:
 # =============================================================================
 # ENHANCED SYNTHETIC DATA GENERATOR
 # =============================================================================
+
 
 class EnhancedSyntheticGenerator(SyntheticDataGenerator):
     """
@@ -119,8 +111,12 @@ class EnhancedSyntheticGenerator(SyntheticDataGenerator):
         total_protein = sum(m["protein"] for m in daily_meals)
         total_carbs = sum(m["carbs"] for m in daily_meals)
 
-        protein_adequacy = min(1.0, total_protein / (config.protein_target * config.weight_kg))
-        calorie_deviation = abs(total_calories - config.calories_target) / config.calories_target
+        protein_adequacy = min(
+            1.0, total_protein / (config.protein_target * config.weight_kg)
+        )
+        calorie_deviation = (
+            abs(total_calories - config.calories_target) / config.calories_target
+        )
 
         # Late eating impact
         late_meals = [m for m in daily_meals if m["consumed_at"].hour >= 20]
@@ -148,7 +144,12 @@ class EnhancedSyntheticGenerator(SyntheticDataGenerator):
             # Sleep debt (bigger impact)
             state.get("sleep_debt", 0) * 3,
             # Yesterday's high activity
-            (state.get("activity_load_7d", [0])[-1] if state.get("activity_load_7d") else 0) * 0.03,
+            (
+                state.get("activity_load_7d", [0])[-1]
+                if state.get("activity_load_7d")
+                else 0
+            )
+            * 0.03,
             # Poor nutrition
             (1 - avg_nutrition) * 4,
             # Cumulative fatigue
@@ -183,7 +184,11 @@ class EnhancedSyntheticGenerator(SyntheticDataGenerator):
             # Fitness benefit
             min(8, avg_activity * 0.015),
             # Overtraining penalty
-            -(state.get("cumulative_fatigue", 0) - 0.3) * 20 if state.get("cumulative_fatigue", 0) > 0.3 else 0,
+            (
+                -(state.get("cumulative_fatigue", 0) - 0.3) * 20
+                if state.get("cumulative_fatigue", 0) > 0.3
+                else 0
+            ),
             # Stress (big impact on HRV)
             -config.stress_level * 15,
             # Stress cycle
@@ -209,19 +214,34 @@ class EnhancedSyntheticGenerator(SyntheticDataGenerator):
 
         sleep_modifiers = [
             -late_eating_impact * 0.4,
-            0.2 if 30 < high_intensity_mins < 60 else (-0.3 if high_intensity_mins > 90 else 0),
-            np.random.uniform(0.5, 1.5) if is_weekend and config.sleep_regularity < 0.7 else 0,
+            (
+                0.2
+                if 30 < high_intensity_mins < 60
+                else (-0.3 if high_intensity_mins > 90 else 0)
+            ),
+            (
+                np.random.uniform(0.5, 1.5)
+                if is_weekend and config.sleep_regularity < 0.7
+                else 0
+            ),
             -config.stress_level * 0.8,
             -0.5 if recovering_from_illness else 0,
             # Caffeine proxy (late meals often include caffeine)
             -0.3 if any(m["consumed_at"].hour >= 18 for m in daily_meals) else 0,
         ]
 
-        sleep_duration = sleep_base + sum(sleep_modifiers) + np.random.normal(0, config.sleep_std)
+        sleep_duration = (
+            sleep_base + sum(sleep_modifiers) + np.random.normal(0, config.sleep_std)
+        )
         sleep_duration = max(3, min(12, sleep_duration))
 
         # Sleep quality
-        sleep_quality = 70 + (sleep_duration - 6) * 5 - late_eating_impact * 8 - config.stress_level * 12
+        sleep_quality = (
+            70
+            + (sleep_duration - 6) * 5
+            - late_eating_impact * 8
+            - config.stress_level * 12
+        )
         sleep_quality += 10 if protein_adequacy > 0.8 else 0  # Good protein helps sleep
         sleep_quality = max(20, min(100, sleep_quality + np.random.normal(0, 6)))
 
@@ -234,56 +254,70 @@ class EnhancedSyntheticGenerator(SyntheticDataGenerator):
         recovery_score = max(0, min(100, recovery_score + np.random.normal(0, 4)))
 
         # Record timestamp
-        recorded_at = datetime.combine(current_date, datetime.min.time()).replace(hour=7, minute=0)
+        recorded_at = datetime.combine(current_date, datetime.min.time()).replace(
+            hour=7, minute=0
+        )
 
         # Add all metrics
-        metrics.append({
-            "user_id": user_id,
-            "metric_type": "RESTING_HEART_RATE",
-            "value": round(rhr_value, 1),
-            "source": "SYNTHETIC_ENHANCED",
-            "recorded_at": recorded_at,
-        })
+        metrics.append(
+            {
+                "user_id": user_id,
+                "metric_type": "RESTING_HEART_RATE",
+                "value": round(rhr_value, 1),
+                "source": "SYNTHETIC_ENHANCED",
+                "recorded_at": recorded_at,
+            }
+        )
 
-        metrics.append({
-            "user_id": user_id,
-            "metric_type": "HEART_RATE_VARIABILITY_RMSSD",
-            "value": round(hrv_value, 1),
-            "source": "SYNTHETIC_ENHANCED",
-            "recorded_at": recorded_at,
-        })
+        metrics.append(
+            {
+                "user_id": user_id,
+                "metric_type": "HEART_RATE_VARIABILITY_RMSSD",
+                "value": round(hrv_value, 1),
+                "source": "SYNTHETIC_ENHANCED",
+                "recorded_at": recorded_at,
+            }
+        )
 
-        metrics.append({
-            "user_id": user_id,
-            "metric_type": "HEART_RATE_VARIABILITY_SDNN",
-            "value": round(hrv_value * 1.15 + np.random.normal(0, 3), 1),
-            "source": "SYNTHETIC_ENHANCED",
-            "recorded_at": recorded_at,
-        })
+        metrics.append(
+            {
+                "user_id": user_id,
+                "metric_type": "HEART_RATE_VARIABILITY_SDNN",
+                "value": round(hrv_value * 1.15 + np.random.normal(0, 3), 1),
+                "source": "SYNTHETIC_ENHANCED",
+                "recorded_at": recorded_at,
+            }
+        )
 
-        metrics.append({
-            "user_id": user_id,
-            "metric_type": "SLEEP_DURATION",
-            "value": round(sleep_duration, 2),
-            "source": "SYNTHETIC_ENHANCED",
-            "recorded_at": recorded_at,
-        })
+        metrics.append(
+            {
+                "user_id": user_id,
+                "metric_type": "SLEEP_DURATION",
+                "value": round(sleep_duration, 2),
+                "source": "SYNTHETIC_ENHANCED",
+                "recorded_at": recorded_at,
+            }
+        )
 
-        metrics.append({
-            "user_id": user_id,
-            "metric_type": "SLEEP_SCORE",
-            "value": round(sleep_quality, 1),
-            "source": "SYNTHETIC_ENHANCED",
-            "recorded_at": recorded_at,
-        })
+        metrics.append(
+            {
+                "user_id": user_id,
+                "metric_type": "SLEEP_SCORE",
+                "value": round(sleep_quality, 1),
+                "source": "SYNTHETIC_ENHANCED",
+                "recorded_at": recorded_at,
+            }
+        )
 
-        metrics.append({
-            "user_id": user_id,
-            "metric_type": "RECOVERY_SCORE",
-            "value": round(recovery_score, 1),
-            "source": "SYNTHETIC_ENHANCED",
-            "recorded_at": recorded_at,
-        })
+        metrics.append(
+            {
+                "user_id": user_id,
+                "metric_type": "RECOVERY_SCORE",
+                "value": round(recovery_score, 1),
+                "source": "SYNTHETIC_ENHANCED",
+                "recorded_at": recorded_at,
+            }
+        )
 
         return metrics
 
@@ -292,13 +326,16 @@ class EnhancedSyntheticGenerator(SyntheticDataGenerator):
 # CUSTOM HYBRID ARCHITECTURES
 # =============================================================================
 
+
 class GatedResidualNetwork(nn.Module):
     """
     Gated Residual Network (GRN) from Temporal Fusion Transformer.
     Provides flexible nonlinear processing with gating.
     """
 
-    def __init__(self, input_dim: int, hidden_dim: int, output_dim: int, dropout: float = 0.1):
+    def __init__(
+        self, input_dim: int, hidden_dim: int, output_dim: int, dropout: float = 0.1
+    ):
         super().__init__()
 
         self.fc1 = nn.Linear(input_dim, hidden_dim)
@@ -338,19 +375,27 @@ class VariableSelectionNetwork(nn.Module):
     Learns which input features are most important.
     """
 
-    def __init__(self, input_dim: int, num_features: int, hidden_dim: int, dropout: float = 0.1):
+    def __init__(
+        self, input_dim: int, num_features: int, hidden_dim: int, dropout: float = 0.1
+    ):
         super().__init__()
 
         self.num_features = num_features
 
         # GRN for each feature
-        self.grns = nn.ModuleList([
-            GatedResidualNetwork(input_dim // num_features, hidden_dim, hidden_dim, dropout)
-            for _ in range(num_features)
-        ])
+        self.grns = nn.ModuleList(
+            [
+                GatedResidualNetwork(
+                    input_dim // num_features, hidden_dim, hidden_dim, dropout
+                )
+                for _ in range(num_features)
+            ]
+        )
 
         # Softmax weights for variable selection
-        self.flattened_grn = GatedResidualNetwork(input_dim, hidden_dim, num_features, dropout)
+        self.flattened_grn = GatedResidualNetwork(
+            input_dim, hidden_dim, num_features, dropout
+        )
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         # x: (batch, seq_len, input_dim)
@@ -366,10 +411,15 @@ class VariableSelectionNetwork(nn.Module):
             feat = features[:, :, i, :]  # (batch, seq_len, feature_dim)
             processed.append(grn(feat))
 
-        processed = torch.stack(processed, dim=2)  # (batch, seq_len, num_features, hidden)
+        processed = torch.stack(
+            processed, dim=2
+        )  # (batch, seq_len, num_features, hidden)
 
         # Variable selection weights
-        weights = F.softmax(self.flattened_grn(x.view(batch * seq_len, -1)).view(batch, seq_len, -1), dim=-1)
+        weights = F.softmax(
+            self.flattened_grn(x.view(batch * seq_len, -1)).view(batch, seq_len, -1),
+            dim=-1,
+        )
 
         # Weighted combination
         output = (processed * weights.unsqueeze(-1)).sum(dim=2)
@@ -408,16 +458,23 @@ class UltimateHealthPredictor(nn.Module):
         self.num_layers = num_layers
 
         # Input projection with GRN
-        self.input_grn = GatedResidualNetwork(input_dim, hidden_dim, hidden_dim, dropout)
+        self.input_grn = GatedResidualNetwork(
+            input_dim, hidden_dim, hidden_dim, dropout
+        )
 
         # TCN branch for long-range patterns
         self.tcn_layers = nn.ModuleList()
         for i in range(num_layers):
-            dilation = 2 ** i
+            dilation = 2**i
             self.tcn_layers.append(
                 nn.Sequential(
-                    nn.Conv1d(hidden_dim, hidden_dim, kernel_size=3,
-                             padding=dilation, dilation=dilation),
+                    nn.Conv1d(
+                        hidden_dim,
+                        hidden_dim,
+                        kernel_size=3,
+                        padding=dilation,
+                        dilation=dilation,
+                    ),
                     nn.BatchNorm1d(hidden_dim),
                     nn.GELU(),
                     nn.Dropout(dropout),
@@ -444,7 +501,9 @@ class UltimateHealthPredictor(nn.Module):
         )
 
         # Output GRN
-        self.output_grn = GatedResidualNetwork(hidden_dim * 2, hidden_dim, hidden_dim // 2, dropout)
+        self.output_grn = GatedResidualNetwork(
+            hidden_dim * 2, hidden_dim, hidden_dim // 2, dropout
+        )
 
         # Final prediction layers
         self.fc1 = nn.Linear(hidden_dim // 2, hidden_dim // 4)
@@ -457,9 +516,9 @@ class UltimateHealthPredictor(nn.Module):
 
     def _init_weights(self):
         for name, param in self.named_parameters():
-            if 'weight' in name and param.dim() >= 2:
+            if "weight" in name and param.dim() >= 2:
                 nn.init.xavier_uniform_(param)
-            elif 'bias' in name:
+            elif "bias" in name:
                 nn.init.zeros_(param)
 
     def forward(
@@ -560,17 +619,25 @@ class LightweightHybrid(nn.Module):
         # Depthwise separable TCN (more efficient)
         self.tcn = nn.ModuleList()
         for i in range(num_layers):
-            dilation = 2 ** i
-            self.tcn.append(nn.Sequential(
-                # Depthwise
-                nn.Conv1d(hidden_dim, hidden_dim, 3, padding=dilation,
-                         dilation=dilation, groups=hidden_dim),
-                # Pointwise
-                nn.Conv1d(hidden_dim, hidden_dim, 1),
-                nn.BatchNorm1d(hidden_dim),
-                nn.GELU(),
-                nn.Dropout(dropout),
-            ))
+            dilation = 2**i
+            self.tcn.append(
+                nn.Sequential(
+                    # Depthwise
+                    nn.Conv1d(
+                        hidden_dim,
+                        hidden_dim,
+                        3,
+                        padding=dilation,
+                        dilation=dilation,
+                        groups=hidden_dim,
+                    ),
+                    # Pointwise
+                    nn.Conv1d(hidden_dim, hidden_dim, 1),
+                    nn.BatchNorm1d(hidden_dim),
+                    nn.GELU(),
+                    nn.Dropout(dropout),
+                )
+            )
 
         # Lightweight attention (single head)
         self.attention = TemporalAttention(hidden_dim, hidden_dim // 2)
@@ -607,6 +674,7 @@ class LightweightHybrid(nn.Module):
 # TRAINING UTILITIES
 # =============================================================================
 
+
 class CosineAnnealingWarmRestarts:
     """Learning rate scheduler with warm restarts."""
 
@@ -617,7 +685,7 @@ class CosineAnnealingWarmRestarts:
         self.eta_min = eta_min
         self.T_cur = 0
         self.T_i = T_0
-        self.base_lrs = [group['lr'] for group in optimizer.param_groups]
+        self.base_lrs = [group["lr"] for group in optimizer.param_groups]
 
     def step(self):
         self.T_cur += 1
@@ -626,8 +694,12 @@ class CosineAnnealingWarmRestarts:
             self.T_i *= self.T_mult
 
         for param_group, base_lr in zip(self.optimizer.param_groups, self.base_lrs):
-            param_group['lr'] = self.eta_min + (base_lr - self.eta_min) * \
-                (1 + np.cos(np.pi * self.T_cur / self.T_i)) / 2
+            param_group["lr"] = (
+                self.eta_min
+                + (base_lr - self.eta_min)
+                * (1 + np.cos(np.pi * self.T_cur / self.T_i))
+                / 2
+            )
 
 
 class FocalMSELoss(nn.Module):
@@ -654,9 +726,7 @@ class HuberLoss(nn.Module):
     def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         diff = torch.abs(pred - target)
         return torch.where(
-            diff < self.delta,
-            0.5 * diff ** 2,
-            self.delta * (diff - 0.5 * self.delta)
+            diff < self.delta, 0.5 * diff**2, self.delta * (diff - 0.5 * self.delta)
         ).mean()
 
 
@@ -738,7 +808,9 @@ def train_model_advanced(
             predictions = model(X_batch)
 
             # Combined loss
-            loss = 0.7 * mse_loss(predictions, y_batch) + 0.3 * huber_loss(predictions, y_batch)
+            loss = 0.7 * mse_loss(predictions, y_batch) + 0.3 * huber_loss(
+                predictions, y_batch
+            )
 
             loss.backward()
 
@@ -760,7 +832,7 @@ def train_model_advanced(
             val_mae = torch.abs(val_pred - y_val_d).mean().item()
 
         train_loss = np.mean(train_losses)
-        current_lr = optimizer.param_groups[0]['lr']
+        current_lr = optimizer.param_groups[0]["lr"]
 
         history["train_loss"].append(train_loss)
         history["val_loss"].append(val_loss)
@@ -777,8 +849,10 @@ def train_model_advanced(
             patience_counter += 1
 
         if verbose and (epoch + 1) % 10 == 0:
-            print(f"  Epoch {epoch + 1}: Train={train_loss:.6f}, Val={val_loss:.6f}, "
-                  f"MAE={val_mae:.6f}, LR={current_lr:.2e}")
+            print(
+                f"  Epoch {epoch + 1}: Train={train_loss:.6f}, Val={val_loss:.6f}, "
+                f"MAE={val_mae:.6f}, LR={current_lr:.2e}"
+            )
 
         if patience_counter >= patience:
             if verbose:
@@ -826,7 +900,11 @@ def evaluate_model(
 
     # MAPE
     mask = y_true != 0
-    mape = np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100 if mask.sum() > 0 else 0
+    mape = (
+        np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100
+        if mask.sum() > 0
+        else 0
+    )
 
     # Additional metrics
     max_error = np.max(np.abs(y_true - y_pred))
@@ -853,6 +931,7 @@ def evaluate_model(
 # =============================================================================
 # MAIN EXPERIMENT RUNNER
 # =============================================================================
+
 
 def print_header(text: str):
     print("\n" + "=" * 80)
@@ -913,7 +992,9 @@ def prepare_data(
             day_features["late_carbs"] = late_meals["carbs"].sum()
 
             # Activity
-            day_activities = activities[activities["started_at"].dt.date == current_date]
+            day_activities = activities[
+                activities["started_at"].dt.date == current_date
+            ]
             day_features["active_minutes"] = day_activities["duration"].sum()
             day_features["calories_burned"] = day_activities["calories_burned"].sum()
 
@@ -921,13 +1002,20 @@ def prepare_data(
             day_features["high_intensity_mins"] = high_intensity["duration"].sum()
 
             # Health metrics (lagged)
-            for mt in ["RESTING_HEART_RATE", "HEART_RATE_VARIABILITY_RMSSD",
-                      "SLEEP_DURATION", "SLEEP_SCORE", "RECOVERY_SCORE"]:
+            for mt in [
+                "RESTING_HEART_RATE",
+                "HEART_RATE_VARIABILITY_RMSSD",
+                "SLEEP_DURATION",
+                "SLEEP_SCORE",
+                "RECOVERY_SCORE",
+            ]:
                 metric_data = health[
-                    (health["metric_type"] == mt) &
-                    (health["recorded_at"].dt.date == current_date)
+                    (health["metric_type"] == mt)
+                    & (health["recorded_at"].dt.date == current_date)
                 ]
-                day_features[f"{mt.lower()}_lag"] = metric_data["value"].iloc[0] if len(metric_data) > 0 else np.nan
+                day_features[f"{mt.lower()}_lag"] = (
+                    metric_data["value"].iloc[0] if len(metric_data) > 0 else np.nan
+                )
 
             # Temporal
             dt = datetime.combine(current_date, datetime.min.time())
@@ -949,7 +1037,7 @@ def prepare_data(
             continue
 
         for i in range(len(common_dates) - sequence_length):
-            seq_dates = common_dates[i:i + sequence_length]
+            seq_dates = common_dates[i : i + sequence_length]
             target_date = common_dates[i + sequence_length]
 
             X_seq = features_df.loc[seq_dates].values
@@ -1002,7 +1090,9 @@ def run_ultimate_experiments():
 
     scaler_X = RobustScaler()  # More robust to outliers
     X_rhr_flat = X_rhr.reshape(-1, num_features)
-    X_rhr_norm = scaler_X.fit_transform(X_rhr_flat).reshape(num_samples, seq_len, num_features)
+    X_rhr_norm = scaler_X.fit_transform(X_rhr_flat).reshape(
+        num_samples, seq_len, num_features
+    )
 
     scaler_y_rhr = StandardScaler()
     y_rhr_norm = scaler_y_rhr.fit_transform(y_rhr.reshape(-1, 1)).flatten()
@@ -1013,10 +1103,10 @@ def run_ultimate_experiments():
 
     X_train = torch.FloatTensor(X_rhr_norm[:n_train])
     y_train = torch.FloatTensor(y_rhr_norm[:n_train]).unsqueeze(1)
-    X_val = torch.FloatTensor(X_rhr_norm[n_train:n_train + n_val])
-    y_val = torch.FloatTensor(y_rhr_norm[n_train:n_train + n_val]).unsqueeze(1)
-    X_test = torch.FloatTensor(X_rhr_norm[n_train + n_val:])
-    y_test = torch.FloatTensor(y_rhr_norm[n_train + n_val:]).unsqueeze(1)
+    X_val = torch.FloatTensor(X_rhr_norm[n_train : n_train + n_val])
+    y_val = torch.FloatTensor(y_rhr_norm[n_train : n_train + n_val]).unsqueeze(1)
+    X_test = torch.FloatTensor(X_rhr_norm[n_train + n_val :])
+    y_test = torch.FloatTensor(y_rhr_norm[n_train + n_val :]).unsqueeze(1)
 
     print(f"\nTrain: {len(X_train)}, Val: {len(X_val)}, Test: {len(X_test)}")
 
@@ -1029,9 +1119,15 @@ def run_ultimate_experiments():
 
     # Test existing architectures
     baseline_models = {
-        "tcn": lambda: ModelFactory.create("tcn", input_dim=num_features, hidden_dim=64, num_layers=5),
-        "lstm_attention": lambda: ModelFactory.create("lstm_attention", input_dim=num_features, hidden_dim=128, num_layers=2),
-        "bilstm_residual": lambda: ModelFactory.create("bilstm_residual", input_dim=num_features, hidden_dim=128, num_layers=2),
+        "tcn": lambda: ModelFactory.create(
+            "tcn", input_dim=num_features, hidden_dim=64, num_layers=5
+        ),
+        "lstm_attention": lambda: ModelFactory.create(
+            "lstm_attention", input_dim=num_features, hidden_dim=128, num_layers=2
+        ),
+        "bilstm_residual": lambda: ModelFactory.create(
+            "bilstm_residual", input_dim=num_features, hidden_dim=128, num_layers=2
+        ),
     }
 
     for name, model_fn in baseline_models.items():
@@ -1041,9 +1137,17 @@ def run_ultimate_experiments():
         print(f"Parameters: {model.count_parameters():,}")
 
         train_result = train_model_advanced(
-            model, X_train, y_train, X_val, y_val,
-            epochs=100, batch_size=32, learning_rate=0.001,
-            patience=15, device=device, verbose=True
+            model,
+            X_train,
+            y_train,
+            X_val,
+            y_val,
+            epochs=100,
+            batch_size=32,
+            learning_rate=0.001,
+            patience=15,
+            device=device,
+            verbose=True,
         )
 
         metrics = evaluate_model(model, X_test, y_test, scaler_y_rhr, device)
@@ -1080,9 +1184,17 @@ def run_ultimate_experiments():
     print(f"Ultimate Model Parameters: {ultimate_model.count_parameters():,}")
 
     train_result = train_model_advanced(
-        ultimate_model, X_train, y_train, X_val, y_val,
-        epochs=150, batch_size=32, learning_rate=0.0008,
-        patience=20, device=device, verbose=True
+        ultimate_model,
+        X_train,
+        y_train,
+        X_val,
+        y_val,
+        epochs=150,
+        batch_size=32,
+        learning_rate=0.0008,
+        patience=20,
+        device=device,
+        verbose=True,
     )
 
     metrics = evaluate_model(ultimate_model, X_test, y_test, scaler_y_rhr, device)
@@ -1108,9 +1220,17 @@ def run_ultimate_experiments():
     print(f"Lightweight Parameters: {lightweight_model.count_parameters():,}")
 
     train_result = train_model_advanced(
-        lightweight_model, X_train, y_train, X_val, y_val,
-        epochs=100, batch_size=32, learning_rate=0.001,
-        patience=15, device=device, verbose=True
+        lightweight_model,
+        X_train,
+        y_train,
+        X_val,
+        y_val,
+        epochs=100,
+        batch_size=32,
+        learning_rate=0.001,
+        patience=15,
+        device=device,
+        verbose=True,
     )
 
     metrics = evaluate_model(lightweight_model, X_test, y_test, scaler_y_rhr, device)
@@ -1147,9 +1267,17 @@ def run_ultimate_experiments():
 
             try:
                 result = train_model_advanced(
-                    model, X_train, y_train, X_val, y_val,
-                    epochs=50, batch_size=batch_size, learning_rate=lr,
-                    patience=10, device=device, verbose=False
+                    model,
+                    X_train,
+                    y_train,
+                    X_val,
+                    y_val,
+                    epochs=50,
+                    batch_size=batch_size,
+                    learning_rate=lr,
+                    patience=10,
+                    device=device,
+                    verbose=False,
                 )
                 return result["best_val_loss"]
             except Exception as e:
@@ -1179,10 +1307,17 @@ def run_ultimate_experiments():
         )
 
         train_result = train_model_advanced(
-            optimized_model, X_train, y_train, X_val, y_val,
-            epochs=200, batch_size=study.best_params["batch_size"],
+            optimized_model,
+            X_train,
+            y_train,
+            X_val,
+            y_val,
+            epochs=200,
+            batch_size=study.best_params["batch_size"],
             learning_rate=study.best_params["lr"],
-            patience=25, device=device, verbose=True
+            patience=25,
+            device=device,
+            verbose=True,
         )
 
         metrics = evaluate_model(optimized_model, X_test, y_test, scaler_y_rhr, device)
@@ -1202,7 +1337,9 @@ def run_ultimate_experiments():
     print_header("PHASE 5: FINAL BRUTAL COMPARISON")
 
     print("\n" + "=" * 100)
-    print(f"{'Model':<25} {'MAE':<10} {'RMSE':<10} {'R²':<10} {'MAPE':<10} {'P90 Err':<10} {'Params':<12}")
+    print(
+        f"{'Model':<25} {'MAE':<10} {'RMSE':<10} {'R²':<10} {'MAPE':<10} {'P90 Err':<10} {'Params':<12}"
+    )
     print("=" * 100)
 
     # Sort by MAE
@@ -1230,9 +1367,15 @@ def run_ultimate_experiments():
     print(f"   R²: {best_model[1]['metrics']['r2']:.4f}")
 
     # Improvement over baselines
-    baseline_mae = results.get("tcn", results.get("lstm_attention", {})).get("metrics", {}).get("mae", 0)
+    baseline_mae = (
+        results.get("tcn", results.get("lstm_attention", {}))
+        .get("metrics", {})
+        .get("mae", 0)
+    )
     if baseline_mae > 0:
-        improvement = (baseline_mae - best_model[1]['metrics']['mae']) / baseline_mae * 100
+        improvement = (
+            (baseline_mae - best_model[1]["metrics"]["mae"]) / baseline_mae * 100
+        )
         print(f"   Improvement over baseline: {improvement:.1f}%")
 
     # Save results

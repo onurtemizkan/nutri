@@ -2,6 +2,7 @@
 Nutri ML Service - FastAPI Application
 Main entry point for the ML service
 """
+
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI

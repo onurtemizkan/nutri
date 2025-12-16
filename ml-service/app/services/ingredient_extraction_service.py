@@ -9,6 +9,7 @@ Extracts ingredients from meal text/descriptions using:
 
 Based on FDA Big 9 allergens and comprehensive compound database.
 """
+
 import re
 import time
 import logging
@@ -19,24 +20,20 @@ from difflib import SequenceMatcher
 # Try to import rapidfuzz, fall back to difflib
 try:
     from rapidfuzz import fuzz, process
+
     RAPIDFUZZ_AVAILABLE = True
 except ImportError:
     RAPIDFUZZ_AVAILABLE = False
 
 from app.data.allergen_database import (
     INGREDIENT_DATABASE,
-    HIDDEN_ALLERGEN_KEYWORDS,
     CROSS_REACTIVITY,
     IngredientData,
-    AllergenMapping,
     check_hidden_allergen,
-    get_histamine_level,
-    get_tyramine_level,
     AllergenType,
     CompoundLevel,
     DerivationType,
     FodmapLevel,
-    IngredientCategory,
 )
 from app.schemas.sensitivity import (
     IngredientExtractionRequest,
@@ -59,20 +56,82 @@ logger = logging.getLogger(__name__)
 
 # Common words to ignore when extracting ingredients
 STOP_WORDS = {
-    "with", "and", "or", "in", "on", "the", "a", "an", "of", "for",
-    "to", "from", "by", "at", "into", "over", "under", "above", "below",
-    "fresh", "organic", "natural", "homemade", "cooked", "raw", "baked",
-    "fried", "grilled", "roasted", "steamed", "boiled", "sauteed",
-    "sliced", "diced", "chopped", "minced", "crushed", "ground",
-    "large", "small", "medium", "extra", "lite", "light", "heavy",
-    "cup", "cups", "tbsp", "tsp", "oz", "ounce", "ounces", "lb", "lbs",
-    "gram", "grams", "kg", "ml", "liter", "liters", "serving", "servings",
-    "piece", "pieces", "slice", "slices", "whole", "half", "quarter",
+    "with",
+    "and",
+    "or",
+    "in",
+    "on",
+    "the",
+    "a",
+    "an",
+    "of",
+    "for",
+    "to",
+    "from",
+    "by",
+    "at",
+    "into",
+    "over",
+    "under",
+    "above",
+    "below",
+    "fresh",
+    "organic",
+    "natural",
+    "homemade",
+    "cooked",
+    "raw",
+    "baked",
+    "fried",
+    "grilled",
+    "roasted",
+    "steamed",
+    "boiled",
+    "sauteed",
+    "sliced",
+    "diced",
+    "chopped",
+    "minced",
+    "crushed",
+    "ground",
+    "large",
+    "small",
+    "medium",
+    "extra",
+    "lite",
+    "light",
+    "heavy",
+    "cup",
+    "cups",
+    "tbsp",
+    "tsp",
+    "oz",
+    "ounce",
+    "ounces",
+    "lb",
+    "lbs",
+    "gram",
+    "grams",
+    "kg",
+    "ml",
+    "liter",
+    "liters",
+    "serving",
+    "servings",
+    "piece",
+    "pieces",
+    "slice",
+    "slices",
+    "whole",
+    "half",
+    "quarter",
 }
 
 # Patterns for cleaning ingredient text
-QUANTITY_PATTERN = re.compile(r'\b\d+[\d./]*\s*(g|kg|oz|lb|ml|l|cup|tbsp|tsp|serving)s?\b', re.IGNORECASE)
-NUMBER_PATTERN = re.compile(r'^\d+[\d./]*\s*')
+QUANTITY_PATTERN = re.compile(
+    r"\b\d+[\d./]*\s*(g|kg|oz|lb|ml|l|cup|tbsp|tsp|serving)s?\b", re.IGNORECASE
+)
+NUMBER_PATTERN = re.compile(r"^\d+[\d./]*\s*")
 
 # Allergen display names
 ALLERGEN_DISPLAY_NAMES = {
@@ -166,9 +225,7 @@ def fuzzy_token_sort_ratio(s1: str, s2: str) -> float:
 
 
 def find_best_match(
-    query: str,
-    choices: List[str],
-    threshold: float = 0.75
+    query: str, choices: List[str], threshold: float = 0.75
 ) -> Optional[Tuple[str, float]]:
     """
     Find the best fuzzy match for a query from a list of choices.
@@ -186,7 +243,7 @@ def find_best_match(
             query.lower(),
             [c.lower() for c in choices],
             scorer=fuzz.WRatio,
-            score_cutoff=threshold * 100
+            score_cutoff=threshold * 100,
         )
         if result:
             # Return original case version
@@ -221,7 +278,7 @@ def clean_ingredient_text(text: str) -> str:
     text = NUMBER_PATTERN.sub("", text)
 
     # Remove parenthetical content like "(optional)" or "(diced)"
-    text = re.sub(r'\([^)]*\)', '', text)
+    text = re.sub(r"\([^)]*\)", "", text)
 
     # Remove special characters but keep hyphens and apostrophes
     text = re.sub(r"[^\w\s'-]", " ", text)
@@ -245,7 +302,9 @@ def extract_ingredient_candidates(text: str) -> List[str]:
     candidates = []
 
     # Split by common separators
-    parts = re.split(r'[,;|&]+|\band\b|\bwith\b|\bover\b|\bon\b', text, flags=re.IGNORECASE)
+    parts = re.split(
+        r"[,;|&]+|\band\b|\bwith\b|\bover\b|\bon\b", text, flags=re.IGNORECASE
+    )
 
     for part in parts:
         cleaned = clean_ingredient_text(part)
@@ -287,6 +346,7 @@ def extract_ingredient_candidates(text: str) -> List[str]:
 @dataclass
 class IngredientMatch:
     """Internal representation of an ingredient match."""
+
     original_text: str
     ingredient_key: str
     ingredient_data: Optional[IngredientData]
@@ -338,8 +398,7 @@ class IngredientExtractionService:
                     self._all_variants[variant.lower()] = key
 
     async def extract_ingredients(
-        self,
-        request: IngredientExtractionRequest
+        self, request: IngredientExtractionRequest
     ) -> IngredientExtractionResponse:
         """
         Extract ingredients and detect allergens from text.
@@ -359,9 +418,7 @@ class IngredientExtractionService:
 
             # 2. Match candidates against database
             matches = self._match_ingredients(
-                candidates,
-                request.fuzzy_threshold,
-                request.max_results
+                candidates, request.fuzzy_threshold, request.max_results
             )
 
             # 3. Check for hidden allergens in original text
@@ -386,7 +443,7 @@ class IngredientExtractionService:
 
             return IngredientExtractionResponse(
                 success=True,
-                ingredients=extracted_ingredients[:request.max_results],
+                ingredients=extracted_ingredients[: request.max_results],
                 allergen_warnings=allergen_warnings,
                 compound_warnings=compound_warnings,
                 total_histamine_mg=totals.get("histamine"),
@@ -401,10 +458,7 @@ class IngredientExtractionService:
             raise
 
     def _match_ingredients(
-        self,
-        candidates: List[str],
-        threshold: float,
-        max_results: int
+        self, candidates: List[str], threshold: float, max_results: int
     ) -> List[IngredientMatch]:
         """
         Match candidate strings to ingredients in database.
@@ -424,13 +478,15 @@ class IngredientExtractionService:
             if candidate_lower in self._all_variants:
                 key = self._all_variants[candidate_lower]
                 if key not in matched_keys:
-                    matches.append(IngredientMatch(
-                        original_text=candidate,
-                        ingredient_key=key,
-                        ingredient_data=INGREDIENT_DATABASE.get(key),
-                        confidence=1.0,
-                        match_type="exact"
-                    ))
+                    matches.append(
+                        IngredientMatch(
+                            original_text=candidate,
+                            ingredient_key=key,
+                            ingredient_data=INGREDIENT_DATABASE.get(key),
+                            confidence=1.0,
+                            match_type="exact",
+                        )
+                    )
                     matched_keys.add(key)
                 continue
 
@@ -442,13 +498,15 @@ class IngredientExtractionService:
                 matched_text, score = best_match
                 key = self._all_variants[matched_text.lower()]
                 if key not in matched_keys:
-                    matches.append(IngredientMatch(
-                        original_text=candidate,
-                        ingredient_key=key,
-                        ingredient_data=INGREDIENT_DATABASE.get(key),
-                        confidence=score,
-                        match_type="fuzzy"
-                    ))
+                    matches.append(
+                        IngredientMatch(
+                            original_text=candidate,
+                            ingredient_key=key,
+                            ingredient_data=INGREDIENT_DATABASE.get(key),
+                            confidence=score,
+                            match_type="fuzzy",
+                        )
+                    )
                     matched_keys.add(key)
                 continue
 
@@ -457,22 +515,23 @@ class IngredientExtractionService:
             if hidden:
                 # Create a synthetic match for the hidden allergen
                 for allergen in hidden:
-                    matches.append(IngredientMatch(
-                        original_text=candidate,
-                        ingredient_key=f"hidden_{allergen.value}",
-                        ingredient_data=None,
-                        confidence=0.9,  # High confidence for keyword match
-                        match_type="hidden_keyword"
-                    ))
+                    matches.append(
+                        IngredientMatch(
+                            original_text=candidate,
+                            ingredient_key=f"hidden_{allergen.value}",
+                            ingredient_data=None,
+                            confidence=0.9,  # High confidence for keyword match
+                            match_type="hidden_keyword",
+                        )
+                    )
 
         # Sort by confidence
         matches.sort(key=lambda m: m.confidence, reverse=True)
 
-        return matches[:max_results * 2]  # Return more for filtering
+        return matches[: max_results * 2]  # Return more for filtering
 
     def _build_extracted_ingredients(
-        self,
-        matches: List[IngredientMatch]
+        self, matches: List[IngredientMatch]
     ) -> List[ExtractedIngredient]:
         """Build ExtractedIngredient objects from matches."""
         ingredients = []
@@ -488,26 +547,30 @@ class IngredientExtractionService:
 
             data = match.ingredient_data
 
-            ingredients.append(ExtractedIngredient(
-                matched_text=match.original_text,
-                ingredient_id=match.ingredient_key if data else None,
-                ingredient_name=match.ingredient_key,
-                display_name=data.display_name if data else match.original_text.title(),
-                confidence=round(match.confidence, 3),
-                match_type=match.match_type,
-                category=data.category.value if data else None,
-            ))
+            ingredients.append(
+                ExtractedIngredient(
+                    matched_text=match.original_text,
+                    ingredient_id=match.ingredient_key if data else None,
+                    ingredient_name=match.ingredient_key,
+                    display_name=(
+                        data.display_name if data else match.original_text.title()
+                    ),
+                    confidence=round(match.confidence, 3),
+                    match_type=match.match_type,
+                    category=data.category.value if data else None,
+                )
+            )
 
         return ingredients
 
     def _build_allergen_warnings(
-        self,
-        matches: List[IngredientMatch],
-        hidden_allergens: List[AllergenType]
+        self, matches: List[IngredientMatch], hidden_allergens: List[AllergenType]
     ) -> List[AllergenWarning]:
         """Build allergen warnings from matches and hidden allergens."""
         warnings: List[AllergenWarning] = []
-        seen_allergens: Dict[AllergenType, float] = {}  # Track highest confidence per allergen
+        seen_allergens: Dict[AllergenType, float] = (
+            {}
+        )  # Track highest confidence per allergen
 
         # Process ingredient matches
         for match in matches:
@@ -525,30 +588,40 @@ class IngredientExtractionService:
 
                 seen_allergens[allergen] = confidence
 
-                warnings.append(AllergenWarning(
-                    allergen_type=AllergenTypeSchema(allergen.value),
-                    display_name=ALLERGEN_DISPLAY_NAMES.get(allergen, allergen.value),
-                    derivation=DerivationTypeSchema(allergen_mapping.derivation.value),
-                    confidence=round(confidence, 3),
-                    source_ingredient=match.ingredient_data.display_name,
-                    is_hidden=False,
-                    warning_level=DERIVATION_SEVERITY.get(
-                        allergen_mapping.derivation, SeveritySchema.MODERATE
-                    ),
-                ))
+                warnings.append(
+                    AllergenWarning(
+                        allergen_type=AllergenTypeSchema(allergen.value),
+                        display_name=ALLERGEN_DISPLAY_NAMES.get(
+                            allergen, allergen.value
+                        ),
+                        derivation=DerivationTypeSchema(
+                            allergen_mapping.derivation.value
+                        ),
+                        confidence=round(confidence, 3),
+                        source_ingredient=match.ingredient_data.display_name,
+                        is_hidden=False,
+                        warning_level=DERIVATION_SEVERITY.get(
+                            allergen_mapping.derivation, SeveritySchema.MODERATE
+                        ),
+                    )
+                )
 
         # Add hidden allergen warnings
         for allergen in hidden_allergens:
             if allergen not in seen_allergens or seen_allergens[allergen] < 0.9:
-                warnings.append(AllergenWarning(
-                    allergen_type=AllergenTypeSchema(allergen.value),
-                    display_name=ALLERGEN_DISPLAY_NAMES.get(allergen, allergen.value),
-                    derivation=DerivationTypeSchema.LIKELY_CONTAINS,
-                    confidence=0.9,
-                    source_ingredient="Hidden in ingredient name",
-                    is_hidden=True,
-                    warning_level=SeveritySchema.MODERATE,
-                ))
+                warnings.append(
+                    AllergenWarning(
+                        allergen_type=AllergenTypeSchema(allergen.value),
+                        display_name=ALLERGEN_DISPLAY_NAMES.get(
+                            allergen, allergen.value
+                        ),
+                        derivation=DerivationTypeSchema.LIKELY_CONTAINS,
+                        confidence=0.9,
+                        source_ingredient="Hidden in ingredient name",
+                        is_hidden=True,
+                        warning_level=SeveritySchema.MODERATE,
+                    )
+                )
 
         # Sort by warning level and confidence
         severity_order = {
@@ -574,8 +647,7 @@ class IngredientExtractionService:
         return unique_warnings
 
     def _build_compound_warnings(
-        self,
-        matches: List[IngredientMatch]
+        self, matches: List[IngredientMatch]
     ) -> List[CompoundWarning]:
         """Build compound warnings (histamine, tyramine, FODMAP, etc.)."""
         warnings: List[CompoundWarning] = []
@@ -588,48 +660,60 @@ class IngredientExtractionService:
 
             # Histamine warning
             if data.histamine_level and data.histamine_level in (
-                CompoundLevel.HIGH, CompoundLevel.VERY_HIGH
+                CompoundLevel.HIGH,
+                CompoundLevel.VERY_HIGH,
             ):
-                warnings.append(CompoundWarning(
-                    compound_type="histamine",
-                    level=CompoundLevelSchema(data.histamine_level.value),
-                    amount_mg=data.histamine_mg,
-                    source_ingredient=data.display_name,
-                    warning_message=self._histamine_warning_message(data),
-                ))
+                warnings.append(
+                    CompoundWarning(
+                        compound_type="histamine",
+                        level=CompoundLevelSchema(data.histamine_level.value),
+                        amount_mg=data.histamine_mg,
+                        source_ingredient=data.display_name,
+                        warning_message=self._histamine_warning_message(data),
+                    )
+                )
 
             # Tyramine warning
             if data.tyramine_level and data.tyramine_level in (
-                CompoundLevel.HIGH, CompoundLevel.VERY_HIGH
+                CompoundLevel.HIGH,
+                CompoundLevel.VERY_HIGH,
             ):
-                warnings.append(CompoundWarning(
-                    compound_type="tyramine",
-                    level=CompoundLevelSchema(data.tyramine_level.value),
-                    amount_mg=data.tyramine_mg,
-                    source_ingredient=data.display_name,
-                    warning_message=self._tyramine_warning_message(data),
-                ))
+                warnings.append(
+                    CompoundWarning(
+                        compound_type="tyramine",
+                        level=CompoundLevelSchema(data.tyramine_level.value),
+                        amount_mg=data.tyramine_mg,
+                        source_ingredient=data.display_name,
+                        warning_message=self._tyramine_warning_message(data),
+                    )
+                )
 
             # FODMAP warning
             if data.fodmap_level and data.fodmap_level == FodmapLevel.HIGH:
-                fodmap_types = ", ".join(data.fodmap_types) if data.fodmap_types else "various"
-                warnings.append(CompoundWarning(
-                    compound_type="fodmap",
-                    level=CompoundLevelSchema.HIGH,
-                    amount_mg=None,
-                    source_ingredient=data.display_name,
-                    warning_message=f"High FODMAP ({fodmap_types}). May cause IBS symptoms.",
-                ))
+                fodmap_types = (
+                    ", ".join(data.fodmap_types) if data.fodmap_types else "various"
+                )
+                warnings.append(
+                    CompoundWarning(
+                        compound_type="fodmap",
+                        level=CompoundLevelSchema.HIGH,
+                        amount_mg=None,
+                        source_ingredient=data.display_name,
+                        warning_message=f"High FODMAP ({fodmap_types}). May cause IBS symptoms.",
+                    )
+                )
 
             # Nightshade warning
             if data.is_nightshade:
-                warnings.append(CompoundWarning(
-                    compound_type="nightshade",
-                    level=CompoundLevelSchema.HIGH,
-                    amount_mg=None,
-                    source_ingredient=data.display_name,
-                    warning_message="Nightshade vegetable. May trigger inflammation in sensitive individuals.",
-                ))
+                warnings.append(
+                    CompoundWarning(
+                        compound_type="nightshade",
+                        level=CompoundLevelSchema.HIGH,
+                        amount_mg=None,
+                        source_ingredient=data.display_name,
+                        warning_message="Nightshade vegetable. May trigger inflammation in sensitive individuals.",
+                    )
+                )
 
         return warnings
 
@@ -650,8 +734,7 @@ class IngredientExtractionService:
         return "High tyramine content. May trigger migraines or interact with MAOIs."
 
     def _calculate_compound_totals(
-        self,
-        matches: List[IngredientMatch]
+        self, matches: List[IngredientMatch]
     ) -> Dict[str, any]:
         """Calculate total compound amounts from matched ingredients."""
         totals = {
@@ -682,8 +765,12 @@ class IngredientExtractionService:
                         totals["fodmap"][fodmap_type] = "medium"
 
         # Round values
-        totals["histamine"] = round(totals["histamine"], 1) if totals["histamine"] > 0 else None
-        totals["tyramine"] = round(totals["tyramine"], 1) if totals["tyramine"] > 0 else None
+        totals["histamine"] = (
+            round(totals["histamine"], 1) if totals["histamine"] > 0 else None
+        )
+        totals["tyramine"] = (
+            round(totals["tyramine"], 1) if totals["tyramine"] > 0 else None
+        )
         totals["fodmap"] = totals["fodmap"] if totals["fodmap"] else None
 
         return totals
@@ -692,24 +779,32 @@ class IngredientExtractionService:
         self,
         matches: List[IngredientMatch],
         allergen_warnings: List[AllergenWarning],
-        compound_warnings: List[CompoundWarning]
+        compound_warnings: List[CompoundWarning],
     ) -> List[str]:
         """Generate helpful suggestions based on analysis."""
         suggestions = []
 
         # Suggestion for severe allergens
-        severe_allergens = [w for w in allergen_warnings if w.warning_level == SeveritySchema.SEVERE]
+        severe_allergens = [
+            w for w in allergen_warnings if w.warning_level == SeveritySchema.SEVERE
+        ]
         if severe_allergens:
             allergen_names = ", ".join([w.display_name for w in severe_allergens[:3]])
-            suggestions.append(f"Contains {allergen_names}. Verify ingredients if you have allergies.")
+            suggestions.append(
+                f"Contains {allergen_names}. Verify ingredients if you have allergies."
+            )
 
         # Suggestion for hidden allergens
         hidden = [w for w in allergen_warnings if w.is_hidden]
         if hidden:
-            suggestions.append("Hidden allergens detected in ingredient names. Check labels carefully.")
+            suggestions.append(
+                "Hidden allergens detected in ingredient names. Check labels carefully."
+            )
 
         # Suggestion for high histamine
-        high_histamine = [w for w in compound_warnings if w.compound_type == "histamine"]
+        high_histamine = [
+            w for w in compound_warnings if w.compound_type == "histamine"
+        ]
         if high_histamine:
             suggestions.append(
                 "High histamine foods detected. Space meals apart if histamine-sensitive."
@@ -723,7 +818,9 @@ class IngredientExtractionService:
             )
 
         # Low match confidence suggestion
-        low_confidence = [m for m in matches if m.confidence < 0.85 and m.match_type == "fuzzy"]
+        low_confidence = [
+            m for m in matches if m.confidence < 0.85 and m.match_type == "fuzzy"
+        ]
         if low_confidence:
             suggestions.append(
                 "Some ingredients matched with lower confidence. Verify correctness."
@@ -734,15 +831,14 @@ class IngredientExtractionService:
     def get_all_allergen_types(self) -> List[Dict[str, str]]:
         """Get list of all supported allergen types."""
         return [
-            {"value": allergen.value, "display_name": ALLERGEN_DISPLAY_NAMES.get(allergen, allergen.value)}
+            {
+                "value": allergen.value,
+                "display_name": ALLERGEN_DISPLAY_NAMES.get(allergen, allergen.value),
+            }
             for allergen in AllergenType
         ]
 
-    def search_ingredients(
-        self,
-        query: str,
-        limit: int = 20
-    ) -> List[Dict[str, any]]:
+    def search_ingredients(self, query: str, limit: int = 20) -> List[Dict[str, any]]:
         """
         Search ingredients database by name.
 
@@ -763,7 +859,9 @@ class IngredientExtractionService:
             if query_lower == key or query_lower == data.display_name.lower():
                 score = 1.0
             # Check name variants
-            elif data.name_variants and any(query_lower == v.lower() for v in data.name_variants):
+            elif data.name_variants and any(
+                query_lower == v.lower() for v in data.name_variants
+            ):
                 score = 0.95
             # Partial match
             elif query_lower in key or query_lower in data.display_name.lower():
@@ -773,29 +871,35 @@ class IngredientExtractionService:
                 score = fuzzy_ratio(query, data.display_name)
 
             if score >= 0.5:
-                results.append({
-                    "id": key,
-                    "name": data.display_name,
-                    "category": data.category.value,
-                    "score": round(score, 3),
-                    "allergens": [a.allergen_type.value for a in data.allergens],
-                    "histamine_level": data.histamine_level.value if data.histamine_level else None,
-                    "fodmap_level": data.fodmap_level.value if data.fodmap_level else None,
-                })
+                results.append(
+                    {
+                        "id": key,
+                        "name": data.display_name,
+                        "category": data.category.value,
+                        "score": round(score, 3),
+                        "allergens": [a.allergen_type.value for a in data.allergens],
+                        "histamine_level": (
+                            data.histamine_level.value if data.histamine_level else None
+                        ),
+                        "fodmap_level": (
+                            data.fodmap_level.value if data.fodmap_level else None
+                        ),
+                    }
+                )
 
         # Sort by score
         results.sort(key=lambda x: x["score"], reverse=True)
 
         return results[:limit]
 
-    def get_cross_reactivity(
-        self,
-        allergen_type: AllergenType
-    ) -> List[Dict[str, str]]:
+    def get_cross_reactivity(self, allergen_type: AllergenType) -> List[Dict[str, str]]:
         """Get cross-reactive allergens for a given allergen."""
         cross_reactive = CROSS_REACTIVITY.get(allergen_type, [])
         return [
-            {"allergen": a.value, "display_name": ALLERGEN_DISPLAY_NAMES.get(a, a.value)}
+            {
+                "allergen": a.value,
+                "display_name": ALLERGEN_DISPLAY_NAMES.get(a, a.value),
+            }
             for a in cross_reactive
         ]
 

@@ -17,13 +17,11 @@ Performance targets:
 
 import asyncio
 import hashlib
-import json
 import pickle
 import time
 import zlib
 from collections import OrderedDict
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from dataclasses import dataclass
 from enum import Enum
 from typing import (
     Any,
@@ -32,16 +30,14 @@ from typing import (
     Generic,
     List,
     Optional,
-    Set,
     Tuple,
     TypeVar,
-    Union,
 )
 import math
-import struct
 
 try:
     import redis.asyncio as aioredis
+
     REDIS_AVAILABLE = True
 except ImportError:
     aioredis = None
@@ -56,6 +52,7 @@ T = TypeVar("T")
 
 class CachePolicy(Enum):
     """Cache eviction and update policies."""
+
     LRU = "lru"  # Least Recently Used
     LFU = "lfu"  # Least Frequently Used
     TTL = "ttl"  # Time-To-Live based
@@ -64,6 +61,7 @@ class CachePolicy(Enum):
 
 class CacheTier(Enum):
     """Cache tier levels."""
+
     L1_MEMORY = "l1"  # In-process memory cache
     L2_REDIS = "l2"  # Redis distributed cache
     L3_COMPRESSED = "l3"  # Compressed cold storage
@@ -72,6 +70,7 @@ class CacheTier(Enum):
 @dataclass
 class CacheEntry(Generic[T]):
     """Individual cache entry with metadata."""
+
     key: str
     value: T
     created_at: float
@@ -102,6 +101,7 @@ class CacheEntry(Generic[T]):
 @dataclass
 class CacheStats:
     """Cache performance statistics."""
+
     hits: int = 0
     misses: int = 0
     l1_hits: int = 0
@@ -156,9 +156,7 @@ class BloomFilter:
     """
 
     def __init__(
-        self,
-        expected_elements: int = 100000,
-        false_positive_rate: float = 0.01
+        self, expected_elements: int = 100000, false_positive_rate: float = 0.01
     ):
         """
         Initialize Bloom filter.
@@ -169,7 +167,9 @@ class BloomFilter:
         """
         # Calculate optimal size and hash count
         # m = -n * ln(p) / (ln(2))^2
-        self.size = int(-expected_elements * math.log(false_positive_rate) / (math.log(2) ** 2))
+        self.size = int(
+            -expected_elements * math.log(false_positive_rate) / (math.log(2) ** 2)
+        )
         # k = (m/n) * ln(2)
         self.hash_count = int((self.size / expected_elements) * math.log(2))
         self.hash_count = max(1, self.hash_count)
@@ -191,7 +191,7 @@ class BloomFilter:
         for pos in self._get_hash_values(key):
             byte_idx = pos // 8
             bit_idx = pos % 8
-            self.bit_array[byte_idx] |= (1 << bit_idx)
+            self.bit_array[byte_idx] |= 1 << bit_idx
         self.element_count += 1
 
     def might_contain(self, key: str) -> bool:
@@ -257,12 +257,7 @@ class LRUCache(Generic[T]):
 
             return entry
 
-    async def set(
-        self,
-        key: str,
-        value: T,
-        ttl_seconds: int = 3600
-    ) -> CacheEntry[T]:
+    async def set(self, key: str, value: T, ttl_seconds: int = 3600) -> CacheEntry[T]:
         """Set entry in cache with eviction if needed."""
         async with self._lock:
             # Calculate size
@@ -273,8 +268,8 @@ class LRUCache(Generic[T]):
 
             # Evict if needed
             while (
-                len(self._cache) >= self.max_size or
-                self._current_memory + size_bytes > self.max_memory_bytes
+                len(self._cache) >= self.max_size
+                or self._current_memory + size_bytes > self.max_memory_bytes
             ):
                 if not self._cache:
                     break
@@ -385,8 +380,7 @@ class SensitivityCacheService:
 
         # L1 in-memory cache
         self.l1_cache: LRUCache[Any] = LRUCache(
-            max_size=l1_max_size,
-            max_memory_mb=l1_max_memory_mb
+            max_size=l1_max_size, max_memory_mb=l1_max_memory_mb
         )
 
         # L2 Redis cache (initialized lazily)
@@ -539,10 +533,7 @@ class SensitivityCacheService:
         return None
 
     async def _fetch_and_cache(
-        self,
-        key: str,
-        fetch_func: Callable[[], Any],
-        ttl_seconds: int
+        self, key: str, fetch_func: Callable[[], Any], ttl_seconds: int
     ) -> Any:
         """Fetch value and cache it."""
         # Handle both sync and async fetch functions
@@ -632,9 +623,7 @@ class SensitivityCacheService:
     # ==================== Ingredient Cache ====================
 
     async def get_ingredient(
-        self,
-        ingredient_name: str,
-        fetch_func: Optional[Callable[[], Any]] = None
+        self, ingredient_name: str, fetch_func: Optional[Callable[[], Any]] = None
     ) -> Optional[Any]:
         """Get ingredient data from cache."""
         key = self._make_key(self.PREFIX_INGREDIENT, ingredient_name.lower())
@@ -645,10 +634,7 @@ class SensitivityCacheService:
         key = self._make_key(self.PREFIX_INGREDIENT, ingredient_name.lower())
         return await self.set(key, data, self.TTL_INGREDIENT)
 
-    async def get_ingredient_batch(
-        self,
-        ingredient_names: List[str]
-    ) -> Dict[str, Any]:
+    async def get_ingredient_batch(self, ingredient_names: List[str]) -> Dict[str, Any]:
         """Get multiple ingredients from cache."""
         results = {}
         missing = []
@@ -662,10 +648,9 @@ class SensitivityCacheService:
 
         # Queue missing items for prefetch
         if missing:
-            await self._prefetch_queue.put([
-                self._make_key(self.PREFIX_INGREDIENT, n.lower())
-                for n in missing
-            ])
+            await self._prefetch_queue.put(
+                [self._make_key(self.PREFIX_INGREDIENT, n.lower()) for n in missing]
+            )
 
         return results
 
@@ -676,30 +661,26 @@ class SensitivityCacheService:
         user_id: str,
         trigger_type: str,
         trigger_name: str = "",
-        fetch_func: Optional[Callable[[], Any]] = None
+        fetch_func: Optional[Callable[[], Any]] = None,
     ) -> Optional[Any]:
         """Get user sensitivity data from cache."""
         key = self._make_key(
             self.PREFIX_SENSITIVITY,
             user_id,
             trigger_type,
-            trigger_name.lower() if trigger_name else "general"
+            trigger_name.lower() if trigger_name else "general",
         )
         return await self.get(key, fetch_func, self.TTL_SENSITIVITY)
 
     async def set_sensitivity(
-        self,
-        user_id: str,
-        trigger_type: str,
-        trigger_name: str,
-        data: Any
+        self, user_id: str, trigger_type: str, trigger_name: str, data: Any
     ) -> bool:
         """Cache user sensitivity data."""
         key = self._make_key(
             self.PREFIX_SENSITIVITY,
             user_id,
             trigger_type,
-            trigger_name.lower() if trigger_name else "general"
+            trigger_name.lower() if trigger_name else "general",
         )
         return await self.set(key, data, self.TTL_SENSITIVITY)
 
@@ -715,31 +696,17 @@ class SensitivityCacheService:
         user_id: str,
         analysis_type: str,
         params_hash: str,
-        fetch_func: Optional[Callable[[], Any]] = None
+        fetch_func: Optional[Callable[[], Any]] = None,
     ) -> Optional[Any]:
         """Get analysis results from cache."""
-        key = self._make_key(
-            self.PREFIX_ANALYSIS,
-            user_id,
-            analysis_type,
-            params_hash
-        )
+        key = self._make_key(self.PREFIX_ANALYSIS, user_id, analysis_type, params_hash)
         return await self.get(key, fetch_func, self.TTL_ANALYSIS)
 
     async def set_analysis(
-        self,
-        user_id: str,
-        analysis_type: str,
-        params_hash: str,
-        data: Any
+        self, user_id: str, analysis_type: str, params_hash: str, data: Any
     ) -> bool:
         """Cache analysis results."""
-        key = self._make_key(
-            self.PREFIX_ANALYSIS,
-            user_id,
-            analysis_type,
-            params_hash
-        )
+        key = self._make_key(self.PREFIX_ANALYSIS, user_id, analysis_type, params_hash)
         return await self.set(key, data, self.TTL_ANALYSIS)
 
     # ==================== Model Cache ====================
@@ -748,28 +715,20 @@ class SensitivityCacheService:
         self,
         model_name: str,
         version: str,
-        fetch_func: Optional[Callable[[], Any]] = None
+        fetch_func: Optional[Callable[[], Any]] = None,
     ) -> Optional[Any]:
         """Get ML model from cache."""
         key = self._make_key(self.PREFIX_MODEL, model_name, version)
         return await self.get(key, fetch_func, self.TTL_MODEL)
 
-    async def set_model(
-        self,
-        model_name: str,
-        version: str,
-        data: Any
-    ) -> bool:
+    async def set_model(self, model_name: str, version: str, data: Any) -> bool:
         """Cache ML model."""
         key = self._make_key(self.PREFIX_MODEL, model_name, version)
         return await self.set(key, data, self.TTL_MODEL)
 
     # ==================== Cache Warming ====================
 
-    async def warm_ingredient_cache(
-        self,
-        ingredients: List[Dict[str, Any]]
-    ) -> int:
+    async def warm_ingredient_cache(self, ingredients: List[Dict[str, Any]]) -> int:
         """Pre-populate ingredient cache."""
         count = 0
         for ing in ingredients:
@@ -782,9 +741,7 @@ class SensitivityCacheService:
         return count
 
     async def warm_user_cache(
-        self,
-        user_id: str,
-        sensitivities: List[Dict[str, Any]]
+        self, user_id: str, sensitivities: List[Dict[str, Any]]
     ) -> int:
         """Pre-populate user sensitivity cache."""
         count = 0
@@ -792,9 +749,7 @@ class SensitivityCacheService:
             trigger_type = sens.get("trigger_type", "")
             trigger_name = sens.get("trigger_name", "")
             if trigger_type:
-                await self.set_sensitivity(
-                    user_id, trigger_type, trigger_name, sens
-                )
+                await self.set_sensitivity(user_id, trigger_type, trigger_name, sens)
                 count += 1
 
         logger.info(f"Warmed user {user_id} cache with {count} entries")
@@ -814,17 +769,15 @@ class SensitivityCacheService:
                 # Collect items with timeout
                 try:
                     item = await asyncio.wait_for(
-                        self._write_queue.get(),
-                        timeout=flush_interval
+                        self._write_queue.get(), timeout=flush_interval
                     )
                     batch.append(item)
                 except asyncio.TimeoutError:
                     pass
 
                 # Flush batch if full or timeout
-                should_flush = (
-                    len(batch) >= batch_size or
-                    (batch and time.time() - last_flush >= flush_interval)
+                should_flush = len(batch) >= batch_size or (
+                    batch and time.time() - last_flush >= flush_interval
                 )
 
                 if should_flush and batch and self._redis_available:
@@ -884,8 +837,7 @@ class SensitivityCacheService:
         # Exponential moving average
         alpha = 0.1
         self.stats.avg_hit_latency_ms = (
-            alpha * latency_ms +
-            (1 - alpha) * self.stats.avg_hit_latency_ms
+            alpha * latency_ms + (1 - alpha) * self.stats.avg_hit_latency_ms
         )
 
     def _update_miss_latency(self, start_time: float) -> None:
@@ -893,18 +845,19 @@ class SensitivityCacheService:
         latency_ms = (time.time() - start_time) * 1000
         alpha = 0.1
         self.stats.avg_miss_latency_ms = (
-            alpha * latency_ms +
-            (1 - alpha) * self.stats.avg_miss_latency_ms
+            alpha * latency_ms + (1 - alpha) * self.stats.avg_miss_latency_ms
         )
 
     def get_stats(self) -> Dict[str, Any]:
         """Get comprehensive cache statistics."""
         stats = self.stats.to_dict()
-        stats.update({
-            "l1_size": self.l1_cache.size,
-            "l1_memory_mb": f"{self.l1_cache.memory_usage_mb:.2f}",
-            "redis_available": self._redis_available,
-        })
+        stats.update(
+            {
+                "l1_size": self.l1_cache.size,
+                "l1_memory_mb": f"{self.l1_cache.memory_usage_mb:.2f}",
+                "redis_available": self._redis_available,
+            }
+        )
 
         if self.bloom_filter:
             stats["bloom_filter"] = {
@@ -964,10 +917,11 @@ async def get_cache_service() -> SensitivityCacheService:
 
 # ==================== Cache Decorators ====================
 
+
 def cached(
     prefix: str,
     ttl_seconds: int = 3600,
-    key_builder: Optional[Callable[..., str]] = None
+    key_builder: Optional[Callable[..., str]] = None,
 ):
     """
     Decorator for caching function results.
@@ -977,6 +931,7 @@ def cached(
         async def analyze_hrv(user_id: str, data: dict) -> dict:
             ...
     """
+
     def decorator(func: Callable):
         async def wrapper(*args, **kwargs):
             cache = await get_cache_service()
@@ -1007,6 +962,7 @@ def cached(
             return result
 
         return wrapper
+
     return decorator
 
 
@@ -1019,6 +975,7 @@ def invalidate_on_update(patterns: List[str]):
         async def update_sensitivity(user_id: str, data: dict):
             ...
     """
+
     def decorator(func: Callable):
         async def wrapper(*args, **kwargs):
             result = await func(*args, **kwargs)
@@ -1038,4 +995,5 @@ def invalidate_on_update(patterns: List[str]):
             return result
 
         return wrapper
+
     return decorator

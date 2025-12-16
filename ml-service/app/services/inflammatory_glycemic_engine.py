@@ -20,21 +20,20 @@ Research Sources:
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Any, Union
+from dataclasses import dataclass
+from typing import Dict, List, Tuple, Any
 from enum import Enum
-from datetime import datetime, timedelta
 import math
-import numpy as np
-from collections import defaultdict
 
 
 # =============================================================================
 # DIETARY INFLAMMATORY INDEX CONSTANTS
 # =============================================================================
 
+
 class DIIComponent(str, Enum):
     """DII food parameters (45 parameters from original research)"""
+
     # Macronutrients
     ENERGY = "energy"
     CARBOHYDRATE = "carbohydrate"
@@ -109,7 +108,6 @@ DII_PARAMETERS: Dict[str, Dict[str, float]] = {
     "omega_6": {"effect": -0.159, "mean": 10.8, "std": 7.5, "unit": "g"},
     "cholesterol": {"effect": 0.110, "mean": 279.4, "std": 51.2, "unit": "mg"},
     "fiber": {"effect": -0.663, "mean": 18.8, "std": 4.9, "unit": "g"},
-
     # Vitamins
     "vitamin_a": {"effect": -0.401, "mean": 983.9, "std": 518.6, "unit": "RE"},
     "vitamin_c": {"effect": -0.424, "mean": 118.2, "std": 43.5, "unit": "mg"},
@@ -122,13 +120,11 @@ DII_PARAMETERS: Dict[str, Dict[str, float]] = {
     "folate": {"effect": -0.190, "mean": 273.0, "std": 70.7, "unit": "mcg"},
     "niacin": {"effect": -0.246, "mean": 25.9, "std": 11.8, "unit": "mg"},
     "beta_carotene": {"effect": -0.584, "mean": 3718, "std": 1720, "unit": "mcg"},
-
     # Minerals
     "iron": {"effect": 0.032, "mean": 13.35, "std": 3.71, "unit": "mg"},
     "magnesium": {"effect": -0.484, "mean": 310.1, "std": 139.4, "unit": "mg"},
     "zinc": {"effect": -0.313, "mean": 9.84, "std": 2.19, "unit": "mg"},
     "selenium": {"effect": -0.191, "mean": 67.0, "std": 25.1, "unit": "mcg"},
-
     # Flavonoids and polyphenols
     "flavonoids": {"effect": -0.467, "mean": 159.0, "std": 159.0, "unit": "mg"},
     "anthocyanidins": {"effect": -0.131, "mean": 18.4, "std": 21.1, "unit": "mg"},
@@ -137,7 +133,6 @@ DII_PARAMETERS: Dict[str, Dict[str, float]] = {
     "flavonols": {"effect": -0.467, "mean": 17.2, "std": 6.79, "unit": "mg"},
     "flavanones": {"effect": -0.250, "mean": 11.7, "std": 3.16, "unit": "mg"},
     "isoflavones": {"effect": -0.593, "mean": 1.20, "std": 1.18, "unit": "mg"},
-
     # Spices and herbs
     "garlic": {"effect": -0.412, "mean": 4.35, "std": 2.90, "unit": "g"},
     "ginger": {"effect": -0.453, "mean": 0.50, "std": 0.50, "unit": "g"},
@@ -147,7 +142,6 @@ DII_PARAMETERS: Dict[str, Dict[str, float]] = {
     "rosemary": {"effect": -0.013, "mean": 0.50, "std": 0.50, "unit": "g"},
     "oregano": {"effect": -0.102, "mean": 0.50, "std": 0.50, "unit": "g"},
     "saffron": {"effect": -0.140, "mean": 0.10, "std": 0.10, "unit": "g"},
-
     # Other
     "tea": {"effect": -0.536, "mean": 1.69, "std": 1.53, "unit": "cups"},
     "caffeine": {"effect": -0.110, "mean": 8.05, "std": 6.67, "unit": "mg/kg"},
@@ -185,14 +179,12 @@ GLYCEMIC_INDEX_DATABASE: Dict[str, Dict[str, Any]] = {
     "quinoa": {"gi": 53, "gl_per_100g": 13, "fiber_factor": 0.8},
     "brown_rice": {"gi": 50, "gl_per_100g": 16, "fiber_factor": 0.85},
     "whole_wheat_bread": {"gi": 51, "gl_per_100g": 15, "fiber_factor": 0.85},
-
     # Medium GI (56-69)
     "banana_ripe": {"gi": 62, "gl_per_100g": 14, "fiber_factor": 0.9},
     "pineapple": {"gi": 66, "gl_per_100g": 8, "fiber_factor": 0.95},
     "honey": {"gi": 61, "gl_per_100g": 50, "fiber_factor": 1.0},
     "basmati_rice": {"gi": 58, "gl_per_100g": 22, "fiber_factor": 0.9},
     "pita_bread": {"gi": 68, "gl_per_100g": 33, "fiber_factor": 0.95},
-
     # High GI (≥70)
     "white_rice": {"gi": 73, "gl_per_100g": 28, "fiber_factor": 1.0},
     "white_bread": {"gi": 75, "gl_per_100g": 38, "fiber_factor": 1.0},
@@ -230,9 +222,11 @@ GV_THRESHOLDS = {
 # DATA CLASSES
 # =============================================================================
 
+
 @dataclass
 class DIICalculation:
     """Complete DII calculation result"""
+
     total_score: float
     category: str
     cvd_relative_risk: float
@@ -246,13 +240,14 @@ class DIICalculation:
 @dataclass
 class GlycemicMeal:
     """Glycemic analysis of a single meal"""
+
     foods: List[str]
     total_glycemic_load: float
     weighted_glycemic_index: float
     carbohydrate_g: float
     fiber_g: float
     protein_g: float  # Protein blunts glucose response
-    fat_g: float      # Fat slows absorption
+    fat_g: float  # Fat slows absorption
     predicted_peak_glucose_rise: float  # mg/dL
     predicted_time_to_peak_min: int
     predicted_return_to_baseline_min: int
@@ -261,6 +256,7 @@ class GlycemicMeal:
 @dataclass
 class GlycemicDay:
     """Daily glycemic load analysis"""
+
     total_glycemic_load: float
     mean_glycemic_index: float
     meals: List[GlycemicMeal]
@@ -273,6 +269,7 @@ class GlycemicDay:
 @dataclass
 class InflammatoryTrend:
     """Multi-day inflammatory trend"""
+
     period_days: int
     mean_dii: float
     trend_direction: str  # "improving", "stable", "worsening"
@@ -285,6 +282,7 @@ class InflammatoryTrend:
 @dataclass
 class CombinedHealthPrediction:
     """Combined inflammatory + glycemic health prediction"""
+
     dii_score: float
     daily_glycemic_load: float
     combined_risk_score: float  # 0-100
@@ -298,6 +296,7 @@ class CombinedHealthPrediction:
 # =============================================================================
 # DEEP LEARNING MODELS
 # =============================================================================
+
 
 class InflammatoryResponsePredictor(nn.Module):
     """
@@ -314,7 +313,7 @@ class InflammatoryResponsePredictor(nn.Module):
         self,
         input_dim: int = 50,  # DII components + meal patterns
         hidden_dim: int = 128,
-        num_layers: int = 3
+        num_layers: int = 3,
     ):
         super().__init__()
 
@@ -365,7 +364,7 @@ class GlycemicResponsePredictor(nn.Module):
         self,
         input_dim: int = 20,  # Meal composition features
         hidden_dim: int = 64,
-        sequence_length: int = 24  # 2-hour response in 5-min intervals
+        sequence_length: int = 24,  # 2-hour response in 5-min intervals
     ):
         super().__init__()
         self.sequence_length = sequence_length
@@ -384,7 +383,7 @@ class GlycemicResponsePredictor(nn.Module):
             hidden_size=hidden_dim,
             num_layers=2,
             batch_first=True,
-            dropout=0.1
+            dropout=0.1,
         )
 
         # Output projection
@@ -394,13 +393,10 @@ class GlycemicResponsePredictor(nn.Module):
         self.stats_head = nn.Sequential(
             nn.Linear(hidden_dim, 32),
             nn.GELU(),
-            nn.Linear(32, 4)  # peak, time_to_peak, auc, return_time
+            nn.Linear(32, 4),  # peak, time_to_peak, auc, return_time
         )
 
-    def forward(
-        self,
-        meal_features: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, meal_features: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Predict glucose response curve from meal.
 
@@ -411,7 +407,7 @@ class GlycemicResponsePredictor(nn.Module):
             glucose_curve: [batch, sequence_length] predicted glucose changes
             stats: [batch, 4] summary statistics
         """
-        batch_size = meal_features.size(0)
+        _ = meal_features.size(0)
 
         # Encode meal
         h = self.meal_encoder(meal_features)
@@ -433,6 +429,7 @@ class GlycemicResponsePredictor(nn.Module):
 # MAIN ENGINE CLASSES
 # =============================================================================
 
+
 class DietaryInflammatoryIndexCalculator:
     """
     Calculates Dietary Inflammatory Index (DII) from food intake.
@@ -447,10 +444,7 @@ class DietaryInflammatoryIndexCalculator:
         self.parameters = DII_PARAMETERS
         self.risk_categories = DII_RISK_CATEGORIES
 
-    def calculate(
-        self,
-        daily_intake: Dict[str, float]
-    ) -> DIICalculation:
+    def calculate(self, daily_intake: Dict[str, float]) -> DIICalculation:
         """
         Calculate DII from daily nutrient intake.
 
@@ -485,10 +479,7 @@ class DietaryInflammatoryIndexCalculator:
         cvd_rr = self.risk_categories[category]["cvd_rr"]
 
         # Sort components
-        sorted_components = sorted(
-            component_scores.items(),
-            key=lambda x: x[1]
-        )
+        sorted_components = sorted(component_scores.items(), key=lambda x: x[1])
 
         # Top contributors
         top_pro = [(k, v) for k, v in sorted_components if v > 0][-5:][::-1]
@@ -505,7 +496,7 @@ class DietaryInflammatoryIndexCalculator:
             top_pro_inflammatory=top_pro,
             top_anti_inflammatory=top_anti,
             missing_components=missing,
-            confidence=confidence
+            confidence=confidence,
         )
 
     def _percentile_from_z(self, z: float) -> float:
@@ -540,40 +531,43 @@ class DietaryInflammatoryIndexCalculator:
 
         return max(-0.15, min(0.1, base_impact))
 
-    def get_recommendations(
-        self,
-        dii: DIICalculation
-    ) -> List[Dict[str, Any]]:
+    def get_recommendations(self, dii: DIICalculation) -> List[Dict[str, Any]]:
         """Generate recommendations to improve DII score."""
         recommendations = []
 
         # Check for high pro-inflammatory components
         for nutrient, score in dii.top_pro_inflammatory:
             if score > 0.1:
-                recommendations.append({
-                    "type": "reduce",
-                    "nutrient": nutrient,
-                    "current_impact": score,
-                    "action": f"Reduce {nutrient.replace('_', ' ')} intake",
-                    "alternatives": self._get_alternatives(nutrient),
-                    "expected_dii_improvement": -score * 0.5
-                })
+                recommendations.append(
+                    {
+                        "type": "reduce",
+                        "nutrient": nutrient,
+                        "current_impact": score,
+                        "action": f"Reduce {nutrient.replace('_', ' ')} intake",
+                        "alternatives": self._get_alternatives(nutrient),
+                        "expected_dii_improvement": -score * 0.5,
+                    }
+                )
 
         # Suggest anti-inflammatory foods
         low_anti = [
-            k for k, v in dii.component_scores.items()
+            k
+            for k, v in dii.component_scores.items()
             if v > -0.1 and self.parameters[k]["effect"] < -0.3
         ]
 
         for nutrient in low_anti[:3]:
-            recommendations.append({
-                "type": "increase",
-                "nutrient": nutrient,
-                "current_impact": dii.component_scores.get(nutrient, 0),
-                "action": f"Increase {nutrient.replace('_', ' ')} intake",
-                "food_sources": self._get_food_sources(nutrient),
-                "expected_dii_improvement": self.parameters[nutrient]["effect"] * 0.5
-            })
+            recommendations.append(
+                {
+                    "type": "increase",
+                    "nutrient": nutrient,
+                    "current_impact": dii.component_scores.get(nutrient, 0),
+                    "action": f"Increase {nutrient.replace('_', ' ')} intake",
+                    "food_sources": self._get_food_sources(nutrient),
+                    "expected_dii_improvement": self.parameters[nutrient]["effect"]
+                    * 0.5,
+                }
+            )
 
         return recommendations
 
@@ -618,8 +612,7 @@ class GlycemicResponseCalculator:
         self.gv_thresholds = GV_THRESHOLDS
 
     def calculate_meal_glycemic_response(
-        self,
-        foods: List[Dict[str, Any]]
+        self, foods: List[Dict[str, Any]]
     ) -> GlycemicMeal:
         """
         Calculate glycemic response for a meal.
@@ -640,7 +633,7 @@ class GlycemicResponseCalculator:
 
         for food in foods:
             name = food.get("name", "unknown").lower().replace(" ", "_")
-            amount_g = food.get("amount_g", 100)
+            _ = food.get("amount_g", 100)
             carbs_g = food.get("carbs_g", 0)
 
             food_names.append(name)
@@ -694,16 +687,11 @@ class GlycemicResponseCalculator:
             fat_g=total_fat,
             predicted_peak_glucose_rise=peak_rise,
             predicted_time_to_peak_min=time_to_peak,
-            predicted_return_to_baseline_min=return_time
+            predicted_return_to_baseline_min=return_time,
         )
 
     def _predict_glucose_curve(
-        self,
-        gl: float,
-        gi: float,
-        protein: float,
-        fat: float,
-        fiber: float
+        self, gl: float, gi: float, protein: float, fat: float, fiber: float
     ) -> Tuple[float, int, int]:
         """
         Predict glucose response curve parameters.
@@ -742,8 +730,7 @@ class GlycemicResponseCalculator:
         return (peak_rise, time_to_peak, return_time)
 
     def calculate_daily_glycemic_profile(
-        self,
-        meals: List[GlycemicMeal]
+        self, meals: List[GlycemicMeal]
     ) -> GlycemicDay:
         """
         Calculate daily glycemic profile from all meals.
@@ -756,7 +743,7 @@ class GlycemicResponseCalculator:
                 predicted_glucose_variability="unknown",
                 predicted_hrv_impact=0,
                 predicted_energy_stability=0.5,
-                recommendations=["Log meals to get glycemic analysis"]
+                recommendations=["Log meals to get glycemic analysis"],
             )
 
         total_gl = sum(m.total_glycemic_load for m in meals)
@@ -784,7 +771,7 @@ class GlycemicResponseCalculator:
             predicted_glucose_variability=variability,
             predicted_hrv_impact=hrv_impact,
             predicted_energy_stability=energy_stability,
-            recommendations=recommendations
+            recommendations=recommendations,
         )
 
     def _predict_variability(self, meals: List[GlycemicMeal]) -> str:
@@ -804,11 +791,7 @@ class GlycemicResponseCalculator:
             return "elevated"
         return "high"
 
-    def _calculate_hrv_impact(
-        self,
-        total_gl: float,
-        variability: str
-    ) -> float:
+    def _calculate_hrv_impact(self, total_gl: float, variability: str) -> float:
         """
         Calculate predicted HRV impact from glycemic profile.
 
@@ -834,7 +817,7 @@ class GlycemicResponseCalculator:
         total_gl: float,
         mean_gi: float,
         variability: str,
-        meals: List[GlycemicMeal]
+        meals: List[GlycemicMeal],
     ) -> List[str]:
         """Generate recommendations for glycemic optimization."""
         recommendations = []
@@ -867,8 +850,7 @@ class GlycemicResponseCalculator:
 
         if not recommendations:
             recommendations.append(
-                "Glycemic profile looks good! "
-                "Continue balanced eating patterns."
+                "Glycemic profile looks good! " "Continue balanced eating patterns."
             )
 
         return recommendations
@@ -894,9 +876,7 @@ class CombinedInflammatoryGlycemicEngine:
         self.glycemic_predictor = GlycemicResponsePredictor()
 
     def analyze_full_day(
-        self,
-        nutrient_intake: Dict[str, float],
-        meals: List[Dict[str, Any]]
+        self, nutrient_intake: Dict[str, float], meals: List[Dict[str, Any]]
     ) -> CombinedHealthPrediction:
         """
         Complete daily analysis combining inflammatory and glycemic factors.
@@ -925,17 +905,17 @@ class CombinedInflammatoryGlycemicEngine:
         # Combined risk score (0-100)
         # Higher DII and higher GV both increase risk
         dii_risk = (dii.total_score + 5) / 13 * 50  # Normalize to 0-50
-        gv_risk = {
-            "low": 10, "moderate": 20, "elevated": 35, "high": 50
-        }.get(glycemic_day.predicted_glucose_variability, 25)
+        gv_risk = {"low": 10, "moderate": 20, "elevated": 35, "high": 50}.get(
+            glycemic_day.predicted_glucose_variability, 25
+        )
 
         combined_risk = dii_risk + gv_risk
         combined_risk = max(0, min(100, combined_risk))
 
         # Autonomic impact assessment
         total_hrv_impact = (
-            self.dii_calculator.predict_hrv_impact(dii) +
-            glycemic_day.predicted_hrv_impact
+            self.dii_calculator.predict_hrv_impact(dii)
+            + glycemic_day.predicted_hrv_impact
         )
 
         if total_hrv_impact > 0.05:
@@ -974,62 +954,66 @@ class CombinedInflammatoryGlycemicEngine:
             predicted_hrv_change=total_hrv_impact,
             predicted_crp_trend=crp_trend,
             predicted_energy_pattern=energy_pattern,
-            priority_interventions=interventions
+            priority_interventions=interventions,
         )
 
     def _get_priority_interventions(
-        self,
-        dii: DIICalculation,
-        glycemic: GlycemicDay
+        self, dii: DIICalculation, glycemic: GlycemicDay
     ) -> List[Dict[str, Any]]:
         """Get prioritized interventions based on analysis."""
         interventions = []
 
         # DII-based interventions
         if dii.total_score > 2:
-            interventions.append({
-                "priority": 1,
-                "category": "anti_inflammatory",
-                "intervention": "Increase omega-3 and fiber intake",
-                "specific_actions": [
-                    "Add fatty fish 2-3x per week",
-                    "Include turmeric/ginger in cooking",
-                    "Add berries or dark leafy greens daily"
-                ],
-                "expected_impact": f"DII reduction of 1-2 points",
-                "evidence": "Meta-analysis: lowest DII quartile has RR=0.70 for CVD"
-            })
+            interventions.append(
+                {
+                    "priority": 1,
+                    "category": "anti_inflammatory",
+                    "intervention": "Increase omega-3 and fiber intake",
+                    "specific_actions": [
+                        "Add fatty fish 2-3x per week",
+                        "Include turmeric/ginger in cooking",
+                        "Add berries or dark leafy greens daily",
+                    ],
+                    "expected_impact": "DII reduction of 1-2 points",
+                    "evidence": "Meta-analysis: lowest DII quartile has RR=0.70 for CVD",
+                }
+            )
 
         # Glycemic interventions
         if glycemic.total_glycemic_load > 120:
-            interventions.append({
-                "priority": 2,
-                "category": "glycemic_control",
-                "intervention": "Reduce glycemic load",
-                "specific_actions": [
-                    "Replace white rice with quinoa or cauliflower rice",
-                    "Add protein to every meal",
-                    "Increase fiber intake to 30g/day"
-                ],
-                "expected_impact": "Reduced glucose variability, more stable energy",
-                "evidence": "GV independently associated with CVD risk"
-            })
+            interventions.append(
+                {
+                    "priority": 2,
+                    "category": "glycemic_control",
+                    "intervention": "Reduce glycemic load",
+                    "specific_actions": [
+                        "Replace white rice with quinoa or cauliflower rice",
+                        "Add protein to every meal",
+                        "Increase fiber intake to 30g/day",
+                    ],
+                    "expected_impact": "Reduced glucose variability, more stable energy",
+                    "evidence": "GV independently associated with CVD risk",
+                }
+            )
 
         # Combined intervention for synergistic effect
         if dii.total_score > 0 and glycemic.total_glycemic_load > 100:
-            interventions.append({
-                "priority": 1,
-                "category": "synergistic",
-                "intervention": "Mediterranean diet pattern",
-                "specific_actions": [
-                    "Olive oil as primary fat",
-                    "Legumes 3-4x per week",
-                    "Whole grains over refined",
-                    "Abundant vegetables and moderate fish"
-                ],
-                "expected_impact": "Addresses both inflammation and glucose control",
-                "evidence": "Mediterranean diet reduces CVD risk by 30%"
-            })
+            interventions.append(
+                {
+                    "priority": 1,
+                    "category": "synergistic",
+                    "intervention": "Mediterranean diet pattern",
+                    "specific_actions": [
+                        "Olive oil as primary fat",
+                        "Legumes 3-4x per week",
+                        "Whole grains over refined",
+                        "Abundant vegetables and moderate fish",
+                    ],
+                    "expected_impact": "Addresses both inflammation and glucose control",
+                    "evidence": "Mediterranean diet reduces CVD risk by 30%",
+                }
+            )
 
         return sorted(interventions, key=lambda x: x["priority"])
 
@@ -1037,6 +1021,7 @@ class CombinedInflammatoryGlycemicEngine:
 # =============================================================================
 # CONVENIENCE FUNCTIONS
 # =============================================================================
+
 
 def calculate_dii(daily_nutrients: Dict[str, float]) -> DIICalculation:
     """Quick DII calculation from nutrient intake."""
@@ -1051,8 +1036,7 @@ def analyze_meal_glycemic(foods: List[Dict[str, Any]]) -> GlycemicMeal:
 
 
 def full_dietary_analysis(
-    nutrients: Dict[str, float],
-    meals: List[Dict[str, Any]]
+    nutrients: Dict[str, float], meals: List[Dict[str, Any]]
 ) -> CombinedHealthPrediction:
     """Complete dietary health analysis."""
     engine = CombinedInflammatoryGlycemicEngine()

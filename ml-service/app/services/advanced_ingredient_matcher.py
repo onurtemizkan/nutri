@@ -14,26 +14,25 @@ Performance targets:
 - Fuzzy match: <10ms for 10k ingredients
 - Batch processing: 1000 queries/second
 """
+
 import logging
 import hashlib
 from typing import List, Dict, Tuple, Optional, Set, Any
-from dataclasses import dataclass, field
-from functools import lru_cache
+from dataclasses import dataclass
 from collections import defaultdict
 import time
-import re
 
 # Try to import optional advanced dependencies
 try:
-    from rapidfuzz import fuzz
     from rapidfuzz.distance import Levenshtein
+
     RAPIDFUZZ_AVAILABLE = True
 except ImportError:
     RAPIDFUZZ_AVAILABLE = False
-    from difflib import SequenceMatcher
 
 try:
     import jellyfish
+
     PHONETIC_AVAILABLE = True
 except ImportError:
     PHONETIC_AVAILABLE = False
@@ -41,7 +40,6 @@ except ImportError:
 from app.data.allergen_database import (
     INGREDIENT_DATABASE,
     IngredientData,
-    AllergenType,
 )
 
 logger = logging.getLogger(__name__)
@@ -54,10 +52,11 @@ logger = logging.getLogger(__name__)
 
 class TrieNode:
     """Node in a Trie (prefix tree)."""
-    __slots__ = ['children', 'is_end', 'ingredient_key', 'weight']
+
+    __slots__ = ["children", "is_end", "ingredient_key", "weight"]
 
     def __init__(self):
-        self.children: Dict[str, 'TrieNode'] = {}
+        self.children: Dict[str, "TrieNode"] = {}
         self.is_end: bool = False
         self.ingredient_key: Optional[str] = None
         self.weight: float = 1.0  # For ranking
@@ -121,7 +120,7 @@ class Trie:
         node: TrieNode,
         current_word: str,
         results: List[Tuple[str, str, float]],
-        limit: int
+        limit: int,
     ):
         """Recursively collect words from a node."""
         if len(results) >= limit * 2:  # Collect extra for sorting
@@ -141,12 +140,13 @@ class Trie:
 
 class BKTreeNode:
     """Node in a BK-Tree."""
-    __slots__ = ['word', 'ingredient_key', 'children']
+
+    __slots__ = ["word", "ingredient_key", "children"]
 
     def __init__(self, word: str, ingredient_key: str):
         self.word = word
         self.ingredient_key = ingredient_key
-        self.children: Dict[int, 'BKTreeNode'] = {}
+        self.children: Dict[int, "BKTreeNode"] = {}
 
 
 class BKTree:
@@ -205,10 +205,7 @@ class BKTree:
                 return
 
     def search(
-        self,
-        query: str,
-        max_distance: int = 2,
-        limit: int = 10
+        self, query: str, max_distance: int = 2, limit: int = 10
     ) -> List[Tuple[str, str, int]]:
         """
         Find all words within max_distance of query.
@@ -232,7 +229,7 @@ class BKTree:
         node: BKTreeNode,
         query: str,
         max_distance: int,
-        results: List[Tuple[str, str, int]]
+        results: List[Tuple[str, str, int]],
     ):
         """Recursively search the BK-Tree."""
         dist = self._edit_distance(query, node.word)
@@ -269,7 +266,7 @@ class NGramIndex:
         word = f"${word}$"  # Add boundary markers
         ngrams = set()
         for i in range(len(word) - self.n + 1):
-            ngrams.add(word[i:i + self.n])
+            ngrams.add(word[i : i + self.n])
         return ngrams
 
     def insert(self, word: str, ingredient_key: str):
@@ -280,7 +277,9 @@ class NGramIndex:
         for ngram in self._get_ngrams(word_lower):
             self.index[ngram].add(word_lower)
 
-    def search(self, query: str, min_overlap: float = 0.5, limit: int = 10) -> List[Tuple[str, str, float]]:
+    def search(
+        self, query: str, min_overlap: float = 0.5, limit: int = 10
+    ) -> List[Tuple[str, str, float]]:
         """
         Find words with overlapping n-grams.
 
@@ -311,7 +310,9 @@ class NGramIndex:
             if match_count >= min_matches:
                 word_ngrams = self._get_ngrams(word)
                 # Jaccard similarity
-                overlap = len(query_ngrams & word_ngrams) / len(query_ngrams | word_ngrams)
+                overlap = len(query_ngrams & word_ngrams) / len(
+                    query_ngrams | word_ngrams
+                )
                 results.append((word, self.words[word], overlap))
 
         results.sort(key=lambda x: -x[2])
@@ -350,17 +351,29 @@ class PhoneticMatcher:
 
             # Character mappings
             mapping = {
-                'B': '1', 'F': '1', 'P': '1', 'V': '1',
-                'C': '2', 'G': '2', 'J': '2', 'K': '2', 'Q': '2', 'S': '2', 'X': '2', 'Z': '2',
-                'D': '3', 'T': '3',
-                'L': '4',
-                'M': '5', 'N': '5',
-                'R': '6'
+                "B": "1",
+                "F": "1",
+                "P": "1",
+                "V": "1",
+                "C": "2",
+                "G": "2",
+                "J": "2",
+                "K": "2",
+                "Q": "2",
+                "S": "2",
+                "X": "2",
+                "Z": "2",
+                "D": "3",
+                "T": "3",
+                "L": "4",
+                "M": "5",
+                "N": "5",
+                "R": "6",
             }
 
-            prev_digit = mapping.get(word[0], '')
+            prev_digit = mapping.get(word[0], "")
             for char in word[1:]:
-                digit = mapping.get(char, '')
+                digit = mapping.get(char, "")
                 if digit and digit != prev_digit:
                     code += digit
                     if len(code) == 4:
@@ -420,6 +433,7 @@ class PhoneticMatcher:
 @dataclass
 class CacheEntry:
     """Cache entry with timestamp."""
+
     value: Any
     timestamp: float
     hits: int = 0
@@ -502,6 +516,7 @@ class TTLCache:
 @dataclass
 class MatchResult:
     """Result from ingredient matching."""
+
     query: str
     ingredient_key: str
     ingredient_data: Optional[IngredientData]
@@ -636,13 +651,15 @@ class AdvancedIngredientMatcher:
         # 1. Exact match (highest priority)
         exact_key = self.trie.search(query)
         if exact_key and exact_key not in seen_keys:
-            results.append(MatchResult(
-                query=query,
-                ingredient_key=exact_key,
-                ingredient_data=INGREDIENT_DATABASE.get(exact_key),
-                score=1.0,
-                match_type="exact",
-            ))
+            results.append(
+                MatchResult(
+                    query=query,
+                    ingredient_key=exact_key,
+                    ingredient_data=INGREDIENT_DATABASE.get(exact_key),
+                    score=1.0,
+                    match_type="exact",
+                )
+            )
             seen_keys.add(exact_key)
 
         # 2. Prefix matches
@@ -654,13 +671,15 @@ class AdvancedIngredientMatcher:
                     coverage = len(query) / len(word)
                     score = weight * coverage * 0.95  # Slightly lower than exact
                     if score >= threshold:
-                        results.append(MatchResult(
-                            query=query,
-                            ingredient_key=key,
-                            ingredient_data=INGREDIENT_DATABASE.get(key),
-                            score=score,
-                            match_type="prefix",
-                        ))
+                        results.append(
+                            MatchResult(
+                                query=query,
+                                ingredient_key=key,
+                                ingredient_data=INGREDIENT_DATABASE.get(key),
+                                score=score,
+                                match_type="prefix",
+                            )
+                        )
                         seen_keys.add(key)
 
         # 3. Phonetic matches
@@ -671,49 +690,59 @@ class AdvancedIngredientMatcher:
                     # Phonetic matches get moderate score
                     score = 0.85
                     if score >= threshold:
-                        results.append(MatchResult(
-                            query=query,
-                            ingredient_key=key,
-                            ingredient_data=INGREDIENT_DATABASE.get(key),
-                            score=score,
-                            match_type=f"phonetic_{match_type}",
-                        ))
+                        results.append(
+                            MatchResult(
+                                query=query,
+                                ingredient_key=key,
+                                ingredient_data=INGREDIENT_DATABASE.get(key),
+                                score=score,
+                                match_type=f"phonetic_{match_type}",
+                            )
+                        )
                         seen_keys.add(key)
 
         # 4. N-gram matches
         if len(results) < max_results:
-            ngram_matches = self.ngram_index.search(query, min_overlap=0.4, limit=max_results)
+            ngram_matches = self.ngram_index.search(
+                query, min_overlap=0.4, limit=max_results
+            )
             for word, key, overlap in ngram_matches:
                 if key not in seen_keys:
                     score = overlap * 0.9  # Scale overlap to score
                     if score >= threshold:
-                        results.append(MatchResult(
-                            query=query,
-                            ingredient_key=key,
-                            ingredient_data=INGREDIENT_DATABASE.get(key),
-                            score=score,
-                            match_type="ngram",
-                        ))
+                        results.append(
+                            MatchResult(
+                                query=query,
+                                ingredient_key=key,
+                                ingredient_data=INGREDIENT_DATABASE.get(key),
+                                score=score,
+                                match_type="ngram",
+                            )
+                        )
                         seen_keys.add(key)
 
         # 5. Fuzzy matches (BK-Tree) - most expensive, do last
         if len(results) < max_results:
             max_edit_dist = max(1, len(query) // 4)  # Scale with query length
-            fuzzy_matches = self.bk_tree.search(query, max_distance=max_edit_dist, limit=max_results)
+            fuzzy_matches = self.bk_tree.search(
+                query, max_distance=max_edit_dist, limit=max_results
+            )
             for word, key, distance in fuzzy_matches:
                 if key not in seen_keys:
                     # Convert edit distance to score
                     max_len = max(len(query), len(word))
                     score = 1.0 - (distance / max_len)
                     if score >= threshold:
-                        results.append(MatchResult(
-                            query=query,
-                            ingredient_key=key,
-                            ingredient_data=INGREDIENT_DATABASE.get(key),
-                            score=score,
-                            match_type="fuzzy",
-                            edit_distance=distance,
-                        ))
+                        results.append(
+                            MatchResult(
+                                query=query,
+                                ingredient_key=key,
+                                ingredient_data=INGREDIENT_DATABASE.get(key),
+                                score=score,
+                                match_type="fuzzy",
+                                edit_distance=distance,
+                            )
+                        )
                         seen_keys.add(key)
 
         # Sort by score and limit
@@ -758,10 +787,7 @@ class AdvancedIngredientMatcher:
 
     def clear_cache(self):
         """Clear the cache."""
-        self.cache = TTLCache(
-            max_size=self.cache.max_size,
-            ttl_seconds=self.cache.ttl
-        )
+        self.cache = TTLCache(max_size=self.cache.max_size, ttl_seconds=self.cache.ttl)
 
 
 # Singleton instance

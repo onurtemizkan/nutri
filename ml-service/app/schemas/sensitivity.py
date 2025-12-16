@@ -7,6 +7,7 @@ These schemas define the API request/response models for:
 - HRV-based sensitivity analysis
 - Sensitivity insights and recommendations
 """
+
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
@@ -20,6 +21,7 @@ from enum import Enum
 
 class AllergenTypeSchema(str, Enum):
     """FDA Big 9 + EU additions"""
+
     MILK = "milk"
     EGGS = "eggs"
     FISH = "fish"
@@ -39,6 +41,7 @@ class AllergenTypeSchema(str, Enum):
 
 class SensitivityTypeSchema(str, Enum):
     """Types of food sensitivities"""
+
     ALLERGY = "allergy"
     INTOLERANCE = "intolerance"
     SENSITIVITY = "sensitivity"
@@ -54,6 +57,7 @@ class SensitivityTypeSchema(str, Enum):
 
 class SeveritySchema(str, Enum):
     """Severity levels"""
+
     NONE = "none"
     MILD = "mild"
     MODERATE = "moderate"
@@ -64,6 +68,7 @@ class SeveritySchema(str, Enum):
 
 class CompoundLevelSchema(str, Enum):
     """Compound concentration levels"""
+
     NEGLIGIBLE = "negligible"
     LOW = "low"
     MEDIUM = "medium"
@@ -73,6 +78,7 @@ class CompoundLevelSchema(str, Enum):
 
 class DerivationTypeSchema(str, Enum):
     """How an ingredient relates to an allergen"""
+
     DIRECTLY_CONTAINS = "directly_contains"
     DERIVED_FROM = "derived_from"
     MAY_CONTAIN = "may_contain"
@@ -88,6 +94,7 @@ class DerivationTypeSchema(str, Enum):
 
 class IngredientExtractionRequest(BaseModel):
     """Request to extract ingredients from text"""
+
     text: str = Field(..., description="Meal name, description, or ingredient list")
     include_hidden_allergens: bool = Field(
         True, description="Check for hidden allergen keywords"
@@ -95,13 +102,18 @@ class IngredientExtractionRequest(BaseModel):
     fuzzy_threshold: float = Field(
         0.75, ge=0.0, le=1.0, description="Fuzzy matching threshold (0-1)"
     )
-    max_results: int = Field(10, ge=1, le=50, description="Maximum ingredients to return")
+    max_results: int = Field(
+        10, ge=1, le=50, description="Maximum ingredients to return"
+    )
 
 
 class ExtractedIngredient(BaseModel):
     """An ingredient extracted from text"""
+
     matched_text: str = Field(..., description="Original text that matched")
-    ingredient_id: Optional[str] = Field(None, description="Database ingredient ID if found")
+    ingredient_id: Optional[str] = Field(
+        None, description="Database ingredient ID if found"
+    )
     ingredient_name: str = Field(..., description="Normalized ingredient name")
     display_name: str = Field(..., description="Human-readable name")
     confidence: float = Field(..., ge=0.0, le=1.0, description="Match confidence")
@@ -111,11 +123,14 @@ class ExtractedIngredient(BaseModel):
 
 class AllergenWarning(BaseModel):
     """Warning about a detected allergen"""
+
     allergen_type: AllergenTypeSchema
     display_name: str = Field(..., description="Human-readable allergen name")
     derivation: DerivationTypeSchema
     confidence: float = Field(..., ge=0.0, le=1.0)
-    source_ingredient: str = Field(..., description="Ingredient containing the allergen")
+    source_ingredient: str = Field(
+        ..., description="Ingredient containing the allergen"
+    )
     is_hidden: bool = Field(False, description="Was this a hidden allergen?")
     warning_level: SeveritySchema = Field(
         SeveritySchema.MODERATE, description="Risk level"
@@ -124,6 +139,7 @@ class AllergenWarning(BaseModel):
 
 class CompoundWarning(BaseModel):
     """Warning about a bioactive compound"""
+
     compound_type: str = Field(..., description="histamine, tyramine, fodmap, etc.")
     level: CompoundLevelSchema
     amount_mg: Optional[float] = Field(None, description="Estimated mg per 100g")
@@ -133,15 +149,26 @@ class CompoundWarning(BaseModel):
 
 class IngredientExtractionResponse(BaseModel):
     """Response from ingredient extraction"""
+
     success: bool = True
     ingredients: List[ExtractedIngredient] = Field(default_factory=list)
     allergen_warnings: List[AllergenWarning] = Field(default_factory=list)
     compound_warnings: List[CompoundWarning] = Field(default_factory=list)
-    total_histamine_mg: Optional[float] = Field(None, description="Total histamine estimate")
-    total_tyramine_mg: Optional[float] = Field(None, description="Total tyramine estimate")
-    fodmap_summary: Optional[Dict[str, str]] = Field(None, description="FODMAP type levels")
-    processing_time_ms: float = Field(..., description="Processing time in milliseconds")
-    suggestions: List[str] = Field(default_factory=list, description="Helpful suggestions")
+    total_histamine_mg: Optional[float] = Field(
+        None, description="Total histamine estimate"
+    )
+    total_tyramine_mg: Optional[float] = Field(
+        None, description="Total tyramine estimate"
+    )
+    fodmap_summary: Optional[Dict[str, str]] = Field(
+        None, description="FODMAP type levels"
+    )
+    processing_time_ms: float = Field(
+        ..., description="Processing time in milliseconds"
+    )
+    suggestions: List[str] = Field(
+        default_factory=list, description="Helpful suggestions"
+    )
 
 
 # =============================================================================
@@ -151,6 +178,7 @@ class IngredientExtractionResponse(BaseModel):
 
 class MealSensitivityCheckRequest(BaseModel):
     """Request to check a meal for user's known sensitivities"""
+
     user_id: str = Field(..., description="User ID")
     meal_text: Optional[str] = Field(None, description="Meal name/description")
     ingredients: Optional[List[str]] = Field(None, description="List of ingredients")
@@ -159,6 +187,7 @@ class MealSensitivityCheckRequest(BaseModel):
 
 class SensitivityMatch(BaseModel):
     """A match between meal content and user sensitivity"""
+
     sensitivity_id: str
     sensitivity_type: SensitivityTypeSchema
     allergen_type: Optional[AllergenTypeSchema] = None
@@ -176,6 +205,7 @@ class SensitivityMatch(BaseModel):
 
 class MealSensitivityCheckResponse(BaseModel):
     """Response from meal sensitivity check"""
+
     success: bool = True
     is_safe: bool = Field(..., description="True if no sensitivity matches found")
     risk_level: SeveritySchema = Field(..., description="Overall risk level")
@@ -195,6 +225,7 @@ class MealSensitivityCheckResponse(BaseModel):
 
 class RecordExposureRequest(BaseModel):
     """Request to record a sensitivity exposure event"""
+
     user_id: str
     meal_id: Optional[str] = None
     allergen_type: Optional[AllergenTypeSchema] = None
@@ -213,6 +244,7 @@ class RecordExposureRequest(BaseModel):
 
 class RecordExposureResponse(BaseModel):
     """Response from recording exposure"""
+
     success: bool = True
     exposure_id: str
     message: str
@@ -220,6 +252,7 @@ class RecordExposureResponse(BaseModel):
 
 class UpdateReactionRequest(BaseModel):
     """Request to update reaction info for an exposure"""
+
     exposure_id: str
     had_reaction: bool
     reaction_severity: Optional[SeveritySchema] = None
@@ -236,7 +269,10 @@ class UpdateReactionRequest(BaseModel):
 
 class HRVWindow(BaseModel):
     """HRV data for a specific time window"""
-    window_name: str = Field(..., description="immediate, short_term, medium_term, next_day")
+
+    window_name: str = Field(
+        ..., description="immediate, short_term, medium_term, next_day"
+    )
     start_minutes: int
     end_minutes: int
     baseline_hrv: float = Field(..., description="RMSSD baseline")
@@ -248,6 +284,7 @@ class HRVWindow(BaseModel):
 
 class HRVSensitivityAnalysisRequest(BaseModel):
     """Request HRV-based sensitivity analysis"""
+
     user_id: str
     exposure_id: Optional[str] = Field(None, description="Specific exposure to analyze")
     allergen_type: Optional[AllergenTypeSchema] = None
@@ -258,6 +295,7 @@ class HRVSensitivityAnalysisRequest(BaseModel):
 
 class HRVSensitivityResult(BaseModel):
     """Result of HRV sensitivity analysis for one trigger"""
+
     trigger_type: str = Field(..., description="allergen or compound type")
     trigger_name: str = Field(..., description="Human-readable name")
     exposure_count: int
@@ -285,6 +323,7 @@ class HRVSensitivityResult(BaseModel):
 
 class HRVSensitivityAnalysisResponse(BaseModel):
     """Response from HRV sensitivity analysis"""
+
     success: bool = True
     user_id: str
     analysis_period_days: int
@@ -312,8 +351,11 @@ class HRVSensitivityAnalysisResponse(BaseModel):
 
 class SensitivityInsightSchema(BaseModel):
     """A generated insight about user's food sensitivities"""
+
     id: str
-    insight_type: str = Field(..., description="pattern, correlation, warning, recommendation")
+    insight_type: str = Field(
+        ..., description="pattern, correlation, warning, recommendation"
+    )
     priority: str = Field(..., description="low, medium, high, critical")
     title: str
     description: str
@@ -337,6 +379,7 @@ class SensitivityInsightSchema(BaseModel):
 
 class GetInsightsRequest(BaseModel):
     """Request to get sensitivity insights"""
+
     user_id: str
     include_dismissed: bool = False
     include_viewed: bool = True
@@ -347,6 +390,7 @@ class GetInsightsRequest(BaseModel):
 
 class GetInsightsResponse(BaseModel):
     """Response with user's sensitivity insights"""
+
     success: bool = True
     insights: List[SensitivityInsightSchema] = Field(default_factory=list)
     total_count: int
@@ -355,6 +399,7 @@ class GetInsightsResponse(BaseModel):
 
 class MarkInsightRequest(BaseModel):
     """Request to mark insight as viewed/dismissed/helpful"""
+
     insight_id: str
     action: str = Field(..., description="view, dismiss, helpful, not_helpful")
 
@@ -366,6 +411,7 @@ class MarkInsightRequest(BaseModel):
 
 class AddUserSensitivityRequest(BaseModel):
     """Request to add a user sensitivity"""
+
     user_id: str
     sensitivity_type: SensitivityTypeSchema
     severity: SeveritySchema
@@ -377,6 +423,7 @@ class AddUserSensitivityRequest(BaseModel):
 
 class UserSensitivitySchema(BaseModel):
     """User sensitivity record"""
+
     id: str
     user_id: str
     sensitivity_type: SensitivityTypeSchema
@@ -400,6 +447,7 @@ class UserSensitivitySchema(BaseModel):
 
 class GetUserSensitivitiesResponse(BaseModel):
     """Response with user's sensitivities"""
+
     success: bool = True
     sensitivities: List[UserSensitivitySchema] = Field(default_factory=list)
     total_count: int

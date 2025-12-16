@@ -18,20 +18,15 @@ Architecture:
 """
 
 import re
-import json
-import math
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import (
     Any,
-    Callable,
     Dict,
-    Generator,
     List,
     Optional,
     Set,
     Tuple,
-    Union,
 )
 from collections import defaultdict
 import logging
@@ -43,6 +38,7 @@ try:
     from spacy.language import Language
     from spacy.matcher import Matcher, PhraseMatcher
     from spacy.vocab import Vocab
+
     SPACY_AVAILABLE = True
 except ImportError:
     spacy = None
@@ -52,6 +48,7 @@ except ImportError:
 # Graceful numpy import for embeddings
 try:
     import numpy as np
+
     NUMPY_AVAILABLE = True
 except ImportError:
     np = None
@@ -62,6 +59,7 @@ logger = logging.getLogger(__name__)
 
 class EntityType(Enum):
     """Types of entities we extract from text."""
+
     INGREDIENT = "INGREDIENT"
     QUANTITY = "QUANTITY"
     UNIT = "UNIT"
@@ -74,6 +72,7 @@ class EntityType(Enum):
 
 class MeasurementSystem(Enum):
     """Measurement systems."""
+
     METRIC = "metric"
     IMPERIAL = "imperial"
     VOLUMETRIC = "volumetric"
@@ -84,6 +83,7 @@ class MeasurementSystem(Enum):
 @dataclass
 class QuantityInfo:
     """Extracted quantity information."""
+
     value: float
     unit: str
     original_text: str
@@ -105,6 +105,7 @@ class QuantityInfo:
 @dataclass
 class ExtractedIngredient:
     """A fully extracted ingredient with all associated information."""
+
     name: str
     original_text: str
     quantity: Optional[QuantityInfo] = None
@@ -139,6 +140,7 @@ class ExtractedIngredient:
 @dataclass
 class ExtractionResult:
     """Complete extraction result from text."""
+
     text: str
     ingredients: List[ExtractedIngredient]
     entities: Dict[str, List[Tuple[str, int, int]]]
@@ -248,34 +250,90 @@ class UnitConverter:
         """Determine measurement system from unit."""
         unit_lower = unit.lower().strip()
 
-        if unit_lower in ["g", "gram", "grams", "kg", "kilogram", "kilograms",
-                          "mg", "milligram", "milligrams", "ml", "milliliter",
-                          "milliliters", "l", "liter", "liters", "litre", "litres"]:
+        if unit_lower in [
+            "g",
+            "gram",
+            "grams",
+            "kg",
+            "kilogram",
+            "kilograms",
+            "mg",
+            "milligram",
+            "milligrams",
+            "ml",
+            "milliliter",
+            "milliliters",
+            "l",
+            "liter",
+            "liters",
+            "litre",
+            "litres",
+        ]:
             return MeasurementSystem.METRIC
 
-        if unit_lower in ["oz", "ounce", "ounces", "lb", "lbs", "pound", "pounds",
-                          "fl oz", "fluid ounce", "fluid ounces"]:
+        if unit_lower in [
+            "oz",
+            "ounce",
+            "ounces",
+            "lb",
+            "lbs",
+            "pound",
+            "pounds",
+            "fl oz",
+            "fluid ounce",
+            "fluid ounces",
+        ]:
             return MeasurementSystem.IMPERIAL
 
-        if unit_lower in ["cup", "cups", "tbsp", "tablespoon", "tablespoons",
-                          "tsp", "teaspoon", "teaspoons", "pint", "pints",
-                          "quart", "quarts", "gallon", "gallons"]:
+        if unit_lower in [
+            "cup",
+            "cups",
+            "tbsp",
+            "tablespoon",
+            "tablespoons",
+            "tsp",
+            "teaspoon",
+            "teaspoons",
+            "pint",
+            "pints",
+            "quart",
+            "quarts",
+            "gallon",
+            "gallons",
+        ]:
             return MeasurementSystem.VOLUMETRIC
 
-        if unit_lower in ["", "piece", "pieces", "whole", "slice", "slices",
-                          "clove", "cloves", "bunch", "bunches", "head", "heads",
-                          "sprig", "sprigs", "stick", "sticks", "can", "cans",
-                          "package", "packages", "box", "boxes"]:
+        if unit_lower in [
+            "",
+            "piece",
+            "pieces",
+            "whole",
+            "slice",
+            "slices",
+            "clove",
+            "cloves",
+            "bunch",
+            "bunches",
+            "head",
+            "heads",
+            "sprig",
+            "sprigs",
+            "stick",
+            "sticks",
+            "can",
+            "cans",
+            "package",
+            "packages",
+            "box",
+            "boxes",
+        ]:
             return MeasurementSystem.COUNT
 
         return MeasurementSystem.DESCRIPTIVE
 
     @classmethod
     def to_grams(
-        cls,
-        value: float,
-        unit: str,
-        ingredient: Optional[str] = None
+        cls, value: float, unit: str, ingredient: Optional[str] = None
     ) -> Optional[float]:
         """Convert quantity to grams."""
         unit_lower = unit.lower().strip()
@@ -310,11 +368,30 @@ class PatternLibrary:
 
     # Fraction patterns
     FRACTION_MAP = {
-        "½": 0.5, "⅓": 0.333, "⅔": 0.667, "¼": 0.25, "¾": 0.75,
-        "⅕": 0.2, "⅖": 0.4, "⅗": 0.6, "⅘": 0.8, "⅙": 0.167,
-        "⅚": 0.833, "⅛": 0.125, "⅜": 0.375, "⅝": 0.625, "⅞": 0.875,
-        "1/2": 0.5, "1/3": 0.333, "2/3": 0.667, "1/4": 0.25, "3/4": 0.75,
-        "1/8": 0.125, "3/8": 0.375, "5/8": 0.625, "7/8": 0.875,
+        "½": 0.5,
+        "⅓": 0.333,
+        "⅔": 0.667,
+        "¼": 0.25,
+        "¾": 0.75,
+        "⅕": 0.2,
+        "⅖": 0.4,
+        "⅗": 0.6,
+        "⅘": 0.8,
+        "⅙": 0.167,
+        "⅚": 0.833,
+        "⅛": 0.125,
+        "⅜": 0.375,
+        "⅝": 0.625,
+        "⅞": 0.875,
+        "1/2": 0.5,
+        "1/3": 0.333,
+        "2/3": 0.667,
+        "1/4": 0.25,
+        "3/4": 0.75,
+        "1/8": 0.125,
+        "3/8": 0.375,
+        "5/8": 0.625,
+        "7/8": 0.875,
     }
 
     # Quantity regex patterns
@@ -332,63 +409,251 @@ class PatternLibrary:
     ]
 
     WRITTEN_NUMBERS = {
-        "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
-        "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
-        "eleven": 11, "twelve": 12, "dozen": 12,
-        "half": 0.5, "quarter": 0.25,
+        "one": 1,
+        "two": 2,
+        "three": 3,
+        "four": 4,
+        "five": 5,
+        "six": 6,
+        "seven": 7,
+        "eight": 8,
+        "nine": 9,
+        "ten": 10,
+        "eleven": 11,
+        "twelve": 12,
+        "dozen": 12,
+        "half": 0.5,
+        "quarter": 0.25,
     }
 
     # Units organized by category
     UNITS = {
         "mass_metric": ["g", "gram", "grams", "kg", "kilogram", "kilograms", "mg"],
         "mass_imperial": ["oz", "ounce", "ounces", "lb", "lbs", "pound", "pounds"],
-        "volume_metric": ["ml", "milliliter", "milliliters", "l", "liter", "liters", "litre", "litres"],
-        "volume_imperial": ["cup", "cups", "tbsp", "tablespoon", "tablespoons",
-                           "tsp", "teaspoon", "teaspoons", "fl oz", "fluid ounce",
-                           "pint", "pints", "quart", "quarts", "gallon", "gallons"],
-        "count": ["piece", "pieces", "whole", "slice", "slices", "clove", "cloves",
-                  "bunch", "bunches", "head", "heads", "sprig", "sprigs", "stick",
-                  "sticks", "can", "cans", "package", "packages", "jar", "jars",
-                  "bag", "bags", "box", "boxes", "bottle", "bottles"],
-        "descriptive": ["pinch", "dash", "handful", "splash", "drizzle",
-                       "small", "medium", "large", "extra large"],
+        "volume_metric": [
+            "ml",
+            "milliliter",
+            "milliliters",
+            "l",
+            "liter",
+            "liters",
+            "litre",
+            "litres",
+        ],
+        "volume_imperial": [
+            "cup",
+            "cups",
+            "tbsp",
+            "tablespoon",
+            "tablespoons",
+            "tsp",
+            "teaspoon",
+            "teaspoons",
+            "fl oz",
+            "fluid ounce",
+            "pint",
+            "pints",
+            "quart",
+            "quarts",
+            "gallon",
+            "gallons",
+        ],
+        "count": [
+            "piece",
+            "pieces",
+            "whole",
+            "slice",
+            "slices",
+            "clove",
+            "cloves",
+            "bunch",
+            "bunches",
+            "head",
+            "heads",
+            "sprig",
+            "sprigs",
+            "stick",
+            "sticks",
+            "can",
+            "cans",
+            "package",
+            "packages",
+            "jar",
+            "jars",
+            "bag",
+            "bags",
+            "box",
+            "boxes",
+            "bottle",
+            "bottles",
+        ],
+        "descriptive": [
+            "pinch",
+            "dash",
+            "handful",
+            "splash",
+            "drizzle",
+            "small",
+            "medium",
+            "large",
+            "extra large",
+        ],
     }
 
     # Preparation terms
     PREPARATIONS = [
-        "chopped", "diced", "minced", "sliced", "grated", "shredded",
-        "crushed", "ground", "mashed", "pureed", "julienned", "cubed",
-        "quartered", "halved", "torn", "crumbled", "zested", "peeled",
-        "deveined", "deboned", "trimmed", "cored", "seeded", "pitted",
-        "blanched", "soaked", "drained", "rinsed", "dried", "toasted",
-        "roasted", "sauteed", "caramelized", "melted", "softened",
-        "chilled", "frozen", "thawed", "room temperature", "at room temp",
-        "freshly", "fresh", "finely", "coarsely", "roughly", "thinly",
+        "chopped",
+        "diced",
+        "minced",
+        "sliced",
+        "grated",
+        "shredded",
+        "crushed",
+        "ground",
+        "mashed",
+        "pureed",
+        "julienned",
+        "cubed",
+        "quartered",
+        "halved",
+        "torn",
+        "crumbled",
+        "zested",
+        "peeled",
+        "deveined",
+        "deboned",
+        "trimmed",
+        "cored",
+        "seeded",
+        "pitted",
+        "blanched",
+        "soaked",
+        "drained",
+        "rinsed",
+        "dried",
+        "toasted",
+        "roasted",
+        "sauteed",
+        "caramelized",
+        "melted",
+        "softened",
+        "chilled",
+        "frozen",
+        "thawed",
+        "room temperature",
+        "at room temp",
+        "freshly",
+        "fresh",
+        "finely",
+        "coarsely",
+        "roughly",
+        "thinly",
     ]
 
     # Cooking methods
     COOKING_METHODS = [
-        "bake", "baked", "baking", "roast", "roasted", "roasting",
-        "grill", "grilled", "grilling", "broil", "broiled", "broiling",
-        "fry", "fried", "frying", "deep fry", "deep fried", "deep frying",
-        "saute", "sauteed", "sauteing", "stir fry", "stir fried",
-        "boil", "boiled", "boiling", "simmer", "simmered", "simmering",
-        "steam", "steamed", "steaming", "poach", "poached", "poaching",
-        "braise", "braised", "braising", "stew", "stewed", "stewing",
-        "smoke", "smoked", "smoking", "cure", "cured", "curing",
-        "ferment", "fermented", "fermenting", "pickle", "pickled", "pickling",
+        "bake",
+        "baked",
+        "baking",
+        "roast",
+        "roasted",
+        "roasting",
+        "grill",
+        "grilled",
+        "grilling",
+        "broil",
+        "broiled",
+        "broiling",
+        "fry",
+        "fried",
+        "frying",
+        "deep fry",
+        "deep fried",
+        "deep frying",
+        "saute",
+        "sauteed",
+        "sauteing",
+        "stir fry",
+        "stir fried",
+        "boil",
+        "boiled",
+        "boiling",
+        "simmer",
+        "simmered",
+        "simmering",
+        "steam",
+        "steamed",
+        "steaming",
+        "poach",
+        "poached",
+        "poaching",
+        "braise",
+        "braised",
+        "braising",
+        "stew",
+        "stewed",
+        "stewing",
+        "smoke",
+        "smoked",
+        "smoking",
+        "cure",
+        "cured",
+        "curing",
+        "ferment",
+        "fermented",
+        "fermenting",
+        "pickle",
+        "pickled",
+        "pickling",
     ]
 
     # Modifiers (descriptive adjectives)
     MODIFIERS = [
-        "organic", "natural", "fresh", "frozen", "canned", "dried",
-        "raw", "cooked", "uncooked", "ripe", "unripe", "green",
-        "red", "yellow", "white", "dark", "light", "extra",
-        "virgin", "extra virgin", "pure", "refined", "unrefined",
-        "salted", "unsalted", "sweetened", "unsweetened", "flavored",
-        "plain", "vanilla", "chocolate", "whole", "skim", "low-fat",
-        "fat-free", "reduced", "lite", "light", "sugar-free", "gluten-free",
-        "vegan", "vegetarian", "kosher", "halal", "non-gmo",
+        "organic",
+        "natural",
+        "fresh",
+        "frozen",
+        "canned",
+        "dried",
+        "raw",
+        "cooked",
+        "uncooked",
+        "ripe",
+        "unripe",
+        "green",
+        "red",
+        "yellow",
+        "white",
+        "dark",
+        "light",
+        "extra",
+        "virgin",
+        "extra virgin",
+        "pure",
+        "refined",
+        "unrefined",
+        "salted",
+        "unsalted",
+        "sweetened",
+        "unsweetened",
+        "flavored",
+        "plain",
+        "vanilla",
+        "chocolate",
+        "whole",
+        "skim",
+        "low-fat",
+        "fat-free",
+        "reduced",
+        "lite",
+        "light",
+        "sugar-free",
+        "gluten-free",
+        "vegan",
+        "vegetarian",
+        "kosher",
+        "halal",
+        "non-gmo",
     ]
 
     @classmethod
@@ -407,13 +672,13 @@ class PatternLibrary:
                 match = re.match(r"(\d+)?\s*" + re.escape(frac), text)
                 if match:
                     whole = float(match.group(1) or 0)
-                    remaining = text[match.end():].strip()
+                    remaining = text[match.end() :].strip()
                     return (whole + value, remaining)
 
         # Try written numbers
         for word, value in cls.WRITTEN_NUMBERS.items():
             if text.lower().startswith(word):
-                remaining = text[len(word):].strip()
+                remaining = text[len(word) :].strip()
                 return (value, remaining)
 
         # Try numeric patterns
@@ -421,14 +686,14 @@ class PatternLibrary:
         range_match = re.match(r"(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)", text)
         if range_match:
             low, high = float(range_match.group(1)), float(range_match.group(2))
-            remaining = text[range_match.end():].strip()
+            remaining = text[range_match.end() :].strip()
             return ((low + high) / 2, remaining)  # Use midpoint
 
         # Simple decimal
         decimal_match = re.match(r"(\d+\.?\d*)", text)
         if decimal_match:
             value = float(decimal_match.group(1))
-            remaining = text[decimal_match.end():].strip()
+            remaining = text[decimal_match.end() :].strip()
             return (value, remaining)
 
         return None
@@ -537,7 +802,9 @@ class SpaCyNLPProcessor:
                 self.nlp = spacy.load(self.model_name)
             except OSError:
                 # Fall back to smaller model
-                logger.warning(f"Model {self.model_name} not found, trying en_core_web_sm")
+                logger.warning(
+                    f"Model {self.model_name} not found, trying en_core_web_sm"
+                )
                 try:
                     self.nlp = spacy.load("en_core_web_sm")
                 except OSError:
@@ -553,7 +820,9 @@ class SpaCyNLPProcessor:
             self._add_food_patterns()
 
             self._initialized = True
-            logger.info(f"Initialized spaCy NLP processor with model: {self.nlp.meta.get('name', 'blank')}")
+            logger.info(
+                f"Initialized spaCy NLP processor with model: {self.nlp.meta.get('name', 'blank')}"
+            )
             return True
 
         except Exception as e:
@@ -566,15 +835,24 @@ class SpaCyNLPProcessor:
             return
 
         # Pattern: NUMBER + UNIT
-        self.matcher.add("QUANTITY", [
-            [{"LIKE_NUM": True}, {"LOWER": {"IN": list(UnitConverter.UNIT_TO_GRAMS.keys())}}],
-        ])
+        self.matcher.add(
+            "QUANTITY",
+            [
+                [
+                    {"LIKE_NUM": True},
+                    {"LOWER": {"IN": list(UnitConverter.UNIT_TO_GRAMS.keys())}},
+                ],
+            ],
+        )
 
         # Pattern: Fraction
-        self.matcher.add("FRACTION", [
-            [{"TEXT": {"REGEX": r"^\d+/\d+$"}}],
-            [{"LIKE_NUM": True}, {"TEXT": {"REGEX": r"^\d+/\d+$"}}],
-        ])
+        self.matcher.add(
+            "FRACTION",
+            [
+                [{"TEXT": {"REGEX": r"^\d+/\d+$"}}],
+                [{"LIKE_NUM": True}, {"TEXT": {"REGEX": r"^\d+/\d+$"}}],
+            ],
+        )
 
     def _add_food_patterns(self) -> None:
         """Add patterns for food entity extraction."""
@@ -583,16 +861,55 @@ class SpaCyNLPProcessor:
 
         # Add allergen terms
         allergens = [
-            "milk", "dairy", "lactose", "casein", "whey",
-            "egg", "eggs", "egg white", "egg yolk",
-            "peanut", "peanuts", "peanut butter",
-            "tree nut", "tree nuts", "almond", "almonds", "walnut", "walnuts",
-            "cashew", "cashews", "pecan", "pecans", "pistachio", "pistachios",
-            "wheat", "gluten", "flour", "bread", "pasta",
-            "soy", "soybean", "tofu", "edamame", "miso",
-            "fish", "salmon", "tuna", "cod", "tilapia",
-            "shellfish", "shrimp", "crab", "lobster", "oyster", "clam", "mussel",
-            "sesame", "sesame seed", "tahini",
+            "milk",
+            "dairy",
+            "lactose",
+            "casein",
+            "whey",
+            "egg",
+            "eggs",
+            "egg white",
+            "egg yolk",
+            "peanut",
+            "peanuts",
+            "peanut butter",
+            "tree nut",
+            "tree nuts",
+            "almond",
+            "almonds",
+            "walnut",
+            "walnuts",
+            "cashew",
+            "cashews",
+            "pecan",
+            "pecans",
+            "pistachio",
+            "pistachios",
+            "wheat",
+            "gluten",
+            "flour",
+            "bread",
+            "pasta",
+            "soy",
+            "soybean",
+            "tofu",
+            "edamame",
+            "miso",
+            "fish",
+            "salmon",
+            "tuna",
+            "cod",
+            "tilapia",
+            "shellfish",
+            "shrimp",
+            "crab",
+            "lobster",
+            "oyster",
+            "clam",
+            "mussel",
+            "sesame",
+            "sesame seed",
+            "tahini",
         ]
 
         self._allergen_terms = set(allergens)
@@ -622,7 +939,9 @@ class SpaCyNLPProcessor:
         # Standard NER entities
         for ent in doc.ents:
             if ent.label_ in ["PRODUCT", "ORG"]:  # Potential food/brand names
-                entities["POTENTIAL_FOOD"].append((ent.text, ent.start_char, ent.end_char))
+                entities["POTENTIAL_FOOD"].append(
+                    (ent.text, ent.start_char, ent.end_char)
+                )
             elif ent.label_ == "QUANTITY":
                 entities["QUANTITY"].append((ent.text, ent.start_char, ent.end_char))
             elif ent.label_ == "CARDINAL":
@@ -650,26 +969,25 @@ class SpaCyNLPProcessor:
         """Extract noun chunks with their root."""
         chunks = []
         for chunk in doc.noun_chunks:
-            chunks.append((
-                chunk.text,
-                chunk.root.text,
-                chunk.start_char,
-                chunk.end_char
-            ))
+            chunks.append(
+                (chunk.text, chunk.root.text, chunk.start_char, chunk.end_char)
+            )
         return chunks
 
     def get_dependencies(self, doc: Doc) -> List[Dict[str, Any]]:
         """Extract dependency relationships."""
         deps = []
         for token in doc:
-            deps.append({
-                "text": token.text,
-                "lemma": token.lemma_,
-                "pos": token.pos_,
-                "dep": token.dep_,
-                "head": token.head.text,
-                "children": [child.text for child in token.children],
-            })
+            deps.append(
+                {
+                    "text": token.text,
+                    "lemma": token.lemma_,
+                    "pos": token.pos_,
+                    "dep": token.dep_,
+                    "head": token.head.text,
+                    "children": [child.text for child in token.children],
+                }
+            )
         return deps
 
     def get_similarity(self, text1: str, text2: str) -> float:
@@ -765,7 +1083,9 @@ class NLPIngredientExtractor:
 
         # Calculate overall confidence
         if result.ingredients:
-            result.confidence = sum(i.confidence for i in result.ingredients) / len(result.ingredients)
+            result.confidence = sum(i.confidence for i in result.ingredients) / len(
+                result.ingredients
+            )
 
         return result
 
@@ -793,9 +1113,7 @@ class NLPIngredientExtractor:
         return text.strip()
 
     def _extract_with_spacy(
-        self,
-        text: str,
-        result: ExtractionResult
+        self, text: str, result: ExtractionResult
     ) -> ExtractionResult:
         """Extract using spaCy NLP."""
         doc = self.nlp_processor.process(text)
@@ -826,7 +1144,9 @@ class NLPIngredientExtractor:
         if "FOOD" in result.entities:
             for food_text, start, end in result.entities["FOOD"]:
                 # Check if already captured in ingredients
-                if not any(food_text.lower() in i.name.lower() for i in result.ingredients):
+                if not any(
+                    food_text.lower() in i.name.lower() for i in result.ingredients
+                ):
                     ingredient = ExtractedIngredient(
                         name=food_text,
                         original_text=food_text,
@@ -848,12 +1168,7 @@ class NLPIngredientExtractor:
         return result
 
     def _create_ingredient_from_chunk(
-        self,
-        chunk_text: str,
-        root: str,
-        start: int,
-        end: int,
-        full_text: str
+        self, chunk_text: str, root: str, start: int, end: int, full_text: str
     ) -> Optional[ExtractedIngredient]:
         """Create ExtractedIngredient from noun chunk."""
         # Try to parse quantity from the beginning
@@ -871,7 +1186,7 @@ class NLPIngredientExtractor:
                 quantity_info = QuantityInfo(
                     value=qty_value,
                     unit=unit,
-                    original_text=chunk_text[:len(chunk_text) - len(name)].strip(),
+                    original_text=chunk_text[: len(chunk_text) - len(name)].strip(),
                     system=UnitConverter.get_system(unit),
                     normalized_grams=UnitConverter.to_grams(qty_value, unit, name),
                 )
@@ -925,9 +1240,11 @@ class NLPIngredientExtractor:
                         unit=unit or "",
                         original_text=f"{qty_str} {unit or ''}".strip(),
                         system=UnitConverter.get_system(unit or ""),
-                        normalized_grams=UnitConverter.to_grams(
-                            qty_value, unit or "", name
-                        ) if unit else None,
+                        normalized_grams=(
+                            UnitConverter.to_grams(qty_value, unit or "", name)
+                            if unit
+                            else None
+                        ),
                     )
 
             name = self._clean_ingredient_name(name)
@@ -972,10 +1289,7 @@ class NLPIngredientExtractor:
         return name.strip()
 
     def _calculate_confidence(
-        self,
-        name: str,
-        quantity: Optional[QuantityInfo],
-        preparations: List[str]
+        self, name: str, quantity: Optional[QuantityInfo], preparations: List[str]
     ) -> float:
         """Calculate extraction confidence score."""
         confidence = 0.5  # Base confidence
@@ -1001,9 +1315,25 @@ class NLPIngredientExtractor:
         # Boost for names that look like ingredients
         if any(
             term in name.lower()
-            for term in ["chicken", "beef", "fish", "egg", "milk", "butter",
-                        "oil", "flour", "sugar", "salt", "pepper", "onion",
-                        "garlic", "tomato", "potato", "carrot", "celery"]
+            for term in [
+                "chicken",
+                "beef",
+                "fish",
+                "egg",
+                "milk",
+                "butter",
+                "oil",
+                "flour",
+                "sugar",
+                "salt",
+                "pepper",
+                "onion",
+                "garlic",
+                "tomato",
+                "potato",
+                "carrot",
+                "celery",
+            ]
         ):
             confidence += 0.2
 
@@ -1030,11 +1360,7 @@ class NLPIngredientExtractor:
         return self.nlp_processor.get_similarity(text1, text2)
 
     def find_similar_ingredients(
-        self,
-        query: str,
-        candidates: List[str],
-        top_k: int = 5,
-        threshold: float = 0.5
+        self, query: str, candidates: List[str], top_k: int = 5, threshold: float = 0.5
     ) -> List[Tuple[str, float]]:
         """Find semantically similar ingredients."""
         if not self._initialized:
@@ -1067,6 +1393,7 @@ def get_nlp_extractor() -> NLPIngredientExtractor:
 
 
 # ==================== Convenience Functions ====================
+
 
 def extract_ingredients(text: str) -> ExtractionResult:
     """Extract ingredients from text (convenience function)."""

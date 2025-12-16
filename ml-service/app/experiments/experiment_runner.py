@@ -14,50 +14,47 @@ Based on best practices from:
 - Research paper methodologies
 """
 
-import json
-import os
-import pickle
-import time
-from dataclasses import dataclass, field
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+import json  # noqa: E402
+import time  # noqa: E402
+from dataclasses import dataclass  # noqa: E402
+from datetime import datetime  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Any, Callable, Dict, List, Optional, Tuple  # noqa: E402
 
-import numpy as np
-import pandas as pd
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.model_selection import TimeSeriesSplit
-from sklearn.preprocessing import StandardScaler
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+import torch  # noqa: E402
+import torch.nn as nn  # noqa: E402
+import torch.optim as optim  # noqa: E402
+from sklearn.metrics import (
+    mean_absolute_error,
+    mean_squared_error,
+    r2_score,
+)  # noqa: E402
+from sklearn.preprocessing import StandardScaler  # noqa: E402
 
 # Optuna for hyperparameter optimization
 try:
     import optuna
     from optuna.pruners import MedianPruner
     from optuna.samplers import TPESampler
+
     OPTUNA_AVAILABLE = True
 except ImportError:
     OPTUNA_AVAILABLE = False
     print("Warning: Optuna not available. Install with: pip install optuna")
 
 # Import our models
-import sys
+import sys  # noqa: E402
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from ml_models.advanced_lstm import (
-    AdvancedLSTMConfig,
-    BiLSTMWithResiduals,
-    EnhancedLSTMWithAttention,
+from ml_models.advanced_lstm import (  # noqa: E402
     ModelFactory,
-    TCNConfig,
-    TemporalConvNet,
 )
-from data.synthetic_generator import (
+from data.synthetic_generator import (  # noqa: E402
     SyntheticDataGenerator,
     UserPersona,
-    generate_synthetic_dataset,
 )
 
 
@@ -65,9 +62,11 @@ from data.synthetic_generator import (
 # Data Classes
 # =============================================================================
 
+
 @dataclass
 class ExperimentConfig:
     """Configuration for an experiment run."""
+
     name: str
     model_type: str  # 'lstm_attention', 'bilstm_residual', 'tcn'
     target_metric: str  # 'RESTING_HEART_RATE', 'HEART_RATE_VARIABILITY_RMSSD'
@@ -85,6 +84,7 @@ class ExperimentConfig:
 @dataclass
 class ExperimentResult:
     """Results from an experiment run."""
+
     config: ExperimentConfig
     train_loss: float
     val_loss: float
@@ -100,6 +100,7 @@ class ExperimentResult:
 @dataclass
 class HyperparameterSearchResult:
     """Results from hyperparameter search."""
+
     best_params: Dict[str, Any]
     best_value: float
     all_trials: List[Dict[str, Any]]
@@ -111,6 +112,7 @@ class HyperparameterSearchResult:
 # =============================================================================
 # Data Preparation
 # =============================================================================
+
 
 class ExperimentDataLoader:
     """
@@ -224,9 +226,13 @@ class ExperimentDataLoader:
             return None, None, []
 
         # Get date range
-        all_dates = sorted(set(
-            health_df[health_df["metric_type"] == target_metric]["recorded_at"].dt.date
-        ))
+        all_dates = sorted(
+            set(
+                health_df[health_df["metric_type"] == target_metric][
+                    "recorded_at"
+                ].dt.date
+            )
+        )
 
         if len(all_dates) < sequence_length + 10:
             return None, None, []
@@ -239,15 +245,15 @@ class ExperimentDataLoader:
             features = {}
 
             # Nutrition features
-            day_meals = meals_df[
-                meals_df["consumed_at"].dt.date == current_date
-            ]
+            day_meals = meals_df[meals_df["consumed_at"].dt.date == current_date]
 
             features["calories_daily"] = day_meals["calories"].sum()
             features["protein_daily"] = day_meals["protein"].sum()
             features["carbs_daily"] = day_meals["carbs"].sum()
             features["fat_daily"] = day_meals["fat"].sum()
-            features["fiber_daily"] = day_meals["fiber"].sum() if "fiber" in day_meals else 0
+            features["fiber_daily"] = (
+                day_meals["fiber"].sum() if "fiber" in day_meals else 0
+            )
             features["meal_count"] = len(day_meals)
 
             # Late eating
@@ -261,22 +267,29 @@ class ExperimentDataLoader:
 
             features["active_minutes"] = day_activities["duration"].sum()
             features["calories_burned"] = day_activities["calories_burned"].sum()
-            features["workout_count"] = len(day_activities[
-                day_activities["activity_type"] != "WALKING"
-            ])
+            features["workout_count"] = len(
+                day_activities[day_activities["activity_type"] != "WALKING"]
+            )
 
             high_intensity = day_activities[day_activities["intensity"] == "HIGH"]
             features["high_intensity_minutes"] = high_intensity["duration"].sum()
 
             # Health features (lagged - use previous values as features)
-            for metric_type in ["RESTING_HEART_RATE", "HEART_RATE_VARIABILITY_RMSSD",
-                              "SLEEP_DURATION", "SLEEP_SCORE", "RECOVERY_SCORE"]:
+            for metric_type in [
+                "RESTING_HEART_RATE",
+                "HEART_RATE_VARIABILITY_RMSSD",
+                "SLEEP_DURATION",
+                "SLEEP_SCORE",
+                "RECOVERY_SCORE",
+            ]:
                 metric_data = health_df[
-                    (health_df["metric_type"] == metric_type) &
-                    (health_df["recorded_at"].dt.date == current_date)
+                    (health_df["metric_type"] == metric_type)
+                    & (health_df["recorded_at"].dt.date == current_date)
                 ]
                 if not metric_data.empty:
-                    features[f"{metric_type.lower()}_prev"] = metric_data["value"].iloc[0]
+                    features[f"{metric_type.lower()}_prev"] = metric_data["value"].iloc[
+                        0
+                    ]
                 else:
                     features[f"{metric_type.lower()}_prev"] = np.nan
 
@@ -311,7 +324,7 @@ class ExperimentDataLoader:
         y_targets = []
 
         for i in range(len(common_dates) - sequence_length):
-            seq_dates = common_dates[i:i + sequence_length]
+            seq_dates = common_dates[i : i + sequence_length]
             target_date = common_dates[i + sequence_length]
 
             # Get feature sequence
@@ -329,6 +342,7 @@ class ExperimentDataLoader:
 # =============================================================================
 # Training Utilities
 # =============================================================================
+
 
 class EarlyStopping:
     """Early stopping with patience."""
@@ -455,6 +469,7 @@ def calculate_metrics(
 # Experiment Runner
 # =============================================================================
 
+
 class ExperimentRunner:
     """
     Runs experiments for model training and evaluation.
@@ -518,7 +533,9 @@ class ExperimentRunner:
         num_samples, seq_len, num_features = X.shape
         X_flat = X.reshape(-1, num_features)
         scaler = StandardScaler()
-        X_norm = scaler.fit_transform(X_flat).reshape(num_samples, seq_len, num_features)
+        X_norm = scaler.fit_transform(X_flat).reshape(
+            num_samples, seq_len, num_features
+        )
 
         # Normalize targets
         y_scaler = StandardScaler()
@@ -530,10 +547,10 @@ class ExperimentRunner:
 
         X_train = X_norm[:n_train]
         y_train = y_norm[:n_train]
-        X_val = X_norm[n_train:n_train + n_val]
-        y_val = y_norm[n_train:n_train + n_val]
-        X_test = X_norm[n_train + n_val:]
-        y_test = y_norm[n_train + n_val:]
+        X_val = X_norm[n_train : n_train + n_val]
+        y_val = y_norm[n_train : n_train + n_val]
+        X_test = X_norm[n_train + n_val :]
+        y_test = y_norm[n_train + n_val :]
 
         if verbose:
             print(f"Train: {len(X_train)}, Val: {len(X_val)}, Test: {len(X_test)}")
@@ -624,13 +641,15 @@ class ExperimentRunner:
         )
 
         # Denormalize for real metrics
-        predictions = y_scaler.inverse_transform(predictions_norm.reshape(-1, 1)).flatten()
+        predictions = y_scaler.inverse_transform(
+            predictions_norm.reshape(-1, 1)
+        ).flatten()
         actuals = y_scaler.inverse_transform(actuals_norm.reshape(-1, 1)).flatten()
 
         test_metrics = calculate_metrics(actuals, predictions)
 
         if verbose:
-            print(f"\nTest Results:")
+            print("\nTest Results:")
             print(f"  MAE: {test_metrics['mae']:.4f}")
             print(f"  RMSE: {test_metrics['rmse']:.4f}")
             print(f"  R²: {test_metrics['r2']:.4f}")
@@ -640,14 +659,17 @@ class ExperimentRunner:
 
         # Save model
         model_path = self.output_dir / f"{config.name}_model.pt"
-        torch.save({
-            "model_state_dict": model.state_dict(),
-            "scaler": scaler,
-            "y_scaler": y_scaler,
-            "config": config,
-            "hyperparams": hyperparams,
-            "feature_names": feature_names,
-        }, model_path)
+        torch.save(
+            {
+                "model_state_dict": model.state_dict(),
+                "scaler": scaler,
+                "y_scaler": y_scaler,
+                "config": config,
+                "hyperparams": hyperparams,
+                "feature_names": feature_names,
+            },
+            model_path,
+        )
 
         # Get attention weights if available
         attention_weights = None
@@ -724,20 +746,20 @@ class ExperimentRunner:
 
         for result in self.results:
             # Convert numpy floats to Python floats for JSON serialization
-            test_metrics = {
-                k: float(v) for k, v in result.test_metrics.items()
-            }
-            results_data.append({
-                "name": result.config.name,
-                "model_type": result.config.model_type,
-                "target_metric": result.config.target_metric,
-                "train_loss": float(result.train_loss),
-                "val_loss": float(result.val_loss),
-                "test_metrics": test_metrics,
-                "training_time": float(result.training_time),
-                "best_epoch": result.best_epoch,
-                "model_path": result.model_path,
-            })
+            test_metrics = {k: float(v) for k, v in result.test_metrics.items()}
+            results_data.append(
+                {
+                    "name": result.config.name,
+                    "model_type": result.config.model_type,
+                    "target_metric": result.config.target_metric,
+                    "train_loss": float(result.train_loss),
+                    "val_loss": float(result.val_loss),
+                    "test_metrics": test_metrics,
+                    "training_time": float(result.training_time),
+                    "best_epoch": result.best_epoch,
+                    "model_path": result.model_path,
+                }
+            )
 
         with open(self.output_dir / filename, "w") as f:
             json.dump(results_data, f, indent=2)
@@ -746,6 +768,7 @@ class ExperimentRunner:
 # =============================================================================
 # Optuna Hyperparameter Optimization
 # =============================================================================
+
 
 class OptunaOptimizer:
     """
@@ -777,8 +800,12 @@ class OptunaOptimizer:
                 "hidden_dim": trial.suggest_categorical("hidden_dim", [64, 128, 256]),
                 "num_layers": trial.suggest_int("num_layers", 1, 3),
                 "dropout": trial.suggest_float("dropout", 0.1, 0.5),
-                "learning_rate": trial.suggest_float("learning_rate", 1e-5, 1e-2, log=True),
-                "weight_decay": trial.suggest_float("weight_decay", 1e-6, 1e-3, log=True),
+                "learning_rate": trial.suggest_float(
+                    "learning_rate", 1e-5, 1e-2, log=True
+                ),
+                "weight_decay": trial.suggest_float(
+                    "weight_decay", 1e-6, 1e-3, log=True
+                ),
             }
 
             config = ExperimentConfig(
@@ -798,7 +825,7 @@ class OptunaOptimizer:
                 return result.test_metrics["mae"]
             except Exception as e:
                 print(f"Trial {trial.number} failed: {e}")
-                return float("inf")
+                return float("in")
 
         return objective
 
@@ -823,7 +850,7 @@ class OptunaOptimizer:
             study_name = f"{self.model_type}_{self.target_metric}_optimization"
 
         print(f"\n{'='*60}")
-        print(f"Starting Optuna Optimization")
+        print("Starting Optuna Optimization")
         print(f"Model: {self.model_type}")
         print(f"Target: {self.target_metric}")
         print(f"Trials: {n_trials}")
@@ -848,12 +875,14 @@ class OptunaOptimizer:
         # Collect results
         all_trials = []
         for trial in study.trials:
-            all_trials.append({
-                "number": trial.number,
-                "params": trial.params,
-                "value": trial.value,
-                "state": str(trial.state),
-            })
+            all_trials.append(
+                {
+                    "number": trial.number,
+                    "params": trial.params,
+                    "value": trial.value,
+                    "state": str(trial.state),
+                }
+            )
 
         result = HyperparameterSearchResult(
             best_params=study.best_params,
@@ -867,7 +896,7 @@ class OptunaOptimizer:
         print(f"\n{'='*60}")
         print("Optimization Complete!")
         print(f"Best MAE: {study.best_value:.4f}")
-        print(f"Best Parameters:")
+        print("Best Parameters:")
         for k, v in study.best_params.items():
             print(f"  {k}: {v}")
         print(f"Time: {optimization_time:.1f}s")
@@ -879,6 +908,7 @@ class OptunaOptimizer:
 # =============================================================================
 # Main Entry Point
 # =============================================================================
+
 
 def run_full_experiment_suite(
     output_dir: str = "ml-service/experiments",
@@ -911,8 +941,10 @@ def run_full_experiment_suite(
     )
 
     # Find best model
-    all_results = {**rhr_results, **hrv_results}
-    best_model = min(rhr_results.keys(), key=lambda k: rhr_results[k].test_metrics["mae"])
+    _ = {**rhr_results, **hrv_results}
+    best_model = min(
+        rhr_results.keys(), key=lambda k: rhr_results[k].test_metrics["mae"]
+    )
 
     print(f"\n[Phase 3] Optimizing Best Model: {best_model}")
 
@@ -937,7 +969,7 @@ def run_full_experiment_suite(
             epochs=100,
         )
 
-        final_result = runner.run_experiment(
+        _ = runner.run_experiment(
             config=final_config,
             hyperparams=optuna_result.best_params,
         )

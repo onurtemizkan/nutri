@@ -25,9 +25,11 @@ import torch.nn.functional as F
 # Configuration Classes
 # =============================================================================
 
+
 @dataclass
 class AdvancedLSTMConfig:
     """Configuration for advanced LSTM models."""
+
     input_dim: int
     hidden_dim: int = 128
     num_layers: int = 2
@@ -51,6 +53,7 @@ class AdvancedLSTMConfig:
 @dataclass
 class TCNConfig:
     """Configuration for Temporal Convolutional Network."""
+
     input_dim: int
     hidden_channels: int = 64
     num_layers: int = 5
@@ -63,6 +66,7 @@ class TCNConfig:
 # =============================================================================
 # Model 1: Enhanced LSTM with Temporal Attention
 # =============================================================================
+
 
 class TemporalAttention(nn.Module):
     """
@@ -128,7 +132,7 @@ class TemporalAttention(nn.Module):
 
         # Apply mask if provided
         if mask is not None:
-            scores = scores.masked_fill(mask == 0, float('-inf'))
+            scores = scores.masked_fill(mask == 0, float("-inf"))
 
         # Softmax to get attention weights
         attention_weights = F.softmax(scores, dim=1)  # (batch, seq_len)
@@ -138,8 +142,10 @@ class TemporalAttention(nn.Module):
         # values: (batch, seq_len, hidden_dim)
         context = torch.bmm(
             attention_weights.unsqueeze(1),  # (batch, 1, seq_len)
-            values  # (batch, seq_len, hidden_dim)
-        ).squeeze(1)  # (batch, hidden_dim)
+            values,  # (batch, seq_len, hidden_dim)
+        ).squeeze(
+            1
+        )  # (batch, hidden_dim)
 
         return context, attention_weights
 
@@ -211,7 +217,9 @@ class MultiHeadTemporalAttention(nn.Module):
         # scores: (batch, num_heads, 1, seq_len)
 
         if mask is not None:
-            scores = scores.masked_fill(mask.unsqueeze(1).unsqueeze(2) == 0, float('-inf'))
+            scores = scores.masked_fill(
+                mask.unsqueeze(1).unsqueeze(2) == 0, float("-inf")
+            )
 
         attention_weights = F.softmax(scores, dim=-1)
         attention_weights = self.dropout(attention_weights)
@@ -221,7 +229,9 @@ class MultiHeadTemporalAttention(nn.Module):
         # context: (batch, num_heads, 1, head_dim)
 
         # Reshape and project output
-        context = context.transpose(1, 2).contiguous().view(batch_size, 1, self.hidden_dim)
+        context = (
+            context.transpose(1, 2).contiguous().view(batch_size, 1, self.hidden_dim)
+        )
         output = self.out_proj(context).squeeze(1)  # (batch, hidden_dim)
 
         # Return attention weights averaged over heads for interpretability
@@ -300,12 +310,12 @@ class EnhancedLSTMWithAttention(nn.Module):
     def _init_weights(self):
         """Initialize weights using Xavier initialization."""
         for name, param in self.named_parameters():
-            if 'weight' in name and param.dim() >= 2:
-                if 'lstm' in name:
+            if "weight" in name and param.dim() >= 2:
+                if "lstm" in name:
                     nn.init.xavier_uniform_(param)
                 else:
                     nn.init.xavier_normal_(param)
-            elif 'bias' in name:
+            elif "bias" in name:
                 nn.init.zeros_(param)
 
     def forward(
@@ -391,6 +401,7 @@ class EnhancedLSTMWithAttention(nn.Module):
 # =============================================================================
 # Model 2: Bidirectional LSTM with Residual Connections
 # =============================================================================
+
 
 class ResidualLSTMBlock(nn.Module):
     """
@@ -502,9 +513,9 @@ class BiLSTMWithResiduals(nn.Module):
 
     def _init_weights(self):
         for name, param in self.named_parameters():
-            if 'weight' in name and param.dim() >= 2:
+            if "weight" in name and param.dim() >= 2:
                 nn.init.xavier_uniform_(param)
-            elif 'bias' in name:
+            elif "bias" in name:
                 nn.init.zeros_(param)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -561,6 +572,7 @@ class BiLSTMWithResiduals(nn.Module):
 # Model 3: Temporal Convolutional Network (TCN)
 # =============================================================================
 
+
 class CausalConv1d(nn.Module):
     """
     Causal 1D convolution with dilation.
@@ -612,7 +624,7 @@ class Chomp1d(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.chomp_size > 0:
-            return x[:, :, :-self.chomp_size]
+            return x[:, :, : -self.chomp_size]
         return x
 
 
@@ -694,7 +706,7 @@ class TemporalConvNet(nn.Module):
         # TCN blocks with exponential dilation
         self.tcn_blocks = nn.ModuleList()
         for i in range(config.num_layers):
-            dilation = 2 ** i
+            dilation = 2**i
             self.tcn_blocks.append(
                 TCNBlock(
                     in_channels=config.hidden_channels,
@@ -725,7 +737,7 @@ class TemporalConvNet(nn.Module):
         """Calculate the receptive field of the TCN."""
         rf = 1
         for i in range(self.config.num_layers):
-            dilation = 2 ** i
+            dilation = 2**i
             rf += (self.config.kernel_size - 1) * dilation * 2
         return rf
 
@@ -785,6 +797,7 @@ class TemporalConvNet(nn.Module):
 # Model Factory
 # =============================================================================
 
+
 class ModelFactory:
     """Factory for creating health prediction models."""
 
@@ -819,8 +832,10 @@ class ModelFactory:
             Initialized model
         """
         if model_type not in cls.MODELS:
-            raise ValueError(f"Unknown model type: {model_type}. "
-                           f"Choose from: {list(cls.MODELS.keys())}")
+            raise ValueError(
+                f"Unknown model type: {model_type}. "
+                f"Choose from: {list(cls.MODELS.keys())}"
+            )
 
         if model_type == "tcn":
             config = TCNConfig(
@@ -850,6 +865,7 @@ class ModelFactory:
 # =============================================================================
 # Utility Functions
 # =============================================================================
+
 
 def compare_models(
     models: Dict[str, nn.Module],
@@ -904,7 +920,7 @@ if __name__ == "__main__":
     for model_type in ModelFactory.list_models():
         print(f"\n{'='*50}")
         print(f"Testing {model_type}")
-        print('='*50)
+        print("=" * 50)
 
         model = ModelFactory.create(
             model_type=model_type,
@@ -920,7 +936,7 @@ if __name__ == "__main__":
         print(f"Output shape: {output.shape}")
 
         # Test attention weights if available
-        if hasattr(model, 'get_attention_weights'):
+        if hasattr(model, "get_attention_weights"):
             weights = model.get_attention_weights(x)
             print(f"Attention weights shape: {weights.shape}")
             print(f"Attention weights sum: {weights.sum(dim=1).mean():.4f}")

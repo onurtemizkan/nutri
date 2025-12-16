@@ -9,69 +9,38 @@ Comprehensive API for:
 - Exposure tracking and reaction recording
 - ML-powered sensitivity prediction
 """
+
 import logging
 from typing import Optional, List
-from datetime import datetime
-from fastapi import APIRouter, HTTPException, Depends, Query, Body
+from fastapi import APIRouter, HTTPException, Query, Body
 from fastapi.responses import JSONResponse
 
 from app.schemas.sensitivity import (
-    # Extraction
     IngredientExtractionRequest,
     IngredientExtractionResponse,
-
-    # Meal checking
     MealSensitivityCheckRequest,
     MealSensitivityCheckResponse,
-    SensitivityMatch,
-    SeveritySchema,
-
-    # Exposure tracking
     RecordExposureRequest,
     RecordExposureResponse,
     UpdateReactionRequest,
-
-    # HRV analysis
     HRVSensitivityAnalysisRequest,
-    HRVSensitivityAnalysisResponse,
-    HRVSensitivityResult,
-
-    # Insights
-    GetInsightsRequest,
-    GetInsightsResponse,
-    SensitivityInsightSchema,
-    MarkInsightRequest,
-
-    # User sensitivities
     AddUserSensitivityRequest,
-    UserSensitivitySchema,
     GetUserSensitivitiesResponse,
-
-    # Enums
-    AllergenTypeSchema,
-    SensitivityTypeSchema,
-    CompoundLevelSchema,
+    SeveritySchema,
 )
 
 from app.services.ingredient_extraction_service import (
     ingredient_extraction_service,
-    ExtractedIngredient,
 )
 from app.services.compound_quantification_service import (
     compound_quantification_service,
-    MealCompoundProfile,
-    RiskLevel,
 )
 from app.services.hrv_sensitivity_analyzer import (
     hrv_sensitivity_analyzer,
-    HRVReading,
-    BaselineHRV,
-    SensitivityPattern,
 )
 from app.services.sensitivity_ml_model import (
     sensitivity_ml_model,
     TrainingDataPoint,
-    PredictionResult,
 )
 from app.data.allergen_database import (
     INGREDIENT_DATABASE,
@@ -187,7 +156,9 @@ async def get_cross_reactivity(allergen_type: str):
             "count": len(cross_reactive),
         }
     except ValueError:
-        raise HTTPException(status_code=400, detail=f"Unknown allergen type: {allergen_type}")
+        raise HTTPException(
+            status_code=400, detail=f"Unknown allergen type: {allergen_type}"
+        )
 
 
 # =============================================================================
@@ -198,7 +169,9 @@ async def get_cross_reactivity(allergen_type: str):
 @router.post("/compounds/quantify")
 async def quantify_meal_compounds(
     ingredients: List[str] = Body(..., description="List of ingredient names"),
-    portion_weights: Optional[dict] = Body(None, description="Ingredient weights in grams"),
+    portion_weights: Optional[dict] = Body(
+        None, description="Ingredient weights in grams"
+    ),
     user_profile: Optional[dict] = Body(None, description="User sensitivity profile"),
 ):
     """
@@ -372,8 +345,7 @@ async def check_meal_sensitivity(
 
         if not ingredients:
             raise HTTPException(
-                status_code=400,
-                detail="Either meal_text or ingredients list required"
+                status_code=400, detail="Either meal_text or ingredients list required"
             )
 
         # TODO: Fetch user sensitivities from database
@@ -390,9 +362,7 @@ async def check_meal_sensitivity(
         risk_level = SeveritySchema.NONE
 
         if extraction.allergen_warnings:
-            max_severity = max(
-                w.warning_level for w in extraction.allergen_warnings
-            )
+            max_severity = max(w.warning_level for w in extraction.allergen_warnings)
             risk_level = max_severity
             is_safe = False
 
@@ -496,8 +466,7 @@ async def get_reaction_pattern(sensitivity_type: str):
         }
     except ValueError:
         raise HTTPException(
-            status_code=400,
-            detail=f"Unknown sensitivity type: {sensitivity_type}"
+            status_code=400, detail=f"Unknown sensitivity type: {sensitivity_type}"
         )
 
 
@@ -534,6 +503,7 @@ async def record_exposure(
         # For now, return success demonstrating the flow
 
         import uuid
+
         exposure_id = str(uuid.uuid4())
 
         return RecordExposureResponse(
@@ -592,7 +562,9 @@ async def predict_reaction(
     baseline_rmssd: float = Body(..., description="User's baseline HRV (RMSSD)"),
     baseline_std: float = Body(15.0, description="Baseline HRV standard deviation"),
     hrv_drops: Optional[dict] = Body(None, description="Current HRV drops by window"),
-    user_history: Optional[dict] = Body(None, description="User's history with this trigger"),
+    user_history: Optional[dict] = Body(
+        None, description="User's history with this trigger"
+    ),
     compound_info: Optional[dict] = Body(None, description="Compound amounts in meal"),
 ):
     """
@@ -714,6 +686,7 @@ async def add_user_sensitivity(
     try:
         # TODO: Save to database
         import uuid
+
         sensitivity_id = str(uuid.uuid4())
 
         return {
@@ -727,7 +700,9 @@ async def add_user_sensitivity(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/user/{user_id}/sensitivities", response_model=GetUserSensitivitiesResponse)
+@router.get(
+    "/user/{user_id}/sensitivities", response_model=GetUserSensitivitiesResponse
+)
 async def get_user_sensitivities(user_id: str):
     """
     Get all sensitivities for a user.

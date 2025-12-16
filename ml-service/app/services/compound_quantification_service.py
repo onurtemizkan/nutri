@@ -12,10 +12,11 @@ Based on clinical research thresholds:
 - Tyramine: <6mg/meal for MAOI users, <25mg for migraine prone
 - FODMAP: <0.5g fructans, <0.2g excess fructose per meal (low FODMAP)
 """
+
 import logging
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 
 from app.data.allergen_database import (
@@ -23,8 +24,6 @@ from app.data.allergen_database import (
     IngredientData,
     CompoundLevel,
     FodmapLevel,
-    get_histamine_level,
-    get_tyramine_level,
 )
 
 logger = logging.getLogger(__name__)
@@ -36,19 +35,19 @@ logger = logging.getLogger(__name__)
 
 # Histamine thresholds (mg per meal)
 HISTAMINE_THRESHOLDS = {
-    "safe_general": 50.0,       # Most people tolerate up to 50mg/meal
-    "caution_general": 25.0,    # General caution threshold
-    "safe_sensitive": 10.0,     # For histamine-sensitive individuals
-    "danger_sensitive": 5.0,    # Likely to trigger symptoms
+    "safe_general": 50.0,  # Most people tolerate up to 50mg/meal
+    "caution_general": 25.0,  # General caution threshold
+    "safe_sensitive": 10.0,  # For histamine-sensitive individuals
+    "danger_sensitive": 5.0,  # Likely to trigger symptoms
     "daily_limit_general": 100.0,
     "daily_limit_sensitive": 20.0,
 }
 
 # Tyramine thresholds (mg per meal)
 TYRAMINE_THRESHOLDS = {
-    "safe_general": 50.0,       # Most people tolerate well
-    "safe_migraine": 25.0,      # For migraine-prone individuals
-    "danger_maoi": 6.0,         # MAOI users must stay below this
+    "safe_general": 50.0,  # Most people tolerate well
+    "safe_migraine": 25.0,  # For migraine-prone individuals
+    "danger_maoi": 6.0,  # MAOI users must stay below this
     "daily_limit_general": 150.0,
     "daily_limit_maoi": 15.0,
 }
@@ -65,14 +64,29 @@ FODMAP_THRESHOLDS = {
 
 # DAO inhibitor foods (reduce histamine metabolism)
 DAO_INHIBITORS = {
-    "alcohol", "black_tea", "green_tea", "energy_drink", "mate",
-    "beer", "wine_red", "wine_white", "champagne",
+    "alcohol",
+    "black_tea",
+    "green_tea",
+    "energy_drink",
+    "mate",
+    "beer",
+    "wine_red",
+    "wine_white",
+    "champagne",
 }
 
 # Histamine liberators (trigger histamine release)
 HISTAMINE_LIBERATORS = {
-    "citrus", "strawberry", "papaya", "pineapple", "tomato",
-    "spinach", "cocoa", "chocolate", "shellfish", "egg_white",
+    "citrus",
+    "strawberry",
+    "papaya",
+    "pineapple",
+    "tomato",
+    "spinach",
+    "cocoa",
+    "chocolate",
+    "shellfish",
+    "egg_white",
 }
 
 
@@ -83,6 +97,7 @@ HISTAMINE_LIBERATORS = {
 
 class RiskLevel(str, Enum):
     """Risk levels for compound exposure."""
+
     NEGLIGIBLE = "negligible"
     LOW = "low"
     MODERATE = "moderate"
@@ -93,6 +108,7 @@ class RiskLevel(str, Enum):
 @dataclass
 class CompoundQuantification:
     """Quantification result for a single compound."""
+
     compound_name: str
     total_mg: float
     level: CompoundLevel
@@ -108,6 +124,7 @@ class CompoundQuantification:
 @dataclass
 class FodmapQuantification:
     """FODMAP quantification with per-type breakdown."""
+
     total_fodmap_types: int
     high_fodmap_count: int
     risk_level: RiskLevel
@@ -120,6 +137,7 @@ class FodmapQuantification:
 @dataclass
 class MealCompoundProfile:
     """Complete compound profile for a meal."""
+
     histamine: CompoundQuantification
     tyramine: CompoundQuantification
     fodmap: FodmapQuantification
@@ -133,6 +151,7 @@ class MealCompoundProfile:
 @dataclass
 class DailyCompoundAccumulation:
     """Track compound accumulation across meals."""
+
     date: datetime
     histamine_total_mg: float = 0.0
     tyramine_total_mg: float = 0.0
@@ -194,22 +213,15 @@ class CompoundQuantificationService:
 
         # Calculate individual compounds
         histamine = self._quantify_histamine(
-            ingredient_data,
-            portion_weights,
-            is_histamine_sensitive
+            ingredient_data, portion_weights, is_histamine_sensitive
         )
 
         tyramine = self._quantify_tyramine(
-            ingredient_data,
-            portion_weights,
-            is_maoi_user,
-            is_migraine_prone
+            ingredient_data, portion_weights, is_maoi_user, is_migraine_prone
         )
 
         fodmap = self._quantify_fodmap(
-            ingredient_data,
-            portion_weights,
-            "fodmap" in user_sensitivities
+            ingredient_data, portion_weights, "fodmap" in user_sensitivities
         )
 
         # Detect cross-compound interactions
@@ -243,8 +255,7 @@ class CompoundQuantificationService:
         )
 
     def _gather_ingredient_data(
-        self,
-        ingredients: List[str]
+        self, ingredients: List[str]
     ) -> Dict[str, IngredientData]:
         """Gather IngredientData for all ingredients."""
         data = {}
@@ -276,7 +287,9 @@ class CompoundQuantificationService:
                 # Scale to portion weight
                 amount = (data.histamine_mg / 100.0) * weight
                 total_mg += amount
-                sources.append({"ingredient": data.display_name, "mg": round(amount, 2)})
+                sources.append(
+                    {"ingredient": data.display_name, "mg": round(amount, 2)}
+                )
 
             # Check for DAO inhibitors
             ing_key = ing_name.lower().replace(" ", "_")
@@ -327,12 +340,14 @@ class CompoundQuantificationService:
         else:
             risk = RiskLevel.CRITICAL
             level = CompoundLevel.VERY_HIGH
-            warnings.append(f"Histamine significantly exceeds safe levels")
+            warnings.append("Histamine significantly exceeds safe levels")
 
         # Recommendations
         recommendations = []
         if risk in (RiskLevel.HIGH, RiskLevel.CRITICAL):
-            recommendations.append("Consider reducing portion size or choosing alternatives")
+            recommendations.append(
+                "Consider reducing portion size or choosing alternatives"
+            )
             if is_sensitive:
                 recommendations.append("Take DAO supplement 15 minutes before eating")
         elif risk == RiskLevel.MODERATE:
@@ -370,13 +385,17 @@ class CompoundQuantificationService:
             if data.tyramine_mg:
                 amount = (data.tyramine_mg / 100.0) * weight
                 total_mg += amount
-                sources.append({"ingredient": data.display_name, "mg": round(amount, 2)})
+                sources.append(
+                    {"ingredient": data.display_name, "mg": round(amount, 2)}
+                )
 
             if data.is_aged:
                 has_aged_food = True
 
         if has_aged_food:
-            warnings.append("Contains aged food - tyramine content may vary significantly")
+            warnings.append(
+                "Contains aged food - tyramine content may vary significantly"
+            )
 
         # Determine threshold based on user profile
         if is_maoi_user:
@@ -486,7 +505,7 @@ class CompoundQuantificationService:
         if stacking_warning:
             warnings.append(
                 f"FODMAP stacking detected: {len(fodmap_types_present)} types present. "
-                f"Cumulative effect may exceed tolerance."
+                "Cumulative effect may exceed tolerance."
             )
 
         # Determine overall risk
@@ -511,8 +530,12 @@ class CompoundQuantificationService:
 
         # Recommendations
         if risk >= RiskLevel.HIGH:
-            recommendations.append("Consider removing one or more high-FODMAP ingredients")
-            recommendations.append("Spacing FODMAP intake by 3+ hours may reduce symptoms")
+            recommendations.append(
+                "Consider removing one or more high-FODMAP ingredients"
+            )
+            recommendations.append(
+                "Spacing FODMAP intake by 3+ hours may reduce symptoms"
+            )
         elif risk == RiskLevel.MODERATE:
             recommendations.append("Monitor for GI symptoms within 6 hours")
 
@@ -538,8 +561,7 @@ class CompoundQuantificationService:
 
         # High histamine + DAO inhibitor interaction
         has_dao_inhibitor = any(
-            ing.lower().replace(" ", "_") in DAO_INHIBITORS
-            for ing in ingredients
+            ing.lower().replace(" ", "_") in DAO_INHIBITORS for ing in ingredients
         )
         if has_dao_inhibitor and histamine.total_mg > 10:
             warnings.append(
@@ -559,8 +581,10 @@ class CompoundQuantificationService:
             )
 
         # High histamine + high tyramine (double whammy)
-        if (histamine.risk_level in (RiskLevel.HIGH, RiskLevel.CRITICAL) and
-            tyramine.risk_level in (RiskLevel.HIGH, RiskLevel.CRITICAL)):
+        if histamine.risk_level in (
+            RiskLevel.HIGH,
+            RiskLevel.CRITICAL,
+        ) and tyramine.risk_level in (RiskLevel.HIGH, RiskLevel.CRITICAL):
             warnings.append(
                 "High histamine AND high tyramine: Combined effect may be severe. "
                 "Both compounds can cause similar symptoms."
@@ -570,9 +594,7 @@ class CompoundQuantificationService:
         fermented_count = sum(
             1 for data in ingredient_data.values() if data.is_fermented
         )
-        aged_count = sum(
-            1 for data in ingredient_data.values() if data.is_aged
-        )
+        aged_count = sum(1 for data in ingredient_data.values() if data.is_aged)
         if fermented_count >= 2 or aged_count >= 2:
             warnings.append(
                 "Multiple fermented/aged foods: Biogenic amine content varies widely. "
@@ -629,7 +651,9 @@ class CompoundQuantificationService:
         if overall_risk == RiskLevel.HIGH:
             recommendations = []
             if histamine.risk_level >= RiskLevel.HIGH:
-                recommendations.append("eat earlier in the day when DAO activity is higher")
+                recommendations.append(
+                    "eat earlier in the day when DAO activity is higher"
+                )
             if fodmap.stacking_warning:
                 recommendations.append("wait 4+ hours after previous FODMAP exposure")
             if tyramine.risk_level >= RiskLevel.HIGH:

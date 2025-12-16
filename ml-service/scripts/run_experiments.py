@@ -19,8 +19,6 @@ Options:
 """
 
 import argparse
-import json
-import os
 import sys
 import time
 from datetime import datetime
@@ -37,15 +35,9 @@ from app.data.synthetic_generator import (
     SyntheticDataGenerator,
     UserPersona,
     PERSONA_CONFIGS,
-    generate_synthetic_dataset,
 )
 from app.ml_models.advanced_lstm import (
-    AdvancedLSTMConfig,
-    BiLSTMWithResiduals,
-    EnhancedLSTMWithAttention,
     ModelFactory,
-    TCNConfig,
-    TemporalConvNet,
 )
 
 
@@ -85,7 +77,9 @@ def run_quick_test():
         health = data["health_metrics"]
 
         rhr_data = health[health["metric_type"] == "RESTING_HEART_RATE"]["value"]
-        hrv_data = health[health["metric_type"] == "HEART_RATE_VARIABILITY_RMSSD"]["value"]
+        hrv_data = health[health["metric_type"] == "HEART_RATE_VARIABILITY_RMSSD"][
+            "value"
+        ]
 
         print(f"\n{persona.value}:")
         print(f"  Meals: {len(meals)} records")
@@ -160,7 +154,9 @@ def run_quick_test():
             val_pred = model(X_val)
             val_loss = criterion(val_pred, y_val)
 
-        print(f"  Epoch {epoch + 1}: Train={loss.item():.4f}, Val={val_loss.item():.4f}")
+        print(
+            f"  Epoch {epoch + 1}: Train={loss.item():.4f}, Val={val_loss.item():.4f}"
+        )
 
     print("\n[PASS] Training loop working!")
 
@@ -176,7 +172,9 @@ def run_data_analysis():
     all_data = generator.generate_all_users(num_days=180)
 
     print("\n" + "=" * 90)
-    print(f"{'Persona':<20} {'RHR Mean':<12} {'RHR Std':<12} {'HRV Mean':<12} {'HRV Std':<12} {'Records':<10}")
+    print(
+        f"{'Persona':<20} {'RHR Mean':<12} {'RHR Std':<12} {'HRV Mean':<12} {'HRV Std':<12} {'Records':<10}"
+    )
     print("=" * 90)
 
     for user_id, data in all_data.items():
@@ -207,13 +205,24 @@ def run_data_analysis():
 
         # Daily aggregates
         meals["date"] = meals["consumed_at"].dt.date
-        daily_nutrition = meals.groupby("date").agg({
-            "calories": "sum",
-            "protein": "sum",
-        }).reset_index()
+        daily_nutrition = (
+            meals.groupby("date")
+            .agg(
+                {
+                    "calories": "sum",
+                    "protein": "sum",
+                }
+            )
+            .reset_index()
+        )
 
         health["date"] = health["recorded_at"].dt.date
-        daily_hrv = health[health["metric_type"] == "HEART_RATE_VARIABILITY_RMSSD"].groupby("date")["value"].mean().reset_index()
+        daily_hrv = (
+            health[health["metric_type"] == "HEART_RATE_VARIABILITY_RMSSD"]
+            .groupby("date")["value"]
+            .mean()
+            .reset_index()
+        )
 
         # Merge and calculate correlation
         merged = daily_nutrition.merge(daily_hrv, on="date", how="inner")
@@ -279,7 +288,9 @@ def run_model_comparison(epochs: int = 50, verbose: bool = True):
     print_header("COMPARISON RESULTS")
 
     print("\n" + "=" * 90)
-    print(f"{'Experiment':<30} {'MAE':<12} {'RMSE':<12} {'R²':<12} {'MAPE':<12} {'Time(s)':<12}")
+    print(
+        f"{'Experiment':<30} {'MAE':<12} {'RMSE':<12} {'R²':<12} {'MAPE':<12} {'Time(s)':<12}"
+    )
     print("=" * 90)
 
     for name, result in results.items():
@@ -302,8 +313,12 @@ def run_model_comparison(epochs: int = 50, verbose: bool = True):
     best_rhr = min(rhr_results.keys(), key=lambda k: rhr_results[k].test_metrics["mae"])
     best_hrv = min(hrv_results.keys(), key=lambda k: hrv_results[k].test_metrics["mae"])
 
-    print(f"\nBest RHR Model: {best_rhr} (MAE: {rhr_results[best_rhr].test_metrics['mae']:.4f})")
-    print(f"Best HRV Model: {best_hrv} (MAE: {hrv_results[best_hrv].test_metrics['mae']:.4f})")
+    print(
+        f"\nBest RHR Model: {best_rhr} (MAE: {rhr_results[best_rhr].test_metrics['mae']:.4f})"
+    )
+    print(
+        f"Best HRV Model: {best_hrv} (MAE: {hrv_results[best_hrv].test_metrics['mae']:.4f})"
+    )
 
     runner.save_results()
     return results
@@ -338,7 +353,7 @@ def run_simplified_comparison(epochs: int = 20, verbose: bool = True):
     X = []
     y = []
     for i in range(len(daily_rhr) - seq_len):
-        X.append(daily_rhr[i:i + seq_len])
+        X.append(daily_rhr[i : i + seq_len])
         y.append(daily_rhr[i + seq_len])
 
     X = np.array(X).reshape(-1, seq_len, 1)
@@ -358,10 +373,10 @@ def run_simplified_comparison(epochs: int = 20, verbose: bool = True):
 
     X_train = torch.FloatTensor(X_norm[:n_train])
     y_train = torch.FloatTensor(y_norm[:n_train]).unsqueeze(1)
-    X_val = torch.FloatTensor(X_norm[n_train:n_train + n_val])
-    y_val = torch.FloatTensor(y_norm[n_train:n_train + n_val]).unsqueeze(1)
-    X_test = torch.FloatTensor(X_norm[n_train + n_val:])
-    y_test = torch.FloatTensor(y_norm[n_train + n_val:]).unsqueeze(1)
+    X_val = torch.FloatTensor(X_norm[n_train : n_train + n_val])
+    y_val = torch.FloatTensor(y_norm[n_train : n_train + n_val]).unsqueeze(1)
+    X_test = torch.FloatTensor(X_norm[n_train + n_val :])
+    y_test = torch.FloatTensor(y_norm[n_train + n_val :]).unsqueeze(1)
 
     print(f"Train: {len(X_train)}, Val: {len(X_val)}, Test: {len(X_test)}")
 
@@ -431,8 +446,12 @@ def main():
     parser = argparse.ArgumentParser(description="Run Health Prediction Experiments")
     parser.add_argument("--quick", action="store_true", help="Run quick test only")
     parser.add_argument("--full", action="store_true", help="Run full experiment suite")
-    parser.add_argument("--data-only", action="store_true", help="Only generate and analyze data")
-    parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
+    parser.add_argument(
+        "--data-only", action="store_true", help="Only generate and analyze data"
+    )
+    parser.add_argument(
+        "--epochs", type=int, default=50, help="Number of training epochs"
+    )
 
     args = parser.parse_args()
 

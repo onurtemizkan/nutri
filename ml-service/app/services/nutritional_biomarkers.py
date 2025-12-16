@@ -21,21 +21,20 @@ Key Research Sources:
 - Frontiers in Nutrition 2024: DII-cardiometabolic parameters
 """
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Any, Set
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Any
 from enum import Enum
-from datetime import datetime, timedelta
 import math
-import numpy as np
-from collections import defaultdict
 
 
 # =============================================================================
 # ENUMS AND CONSTANTS
 # =============================================================================
 
+
 class AminoAcidType(str, Enum):
     """Essential and conditionally essential amino acids"""
+
     # Essential
     TRYPTOPHAN = "tryptophan"
     TYROSINE = "tyrosine"
@@ -58,18 +57,20 @@ class AminoAcidType(str, Enum):
 
 class NeurotransmitterType(str, Enum):
     """Neurotransmitters synthesized from amino acid precursors"""
-    SEROTONIN = "serotonin"          # From tryptophan
-    MELATONIN = "melatonin"          # From serotonin (via tryptophan)
-    DOPAMINE = "dopamine"            # From tyrosine
+
+    SEROTONIN = "serotonin"  # From tryptophan
+    MELATONIN = "melatonin"  # From serotonin (via tryptophan)
+    DOPAMINE = "dopamine"  # From tyrosine
     NOREPINEPHRINE = "norepinephrine"  # From dopamine
-    EPINEPHRINE = "epinephrine"      # From norepinephrine
-    GABA = "gaba"                    # From glutamate
+    EPINEPHRINE = "epinephrine"  # From norepinephrine
+    GABA = "gaba"  # From glutamate
     ACETYLCHOLINE = "acetylcholine"  # From choline
-    HISTAMINE = "histamine"          # From histidine
+    HISTAMINE = "histamine"  # From histidine
 
 
 class MicronutrientType(str, Enum):
     """Key micronutrients affecting autonomic function"""
+
     # Minerals
     MAGNESIUM = "magnesium"
     ZINC = "zinc"
@@ -94,6 +95,7 @@ class MicronutrientType(str, Enum):
 
 class InflammatoryCategory(str, Enum):
     """Food inflammatory potential categories"""
+
     HIGHLY_ANTI_INFLAMMATORY = "highly_anti_inflammatory"
     ANTI_INFLAMMATORY = "anti_inflammatory"
     NEUTRAL = "neutral"
@@ -103,6 +105,7 @@ class InflammatoryCategory(str, Enum):
 
 class BiogenicAmineType(str, Enum):
     """Biogenic amines in foods"""
+
     HISTAMINE = "histamine"
     TYRAMINE = "tyramine"
     PHENYLETHYLAMINE = "phenylethylamine"
@@ -114,6 +117,7 @@ class BiogenicAmineType(str, Enum):
 
 class GutBrainPathway(str, Enum):
     """Gut-brain axis communication pathways"""
+
     VAGAL_AFFERENT = "vagal_afferent"
     IMMUNE_MEDIATED = "immune_mediated"
     METABOLITE_SIGNALING = "metabolite_signaling"  # SCFAs, etc.
@@ -128,59 +132,125 @@ class GutBrainPathway(str, Enum):
 # Amino acid content per 100g for common foods (mg)
 AMINO_ACID_DATABASE: Dict[str, Dict[str, float]] = {
     "chicken_breast": {
-        "tryptophan": 267, "tyrosine": 893, "phenylalanine": 1030,
-        "leucine": 2013, "isoleucine": 1362, "valine": 1325,
-        "glycine": 1221, "arginine": 1545, "glutamine": 3610,
+        "tryptophan": 267,
+        "tyrosine": 893,
+        "phenylalanine": 1030,
+        "leucine": 2013,
+        "isoleucine": 1362,
+        "valine": 1325,
+        "glycine": 1221,
+        "arginine": 1545,
+        "glutamine": 3610,
     },
     "salmon": {
-        "tryptophan": 250, "tyrosine": 759, "phenylalanine": 869,
-        "leucine": 1770, "isoleucine": 1006, "valine": 1120,
-        "glycine": 1040, "arginine": 1300, "glutamine": 2980,
+        "tryptophan": 250,
+        "tyrosine": 759,
+        "phenylalanine": 869,
+        "leucine": 1770,
+        "isoleucine": 1006,
+        "valine": 1120,
+        "glycine": 1040,
+        "arginine": 1300,
+        "glutamine": 2980,
     },
     "eggs": {
-        "tryptophan": 167, "tyrosine": 499, "phenylalanine": 680,
-        "leucine": 1088, "isoleucine": 672, "valine": 859,
-        "glycine": 432, "arginine": 755, "glutamine": 1670,
+        "tryptophan": 167,
+        "tyrosine": 499,
+        "phenylalanine": 680,
+        "leucine": 1088,
+        "isoleucine": 672,
+        "valine": 859,
+        "glycine": 432,
+        "arginine": 755,
+        "glutamine": 1670,
     },
     "milk": {
-        "tryptophan": 46, "tyrosine": 159, "phenylalanine": 163,
-        "leucine": 323, "isoleucine": 200, "valine": 220,
-        "glycine": 72, "arginine": 119, "glutamine": 680,
+        "tryptophan": 46,
+        "tyrosine": 159,
+        "phenylalanine": 163,
+        "leucine": 323,
+        "isoleucine": 200,
+        "valine": 220,
+        "glycine": 72,
+        "arginine": 119,
+        "glutamine": 680,
     },
     "beef": {
-        "tryptophan": 223, "tyrosine": 751, "phenylalanine": 872,
-        "leucine": 1760, "isoleucine": 1001, "valine": 1085,
-        "glycine": 1260, "arginine": 1400, "glutamine": 3250,
+        "tryptophan": 223,
+        "tyrosine": 751,
+        "phenylalanine": 872,
+        "leucine": 1760,
+        "isoleucine": 1001,
+        "valine": 1085,
+        "glycine": 1260,
+        "arginine": 1400,
+        "glutamine": 3250,
     },
     "tofu": {
-        "tryptophan": 148, "tyrosine": 400, "phenylalanine": 520,
-        "leucine": 820, "isoleucine": 510, "valine": 530,
-        "glycine": 450, "arginine": 830, "glutamine": 2100,
+        "tryptophan": 148,
+        "tyrosine": 400,
+        "phenylalanine": 520,
+        "leucine": 820,
+        "isoleucine": 510,
+        "valine": 530,
+        "glycine": 450,
+        "arginine": 830,
+        "glutamine": 2100,
     },
     "lentils": {
-        "tryptophan": 81, "tyrosine": 265, "phenylalanine": 481,
-        "leucine": 654, "isoleucine": 390, "valine": 448,
-        "glycine": 380, "arginine": 780, "glutamine": 1520,
+        "tryptophan": 81,
+        "tyrosine": 265,
+        "phenylalanine": 481,
+        "leucine": 654,
+        "isoleucine": 390,
+        "valine": 448,
+        "glycine": 380,
+        "arginine": 780,
+        "glutamine": 1520,
     },
     "oats": {
-        "tryptophan": 182, "tyrosine": 447, "phenylalanine": 663,
-        "leucine": 980, "isoleucine": 503, "valine": 688,
-        "glycine": 642, "arginine": 850, "glutamine": 2890,
+        "tryptophan": 182,
+        "tyrosine": 447,
+        "phenylalanine": 663,
+        "leucine": 980,
+        "isoleucine": 503,
+        "valine": 688,
+        "glycine": 642,
+        "arginine": 850,
+        "glutamine": 2890,
     },
     "almonds": {
-        "tryptophan": 211, "tyrosine": 452, "phenylalanine": 1132,
-        "leucine": 1461, "isoleucine": 745, "valine": 848,
-        "glycine": 1430, "arginine": 2490, "glutamine": 4140,
+        "tryptophan": 211,
+        "tyrosine": 452,
+        "phenylalanine": 1132,
+        "leucine": 1461,
+        "isoleucine": 745,
+        "valine": 848,
+        "glycine": 1430,
+        "arginine": 2490,
+        "glutamine": 4140,
     },
     "banana": {
-        "tryptophan": 9, "tyrosine": 9, "phenylalanine": 49,
-        "leucine": 68, "isoleucine": 28, "valine": 47,
-        "glycine": 38, "arginine": 49, "glutamine": 152,
+        "tryptophan": 9,
+        "tyrosine": 9,
+        "phenylalanine": 49,
+        "leucine": 68,
+        "isoleucine": 28,
+        "valine": 47,
+        "glycine": 38,
+        "arginine": 49,
+        "glutamine": 152,
     },
     "spinach": {
-        "tryptophan": 39, "tyrosine": 108, "phenylalanine": 129,
-        "leucine": 223, "isoleucine": 147, "valine": 161,
-        "glycine": 134, "arginine": 162, "glutamine": 343,
+        "tryptophan": 39,
+        "tyrosine": 108,
+        "phenylalanine": 129,
+        "leucine": 223,
+        "isoleucine": 147,
+        "valine": 161,
+        "glycine": 134,
+        "arginine": 162,
+        "glutamine": 343,
     },
 }
 
@@ -219,7 +289,6 @@ DII_COEFFICIENTS: Dict[str, float] = {
     "saffron": -0.140,
     "alcohol_moderate": -0.278,  # J-curve effect
     "caffeine": -0.110,
-
     # Pro-inflammatory (positive values)
     "saturated_fat": 0.373,
     "trans_fat": 0.229,
@@ -266,17 +335,17 @@ MAGNESIUM_HRV_EFFECTS = {
 
 # Vitamin D - HRV relationships
 VITAMIN_D_HRV_THRESHOLDS = {
-    "deficient": {"level": 20, "hrv_impact": -0.15},      # < 20 ng/mL
-    "insufficient": {"level": 30, "hrv_impact": -0.05},   # 20-30 ng/mL
-    "optimal": {"level": 50, "hrv_impact": 0.0},          # 30-50 ng/mL
-    "high_normal": {"level": 80, "hrv_impact": 0.02},     # 50-80 ng/mL
+    "deficient": {"level": 20, "hrv_impact": -0.15},  # < 20 ng/mL
+    "insufficient": {"level": 30, "hrv_impact": -0.05},  # 20-30 ng/mL
+    "optimal": {"level": 50, "hrv_impact": 0.0},  # 30-50 ng/mL
+    "high_normal": {"level": 80, "hrv_impact": 0.02},  # 50-80 ng/mL
 }
 
 # Caffeine concentration-effect relationships (μmol/L)
 CAFFEINE_HRV_THRESHOLDS = {
-    "hr_reduction_threshold": 4.3,    # μmol/L for HR reduction
+    "hr_reduction_threshold": 4.3,  # μmol/L for HR reduction
     "hf_hrv_increase_threshold": 4.9,  # μmol/L for parasympathetic increase
-    "eeg_delta_reduction": 7.4,        # μmol/L for sleep disruption
+    "eeg_delta_reduction": 7.4,  # μmol/L for sleep disruption
 }
 
 # Biogenic amine thresholds (mg/day)
@@ -319,9 +388,11 @@ GUT_BRAIN_EFFECTS = {
 # DATA CLASSES
 # =============================================================================
 
+
 @dataclass
 class AminoAcidProfile:
     """Complete amino acid intake profile"""
+
     tryptophan_mg: float = 0.0
     tyrosine_mg: float = 0.0
     phenylalanine_mg: float = 0.0
@@ -370,6 +441,7 @@ class AminoAcidProfile:
 @dataclass
 class MicronutrientProfile:
     """Micronutrient intake and status"""
+
     # Minerals (mg unless specified)
     magnesium_mg: float = 0.0
     zinc_mg: float = 0.0
@@ -416,6 +488,7 @@ class MicronutrientProfile:
 @dataclass
 class InflammatoryProfile:
     """Dietary inflammatory assessment"""
+
     dii_score: float = 0.0
     anti_inflammatory_foods: int = 0
     pro_inflammatory_foods: int = 0
@@ -449,6 +522,7 @@ class InflammatoryProfile:
 @dataclass
 class BiogenicAmineProfile:
     """Biogenic amine intake tracking"""
+
     histamine_mg: float = 0.0
     tyramine_mg: float = 0.0
     phenylethylamine_mg: float = 0.0
@@ -501,6 +575,7 @@ class BiogenicAmineProfile:
 @dataclass
 class GlycemicProfile:
     """Glycemic load and variability assessment"""
+
     glycemic_load: float = 0.0
     glycemic_index_avg: float = 0.0
     fiber_g: float = 0.0
@@ -508,7 +583,7 @@ class GlycemicProfile:
     complex_carbs_g: float = 0.0
     simple_carbs_g: float = 0.0
     protein_with_carbs: bool = True  # Protein blunts glucose spike
-    fat_with_carbs: bool = True      # Fat slows absorption
+    fat_with_carbs: bool = True  # Fat slows absorption
 
     @property
     def predicted_glucose_variability(self) -> str:
@@ -549,6 +624,7 @@ class GlycemicProfile:
 @dataclass
 class GutBrainProfile:
     """Gut-brain axis assessment"""
+
     probiotic_cfu: float = 0.0  # Colony forming units (billions)
     prebiotic_fiber_g: float = 0.0
     fermented_foods_servings: int = 0
@@ -590,6 +666,7 @@ class GutBrainProfile:
 @dataclass
 class NeurotransmitterPrediction:
     """Predicted neurotransmitter synthesis capacity"""
+
     serotonin_score: float = 0.0
     dopamine_score: float = 0.0
     norepinephrine_score: float = 0.0
@@ -620,22 +697,27 @@ class NeurotransmitterPrediction:
     @property
     def sleep_support_score(self) -> float:
         """Sleep support from neurotransmitter precursors"""
-        return (self.serotonin_score * 0.4 +
-                self.melatonin_score * 0.3 +
-                self.gaba_score * 0.3)
+        return (
+            self.serotonin_score * 0.4
+            + self.melatonin_score * 0.3
+            + self.gaba_score * 0.3
+        )
 
     @property
     def stress_resilience_score(self) -> float:
         """Stress resilience prediction"""
-        return (self.gaba_score * 0.35 +
-                self.serotonin_score * 0.25 +
-                self.dopamine_score * 0.2 +
-                self.acetylcholine_score * 0.2)
+        return (
+            self.gaba_score * 0.35
+            + self.serotonin_score * 0.25
+            + self.dopamine_score * 0.2
+            + self.acetylcholine_score * 0.2
+        )
 
 
 @dataclass
 class HRVPrediction:
     """Comprehensive HRV prediction from nutritional factors"""
+
     # Individual factor contributions
     amino_acid_contribution: float = 0.0
     omega3_contribution: float = 0.0
@@ -658,15 +740,15 @@ class HRVPrediction:
     def total_hrv_impact(self) -> float:
         """Net HRV impact from all factors (-1 to 1)"""
         return (
-            self.amino_acid_contribution +
-            self.omega3_contribution +
-            self.magnesium_contribution +
-            self.vitamin_d_contribution +
-            self.inflammatory_contribution +
-            self.glycemic_contribution +
-            self.biogenic_amine_contribution +
-            self.gut_brain_contribution +
-            self.caffeine_contribution
+            self.amino_acid_contribution
+            + self.omega3_contribution
+            + self.magnesium_contribution
+            + self.vitamin_d_contribution
+            + self.inflammatory_contribution
+            + self.glycemic_contribution
+            + self.biogenic_amine_contribution
+            + self.gut_brain_contribution
+            + self.caffeine_contribution
         )
 
     @property
@@ -688,6 +770,7 @@ class HRVPrediction:
 # MAIN ENGINE CLASS
 # =============================================================================
 
+
 class NutritionalBiomarkerEngine:
     """
     Advanced engine for predicting health biomarker responses to nutrition.
@@ -704,8 +787,7 @@ class NutritionalBiomarkerEngine:
         self.omega3_effects = OMEGA3_HRV_EFFECTS
 
     def calculate_amino_acid_profile(
-        self,
-        foods: List[Dict[str, Any]]
+        self, foods: List[Dict[str, Any]]
     ) -> AminoAcidProfile:
         """
         Calculate amino acid profile from food intake.
@@ -739,8 +821,7 @@ class NutritionalBiomarkerEngine:
         return profile
 
     def calculate_dietary_inflammatory_index(
-        self,
-        nutrients: Dict[str, float]
+        self, nutrients: Dict[str, float]
     ) -> InflammatoryProfile:
         """
         Calculate Dietary Inflammatory Index (DII) score.
@@ -782,14 +863,12 @@ class NutritionalBiomarkerEngine:
             pro_inflammatory_foods=pro_count,
             fiber_g=nutrients.get("fiber", 0),
             omega6_omega3_ratio=ratio,
-            polyphenol_score=nutrients.get("flavonoids", 0) +
-                            nutrients.get("anthocyanidins", 0)
+            polyphenol_score=nutrients.get("flavonoids", 0)
+            + nutrients.get("anthocyanidins", 0),
         )
 
     def calculate_neurotransmitter_prediction(
-        self,
-        amino_acids: AminoAcidProfile,
-        micronutrients: MicronutrientProfile
+        self, amino_acids: AminoAcidProfile, micronutrients: MicronutrientProfile
     ) -> NeurotransmitterPrediction:
         """
         Predict neurotransmitter synthesis capacity from precursors.
@@ -852,7 +931,7 @@ class NutritionalBiomarkerEngine:
             melatonin_score=melatonin_score,
             b6_adequate=b6_adequate,
             iron_adequate=iron_adequate,
-            magnesium_adequate=mg_adequate
+            magnesium_adequate=mg_adequate,
         )
 
     def predict_hrv_response(
@@ -863,7 +942,7 @@ class NutritionalBiomarkerEngine:
         glycemic: GlycemicProfile,
         biogenic_amines: BiogenicAmineProfile,
         gut_brain: GutBrainProfile,
-        caffeine_mg: float = 0.0
+        caffeine_mg: float = 0.0,
     ) -> HRVPrediction:
         """
         Predict HRV response from comprehensive nutritional assessment.
@@ -883,7 +962,9 @@ class NutritionalBiomarkerEngine:
         taurine_effect = min(0.02, amino_acids.taurine_mg / 3000)
         # Tryptophan → serotonin → parasympathetic
         trp_effect = min(0.02, amino_acids.serotonin_precursor_score / 5000)
-        prediction.amino_acid_contribution = glycine_effect + taurine_effect + trp_effect
+        prediction.amino_acid_contribution = (
+            glycine_effect + taurine_effect + trp_effect
+        )
 
         # 2. Omega-3 contribution
         dose_cat = micronutrients.omega3_dose_category
@@ -893,8 +974,12 @@ class NutritionalBiomarkerEngine:
 
         # 3. Magnesium contribution
         mg_factor = min(1.0, micronutrients.magnesium_mg / 400)
-        prediction.magnesium_contribution = mg_factor * MAGNESIUM_HRV_EFFECTS["vagal_activity_increase"]
-        prediction.predicted_hf_power_change_pct += mg_factor * MAGNESIUM_HRV_EFFECTS["pnn50_increase"] * 100
+        prediction.magnesium_contribution = (
+            mg_factor * MAGNESIUM_HRV_EFFECTS["vagal_activity_increase"]
+        )
+        prediction.predicted_hf_power_change_pct += (
+            mg_factor * MAGNESIUM_HRV_EFFECTS["pnn50_increase"] * 100
+        )
 
         # 4. Vitamin D contribution
         vit_d = micronutrients.vitamin_d_ng_ml_estimated
@@ -942,15 +1027,17 @@ class NutritionalBiomarkerEngine:
         prediction.predicted_lf_hf_ratio_change = -total_impact * 0.5
 
         # Confidence based on data completeness
-        data_points = sum([
-            amino_acids.tryptophan_mg > 0,
-            micronutrients.omega3_total_g > 0,
-            micronutrients.magnesium_mg > 0,
-            micronutrients.vitamin_d_iu > 0,
-            inflammatory.dii_score != 0,
-            glycemic.glycemic_load > 0,
-            gut_brain.probiotic_cfu > 0,
-        ])
+        data_points = sum(
+            [
+                amino_acids.tryptophan_mg > 0,
+                micronutrients.omega3_total_g > 0,
+                micronutrients.magnesium_mg > 0,
+                micronutrients.vitamin_d_iu > 0,
+                inflammatory.dii_score != 0,
+                glycemic.glycemic_load > 0,
+                gut_brain.probiotic_cfu > 0,
+            ]
+        )
         prediction.confidence = min(0.95, 0.5 + (data_points * 0.06))
 
         return prediction
@@ -960,7 +1047,7 @@ class NutritionalBiomarkerEngine:
         hrv_prediction: HRVPrediction,
         neurotransmitter_prediction: NeurotransmitterPrediction,
         inflammatory: InflammatoryProfile,
-        current_hrv_baseline: Optional[float] = None
+        current_hrv_baseline: Optional[float] = None,
     ) -> List[Dict[str, Any]]:
         """
         Generate personalized nutritional recommendations.
@@ -978,87 +1065,112 @@ class NutritionalBiomarkerEngine:
 
         # Omega-3 recommendation
         if hrv_prediction.omega3_contribution < 0.1:
-            recommendations.append({
-                "priority": 1,
-                "category": "omega_3",
-                "recommendation": "Increase EPA+DHA intake to 2-4g/day",
-                "foods": ["fatty fish (salmon, mackerel)", "fish oil", "algae oil"],
-                "expected_benefit": "+5ms RMSSD, +15% HF power",
-                "evidence": "Meta-analysis: 3.4g/d EPA+DHA improves HRV in 8 weeks",
-                "source": "Frontiers in Physiology 2011"
-            })
+            recommendations.append(
+                {
+                    "priority": 1,
+                    "category": "omega_3",
+                    "recommendation": "Increase EPA+DHA intake to 2-4g/day",
+                    "foods": ["fatty fish (salmon, mackerel)", "fish oil", "algae oil"],
+                    "expected_benefit": "+5ms RMSSD, +15% HF power",
+                    "evidence": "Meta-analysis: 3.4g/d EPA+DHA improves HRV in 8 weeks",
+                    "source": "Frontiers in Physiology 2011",
+                }
+            )
 
         # Magnesium recommendation
         if hrv_prediction.magnesium_contribution < 0.15:
-            recommendations.append({
-                "priority": 2,
-                "category": "magnesium",
-                "recommendation": "Increase magnesium to 400mg/day",
-                "foods": ["dark chocolate", "almonds", "spinach", "avocado"],
-                "expected_benefit": "+15% pNN50, reduced stress index",
-                "evidence": "400mg/d Mg increases vagal activity",
-                "source": "MMW Fortschr Med 2016"
-            })
+            recommendations.append(
+                {
+                    "priority": 2,
+                    "category": "magnesium",
+                    "recommendation": "Increase magnesium to 400mg/day",
+                    "foods": ["dark chocolate", "almonds", "spinach", "avocado"],
+                    "expected_benefit": "+15% pNN50, reduced stress index",
+                    "evidence": "400mg/d Mg increases vagal activity",
+                    "source": "MMW Fortschr Med 2016",
+                }
+            )
 
         # Vitamin D recommendation
         if hrv_prediction.vitamin_d_contribution < 0:
-            recommendations.append({
-                "priority": 2,
-                "category": "vitamin_d",
-                "recommendation": "Optimize vitamin D to 40-60 ng/mL",
-                "foods": ["sunlight", "fatty fish", "fortified foods", "supplement"],
-                "expected_benefit": "Improved SDNN, RMSSD, HF power",
-                "evidence": "VitD deficiency correlates with reduced HRV",
-                "source": "Cardiovasc Ther 2022"
-            })
+            recommendations.append(
+                {
+                    "priority": 2,
+                    "category": "vitamin_d",
+                    "recommendation": "Optimize vitamin D to 40-60 ng/mL",
+                    "foods": [
+                        "sunlight",
+                        "fatty fish",
+                        "fortified foods",
+                        "supplement",
+                    ],
+                    "expected_benefit": "Improved SDNN, RMSSD, HF power",
+                    "evidence": "VitD deficiency correlates with reduced HRV",
+                    "source": "Cardiovasc Ther 2022",
+                }
+            )
 
         # Anti-inflammatory recommendation
         if inflammatory.dii_score > 1:
-            recommendations.append({
-                "priority": 1,
-                "category": "anti_inflammatory",
-                "recommendation": "Shift to anti-inflammatory diet pattern",
-                "foods": ["berries", "leafy greens", "olive oil", "turmeric", "ginger"],
-                "expected_benefit": "Reduced CVD risk (RR 0.71 vs high DII)",
-                "evidence": "Meta-analysis of 15 cohort studies",
-                "source": "Atherosclerosis 2020"
-            })
+            recommendations.append(
+                {
+                    "priority": 1,
+                    "category": "anti_inflammatory",
+                    "recommendation": "Shift to anti-inflammatory diet pattern",
+                    "foods": [
+                        "berries",
+                        "leafy greens",
+                        "olive oil",
+                        "turmeric",
+                        "ginger",
+                    ],
+                    "expected_benefit": "Reduced CVD risk (RR 0.71 vs high DII)",
+                    "evidence": "Meta-analysis of 15 cohort studies",
+                    "source": "Atherosclerosis 2020",
+                }
+            )
 
         # Neurotransmitter support
         if neurotransmitter_prediction.serotonin_score < 60:
-            recommendations.append({
-                "priority": 3,
-                "category": "serotonin_support",
-                "recommendation": "Increase tryptophan-rich foods",
-                "foods": ["turkey", "eggs", "cheese", "nuts", "seeds"],
-                "expected_benefit": "Improved mood, sleep, HRV",
-                "evidence": "Tryptophan depletion reduces HF-HRV",
-                "source": "Biol Psychiatry 2006"
-            })
+            recommendations.append(
+                {
+                    "priority": 3,
+                    "category": "serotonin_support",
+                    "recommendation": "Increase tryptophan-rich foods",
+                    "foods": ["turkey", "eggs", "cheese", "nuts", "seeds"],
+                    "expected_benefit": "Improved mood, sleep, HRV",
+                    "evidence": "Tryptophan depletion reduces HF-HRV",
+                    "source": "Biol Psychiatry 2006",
+                }
+            )
 
         # Gut-brain axis
         if hrv_prediction.gut_brain_contribution < 0.05:
-            recommendations.append({
-                "priority": 3,
-                "category": "gut_brain",
-                "recommendation": "Add probiotics and fermented foods",
-                "foods": ["yogurt", "kefir", "sauerkraut", "kimchi", "kombucha"],
-                "expected_benefit": "Improved vagal tone after 3 months",
-                "evidence": "Multi-species probiotic improves VN function",
-                "source": "Gut Microbes 2025"
-            })
+            recommendations.append(
+                {
+                    "priority": 3,
+                    "category": "gut_brain",
+                    "recommendation": "Add probiotics and fermented foods",
+                    "foods": ["yogurt", "kefir", "sauerkraut", "kimchi", "kombucha"],
+                    "expected_benefit": "Improved vagal tone after 3 months",
+                    "evidence": "Multi-species probiotic improves VN function",
+                    "source": "Gut Microbes 2025",
+                }
+            )
 
         # B6 cofactor
         if not neurotransmitter_prediction.b6_adequate:
-            recommendations.append({
-                "priority": 2,
-                "category": "b_vitamins",
-                "recommendation": "Ensure adequate B6 intake (1.3-2mg/day)",
-                "foods": ["chicken", "fish", "potatoes", "bananas", "chickpeas"],
-                "expected_benefit": "Enhanced serotonin and GABA synthesis",
-                "evidence": "B6 required for amino acid decarboxylation",
-                "source": "NCBI StatPearls"
-            })
+            recommendations.append(
+                {
+                    "priority": 2,
+                    "category": "b_vitamins",
+                    "recommendation": "Ensure adequate B6 intake (1.3-2mg/day)",
+                    "foods": ["chicken", "fish", "potatoes", "bananas", "chickpeas"],
+                    "expected_benefit": "Enhanced serotonin and GABA synthesis",
+                    "evidence": "B6 required for amino acid decarboxylation",
+                    "source": "NCBI StatPearls",
+                }
+            )
 
         # Sort by priority
         recommendations.sort(key=lambda x: x["priority"])
@@ -1070,14 +1182,14 @@ class NutritionalBiomarkerEngine:
 # CONVENIENCE FUNCTIONS
 # =============================================================================
 
+
 def create_engine() -> NutritionalBiomarkerEngine:
     """Create and return a configured engine instance."""
     return NutritionalBiomarkerEngine()
 
 
 def quick_hrv_assessment(
-    foods: List[Dict[str, Any]],
-    supplements: Optional[Dict[str, float]] = None
+    foods: List[Dict[str, Any]], supplements: Optional[Dict[str, float]] = None
 ) -> HRVPrediction:
     """
     Quick HRV prediction from food list.
@@ -1116,5 +1228,5 @@ def quick_hrv_assessment(
         inflammatory=inflammatory,
         glycemic=glycemic,
         biogenic_amines=biogenic,
-        gut_brain=gut_brain
+        gut_brain=gut_brain,
     )

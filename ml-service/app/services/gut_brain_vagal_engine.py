@@ -26,21 +26,20 @@ Key Findings:
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Any, Union, Set
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Any
 from enum import Enum
-from datetime import datetime, timedelta
 import math
-import numpy as np
-from collections import defaultdict
 
 
 # =============================================================================
 # MICROBIOME CONSTANTS
 # =============================================================================
 
+
 class BacterialPhylum(str, Enum):
     """Major gut bacterial phyla"""
+
     FIRMICUTES = "firmicutes"
     BACTEROIDETES = "bacteroidetes"
     ACTINOBACTERIA = "actinobacteria"
@@ -50,6 +49,7 @@ class BacterialPhylum(str, Enum):
 
 class BeneficialBacteria(str, Enum):
     """Key beneficial bacteria for gut-brain health"""
+
     AKKERMANSIA_MUCINIPHILA = "akkermansia_muciniphila"
     LACTOBACILLUS_RHAMNOSUS = "lactobacillus_rhamnosus"
     LACTOBACILLUS_PLANTARUM = "lactobacillus_plantarum"
@@ -64,6 +64,7 @@ class BeneficialBacteria(str, Enum):
 
 class PrebioticFiber(str, Enum):
     """Prebiotic fiber types that feed beneficial bacteria"""
+
     INULIN = "inulin"
     FOS = "fructooligosaccharides"
     GOS = "galactooligosaccharides"
@@ -76,6 +77,7 @@ class PrebioticFiber(str, Enum):
 
 class ShortChainFattyAcid(str, Enum):
     """SCFAs produced by gut bacteria"""
+
     ACETATE = "acetate"
     PROPIONATE = "propionate"
     BUTYRATE = "butyrate"
@@ -83,6 +85,7 @@ class ShortChainFattyAcid(str, Enum):
 
 class VagalCommunicationPathway(str, Enum):
     """Pathways for gut-brain vagal communication"""
+
     DIRECT_NEUROPOD = "direct_neuropod"  # Enteroendocrine cells
     SCFA_SIGNALING = "scfa_signaling"
     CYTOKINE_MEDIATED = "cytokine_mediated"
@@ -124,10 +127,18 @@ BACTERIA_HEALTH_EFFECTS: Dict[str, Dict[str, float]] = {
 
 # Prebiotic fiber → bacteria relationships
 PREBIOTIC_BACTERIA_SUPPORT: Dict[str, List[str]] = {
-    "inulin": ["bifidobacterium_longum", "akkermansia_muciniphila", "faecalibacterium_prausnitzii"],
+    "inulin": [
+        "bifidobacterium_longum",
+        "akkermansia_muciniphila",
+        "faecalibacterium_prausnitzii",
+    ],
     "fructooligosaccharides": ["bifidobacterium_longum", "bifidobacterium_infantis"],
     "galactooligosaccharides": ["bifidobacterium_longum", "lactobacillus_rhamnosus"],
-    "resistant_starch": ["faecalibacterium_prausnitzii", "eubacterium_rectale", "roseburia"],
+    "resistant_starch": [
+        "faecalibacterium_prausnitzii",
+        "eubacterium_rectale",
+        "roseburia",
+    ],
     "pectin": ["akkermansia_muciniphila", "bacteroides_fragilis"],
     "beta_glucan": ["lactobacillus_plantarum", "bifidobacterium_longum"],
 }
@@ -140,7 +151,11 @@ FERMENTED_FOODS: Dict[str, Dict[str, Any]] = {
         "vagal_support": 0.05,
     },
     "kefir": {
-        "bacteria": ["lactobacillus_kefiri", "lactobacillus_rhamnosus", "bifidobacterium"],
+        "bacteria": [
+            "lactobacillus_kefiri",
+            "lactobacillus_rhamnosus",
+            "bifidobacterium",
+        ],
         "cfu_per_serving": 2.5e10,
         "vagal_support": 0.10,
     },
@@ -195,9 +210,11 @@ GUT_HRV_CORRELATIONS = {
 # DATA CLASSES
 # =============================================================================
 
+
 @dataclass
 class MicrobiomeProfile:
     """Estimated gut microbiome profile"""
+
     diversity_score: float  # 0-100 Shannon diversity proxy
     firmicutes_ratio: float  # F:B ratio
     beneficial_bacteria: Dict[str, float]  # Abundance 0-1
@@ -208,6 +225,7 @@ class MicrobiomeProfile:
 @dataclass
 class PrebioticIntake:
     """Prebiotic fiber intake tracking"""
+
     total_prebiotic_g: float
     inulin_g: float = 0.0
     fos_g: float = 0.0
@@ -220,6 +238,7 @@ class PrebioticIntake:
 @dataclass
 class ProbioticIntake:
     """Probiotic intake from foods and supplements"""
+
     total_cfu: float  # Colony forming units
     strains: List[str]
     source: str  # "supplement", "fermented_food"
@@ -229,6 +248,7 @@ class ProbioticIntake:
 @dataclass
 class SCFAProduction:
     """Predicted SCFA production"""
+
     acetate_mmol: float
     propionate_mmol: float
     butyrate_mmol: float
@@ -244,6 +264,7 @@ class SCFAProduction:
 @dataclass
 class VagalTonePrediction:
     """Predicted vagal tone from gut health"""
+
     vagal_tone_score: float  # 0-100
     hrv_impact: float  # -0.2 to 0.2 relative change
     parasympathetic_support: float  # 0-1
@@ -255,6 +276,7 @@ class VagalTonePrediction:
 @dataclass
 class GutBrainAxisState:
     """Complete gut-brain axis assessment"""
+
     microbiome: MicrobiomeProfile
     scfa_production: SCFAProduction
     vagal_prediction: VagalTonePrediction
@@ -266,6 +288,7 @@ class GutBrainAxisState:
 @dataclass
 class ProbioticProtocol:
     """Recommended probiotic protocol"""
+
     priority_strains: List[str]
     target_cfu: float
     duration_weeks: int
@@ -279,6 +302,7 @@ class ProbioticProtocol:
 # =============================================================================
 # NEURAL NETWORK MODELS
 # =============================================================================
+
 
 class GutBrainPredictor(nn.Module):
     """
@@ -298,12 +322,7 @@ class GutBrainPredictor(nn.Module):
     - HRV change prediction
     """
 
-    def __init__(
-        self,
-        input_dim: int = 25,
-        hidden_dim: int = 64,
-        num_layers: int = 2
-    ):
+    def __init__(self, input_dim: int = 25, hidden_dim: int = 64, num_layers: int = 2):
         super().__init__()
 
         self.encoder = nn.Sequential(
@@ -313,15 +332,17 @@ class GutBrainPredictor(nn.Module):
             nn.Dropout(0.1),
         )
 
-        self.layers = nn.ModuleList([
-            nn.Sequential(
-                nn.Linear(hidden_dim, hidden_dim),
-                nn.LayerNorm(hidden_dim),
-                nn.GELU(),
-                nn.Dropout(0.1),
-            )
-            for _ in range(num_layers)
-        ])
+        self.layers = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Linear(hidden_dim, hidden_dim),
+                    nn.LayerNorm(hidden_dim),
+                    nn.GELU(),
+                    nn.Dropout(0.1),
+                )
+                for _ in range(num_layers)
+            ]
+        )
 
         # Output heads
         self.diversity_head = nn.Linear(hidden_dim, 1)
@@ -353,12 +374,7 @@ class TemporalMicrobiomeModel(nn.Module):
     in vagal function - this model captures temporal dynamics.
     """
 
-    def __init__(
-        self,
-        input_dim: int = 20,
-        hidden_dim: int = 64,
-        num_layers: int = 2
-    ):
+    def __init__(self, input_dim: int = 20, hidden_dim: int = 64, num_layers: int = 2):
         super().__init__()
 
         self.lstm = nn.LSTM(
@@ -367,19 +383,17 @@ class TemporalMicrobiomeModel(nn.Module):
             num_layers=num_layers,
             batch_first=True,
             dropout=0.1 if num_layers > 1 else 0,
-            bidirectional=True
+            bidirectional=True,
         )
 
         self.output_proj = nn.Sequential(
             nn.Linear(hidden_dim * 2, hidden_dim),
             nn.GELU(),
-            nn.Linear(hidden_dim, 5)  # diversity, scfa, vagal, hrv, inflammation
+            nn.Linear(hidden_dim, 5),  # diversity, scfa, vagal, hrv, inflammation
         )
 
     def forward(
-        self,
-        x: torch.Tensor,
-        lengths: Optional[torch.Tensor] = None
+        self, x: torch.Tensor, lengths: Optional[torch.Tensor] = None
     ) -> torch.Tensor:
         """
         Args:
@@ -400,6 +414,7 @@ class TemporalMicrobiomeModel(nn.Module):
 # =============================================================================
 # MAIN ENGINE CLASS
 # =============================================================================
+
 
 class GutBrainVagalEngine:
     """
@@ -434,7 +449,7 @@ class GutBrainVagalEngine:
         probiotic_intake: Optional[ProbioticIntake] = None,
         fermented_foods: Optional[List[str]] = None,
         diet_quality_score: float = 0.5,
-        baseline_diversity: Optional[float] = None
+        baseline_diversity: Optional[float] = None,
     ) -> GutBrainAxisState:
         """
         Complete gut-brain axis analysis.
@@ -455,7 +470,7 @@ class GutBrainVagalEngine:
             probiotic_intake,
             fermented_foods,
             diet_quality_score,
-            baseline_diversity
+            baseline_diversity,
         )
 
         # Calculate SCFA production
@@ -463,31 +478,22 @@ class GutBrainVagalEngine:
 
         # Predict vagal tone impact
         vagal = self._predict_vagal_tone(
-            microbiome,
-            scfa,
-            probiotic_intake,
-            fermented_foods
+            microbiome, scfa, probiotic_intake, fermented_foods
         )
 
         # Estimate enteric neurotransmitters
         enteric_nt = self._estimate_enteric_neurotransmitters(
-            microbiome,
-            probiotic_intake
+            microbiome, probiotic_intake
         )
 
         # Determine inflammation pathway
         inflammation = self._assess_inflammation_pathway(
-            microbiome,
-            scfa,
-            diet_quality_score
+            microbiome, scfa, diet_quality_score
         )
 
         # Generate recommendations
         recommendations = self._generate_recommendations(
-            microbiome,
-            scfa,
-            vagal,
-            probiotic_intake
+            microbiome, scfa, vagal, probiotic_intake
         )
 
         return GutBrainAxisState(
@@ -496,7 +502,7 @@ class GutBrainVagalEngine:
             vagal_prediction=vagal,
             enteric_neurotransmitters=enteric_nt,
             inflammation_pathway=inflammation,
-            recommendations=recommendations
+            recommendations=recommendations,
         )
 
     def _estimate_microbiome(
@@ -505,7 +511,7 @@ class GutBrainVagalEngine:
         probiotic: Optional[ProbioticIntake],
         fermented: Optional[List[str]],
         diet_quality: float,
-        baseline: Optional[float]
+        baseline: Optional[float],
     ) -> MicrobiomeProfile:
         """Estimate microbiome profile from dietary inputs."""
 
@@ -529,10 +535,13 @@ class GutBrainVagalEngine:
         if fermented:
             for food in fermented:
                 if food.lower() in self.fermented_foods:
-                    fermented_boost += self.fermented_foods[food.lower()]["vagal_support"] * 5
+                    fermented_boost += (
+                        self.fermented_foods[food.lower()]["vagal_support"] * 5
+                    )
 
-        diversity_score = min(100, base_diversity + prebiotic_boost +
-                             probiotic_boost + fermented_boost)
+        diversity_score = min(
+            100, base_diversity + prebiotic_boost + probiotic_boost + fermented_boost
+        )
 
         # Estimate beneficial bacteria abundance
         beneficial = {}
@@ -558,11 +567,17 @@ class GutBrainVagalEngine:
         fb_ratio = max(0.5, min(3.0, fb_ratio))
 
         # SCFA producing capacity
-        scfa_capacity = sum(beneficial.get(b, 0) for b in [
-            "faecalibacterium_prausnitzii",
-            "roseburia",
-            "eubacterium_rectale"
-        ]) / 3
+        scfa_capacity = (
+            sum(
+                beneficial.get(b, 0)
+                for b in [
+                    "faecalibacterium_prausnitzii",
+                    "roseburia",
+                    "eubacterium_rectale",
+                ]
+            )
+            / 3
+        )
 
         # Inflammation marker (inverse of beneficial bacteria)
         inflammation = 1 - (sum(beneficial.values()) / len(beneficial))
@@ -572,13 +587,10 @@ class GutBrainVagalEngine:
             firmicutes_ratio=fb_ratio,
             beneficial_bacteria=beneficial,
             scfa_producing_capacity=scfa_capacity,
-            inflammation_markers=inflammation
+            inflammation_markers=inflammation,
         )
 
-    def _calculate_scfa_production(
-        self,
-        prebiotic: PrebioticIntake
-    ) -> SCFAProduction:
+    def _calculate_scfa_production(self, prebiotic: PrebioticIntake) -> SCFAProduction:
         """Calculate predicted SCFA production from prebiotic intake."""
         total_acetate = 0
         total_propionate = 0
@@ -609,7 +621,7 @@ class GutBrainVagalEngine:
             propionate_mmol=total_propionate,
             butyrate_mmol=total_butyrate,
             total_mmol=total,
-            butyrate_ratio=butyrate_ratio
+            butyrate_ratio=butyrate_ratio,
         )
 
     def _predict_vagal_tone(
@@ -617,7 +629,7 @@ class GutBrainVagalEngine:
         microbiome: MicrobiomeProfile,
         scfa: SCFAProduction,
         probiotic: Optional[ProbioticIntake],
-        fermented: Optional[List[str]]
+        fermented: Optional[List[str]],
     ) -> VagalTonePrediction:
         """
         Predict vagal tone impact from gut health.
@@ -650,8 +662,11 @@ class GutBrainVagalEngine:
         time_to_effect = 90  # days
         if probiotic:
             # Check for specific strains with research backing
-            effective_strains = ["lactobacillus_rhamnosus", "bifidobacterium_longum",
-                               "lactobacillus_plantarum"]
+            effective_strains = [
+                "lactobacillus_rhamnosus",
+                "bifidobacterium_longum",
+                "lactobacillus_plantarum",
+            ]
             for strain in probiotic.strains:
                 if strain.lower() in effective_strains:
                     probiotic_contrib += 0.04
@@ -668,7 +683,9 @@ class GutBrainVagalEngine:
         if fermented:
             for food in fermented:
                 if food.lower() in self.fermented_foods:
-                    fermented_contrib += self.fermented_foods[food.lower()]["vagal_support"]
+                    fermented_contrib += self.fermented_foods[food.lower()][
+                        "vagal_support"
+                    ]
         contributing_factors["fermented_foods"] = fermented_contrib
 
         # Total HRV impact
@@ -696,13 +713,11 @@ class GutBrainVagalEngine:
             parasympathetic_support=para_support,
             time_to_effect_days=time_to_effect,
             confidence=min(0.95, confidence),
-            contributing_factors=contributing_factors
+            contributing_factors=contributing_factors,
         )
 
     def _estimate_enteric_neurotransmitters(
-        self,
-        microbiome: MicrobiomeProfile,
-        probiotic: Optional[ProbioticIntake]
+        self, microbiome: MicrobiomeProfile, probiotic: Optional[ProbioticIntake]
     ) -> Dict[str, float]:
         """
         Estimate enteric neurotransmitter production.
@@ -711,17 +726,17 @@ class GutBrainVagalEngine:
         Certain bacteria produce neurotransmitters directly.
         """
         neurotransmitters = {
-            "serotonin": 0.5,       # 95% made in gut
-            "gaba": 0.5,            # Some bacteria produce GABA
-            "acetylcholine": 0.5,   # L. plantarum produces ACh
-            "dopamine": 0.5,        # Some enteric production
+            "serotonin": 0.5,  # 95% made in gut
+            "gaba": 0.5,  # Some bacteria produce GABA
+            "acetylcholine": 0.5,  # L. plantarum produces ACh
+            "dopamine": 0.5,  # Some enteric production
         }
 
         # Serotonin - supported by good microbiome
         neurotransmitters["serotonin"] += (microbiome.diversity_score - 50) / 200
-        neurotransmitters["serotonin"] += microbiome.beneficial_bacteria.get(
-            "bifidobacterium_longum", 0
-        ) * 0.1
+        neurotransmitters["serotonin"] += (
+            microbiome.beneficial_bacteria.get("bifidobacterium_longum", 0) * 0.1
+        )
 
         # GABA - L. rhamnosus produces GABA
         if probiotic:
@@ -730,18 +745,15 @@ class GutBrainVagalEngine:
                     neurotransmitters["gaba"] += 0.15
 
         # Acetylcholine - L. plantarum, B. subtilis produce ACh
-        neurotransmitters["acetylcholine"] += microbiome.beneficial_bacteria.get(
-            "lactobacillus_plantarum", 0
-        ) * 0.12
+        neurotransmitters["acetylcholine"] += (
+            microbiome.beneficial_bacteria.get("lactobacillus_plantarum", 0) * 0.12
+        )
 
         # Normalize all values
         return {k: min(1.0, max(0.0, v)) for k, v in neurotransmitters.items()}
 
     def _assess_inflammation_pathway(
-        self,
-        microbiome: MicrobiomeProfile,
-        scfa: SCFAProduction,
-        diet_quality: float
+        self, microbiome: MicrobiomeProfile, scfa: SCFAProduction, diet_quality: float
     ) -> str:
         """
         Assess overall inflammation pathway.
@@ -753,9 +765,9 @@ class GutBrainVagalEngine:
         anti_score = 0
         anti_score += scfa.butyrate_mmol / 20  # Butyrate is anti-inflammatory
         anti_score += (microbiome.diversity_score - 50) / 100
-        anti_score += microbiome.beneficial_bacteria.get(
-            "faecalibacterium_prausnitzii", 0
-        ) * 0.5  # Major anti-inflammatory bacterium
+        anti_score += (
+            microbiome.beneficial_bacteria.get("faecalibacterium_prausnitzii", 0) * 0.5
+        )  # Major anti-inflammatory bacterium
         anti_score += diet_quality * 0.3
 
         # Pro-inflammatory factors
@@ -776,90 +788,100 @@ class GutBrainVagalEngine:
         microbiome: MicrobiomeProfile,
         scfa: SCFAProduction,
         vagal: VagalTonePrediction,
-        probiotic: Optional[ProbioticIntake]
+        probiotic: Optional[ProbioticIntake],
     ) -> List[Dict[str, Any]]:
         """Generate personalized gut-brain recommendations."""
         recommendations = []
 
         # Low diversity
         if microbiome.diversity_score < 60:
-            recommendations.append({
-                "priority": 1,
-                "category": "diversity",
-                "recommendation": "Increase microbiome diversity",
-                "actions": [
-                    "Eat 30+ different plant foods per week",
-                    "Include fermented foods daily",
-                    "Vary fiber sources (legumes, whole grains, vegetables)"
-                ],
-                "expected_benefit": "Improved vagal tone, better HRV",
-                "evidence": "Higher diversity correlates with better HRV"
-            })
+            recommendations.append(
+                {
+                    "priority": 1,
+                    "category": "diversity",
+                    "recommendation": "Increase microbiome diversity",
+                    "actions": [
+                        "Eat 30+ different plant foods per week",
+                        "Include fermented foods daily",
+                        "Vary fiber sources (legumes, whole grains, vegetables)",
+                    ],
+                    "expected_benefit": "Improved vagal tone, better HRV",
+                    "evidence": "Higher diversity correlates with better HRV",
+                }
+            )
 
         # Low SCFA production
         if scfa.total_mmol < 30:
-            recommendations.append({
-                "priority": 1,
-                "category": "scfa_production",
-                "recommendation": "Boost SCFA production",
-                "actions": [
-                    "Add resistant starch (cooled potatoes, green bananas)",
-                    "Include 25-35g fiber daily",
-                    "Eat more legumes (chickpeas, lentils, beans)"
-                ],
-                "expected_benefit": "Increased butyrate, reduced inflammation",
-                "evidence": "SCFAs signal directly to vagus nerve via neuropods"
-            })
+            recommendations.append(
+                {
+                    "priority": 1,
+                    "category": "scfa_production",
+                    "recommendation": "Boost SCFA production",
+                    "actions": [
+                        "Add resistant starch (cooled potatoes, green bananas)",
+                        "Include 25-35g fiber daily",
+                        "Eat more legumes (chickpeas, lentils, beans)",
+                    ],
+                    "expected_benefit": "Increased butyrate, reduced inflammation",
+                    "evidence": "SCFAs signal directly to vagus nerve via neuropods",
+                }
+            )
 
         # No probiotic
         if not probiotic or probiotic.total_cfu < 1e9:
-            recommendations.append({
-                "priority": 2,
-                "category": "probiotics",
-                "recommendation": "Consider multi-strain probiotic",
-                "actions": [
-                    "Look for strains: L. rhamnosus, B. longum, L. plantarum",
-                    "Target 10+ billion CFU daily",
-                    "Commit to 3 months for vagal benefits"
-                ],
-                "expected_benefit": "Improved morning vagal function after 3 months",
-                "evidence": "Gut Microbes 2025 RCT: Multi-species probiotic improves VN"
-            })
+            recommendations.append(
+                {
+                    "priority": 2,
+                    "category": "probiotics",
+                    "recommendation": "Consider multi-strain probiotic",
+                    "actions": [
+                        "Look for strains: L. rhamnosus, B. longum, L. plantarum",
+                        "Target 10+ billion CFU daily",
+                        "Commit to 3 months for vagal benefits",
+                    ],
+                    "expected_benefit": "Improved morning vagal function after 3 months",
+                    "evidence": "Gut Microbes 2025 RCT: Multi-species probiotic improves VN",
+                }
+            )
 
         # Low Akkermansia support
         if microbiome.beneficial_bacteria.get("akkermansia_muciniphila", 0) < 0.4:
-            recommendations.append({
-                "priority": 2,
-                "category": "akkermansia",
-                "recommendation": "Support Akkermansia growth",
-                "actions": [
-                    "Increase polyphenol intake (berries, pomegranate)",
-                    "Add pectin-rich foods (apples, citrus)",
-                    "Consider pomegranate extract"
-                ],
-                "expected_benefit": "Better metabolic health, improved sleep",
-                "evidence": "Akkermansia associated with improved HRV and sleep"
-            })
+            recommendations.append(
+                {
+                    "priority": 2,
+                    "category": "akkermansia",
+                    "recommendation": "Support Akkermansia growth",
+                    "actions": [
+                        "Increase polyphenol intake (berries, pomegranate)",
+                        "Add pectin-rich foods (apples, citrus)",
+                        "Consider pomegranate extract",
+                    ],
+                    "expected_benefit": "Better metabolic health, improved sleep",
+                    "evidence": "Akkermansia associated with improved HRV and sleep",
+                }
+            )
 
         # Fermented foods
-        recommendations.append({
-            "priority": 3,
-            "category": "fermented_foods",
-            "recommendation": "Daily fermented foods",
-            "actions": [
-                "Yogurt or kefir with breakfast",
-                "Sauerkraut or kimchi with lunch",
-                "Miso soup or kombucha as snack"
-            ],
-            "expected_benefit": "Direct probiotic delivery, vagal support",
-            "evidence": "Fermented food consumption correlates with better mood"
-        })
+        recommendations.append(
+            {
+                "priority": 3,
+                "category": "fermented_foods",
+                "recommendation": "Daily fermented foods",
+                "actions": [
+                    "Yogurt or kefir with breakfast",
+                    "Sauerkraut or kimchi with lunch",
+                    "Miso soup or kombucha as snack",
+                ],
+                "expected_benefit": "Direct probiotic delivery, vagal support",
+                "evidence": "Fermented food consumption correlates with better mood",
+            }
+        )
 
         return recommendations
 
     def get_probiotic_protocol(
         self,
-        target: str = "hrv_improvement"  # "hrv_improvement", "anxiety", "sleep", "general"
+        target: str = "hrv_improvement",  # "hrv_improvement", "anxiety", "sleep", "general"
     ) -> ProbioticProtocol:
         """
         Get evidence-based probiotic protocol for specific goal.
@@ -878,7 +900,7 @@ class GutBrainVagalEngine:
                 supporting_prebiotics=["inulin", "GOS"],
                 food_sources=["kefir", "yogurt", "kimchi"],
                 evidence_summary="Gut Microbes 2025: Multi-species probiotic improves "
-                               "morning vagal function in MDD patients after 3 months"
+                "morning vagal function in MDD patients after 3 months",
             ),
             "anxiety": ProbioticProtocol(
                 priority_strains=[
@@ -892,7 +914,7 @@ class GutBrainVagalEngine:
                 supporting_prebiotics=["GOS", "inulin"],
                 food_sources=["yogurt", "kefir"],
                 evidence_summary="L. rhamnosus anxiolytic effects are vagus-dependent "
-                               "(effect abolished when vagus is cut in animal models)"
+                "(effect abolished when vagus is cut in animal models)",
             ),
             "sleep": ProbioticProtocol(
                 priority_strains=[
@@ -907,7 +929,7 @@ class GutBrainVagalEngine:
                 supporting_prebiotics=["inulin", "pectin"],
                 food_sources=["kefir", "tart cherry (prebiotic)"],
                 evidence_summary="Akkermansia muciniphila associated with improved "
-                               "sleep parameters in probiotic RCT"
+                "sleep parameters in probiotic RCT",
             ),
             "general": ProbioticProtocol(
                 priority_strains=[
@@ -923,7 +945,7 @@ class GutBrainVagalEngine:
                 supporting_prebiotics=["inulin", "FOS"],
                 food_sources=["yogurt", "kefir", "sauerkraut"],
                 evidence_summary="General multi-strain probiotics support overall "
-                               "gut-brain axis health"
+                "gut-brain axis health",
             ),
         }
 
@@ -934,11 +956,12 @@ class GutBrainVagalEngine:
 # CONVENIENCE FUNCTIONS
 # =============================================================================
 
+
 def analyze_gut_brain_health(
     prebiotic_g: float = 0,
     probiotic_cfu: float = 0,
     fermented_servings: int = 0,
-    diet_quality: float = 0.5
+    diet_quality: float = 0.5,
 ) -> GutBrainAxisState:
     """
     Quick gut-brain axis analysis.
@@ -968,7 +991,7 @@ def analyze_gut_brain_health(
             total_cfu=probiotic_cfu,
             strains=["lactobacillus_rhamnosus", "bifidobacterium_longum"],
             source="supplement",
-            multi_strain=True
+            multi_strain=True,
         )
 
     fermented = None
@@ -979,7 +1002,7 @@ def analyze_gut_brain_health(
         prebiotic_intake=prebiotic,
         probiotic_intake=probiotic,
         fermented_foods=fermented,
-        diet_quality_score=diet_quality
+        diet_quality_score=diet_quality,
     )
 
 

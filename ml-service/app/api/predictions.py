@@ -230,9 +230,9 @@ async def batch_predict(
         response = BatchPredictResponse(
             user_id=request.user_id,
             target_date=request.target_date,
-            predicted_at=list(predictions.values())[0].predicted_at
-            if predictions
-            else None,
+            predicted_at=(
+                list(predictions.values())[0].predicted_at if predictions else None
+            ),
             predictions=predictions,
             overall_data_quality=overall_quality,
             all_predictions_successful=len(failed_metrics) == 0,

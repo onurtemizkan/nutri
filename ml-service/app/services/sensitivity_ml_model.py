@@ -19,17 +19,18 @@ Based on research showing:
 - 90.5% sensitivity, 79.4% specificity for HRV-based allergy detection
 - 17-minute early warning capability
 """
+
 import logging
 import pickle
 from typing import List, Dict, Optional, Tuple, Any
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 import numpy as np
-import pandas as pd
 
 try:
     import xgboost as xgb
+
     XGBOOST_AVAILABLE = True
 except ImportError:
     XGBOOST_AVAILABLE = False
@@ -47,16 +48,10 @@ from sklearn.metrics import (
 from sklearn.ensemble import IsolationForest
 
 from app.services.hrv_sensitivity_analyzer import (
-    ExposureAnalysis,
-    SensitivityPattern,
     TimeWindow,
-    WINDOW_DEFINITIONS,
-    HRV_THRESHOLDS,
 )
 from app.models.sensitivity import (
     AllergenType,
-    SensitivityType,
-    SensitivitySeverity,
     ReactionSeverity,
 )
 
@@ -78,24 +73,19 @@ FEATURE_COLUMNS = [
     "max_hrv_drop",
     "mean_hrv_drop",
     "std_hrv_drop",
-
     # Baseline features
     "baseline_rmssd",
     "baseline_std",
-
     # Trigger features
     "trigger_type_encoded",
     "compound_level",  # For compounds like histamine
-
     # Temporal features
     "hour_of_day",
     "day_of_week",
-
     # Historical features
     "prior_reaction_rate",
     "days_since_last_exposure",
     "exposure_count_last_30d",
-
     # Compound interaction features
     "has_dao_inhibitor",
     "has_histamine_liberator",
@@ -140,6 +130,7 @@ MIN_TRAINING_SAMPLES = 30
 @dataclass
 class TrainingDataPoint:
     """Single training data point for the ML model."""
+
     # Features
     hrv_drops: Dict[TimeWindow, float]  # HRV drop per window
     baseline_rmssd: float
@@ -164,6 +155,7 @@ class TrainingDataPoint:
 @dataclass
 class PredictionResult:
     """Result of sensitivity prediction."""
+
     reaction_probability: float
     predicted_severity: ReactionSeverity
     severity_probabilities: Dict[str, float]
@@ -176,6 +168,7 @@ class PredictionResult:
 @dataclass
 class ModelMetrics:
     """Model performance metrics."""
+
     accuracy: float
     precision: float
     recall: float
@@ -225,7 +218,12 @@ class SensitivityMLModel:
 
         # Initialize trigger encoder with known allergens
         all_triggers = [a.value for a in AllergenType] + [
-            "histamine", "tyramine", "fodmap", "salicylate", "oxalate", "lectin"
+            "histamine",
+            "tyramine",
+            "fodmap",
+            "salicylate",
+            "oxalate",
+            "lectin",
         ]
         self.trigger_encoder.fit(all_triggers)
 
@@ -235,8 +233,7 @@ class SensitivityMLModel:
         )
 
     def prepare_features(
-        self,
-        data_points: List[TrainingDataPoint]
+        self, data_points: List[TrainingDataPoint]
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Prepare feature matrix and labels from training data.
@@ -272,24 +269,19 @@ class SensitivityMLModel:
                 max(abs(d) for d in hrv_drops) if hrv_drops else 0.0,
                 np.mean([abs(d) for d in hrv_drops]) if hrv_drops else 0.0,
                 np.std([abs(d) for d in hrv_drops]) if hrv_drops else 0.0,
-
                 # Baseline features
                 dp.baseline_rmssd,
                 dp.baseline_std,
-
                 # Trigger features
                 self._encode_trigger(dp.trigger_type),
                 dp.compound_level or 0.0,
-
                 # Temporal features
                 dp.hour_of_day,
                 dp.day_of_week,
-
                 # Historical features
                 dp.prior_reaction_rate,
                 dp.days_since_last_exposure,
                 dp.exposure_count_last_30d,
-
                 # Compound interaction features
                 1.0 if dp.has_dao_inhibitor else 0.0,
                 1.0 if dp.has_histamine_liberator else 0.0,
@@ -330,7 +322,9 @@ class SensitivityMLModel:
             Training metrics
         """
         if not XGBOOST_AVAILABLE:
-            raise RuntimeError("XGBoost not available. Install with: pip install xgboost")
+            raise RuntimeError(
+                "XGBoost not available. Install with: pip install xgboost"
+            )
 
         if len(data_points) < MIN_TRAINING_SAMPLES:
             raise ValueError(
@@ -348,7 +342,11 @@ class SensitivityMLModel:
 
         # Split data
         X_train, X_test, y_train, y_test = train_test_split(
-            X_scaled, y_reaction, test_size=test_size, random_state=42, stratify=y_reaction
+            X_scaled,
+            y_reaction,
+            test_size=test_size,
+            random_state=42,
+            stratify=y_reaction,
         )
 
         # Train reaction prediction model
@@ -378,17 +376,21 @@ class SensitivityMLModel:
         self.anomaly_detector.fit(X_scaled)
 
         # Calculate metrics
-        feature_importance = dict(zip(
-            FEATURE_COLUMNS[:len(self.reaction_model.feature_importances_)],
-            self.reaction_model.feature_importances_.tolist()
-        ))
+        feature_importance = dict(
+            zip(
+                FEATURE_COLUMNS[: len(self.reaction_model.feature_importances_)],
+                self.reaction_model.feature_importances_.tolist(),
+            )
+        )
 
         metrics = ModelMetrics(
             accuracy=accuracy_score(y_test, y_pred),
             precision=precision_score(y_test, y_pred, zero_division=0),
             recall=recall_score(y_test, y_pred, zero_division=0),
             f1=f1_score(y_test, y_pred, zero_division=0),
-            auc_roc=roc_auc_score(y_test, y_prob) if len(np.unique(y_test)) > 1 else 0.0,
+            auc_roc=(
+                roc_auc_score(y_test, y_prob) if len(np.unique(y_test)) > 1 else 0.0
+            ),
             confusion_matrix=confusion_matrix(y_test, y_pred),
             feature_importance=feature_importance,
             training_samples=len(data_points),
@@ -449,8 +451,12 @@ class SensitivityMLModel:
 
             # Get predicted class
             pred_class = np.argmax(sev_probs)
-            severity_map = {0: ReactionSeverity.NONE, 1: ReactionSeverity.MILD,
-                           2: ReactionSeverity.MODERATE, 3: ReactionSeverity.SEVERE}
+            severity_map = {
+                0: ReactionSeverity.NONE,
+                1: ReactionSeverity.MILD,
+                2: ReactionSeverity.MODERATE,
+                3: ReactionSeverity.SEVERE,
+            }
             predicted_severity = severity_map.get(pred_class, ReactionSeverity.NONE)
 
         # Check for anomalies
@@ -480,17 +486,22 @@ class SensitivityMLModel:
             recommendations=recommendations,
         )
 
-    def _fallback_prediction(
-        self,
-        data_point: TrainingDataPoint
-    ) -> PredictionResult:
+    def _fallback_prediction(self, data_point: TrainingDataPoint) -> PredictionResult:
         """
         Fallback prediction when model is not trained.
         Uses rule-based approach.
         """
         # Calculate basic risk from HRV drops
-        max_drop = max(abs(d) for d in data_point.hrv_drops.values()) if data_point.hrv_drops else 0
-        mean_drop = np.mean([abs(d) for d in data_point.hrv_drops.values()]) if data_point.hrv_drops else 0
+        max_drop = (
+            max(abs(d) for d in data_point.hrv_drops.values())
+            if data_point.hrv_drops
+            else 0
+        )
+        _ = (
+            np.mean([abs(d) for d in data_point.hrv_drops.values()])
+            if data_point.hrv_drops
+            else 0
+        )
 
         # Base probability from HRV drops
         if max_drop >= 25:
@@ -527,9 +538,17 @@ class SensitivityMLModel:
             predicted_severity=severity,
             severity_probabilities={
                 "none": round(1 - reaction_prob, 3),
-                "mild": round(reaction_prob * 0.4, 3) if severity.value == "mild" else 0.0,
-                "moderate": round(reaction_prob * 0.4, 3) if severity.value == "moderate" else 0.0,
-                "severe": round(reaction_prob * 0.2, 3) if severity.value == "severe" else 0.0,
+                "mild": (
+                    round(reaction_prob * 0.4, 3) if severity.value == "mild" else 0.0
+                ),
+                "moderate": (
+                    round(reaction_prob * 0.4, 3)
+                    if severity.value == "moderate"
+                    else 0.0
+                ),
+                "severe": (
+                    round(reaction_prob * 0.2, 3) if severity.value == "severe" else 0.0
+                ),
             },
             confidence=0.5,  # Low confidence for fallback
             feature_importances={},
@@ -537,11 +556,7 @@ class SensitivityMLModel:
             recommendations=["Model not yet trained. Using rule-based prediction."],
         )
 
-    def _calculate_confidence(
-        self,
-        reaction_prob: float,
-        is_anomaly: bool
-    ) -> float:
+    def _calculate_confidence(self, reaction_prob: float, is_anomaly: bool) -> float:
         """Calculate prediction confidence."""
         # Base confidence from probability extremes
         # More extreme probabilities = higher confidence
@@ -558,10 +573,7 @@ class SensitivityMLModel:
 
         return min(0.99, max(0.1, confidence))
 
-    def _get_local_feature_importance(
-        self,
-        features: np.ndarray
-    ) -> Dict[str, float]:
+    def _get_local_feature_importance(self, features: np.ndarray) -> Dict[str, float]:
         """Get feature importance for a specific prediction."""
         if not self.is_trained or self.reaction_model is None:
             return {}
@@ -570,28 +582,32 @@ class SensitivityMLModel:
         global_importance = self.reaction_model.feature_importances_
 
         # Normalize feature values
-        feature_contrib = features * global_importance[:len(features)]
+        feature_contrib = features * global_importance[: len(features)]
 
         result = {}
-        for i, name in enumerate(FEATURE_COLUMNS[:len(feature_contrib)]):
+        for i, name in enumerate(FEATURE_COLUMNS[: len(feature_contrib)]):
             if abs(feature_contrib[i]) > 0.01:
                 result[name] = round(float(feature_contrib[i]), 4)
 
         # Sort by absolute importance
-        result = dict(sorted(result.items(), key=lambda x: abs(x[1]), reverse=True)[:10])
+        result = dict(
+            sorted(result.items(), key=lambda x: abs(x[1]), reverse=True)[:10]
+        )
 
         return result
 
     def _identify_risk_factors(
-        self,
-        data_point: TrainingDataPoint,
-        feature_importances: Dict[str, float]
+        self, data_point: TrainingDataPoint, feature_importances: Dict[str, float]
     ) -> List[str]:
         """Identify human-readable risk factors."""
         risk_factors = []
 
         # HRV-based risks
-        max_drop = max(abs(d) for d in data_point.hrv_drops.values()) if data_point.hrv_drops else 0
+        max_drop = (
+            max(abs(d) for d in data_point.hrv_drops.values())
+            if data_point.hrv_drops
+            else 0
+        )
         if max_drop >= 20:
             risk_factors.append(f"Large HRV drop observed ({max_drop:.0f}%)")
         elif max_drop >= 10:
@@ -613,10 +629,14 @@ class SensitivityMLModel:
             risk_factors.append("Histamine liberator present")
 
         if data_point.total_histamine_mg > 50:
-            risk_factors.append(f"High histamine load ({data_point.total_histamine_mg:.0f}mg)")
+            risk_factors.append(
+                f"High histamine load ({data_point.total_histamine_mg:.0f}mg)"
+            )
 
         if data_point.total_tyramine_mg > 25:
-            risk_factors.append(f"Elevated tyramine ({data_point.total_tyramine_mg:.0f}mg)")
+            risk_factors.append(
+                f"Elevated tyramine ({data_point.total_tyramine_mg:.0f}mg)"
+            )
 
         # Low baseline HRV
         if data_point.baseline_rmssd < 25:
@@ -629,26 +649,31 @@ class SensitivityMLModel:
         return risk_factors
 
     def _generate_recommendations(
-        self,
-        reaction_prob: float,
-        severity: ReactionSeverity,
-        risk_factors: List[str]
+        self, reaction_prob: float, severity: ReactionSeverity, risk_factors: List[str]
     ) -> List[str]:
         """Generate actionable recommendations."""
         recommendations = []
 
         if reaction_prob >= 0.7:
-            recommendations.append("HIGH RISK: Consider avoiding this food or reducing portion significantly")
+            recommendations.append(
+                "HIGH RISK: Consider avoiding this food or reducing portion significantly"
+            )
         elif reaction_prob >= 0.5:
-            recommendations.append("MODERATE RISK: Monitor closely for symptoms after eating")
+            recommendations.append(
+                "MODERATE RISK: Monitor closely for symptoms after eating"
+            )
         elif reaction_prob >= 0.3:
             recommendations.append("SLIGHT RISK: Be aware of potential mild reaction")
 
         if severity == ReactionSeverity.SEVERE:
-            recommendations.append("If consuming, ensure antihistamine/medication available")
+            recommendations.append(
+                "If consuming, ensure antihistamine/medication available"
+            )
 
         if "DAO inhibitor" in str(risk_factors):
-            recommendations.append("Consider taking DAO supplement 15 min before eating")
+            recommendations.append(
+                "Consider taking DAO supplement 15 min before eating"
+            )
 
         if "histamine" in str(risk_factors).lower():
             recommendations.append("Space high-histamine foods throughout the day")
@@ -721,7 +746,7 @@ class SensitivityMLModel:
                 sorted(
                     self.training_metrics.feature_importance.items(),
                     key=lambda x: x[1],
-                    reverse=True
+                    reverse=True,
                 )[:10]
             )
 

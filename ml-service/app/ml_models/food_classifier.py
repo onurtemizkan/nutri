@@ -4,6 +4,7 @@ Food Classification Model using Hugging Face Vision Transformer (ViT)
 Uses nateraw/food model - a ViT fine-tuned on Food-101 dataset with 101 food classes.
 Achieves ~90%+ accuracy on food classification.
 """
+
 import logging
 from typing import List, Tuple, Dict, Optional
 
@@ -282,9 +283,7 @@ def get_model():
         device = (
             "cuda"
             if torch.cuda.is_available()
-            else "mps"
-            if torch.backends.mps.is_available()
-            else "cpu"
+            else "mps" if torch.backends.mps.is_available() else "cpu"
         )
         _model = _model.to(device)
         _model.eval()

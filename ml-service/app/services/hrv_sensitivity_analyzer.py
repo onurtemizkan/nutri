@@ -24,8 +24,9 @@ Detection Thresholds:
 - >25% RMSSD drop: Significant reaction
 - Pattern across 3+ exposures: Confirmed sensitivity
 """
+
 import logging
-from typing import List, Dict, Optional, Tuple, Any
+from typing import List, Dict, Optional, Any
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
@@ -33,7 +34,6 @@ import numpy as np
 from scipy import stats
 
 from app.models.sensitivity import (
-    AllergenType,
     SensitivityType,
     SensitivitySeverity,
     ReactionSeverity,
@@ -49,11 +49,12 @@ logger = logging.getLogger(__name__)
 
 class TimeWindow(str, Enum):
     """HRV analysis time windows."""
-    IMMEDIATE = "immediate"      # 0-30 min
-    SHORT_TERM = "short_term"    # 30-120 min
+
+    IMMEDIATE = "immediate"  # 0-30 min
+    SHORT_TERM = "short_term"  # 30-120 min
     MEDIUM_TERM = "medium_term"  # 2-6 hours
-    EXTENDED = "extended"        # 6-24 hours
-    NEXT_DAY = "next_day"        # 24-48 hours
+    EXTENDED = "extended"  # 6-24 hours
+    NEXT_DAY = "next_day"  # 24-48 hours
 
 
 # Time window definitions in minutes
@@ -101,12 +102,12 @@ REACTION_PATTERNS = {
 
 # HRV drop thresholds for reaction detection
 HRV_THRESHOLDS = {
-    "possible_reaction_pct": 10.0,   # >10% drop
-    "likely_reaction_pct": 15.0,     # >15% drop
-    "significant_reaction_pct": 25.0, # >25% drop
-    "min_baseline_samples": 3,        # Minimum samples for baseline
-    "min_exposures_for_pattern": 3,   # Exposures needed to confirm pattern
-    "statistical_significance": 0.05, # p-value threshold
+    "possible_reaction_pct": 10.0,  # >10% drop
+    "likely_reaction_pct": 15.0,  # >15% drop
+    "significant_reaction_pct": 25.0,  # >25% drop
+    "min_baseline_samples": 3,  # Minimum samples for baseline
+    "min_exposures_for_pattern": 3,  # Exposures needed to confirm pattern
+    "statistical_significance": 0.05,  # p-value threshold
 }
 
 
@@ -118,6 +119,7 @@ HRV_THRESHOLDS = {
 @dataclass
 class HRVReading:
     """Single HRV measurement."""
+
     timestamp: datetime
     rmssd: float  # Root Mean Square of Successive Differences (ms)
     sdnn: Optional[float] = None  # Standard Deviation of NN intervals
@@ -130,6 +132,7 @@ class HRVReading:
 @dataclass
 class BaselineHRV:
     """User's baseline HRV statistics."""
+
     mean_rmssd: float
     std_rmssd: float
     median_rmssd: float
@@ -144,6 +147,7 @@ class BaselineHRV:
 @dataclass
 class WindowAnalysis:
     """HRV analysis for a specific time window."""
+
     window: TimeWindow
     start_minutes: int
     end_minutes: int
@@ -167,6 +171,7 @@ class WindowAnalysis:
 @dataclass
 class ExposureAnalysis:
     """Complete HRV analysis for a single exposure event."""
+
     exposure_id: str
     trigger_type: str  # allergen type or compound
     trigger_name: str
@@ -192,6 +197,7 @@ class ExposureAnalysis:
 @dataclass
 class SensitivityPattern:
     """Detected sensitivity pattern across multiple exposures."""
+
     trigger_type: str
     trigger_name: str
 
@@ -225,6 +231,7 @@ class SensitivityPattern:
 @dataclass
 class SensitivityReport:
     """Complete sensitivity analysis report for a user."""
+
     user_id: str
     analysis_period_days: int
     generated_at: datetime
@@ -316,7 +323,9 @@ class HRVSensitivityAnalyzer:
         if pnn50_values:
             baseline.mean_pnn50 = float(np.mean(pnn50_values))
 
-        lf_hf_values = [r.lf_hf_ratio for r in readings_in_range if r.lf_hf_ratio is not None]
+        lf_hf_values = [
+            r.lf_hf_ratio for r in readings_in_range if r.lf_hf_ratio is not None
+        ]
         if lf_hf_values:
             baseline.mean_lf_hf = float(np.mean(lf_hf_values))
 
@@ -370,8 +379,9 @@ class HRVSensitivityAnalyzer:
             analysis.windows[window] = window_analysis
 
             # Track maximum drop
-            if (window_analysis.rmssd_change_pct is not None and
-                abs(window_analysis.rmssd_change_pct) > abs(analysis.max_hrv_drop_pct)):
+            if window_analysis.rmssd_change_pct is not None and abs(
+                window_analysis.rmssd_change_pct
+            ) > abs(analysis.max_hrv_drop_pct):
                 analysis.max_hrv_drop_pct = window_analysis.rmssd_change_pct
                 if window_analysis.has_significant_drop:
                     analysis.peak_reaction_window = window
@@ -414,8 +424,7 @@ class HRVSensitivityAnalyzer:
 
         # Filter readings in window
         window_readings = [
-            r for r in hrv_readings
-            if start_time <= r.timestamp < end_time
+            r for r in hrv_readings if start_time <= r.timestamp < end_time
         ]
 
         analysis = WindowAnalysis(
@@ -526,24 +535,29 @@ class HRVSensitivityAnalyzer:
         primary_window = max(
             window_impacts.items(),
             key=lambda x: x[1],
-            default=(TimeWindow.SHORT_TERM, 0)
+            default=(TimeWindow.SHORT_TERM, 0),
         )[0]
 
         # Statistical test: is the drop significant?
         # One-sample t-test: is mean drop significantly > 0?
         if len(hrv_drops) >= 3:
-            t_stat, p_value = stats.ttest_1samp([abs(d) for d in hrv_drops], 0)
-            correlation = float(np.corrcoef(
-                list(range(len(hrv_drops))),
-                [abs(d) for d in hrv_drops]
-            )[0, 1]) if len(hrv_drops) > 1 else 0.0
+            _, p_value = stats.ttest_1samp([abs(d) for d in hrv_drops], 0)
+            correlation = (
+                float(
+                    np.corrcoef(
+                        list(range(len(hrv_drops))), [abs(d) for d in hrv_drops]
+                    )[0, 1]
+                )
+                if len(hrv_drops) > 1
+                else 0.0
+            )
         else:
-            t_stat, p_value = 0.0, 1.0
+            _, p_value = 0.0, 1.0
             correlation = 0.0
 
         is_significant = (
-            p_value < HRV_THRESHOLDS["statistical_significance"] and
-            avg_drop >= HRV_THRESHOLDS["possible_reaction_pct"]
+            p_value < HRV_THRESHOLDS["statistical_significance"]
+            and avg_drop >= HRV_THRESHOLDS["possible_reaction_pct"]
         )
 
         # Determine suggested severity
@@ -633,9 +647,7 @@ class HRVSensitivityAnalyzer:
         significance_factor = 1.2 if is_significant else 0.8
 
         confidence = (
-            count_factor * 0.3 +
-            consistency_factor * 0.3 +
-            magnitude_factor * 0.4
+            count_factor * 0.3 + consistency_factor * 0.3 + magnitude_factor * 0.4
         ) * significance_factor
 
         return min(0.99, max(0.1, confidence))
@@ -662,13 +674,25 @@ class HRVSensitivityAnalyzer:
             Complete SensitivityReport
         """
         # Separate confirmed vs possible sensitivities
-        confirmed = [p for p in patterns if p.is_statistically_significant and p.confidence >= 0.7]
-        possible = [p for p in patterns if not p.is_statistically_significant or p.confidence < 0.7]
+        confirmed = [
+            p
+            for p in patterns
+            if p.is_statistically_significant and p.confidence >= 0.7
+        ]
+        possible = [
+            p
+            for p in patterns
+            if not p.is_statistically_significant or p.confidence < 0.7
+        ]
 
         # Calculate current HRV trend
         if current_hrv_readings:
             recent_rmssd = np.mean([r.rmssd for r in current_hrv_readings[-7:]])
-            older_rmssd = np.mean([r.rmssd for r in current_hrv_readings[:-7]]) if len(current_hrv_readings) > 7 else recent_rmssd
+            older_rmssd = (
+                np.mean([r.rmssd for r in current_hrv_readings[:-7]])
+                if len(current_hrv_readings) > 7
+                else recent_rmssd
+            )
 
             if recent_rmssd > older_rmssd * 1.05:
                 trend = "improving"
@@ -677,7 +701,9 @@ class HRVSensitivityAnalyzer:
             else:
                 trend = "stable"
 
-            current_vs_baseline = ((recent_rmssd - baseline.mean_rmssd) / baseline.mean_rmssd) * 100
+            current_vs_baseline = (
+                (recent_rmssd - baseline.mean_rmssd) / baseline.mean_rmssd
+            ) * 100
         else:
             trend = "unknown"
             current_vs_baseline = 0.0
@@ -753,20 +779,24 @@ class HRVSensitivityAnalyzer:
         return recommendations
 
     def get_reaction_pattern_info(
-        self,
-        sensitivity_type: SensitivityType
+        self, sensitivity_type: SensitivityType
     ) -> Dict[str, Any]:
         """Get typical reaction pattern for a sensitivity type."""
-        pattern = REACTION_PATTERNS.get(sensitivity_type, {
-            "primary_window": TimeWindow.SHORT_TERM,
-            "secondary_windows": [],
-            "typical_onset_min": 60,
-            "typical_duration_hours": 6,
-        })
+        pattern = REACTION_PATTERNS.get(
+            sensitivity_type,
+            {
+                "primary_window": TimeWindow.SHORT_TERM,
+                "secondary_windows": [],
+                "typical_onset_min": 60,
+                "typical_duration_hours": 6,
+            },
+        )
 
         return {
             "primary_window": pattern["primary_window"].value,
-            "primary_window_label": WINDOW_DEFINITIONS[pattern["primary_window"]]["label"],
+            "primary_window_label": WINDOW_DEFINITIONS[pattern["primary_window"]][
+                "label"
+            ],
             "secondary_windows": [w.value for w in pattern["secondary_windows"]],
             "typical_onset_minutes": pattern["typical_onset_min"],
             "typical_duration_hours": pattern["typical_duration_hours"],

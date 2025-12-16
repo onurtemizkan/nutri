@@ -10,42 +10,41 @@ Tests cover:
 - ML model prediction
 - API endpoints
 """
-import pytest
-import pytest_asyncio
-from datetime import datetime, timedelta
-from typing import List
 
-from httpx import AsyncClient
+import pytest  # noqa: E402
+from datetime import datetime, timedelta  # noqa: E402
+from typing import List  # noqa: E402
+
+from httpx import AsyncClient  # noqa: E402
 
 # Service imports
-from app.services.ingredient_extraction_service import (
+from app.services.ingredient_extraction_service import (  # noqa: E402
     ingredient_extraction_service,
     extract_ingredient_candidates,
     clean_ingredient_text,
     fuzzy_ratio,
 )
-from app.services.compound_quantification_service import (
+from app.services.compound_quantification_service import (  # noqa: E402
     compound_quantification_service,
     RiskLevel,
 )
-from app.services.hrv_sensitivity_analyzer import (
+from app.services.hrv_sensitivity_analyzer import (  # noqa: E402
     hrv_sensitivity_analyzer,
     HRVReading,
     TimeWindow,
 )
-from app.services.sensitivity_ml_model import (
+from app.services.sensitivity_ml_model import (  # noqa: E402
     sensitivity_ml_model,
     TrainingDataPoint,
 )
 
 # Schema imports
-from app.schemas.sensitivity import (
+from app.schemas.sensitivity import (  # noqa: E402
     IngredientExtractionRequest,
-    AllergenTypeSchema,
 )
 
 # Data imports
-from app.data.allergen_database import (
+from app.data.allergen_database import (  # noqa: E402
     INGREDIENT_DATABASE,
     HIDDEN_ALLERGEN_KEYWORDS,
     check_hidden_allergen,
@@ -88,13 +87,17 @@ class TestIngredientExtraction:
         assert "flour" in candidates
 
         # Natural text
-        candidates = extract_ingredient_candidates("Grilled salmon with spinach and parmesan")
+        candidates = extract_ingredient_candidates(
+            "Grilled salmon with spinach and parmesan"
+        )
         assert any("salmon" in c for c in candidates)
         assert any("spinach" in c for c in candidates)
         assert any("parmesan" in c for c in candidates)
 
         # Complex dish name
-        candidates = extract_ingredient_candidates("Caesar salad with anchovies and croutons")
+        candidates = extract_ingredient_candidates(
+            "Caesar salad with anchovies and croutons"
+        )
         assert len(candidates) >= 2
 
     def test_fuzzy_matching(self):
@@ -155,9 +158,7 @@ class TestIngredientExtraction:
 
         assert response.success
         # Should detect histamine warnings
-        histamine_warnings = [
-            w for w in response.compound_warnings if w.compound_type == "histamine"
-        ]
+        _ = [w for w in response.compound_warnings if w.compound_type == "histamine"]
         # At least some histamine warning expected
         assert len(response.compound_warnings) >= 0  # May or may not find matches
 
@@ -305,7 +306,10 @@ class TestCompoundQuantification:
         assert "fodmap" in thresholds
 
         # Check histamine thresholds
-        assert thresholds["histamine"]["safe_sensitive"] < thresholds["histamine"]["safe_general"]
+        assert (
+            thresholds["histamine"]["safe_sensitive"]
+            < thresholds["histamine"]["safe_general"]
+        )
 
         # Check tyramine MAOI threshold is very low
         assert thresholds["tyramine"]["danger_maoi"] < 10
@@ -334,18 +338,23 @@ class TestHRVSensitivityAnalyzer:
     ) -> List[HRVReading]:
         """Helper to create test HRV readings."""
         import random
+
         readings = []
         base_time = datetime.utcnow()
 
         for i in range(count):
-            timestamp = base_time - timedelta(hours=hours_back - i * (hours_back // count))
+            timestamp = base_time - timedelta(
+                hours=hours_back - i * (hours_back // count)
+            )
             # Add some variation
             rmssd = base_rmssd + random.gauss(0, 5)
-            readings.append(HRVReading(
-                timestamp=timestamp,
-                rmssd=max(20, rmssd),  # Keep positive
-                source="test",
-            ))
+            readings.append(
+                HRVReading(
+                    timestamp=timestamp,
+                    rmssd=max(20, rmssd),  # Keep positive
+                    source="test",
+                )
+            )
 
         return readings
 
@@ -404,7 +413,9 @@ class TestHRVSensitivityAnalyzer:
         fodmap_pattern = hrv_sensitivity_analyzer.get_reaction_pattern_info(
             SensitivityType.FODMAP
         )
-        assert fodmap_pattern["typical_onset_minutes"] > pattern["typical_onset_minutes"]
+        assert (
+            fodmap_pattern["typical_onset_minutes"] > pattern["typical_onset_minutes"]
+        )
 
 
 # =============================================================================
@@ -418,6 +429,7 @@ class TestSensitivityMLModel:
     def create_training_data(self, count: int = 50) -> List[TrainingDataPoint]:
         """Helper to create test training data."""
         import random
+
         data_points = []
 
         for i in range(count):
@@ -430,19 +442,26 @@ class TestSensitivityMLModel:
                 TimeWindow.MEDIUM_TERM: random.gauss(-8 if had_reaction else -1, 4),
             }
 
-            data_points.append(TrainingDataPoint(
-                hrv_drops=hrv_drops,
-                baseline_rmssd=random.gauss(45, 10),
-                baseline_std=random.gauss(12, 3),
-                trigger_type=random.choice(["milk", "eggs", "wheat", "peanuts"]),
-                prior_reaction_rate=random.random() * 0.5 + (0.3 if had_reaction else 0),
-                had_reaction=had_reaction,
-                reaction_severity=(
-                    ReactionSeverity.MODERATE if had_reaction and random.random() > 0.5
-                    else ReactionSeverity.MILD if had_reaction
-                    else ReactionSeverity.NONE
-                ),
-            ))
+            data_points.append(
+                TrainingDataPoint(
+                    hrv_drops=hrv_drops,
+                    baseline_rmssd=random.gauss(45, 10),
+                    baseline_std=random.gauss(12, 3),
+                    trigger_type=random.choice(["milk", "eggs", "wheat", "peanuts"]),
+                    prior_reaction_rate=random.random() * 0.5
+                    + (0.3 if had_reaction else 0),
+                    had_reaction=had_reaction,
+                    reaction_severity=(
+                        ReactionSeverity.MODERATE
+                        if had_reaction and random.random() > 0.5
+                        else (
+                            ReactionSeverity.MILD
+                            if had_reaction
+                            else ReactionSeverity.NONE
+                        )
+                    ),
+                )
+            )
 
         return data_points
 
@@ -698,4 +717,4 @@ class TestAllergenDatabase:
 # REACTION SEVERITY IMPORT (for ML tests)
 # =============================================================================
 
-from app.models.sensitivity import ReactionSeverity
+from app.models.sensitivity import ReactionSeverity  # noqa: E402

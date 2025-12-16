@@ -16,15 +16,14 @@ Based on:
 - Dose-response modeling in toxicology
 - HRV as biomarker with known sensitivity/specificity
 """
+
 import logging
 import math
 from typing import List, Dict, Tuple, Optional, Any
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from enum import Enum
+from datetime import datetime
 import numpy as np
 from scipy import stats
-from scipy.special import beta as beta_func, betaln, gammaln
 
 logger = logging.getLogger(__name__)
 
@@ -37,14 +36,14 @@ logger = logging.getLogger(__name__)
 # Weakly informative prior: most people don't have severe sensitivities
 SENSITIVITY_PRIOR = {
     "alpha": 1.0,  # Pseudo-count for reactions
-    "beta": 9.0,   # Pseudo-count for non-reactions
+    "beta": 9.0,  # Pseudo-count for non-reactions
     # Prior mean = alpha / (alpha + beta) = 0.1 (10% prior probability)
 }
 
 # HRV test characteristics (from research)
 HRV_TEST_CHARACTERISTICS = {
-    "sensitivity": 0.905,    # True positive rate
-    "specificity": 0.794,    # True negative rate
+    "sensitivity": 0.905,  # True positive rate
+    "specificity": 0.794,  # True negative rate
     # Derived:
     # P(HRV+|Reaction) = 0.905
     # P(HRV-|NoReaction) = 0.794
@@ -55,9 +54,9 @@ HRV_TEST_CHARACTERISTICS = {
 # Dose-response model parameters
 DOSE_RESPONSE_PARAMS = {
     "histamine": {
-        "ed50": 25.0,      # 50% effect dose (mg)
+        "ed50": 25.0,  # 50% effect dose (mg)
         "hill_slope": 2.0,  # Hill coefficient (steepness)
-        "max_effect": 0.95, # Maximum effect probability
+        "max_effect": 0.95,  # Maximum effect probability
     },
     "tyramine": {
         "ed50": 15.0,
@@ -65,7 +64,7 @@ DOSE_RESPONSE_PARAMS = {
         "max_effect": 0.90,
     },
     "fodmap": {
-        "ed50": 0.5,       # grams
+        "ed50": 0.5,  # grams
         "hill_slope": 1.5,
         "max_effect": 0.85,
     },
@@ -90,12 +89,13 @@ class BayesianBelief:
     Uses Beta distribution for conjugate updating with
     binomial likelihood (reactions vs no-reactions).
     """
+
     trigger_type: str
     trigger_name: str
 
     # Beta distribution parameters
     alpha: float = 1.0  # Reactions + prior
-    beta: float = 9.0   # Non-reactions + prior
+    beta: float = 9.0  # Non-reactions + prior
 
     # Exposure counts
     total_exposures: int = 0
@@ -165,6 +165,7 @@ class BayesianBelief:
 @dataclass
 class ExposureEvidence:
     """Single piece of evidence from an exposure event."""
+
     exposure_id: str
     timestamp: datetime
     trigger_type: str
@@ -188,6 +189,7 @@ class ExposureEvidence:
 @dataclass
 class SensitivityInference:
     """Result of Bayesian sensitivity inference."""
+
     trigger_type: str
     trigger_name: str
 
@@ -256,8 +258,8 @@ class DoseResponseModel:
         if dose <= 0:
             return 0.0
 
-        numerator = self.max_effect * (dose ** self.hill_slope)
-        denominator = (self.ed50 ** self.hill_slope) + (dose ** self.hill_slope)
+        numerator = self.max_effect * (dose**self.hill_slope)
+        denominator = (self.ed50**self.hill_slope) + (dose**self.hill_slope)
 
         return numerator / denominator
 
@@ -274,7 +276,7 @@ class DoseResponseModel:
         if probability <= 0:
             return 0.0
         if probability >= self.max_effect:
-            return float('inf')
+            return float("inf")
 
         # Rearrange Hill equation to solve for dose
         p = probability
@@ -283,16 +285,13 @@ class DoseResponseModel:
         n = self.hill_slope
 
         # dose^n = ED50^n * p / (E_max - p)
-        dose_n = (ed50 ** n) * p / (e_max - p)
+        dose_n = (ed50**n) * p / (e_max - p)
         dose = dose_n ** (1 / n)
 
         return dose
 
     def fit(
-        self,
-        doses: List[float],
-        reactions: List[bool],
-        method: str = "mle"
+        self, doses: List[float], reactions: List[bool], method: str = "mle"
     ) -> Dict[str, float]:
         """
         Fit model parameters to observed data.
@@ -305,10 +304,14 @@ class DoseResponseModel:
             Fitted parameters
         """
         if len(doses) < 3:
-            return {"ed50": self.ed50, "hill_slope": self.hill_slope, "max_effect": self.max_effect}
+            return {
+                "ed50": self.ed50,
+                "hill_slope": self.hill_slope,
+                "max_effect": self.max_effect,
+            }
 
         # Simple grid search for ED50 (more sophisticated methods available)
-        best_ll = float('-inf')
+        best_ll = float("-inf")
         best_ed50 = self.ed50
 
         for ed50 in np.linspace(self.ed50 * 0.1, self.ed50 * 10, 50):
@@ -325,13 +328,17 @@ class DoseResponseModel:
                 best_ed50 = ed50
 
         self.ed50 = best_ed50
-        return {"ed50": best_ed50, "hill_slope": self.hill_slope, "max_effect": self.max_effect}
+        return {
+            "ed50": best_ed50,
+            "hill_slope": self.hill_slope,
+            "max_effect": self.max_effect,
+        }
 
     def _hill_eq(self, dose: float, ed50: float, n: float, e_max: float) -> float:
         """Hill equation calculation."""
         if dose <= 0:
             return 0.0
-        return e_max * (dose ** n) / ((ed50 ** n) + (dose ** n))
+        return e_max * (dose**n) / ((ed50**n) + (dose**n))
 
 
 # =============================================================================
@@ -363,7 +370,9 @@ class BayesianSensitivityEngine:
 
         logger.info("Initialized BayesianSensitivityEngine")
 
-    def get_or_create_belief(self, trigger_type: str, trigger_name: str) -> BayesianBelief:
+    def get_or_create_belief(
+        self, trigger_type: str, trigger_name: str
+    ) -> BayesianBelief:
         """Get existing belief or create new one with prior."""
         if trigger_type not in self.beliefs:
             self.beliefs[trigger_type] = BayesianBelief(
@@ -377,9 +386,7 @@ class BayesianSensitivityEngine:
         return self.beliefs[trigger_type]
 
     def update_belief(
-        self,
-        evidence: ExposureEvidence,
-        trigger_name: str = ""
+        self, evidence: ExposureEvidence, trigger_name: str = ""
     ) -> BayesianBelief:
         """
         Update belief based on new evidence using Bayesian inference.
@@ -412,13 +419,13 @@ class BayesianSensitivityEngine:
             likelihood_ratio = sens / (1 - spec)
             # Effective "reaction" observation weighted by test accuracy
             belief.alpha += sens  # Weight by sensitivity
-            belief.beta += (1 - spec)  # Account for false positive rate
+            belief.beta += 1 - spec  # Account for false positive rate
             belief.positive_exposures += 1
         else:
             # Negative HRV signal
             likelihood_ratio = (1 - sens) / spec
             # Effective "no reaction" observation
-            belief.alpha += (1 - sens)  # Account for false negative rate
+            belief.alpha += 1 - sens  # Account for false negative rate
             belief.beta += spec  # Weight by specificity
 
         belief.total_exposures += 1
@@ -448,9 +455,7 @@ class BayesianSensitivityEngine:
         return belief
 
     def update_batch(
-        self,
-        evidence_list: List[ExposureEvidence],
-        trigger_name: str = ""
+        self, evidence_list: List[ExposureEvidence], trigger_name: str = ""
     ) -> Dict[str, BayesianBelief]:
         """
         Update beliefs from multiple evidence items.
@@ -556,9 +561,7 @@ class BayesianSensitivityEngine:
 
         # Combine factors
         confidence = (
-            0.4 * evidence_factor +
-            0.3 * consistency_factor +
-            0.3 * signal_factor
+            0.4 * evidence_factor + 0.3 * consistency_factor + 0.3 * signal_factor
         )
 
         return min(0.99, max(0.1, confidence))
@@ -611,7 +614,9 @@ class BayesianSensitivityEngine:
         belief = self.beliefs.get(trigger_type)
         if belief is None:
             # Return prior
-            p = SENSITIVITY_PRIOR["alpha"] / (SENSITIVITY_PRIOR["alpha"] + SENSITIVITY_PRIOR["beta"])
+            p = SENSITIVITY_PRIOR["alpha"] / (
+                SENSITIVITY_PRIOR["alpha"] + SENSITIVITY_PRIOR["beta"]
+            )
             return (p, 0.01, 0.5)
 
         base_prob = belief.mean_probability
@@ -632,7 +637,9 @@ class BayesianSensitivityEngine:
         ci_lower, ci_upper = belief.credible_interval(0.9)
 
         # Scale CI by same factor as base_prob
-        scale = base_prob / belief.mean_probability if belief.mean_probability > 0 else 1.0
+        scale = (
+            base_prob / belief.mean_probability if belief.mean_probability > 0 else 1.0
+        )
         ci_lower *= scale
         ci_upper *= scale
 
@@ -642,10 +649,7 @@ class BayesianSensitivityEngine:
             min(0.99, ci_upper),
         )
 
-    def _compute_confounder_adjustment(
-        self,
-        confounders: Dict[str, float]
-    ) -> float:
+    def _compute_confounder_adjustment(self, confounders: Dict[str, float]) -> float:
         """
         Compute adjustment factor for confounding variables.
 
@@ -679,10 +683,7 @@ class BayesianSensitivityEngine:
             if belief.total_exposures >= MIN_EXPOSURES_FOR_INFERENCE
         ]
 
-    def compare_triggers(
-        self,
-        trigger_types: List[str]
-    ) -> Dict[str, Dict[str, Any]]:
+    def compare_triggers(self, trigger_types: List[str]) -> Dict[str, Dict[str, Any]]:
         """
         Compare sensitivity across multiple triggers.
 
@@ -706,9 +707,7 @@ class BayesianSensitivityEngine:
 
         # Rank by probability
         ranked = sorted(
-            comparisons.items(),
-            key=lambda x: x[1]["probability"],
-            reverse=True
+            comparisons.items(), key=lambda x: x[1]["probability"], reverse=True
         )
 
         return {k: {**v, "rank": i + 1} for i, (k, v) in enumerate(ranked)}

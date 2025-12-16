@@ -18,13 +18,11 @@ Research Sources:
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Any, Union
+from typing import Dict, List, Optional, Tuple, Any
 from enum import Enum
 from datetime import datetime, timedelta
 import math
-import numpy as np
 from collections import deque
 
 
@@ -32,8 +30,10 @@ from collections import deque
 # METABOLIC PATHWAY CONSTANTS
 # =============================================================================
 
+
 class MetabolicPathway(str, Enum):
     """Major amino acid metabolic pathways"""
+
     TRYPTOPHAN_SEROTONIN = "tryptophan_serotonin"
     TRYPTOPHAN_KYNURENINE = "tryptophan_kynurenine"
     TYROSINE_CATECHOLAMINE = "tyrosine_catecholamine"
@@ -139,9 +139,11 @@ HEALTH_CORRELATIONS = {
 # DATA CLASSES
 # =============================================================================
 
+
 @dataclass
 class AminoAcidIntake:
     """Single amino acid intake event"""
+
     amino_acid: str
     amount_mg: float
     timestamp: datetime
@@ -153,6 +155,7 @@ class AminoAcidIntake:
 @dataclass
 class PlasmaConcentration:
     """Modeled plasma amino acid concentration"""
+
     amino_acid: str
     concentration_umol: float
     timestamp: datetime
@@ -162,6 +165,7 @@ class PlasmaConcentration:
 @dataclass
 class PathwayActivity:
     """Metabolic pathway activity level"""
+
     pathway: MetabolicPathway
     activity_level: float  # 0-1 normalized
     rate_limiting_factor: Optional[str] = None
@@ -172,6 +176,7 @@ class PathwayActivity:
 @dataclass
 class NeurotransmitterSynthesis:
     """Predicted neurotransmitter synthesis rate"""
+
     neurotransmitter: str
     synthesis_rate: float  # Relative to baseline
     precursor_availability: float
@@ -183,6 +188,7 @@ class NeurotransmitterSynthesis:
 @dataclass
 class HealthOutcomePrediction:
     """Predicted health outcome from amino acid status"""
+
     outcome: str
     predicted_change: float  # -1 to 1 relative change
     confidence: float
@@ -194,6 +200,7 @@ class HealthOutcomePrediction:
 @dataclass
 class MetabolicState:
     """Complete metabolic state snapshot"""
+
     timestamp: datetime
     plasma_amino_acids: Dict[str, float]  # μmol/L
     pathway_activities: Dict[str, float]
@@ -208,6 +215,7 @@ class MetabolicState:
 # PHARMACOKINETIC MODEL
 # =============================================================================
 
+
 class AminoAcidPharmacokinetics:
     """
     Models amino acid absorption, distribution, and metabolism.
@@ -220,9 +228,7 @@ class AminoAcidPharmacokinetics:
         self.lat1_competition = LAT1_COMPETITION
 
     def calculate_plasma_concentration(
-        self,
-        intakes: List[AminoAcidIntake],
-        current_time: datetime
+        self, intakes: List[AminoAcidIntake], current_time: datetime
     ) -> Dict[str, PlasmaConcentration]:
         """
         Calculate current plasma concentrations from intake history.
@@ -266,24 +272,29 @@ class AminoAcidPharmacokinetics:
 
                 # Rate constants
                 ke = 0.693 / t_half  # Elimination
-                ka = 2.5 / t_max     # Absorption (empirical)
+                ka = 2.5 / t_max  # Absorption (empirical)
 
                 # One-compartment model
                 # Simplified: peak at t_max, exponential decay
                 if dt <= t_max:
                     # Rising phase
-                    conc_fraction = (1 - math.exp(-ka * dt))
+                    conc_fraction = 1 - math.exp(-ka * dt)
                 else:
                     # Decay phase
-                    peak_fraction = (1 - math.exp(-ka * t_max))
+                    peak_fraction = 1 - math.exp(-ka * t_max)
                     decay = math.exp(-ke * (dt - t_max))
                     conc_fraction = peak_fraction * decay
 
                 # Convert mg to μmol (rough MW estimates)
                 mw_estimates = {
-                    "tryptophan": 204, "tyrosine": 181, "leucine": 131,
-                    "isoleucine": 131, "valine": 117, "glycine": 75,
-                    "arginine": 174, "glutamine": 146,
+                    "tryptophan": 204,
+                    "tyrosine": 181,
+                    "leucine": 131,
+                    "isoleucine": 131,
+                    "valine": 117,
+                    "glycine": 75,
+                    "arginine": 174,
+                    "glutamine": 146,
                 }
                 mw = mw_estimates.get(aa_name, 150)
 
@@ -294,24 +305,20 @@ class AminoAcidPharmacokinetics:
                 total_conc += contribution
 
             # Calculate brain availability (LAT1 competition)
-            brain_avail = self._calculate_brain_availability(
-                aa_name, concentrations
-            )
+            brain_avail = self._calculate_brain_availability(aa_name, concentrations)
 
             if total_conc > 0:
                 concentrations[aa_name] = PlasmaConcentration(
                     amino_acid=aa_name,
                     concentration_umol=total_conc,
                     timestamp=current_time,
-                    brain_availability=brain_avail
+                    brain_availability=brain_avail,
                 )
 
         return concentrations
 
     def _calculate_brain_availability(
-        self,
-        amino_acid: str,
-        current_concentrations: Dict[str, PlasmaConcentration]
+        self, amino_acid: str, current_concentrations: Dict[str, PlasmaConcentration]
     ) -> float:
         """
         Calculate brain availability accounting for LAT1 competition.
@@ -334,7 +341,7 @@ class AminoAcidPharmacokinetics:
                 other_params = self.lat1_competition[other_aa]
                 # Higher concentration and lower Ki = stronger competition
                 if conc.concentration_umol > 0:
-                    competition = (conc.concentration_umol / other_params["ki"])
+                    competition = conc.concentration_umol / other_params["ki"]
                     competition_factor += competition * 0.1
 
         # Brain availability decreases with competition
@@ -346,6 +353,7 @@ class AminoAcidPharmacokinetics:
 # =============================================================================
 # PATHWAY MODELING
 # =============================================================================
+
 
 class MetabolicPathwayModel:
     """
@@ -362,7 +370,7 @@ class MetabolicPathwayModel:
         self,
         pathway: MetabolicPathway,
         substrate_concentration: float,
-        cofactor_status: Dict[str, float]
+        cofactor_status: Dict[str, float],
     ) -> PathwayActivity:
         """
         Calculate metabolic pathway activity using enzyme kinetics.
@@ -386,7 +394,9 @@ class MetabolicPathwayModel:
             # Base Michaelis-Menten
             km = enzyme["km"]
             vmax = enzyme["vmax_relative"]
-            base_activity = vmax * substrate_concentration / (km + substrate_concentration)
+            base_activity = (
+                vmax * substrate_concentration / (km + substrate_concentration)
+            )
 
             # Cofactor modification
             cofactor_modifier = 1.0
@@ -410,7 +420,7 @@ class MetabolicPathwayModel:
                 activity_level=min(1.0, final_activity),
                 rate_limiting_factor=rate_limiting_factor,
                 cofactor_status=cofactor_details,
-                product_accumulation=0.0
+                product_accumulation=0.0,
             )
 
         # Default for unmapped pathways
@@ -418,13 +428,13 @@ class MetabolicPathwayModel:
             pathway=pathway,
             activity_level=0.5,
             rate_limiting_factor=None,
-            cofactor_status=cofactor_status
+            cofactor_status=cofactor_status,
         )
 
     def predict_neurotransmitter_synthesis(
         self,
         plasma_concentrations: Dict[str, PlasmaConcentration],
-        cofactor_status: Dict[str, float]
+        cofactor_status: Dict[str, float],
     ) -> List[NeurotransmitterSynthesis]:
         """
         Predict neurotransmitter synthesis rates from precursor availability.
@@ -437,7 +447,7 @@ class MetabolicPathwayModel:
             pathway_activity = self.calculate_pathway_activity(
                 MetabolicPathway.TRYPTOPHAN_SEROTONIN,
                 trp.concentration_umol,
-                cofactor_status
+                cofactor_status,
             )
 
             # Account for brain availability
@@ -446,7 +456,9 @@ class MetabolicPathwayModel:
             # B6 is critical for final decarboxylation step
             b6_status = cofactor_status.get("plp", cofactor_status.get("b6", 0.8))
 
-            synthesis_rate = pathway_activity.activity_level * b6_status * trp.brain_availability
+            synthesis_rate = (
+                pathway_activity.activity_level * b6_status * trp.brain_availability
+            )
 
             # Classify brain level
             if synthesis_rate < 0.4:
@@ -456,14 +468,16 @@ class MetabolicPathwayModel:
             else:
                 brain_level = "elevated"
 
-            predictions.append(NeurotransmitterSynthesis(
-                neurotransmitter="serotonin",
-                synthesis_rate=synthesis_rate,
-                precursor_availability=effective_precursor / 100,
-                enzyme_activity=pathway_activity.activity_level,
-                cofactor_adequacy=b6_status,
-                predicted_brain_level=brain_level
-            ))
+            predictions.append(
+                NeurotransmitterSynthesis(
+                    neurotransmitter="serotonin",
+                    synthesis_rate=synthesis_rate,
+                    precursor_availability=effective_precursor / 100,
+                    enzyme_activity=pathway_activity.activity_level,
+                    cofactor_adequacy=b6_status,
+                    predicted_brain_level=brain_level,
+                )
+            )
 
         # Dopamine from tyrosine
         if "tyrosine" in plasma_concentrations:
@@ -471,11 +485,13 @@ class MetabolicPathwayModel:
             pathway_activity = self.calculate_pathway_activity(
                 MetabolicPathway.TYROSINE_CATECHOLAMINE,
                 tyr.concentration_umol,
-                cofactor_status
+                cofactor_status,
             )
 
             iron_status = cofactor_status.get("fe2+", cofactor_status.get("iron", 0.8))
-            synthesis_rate = pathway_activity.activity_level * iron_status * tyr.brain_availability
+            synthesis_rate = (
+                pathway_activity.activity_level * iron_status * tyr.brain_availability
+            )
 
             if synthesis_rate < 0.4:
                 brain_level = "low"
@@ -484,14 +500,16 @@ class MetabolicPathwayModel:
             else:
                 brain_level = "elevated"
 
-            predictions.append(NeurotransmitterSynthesis(
-                neurotransmitter="dopamine",
-                synthesis_rate=synthesis_rate,
-                precursor_availability=tyr.concentration_umol / 100,
-                enzyme_activity=pathway_activity.activity_level,
-                cofactor_adequacy=iron_status,
-                predicted_brain_level=brain_level
-            ))
+            predictions.append(
+                NeurotransmitterSynthesis(
+                    neurotransmitter="dopamine",
+                    synthesis_rate=synthesis_rate,
+                    precursor_availability=tyr.concentration_umol / 100,
+                    enzyme_activity=pathway_activity.activity_level,
+                    cofactor_adequacy=iron_status,
+                    predicted_brain_level=brain_level,
+                )
+            )
 
         # GABA from glutamate/glutamine
         if "glutamine" in plasma_concentrations:
@@ -499,12 +517,12 @@ class MetabolicPathwayModel:
             pathway_activity = self.calculate_pathway_activity(
                 MetabolicPathway.GLUTAMATE_GABA,
                 gln.concentration_umol * 0.8,  # Conversion to glutamate
-                cofactor_status
+                cofactor_status,
             )
 
             b6_status = cofactor_status.get("plp", cofactor_status.get("b6", 0.8))
             # B6 is CRITICAL for GAD enzyme
-            synthesis_rate = pathway_activity.activity_level * (b6_status ** 1.5)
+            synthesis_rate = pathway_activity.activity_level * (b6_status**1.5)
 
             if synthesis_rate < 0.3:
                 brain_level = "low"
@@ -513,14 +531,16 @@ class MetabolicPathwayModel:
             else:
                 brain_level = "elevated"
 
-            predictions.append(NeurotransmitterSynthesis(
-                neurotransmitter="gaba",
-                synthesis_rate=synthesis_rate,
-                precursor_availability=gln.concentration_umol / 500,
-                enzyme_activity=pathway_activity.activity_level,
-                cofactor_adequacy=b6_status,
-                predicted_brain_level=brain_level
-            ))
+            predictions.append(
+                NeurotransmitterSynthesis(
+                    neurotransmitter="gaba",
+                    synthesis_rate=synthesis_rate,
+                    precursor_availability=gln.concentration_umol / 500,
+                    enzyme_activity=pathway_activity.activity_level,
+                    cofactor_adequacy=b6_status,
+                    predicted_brain_level=brain_level,
+                )
+            )
 
         return predictions
 
@@ -528,6 +548,7 @@ class MetabolicPathwayModel:
 # =============================================================================
 # DEEP LEARNING MODEL
 # =============================================================================
+
 
 class AminoAcidHealthPredictor(nn.Module):
     """
@@ -546,7 +567,7 @@ class AminoAcidHealthPredictor(nn.Module):
         hidden_dim: int = 128,
         num_heads: int = 4,
         num_layers: int = 3,
-        output_dims: Dict[str, int] = None
+        output_dims: Dict[str, int] = None,
     ):
         super().__init__()
 
@@ -567,51 +588,50 @@ class AminoAcidHealthPredictor(nn.Module):
             nn.Linear(input_dim, hidden_dim),
             nn.LayerNorm(hidden_dim),
             nn.GELU(),
-            nn.Dropout(0.1)
+            nn.Dropout(0.1),
         )
 
         # Pathway interaction attention
         self.pathway_attention = nn.MultiheadAttention(
-            embed_dim=hidden_dim,
-            num_heads=num_heads,
-            dropout=0.1,
-            batch_first=True
+            embed_dim=hidden_dim, num_heads=num_heads, dropout=0.1, batch_first=True
         )
 
         # Processing layers with residual connections
-        self.layers = nn.ModuleList([
-            nn.Sequential(
-                nn.Linear(hidden_dim, hidden_dim * 2),
-                nn.GELU(),
-                nn.Dropout(0.1),
-                nn.Linear(hidden_dim * 2, hidden_dim),
-                nn.LayerNorm(hidden_dim)
-            )
-            for _ in range(num_layers)
-        ])
+        self.layers = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Linear(hidden_dim, hidden_dim * 2),
+                    nn.GELU(),
+                    nn.Dropout(0.1),
+                    nn.Linear(hidden_dim * 2, hidden_dim),
+                    nn.LayerNorm(hidden_dim),
+                )
+                for _ in range(num_layers)
+            ]
+        )
 
         # Output heads for different predictions
-        self.output_heads = nn.ModuleDict({
-            name: nn.Sequential(
-                nn.Linear(hidden_dim, hidden_dim // 2),
-                nn.GELU(),
-                nn.Linear(hidden_dim // 2, dim)
-            )
-            for name, dim in output_dims.items()
-        })
+        self.output_heads = nn.ModuleDict(
+            {
+                name: nn.Sequential(
+                    nn.Linear(hidden_dim, hidden_dim // 2),
+                    nn.GELU(),
+                    nn.Linear(hidden_dim // 2, dim),
+                )
+                for name, dim in output_dims.items()
+            }
+        )
 
         # Uncertainty estimation head
         self.uncertainty_head = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.GELU(),
             nn.Linear(hidden_dim // 2, len(output_dims)),
-            nn.Softplus()  # Ensure positive uncertainty
+            nn.Softplus(),  # Ensure positive uncertainty
         )
 
     def forward(
-        self,
-        x: torch.Tensor,
-        return_attention: bool = False
+        self, x: torch.Tensor, return_attention: bool = False
     ) -> Tuple[Dict[str, torch.Tensor], torch.Tensor]:
         """
         Forward pass.
@@ -642,10 +662,7 @@ class AminoAcidHealthPredictor(nn.Module):
             h = h + layer(h)
 
         # Generate predictions from each head
-        predictions = {
-            name: head(h)
-            for name, head in self.output_heads.items()
-        }
+        predictions = {name: head(h) for name, head in self.output_heads.items()}
 
         # Uncertainty estimation
         uncertainty = self.uncertainty_head(h)
@@ -659,6 +676,7 @@ class AminoAcidHealthPredictor(nn.Module):
 # =============================================================================
 # MAIN TRACKER CLASS
 # =============================================================================
+
 
 class AminoAcidMetabolismTracker:
     """
@@ -686,12 +704,12 @@ class AminoAcidMetabolismTracker:
 
         # Default cofactor status (can be updated)
         self.cofactor_status = {
-            "plp": 0.8,     # Vitamin B6
-            "bh4": 0.85,    # Tetrahydrobiopterin
-            "fe2+": 0.8,    # Iron
-            "o2": 1.0,      # Oxygen
-            "cu2+": 0.9,    # Copper
-            "mg2+": 0.75,   # Magnesium
+            "plp": 0.8,  # Vitamin B6
+            "bh4": 0.85,  # Tetrahydrobiopterin
+            "fe2+": 0.8,  # Iron
+            "o2": 1.0,  # Oxygen
+            "cu2+": 0.9,  # Copper
+            "mg2+": 0.75,  # Magnesium
         }
 
     def log_intake(self, intake: AminoAcidIntake) -> None:
@@ -705,7 +723,7 @@ class AminoAcidMetabolismTracker:
         amino_acid_content: Dict[str, float],  # mg per 100g
         timestamp: Optional[datetime] = None,
         with_carbs: bool = True,
-        fasted: bool = False
+        fasted: bool = False,
     ) -> None:
         """
         Log food intake and create amino acid intake events.
@@ -731,7 +749,7 @@ class AminoAcidMetabolismTracker:
                     timestamp=timestamp,
                     source=f"food:{food_name}",
                     with_carbs=with_carbs,
-                    fasted=fasted
+                    fasted=fasted,
                 )
                 self.log_intake(intake)
 
@@ -739,10 +757,7 @@ class AminoAcidMetabolismTracker:
         """Update cofactor status (0-1 scale for each)."""
         self.cofactor_status.update(cofactors)
 
-    def get_current_state(
-        self,
-        timestamp: Optional[datetime] = None
-    ) -> MetabolicState:
+    def get_current_state(self, timestamp: Optional[datetime] = None) -> MetabolicState:
         """
         Get complete current metabolic state.
 
@@ -774,9 +789,7 @@ class AminoAcidMetabolismTracker:
             substrate = substrate_map.get(pathway)
             if substrate and substrate in plasma:
                 activity = self.pathway_model.calculate_pathway_activity(
-                    pathway,
-                    plasma[substrate].concentration_umol,
-                    self.cofactor_status
+                    pathway, plasma[substrate].concentration_umol, self.cofactor_status
                 )
                 pathway_activities[pathway.value] = activity.activity_level
             else:
@@ -787,8 +800,7 @@ class AminoAcidMetabolismTracker:
             plasma, self.cofactor_status
         )
         neurotransmitter_estimates = {
-            nt.neurotransmitter: nt.synthesis_rate
-            for nt in nt_predictions
+            nt.neurotransmitter: nt.synthesis_rate for nt in nt_predictions
         }
 
         # Health predictions
@@ -799,15 +811,14 @@ class AminoAcidMetabolismTracker:
         state = MetabolicState(
             timestamp=timestamp,
             plasma_amino_acids={
-                aa: conc.concentration_umol
-                for aa, conc in plasma.items()
+                aa: conc.concentration_umol for aa, conc in plasma.items()
             },
             pathway_activities=pathway_activities,
             neurotransmitter_estimates=neurotransmitter_estimates,
             hrv_prediction=hrv_pred,
             mood_prediction=mood_pred,
             energy_prediction=energy_pred,
-            sleep_prediction=sleep_pred
+            sleep_prediction=sleep_pred,
         )
 
         self.metabolic_history.append(state)
@@ -817,7 +828,7 @@ class AminoAcidMetabolismTracker:
         self,
         plasma: Dict[str, PlasmaConcentration],
         pathway_activities: Dict[str, float],
-        neurotransmitters: Dict[str, float]
+        neurotransmitters: Dict[str, float],
     ) -> Tuple[float, float, float, float]:
         """
         Predict health outcomes from current metabolic state.
@@ -836,11 +847,15 @@ class AminoAcidMetabolismTracker:
 
         if "glycine" in plasma:
             gly_effect = correlations["glycine_cardiovascular"]["hrv_sdnn"]
-            hrv_change += gly_effect * min(1, plasma["glycine"].concentration_umol / 500)
+            hrv_change += gly_effect * min(
+                1, plasma["glycine"].concentration_umol / 500
+            )
 
         # BCAA recovery effect (post-exercise)
         bcaa_level = sum(
-            plasma.get(aa, PlasmaConcentration(aa, 0, datetime.now(), 0)).concentration_umol
+            plasma.get(
+                aa, PlasmaConcentration(aa, 0, datetime.now(), 0)
+            ).concentration_umol
             for aa in ["leucine", "isoleucine", "valine"]
         )
         if bcaa_level > 500:
@@ -851,18 +866,26 @@ class AminoAcidMetabolismTracker:
         serotonin = neurotransmitters.get("serotonin", 0.5)
         dopamine = neurotransmitters.get("dopamine", 0.5)
 
-        mood_change += correlations["tryptophan_serotonin"]["mood_score"] * (serotonin - 0.5)
-        mood_change += correlations["tyrosine_dopamine"]["motivation"] * (dopamine - 0.5)
+        mood_change += correlations["tryptophan_serotonin"]["mood_score"] * (
+            serotonin - 0.5
+        )
+        mood_change += correlations["tyrosine_dopamine"]["motivation"] * (
+            dopamine - 0.5
+        )
 
         # Energy prediction
         energy_change = 0.0
-        energy_change += correlations["tyrosine_dopamine"]["cognitive_performance"] * (dopamine - 0.5)
+        energy_change += correlations["tyrosine_dopamine"]["cognitive_performance"] * (
+            dopamine - 0.5
+        )
         if bcaa_level > 300:
             energy_change += 0.1  # BCAAs support energy
 
         # Sleep prediction
         sleep_change = 0.0
-        sleep_change += correlations["tryptophan_serotonin"]["sleep_quality"] * (serotonin - 0.5)
+        sleep_change += correlations["tryptophan_serotonin"]["sleep_quality"] * (
+            serotonin - 0.5
+        )
         gaba = neurotransmitters.get("gaba", 0.5)
         sleep_change += 0.3 * (gaba - 0.5)  # GABA promotes sleep
 
@@ -871,13 +894,11 @@ class AminoAcidMetabolismTracker:
             max(-1, min(1, hrv_change)),
             max(-1, min(1, mood_change)),
             max(-1, min(1, energy_change)),
-            max(-1, min(1, sleep_change))
+            max(-1, min(1, sleep_change)),
         )
 
     def predict_outcome_timeline(
-        self,
-        hours_ahead: int = 12,
-        resolution_minutes: int = 30
+        self, hours_ahead: int = 12, resolution_minutes: int = 30
     ) -> List[MetabolicState]:
         """
         Predict metabolic state timeline for upcoming hours.
@@ -900,8 +921,7 @@ class AminoAcidMetabolismTracker:
         return timeline
 
     def get_optimization_recommendations(
-        self,
-        target: str = "balanced"  # "hrv", "mood", "energy", "sleep", "balanced"
+        self, target: str = "balanced"  # "hrv", "mood", "energy", "sleep", "balanced"
     ) -> List[Dict[str, Any]]:
         """
         Get recommendations to optimize amino acid intake.
@@ -922,77 +942,100 @@ class AminoAcidMetabolismTracker:
         if target in ["sleep", "mood", "balanced"]:
             trp_level = plasma.get("tryptophan", 0)
             if trp_level < 50:
-                recommendations.append({
-                    "priority": 1,
-                    "amino_acid": "tryptophan",
-                    "current_level_umol": trp_level,
-                    "target_level_umol": 80,
-                    "recommendation": "Increase tryptophan intake",
-                    "food_sources": ["turkey", "chicken", "eggs", "cheese", "nuts"],
-                    "timing": "2-3 hours before bed for sleep, with carbs to reduce BCAA competition",
-                    "mechanism": "Tryptophan → 5-HTP → Serotonin → Melatonin pathway",
-                    "evidence": "Tryptophan depletion reduces HF-HRV (Biol Psychiatry 2006)"
-                })
+                recommendations.append(
+                    {
+                        "priority": 1,
+                        "amino_acid": "tryptophan",
+                        "current_level_umol": trp_level,
+                        "target_level_umol": 80,
+                        "recommendation": "Increase tryptophan intake",
+                        "food_sources": ["turkey", "chicken", "eggs", "cheese", "nuts"],
+                        "timing": "2-3 hours before bed for sleep, with carbs to reduce BCAA competition",
+                        "mechanism": "Tryptophan → 5-HTP → Serotonin → Melatonin pathway",
+                        "evidence": "Tryptophan depletion reduces HF-HRV (Biol Psychiatry 2006)",
+                    }
+                )
 
         # Tyrosine for energy/cognition
         if target in ["energy", "cognitive", "balanced"]:
             tyr_level = plasma.get("tyrosine", 0)
             if tyr_level < 60:
-                recommendations.append({
-                    "priority": 2,
-                    "amino_acid": "tyrosine",
-                    "current_level_umol": tyr_level,
-                    "target_level_umol": 100,
-                    "recommendation": "Increase tyrosine intake",
-                    "food_sources": ["chicken", "fish", "dairy", "almonds", "avocado"],
-                    "timing": "Morning or before demanding tasks",
-                    "mechanism": "Tyrosine → L-DOPA → Dopamine → Norepinephrine",
-                    "evidence": "Tyrosine improves cognitive performance under stress"
-                })
+                recommendations.append(
+                    {
+                        "priority": 2,
+                        "amino_acid": "tyrosine",
+                        "current_level_umol": tyr_level,
+                        "target_level_umol": 100,
+                        "recommendation": "Increase tyrosine intake",
+                        "food_sources": [
+                            "chicken",
+                            "fish",
+                            "dairy",
+                            "almonds",
+                            "avocado",
+                        ],
+                        "timing": "Morning or before demanding tasks",
+                        "mechanism": "Tyrosine → L-DOPA → Dopamine → Norepinephrine",
+                        "evidence": "Tyrosine improves cognitive performance under stress",
+                    }
+                )
 
         # Glycine for cardiovascular/sleep
         if target in ["hrv", "sleep", "balanced"]:
             gly_level = plasma.get("glycine", 0)
             if gly_level < 200:
-                recommendations.append({
-                    "priority": 2,
-                    "amino_acid": "glycine",
-                    "current_level_umol": gly_level,
-                    "target_level_umol": 400,
-                    "recommendation": "Increase glycine intake (3g before bed)",
-                    "food_sources": ["bone broth", "gelatin", "collagen", "pork skin"],
-                    "timing": "Before bed - improves sleep quality",
-                    "mechanism": "Glycine is inhibitory neurotransmitter, reduces core body temp",
-                    "evidence": "MDPI 2024 narrative review on glycine cardiovascular benefits"
-                })
+                recommendations.append(
+                    {
+                        "priority": 2,
+                        "amino_acid": "glycine",
+                        "current_level_umol": gly_level,
+                        "target_level_umol": 400,
+                        "recommendation": "Increase glycine intake (3g before bed)",
+                        "food_sources": [
+                            "bone broth",
+                            "gelatin",
+                            "collagen",
+                            "pork skin",
+                        ],
+                        "timing": "Before bed - improves sleep quality",
+                        "mechanism": "Glycine is inhibitory neurotransmitter, reduces core body temp",
+                        "evidence": "MDPI 2024 narrative review on glycine cardiovascular benefits",
+                    }
+                )
 
         # BCAAs for recovery
         if target in ["recovery", "balanced"]:
-            bcaa_total = sum(plasma.get(aa, 0) for aa in ["leucine", "isoleucine", "valine"])
+            bcaa_total = sum(
+                plasma.get(aa, 0) for aa in ["leucine", "isoleucine", "valine"]
+            )
             if bcaa_total < 300:
-                recommendations.append({
-                    "priority": 3,
-                    "amino_acid": "bcaa",
-                    "current_level_umol": bcaa_total,
-                    "target_level_umol": 600,
-                    "recommendation": "Add BCAAs around exercise (2:1:1 ratio)",
-                    "food_sources": ["whey protein", "eggs", "chicken", "beef"],
-                    "timing": "30min pre-workout and immediately post-workout",
-                    "mechanism": "Reduces muscle damage markers (CK), DOMS",
-                    "evidence": "Sports Med Open 2024: BCAA reduces CK at 72h (g=-0.99)"
-                })
+                recommendations.append(
+                    {
+                        "priority": 3,
+                        "amino_acid": "bcaa",
+                        "current_level_umol": bcaa_total,
+                        "target_level_umol": 600,
+                        "recommendation": "Add BCAAs around exercise (2:1:1 ratio)",
+                        "food_sources": ["whey protein", "eggs", "chicken", "beef"],
+                        "timing": "30min pre-workout and immediately post-workout",
+                        "mechanism": "Reduces muscle damage markers (CK), DOMS",
+                        "evidence": "Sports Med Open 2024: BCAA reduces CK at 72h (g=-0.99)",
+                    }
+                )
 
         # Cofactor recommendations
         if self.cofactor_status.get("plp", 1) < 0.7:
-            recommendations.append({
-                "priority": 1,
-                "type": "cofactor",
-                "nutrient": "vitamin_b6",
-                "recommendation": "Increase B6 intake - critical for neurotransmitter synthesis",
-                "food_sources": ["chicken", "fish", "potatoes", "bananas"],
-                "mechanism": "B6 (PLP) is cofactor for aromatic amino acid decarboxylase",
-                "evidence": "B6 deficiency impairs serotonin and GABA synthesis"
-            })
+            recommendations.append(
+                {
+                    "priority": 1,
+                    "type": "cofactor",
+                    "nutrient": "vitamin_b6",
+                    "recommendation": "Increase B6 intake - critical for neurotransmitter synthesis",
+                    "food_sources": ["chicken", "fish", "potatoes", "bananas"],
+                    "mechanism": "B6 (PLP) is cofactor for aromatic amino acid decarboxylase",
+                    "evidence": "B6 deficiency impairs serotonin and GABA synthesis",
+                }
+            )
 
         return sorted(recommendations, key=lambda x: x.get("priority", 99))
 
@@ -1001,14 +1044,13 @@ class AminoAcidMetabolismTracker:
 # CONVENIENCE FUNCTIONS
 # =============================================================================
 
+
 def create_tracker() -> AminoAcidMetabolismTracker:
     """Create and return a tracker instance."""
     return AminoAcidMetabolismTracker()
 
 
-def quick_analysis(
-    foods: List[Dict[str, Any]]
-) -> Dict[str, Any]:
+def quick_analysis(foods: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
     Quick amino acid analysis from food list.
 
@@ -1040,5 +1082,5 @@ def quick_analysis(
             "energy_change": state.energy_prediction,
             "sleep_change": state.sleep_prediction,
         },
-        "recommendations": recommendations
+        "recommendations": recommendations,
     }

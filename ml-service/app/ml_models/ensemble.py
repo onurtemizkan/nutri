@@ -27,6 +27,7 @@ import torch.optim as optim
 @dataclass
 class EnsembleConfig:
     """Configuration for ensemble models."""
+
     models: List[nn.Module]
     model_names: List[str]
     ensemble_type: str = "weighted"  # 'simple', 'weighted', 'stacking'
@@ -271,7 +272,7 @@ class StackingEnsemble(nn.Module):
 
             indices = torch.randperm(len(train_base_preds))
             for i in range(0, len(indices), batch_size):
-                batch_idx = indices[i:i + batch_size]
+                batch_idx = indices[i : i + batch_size]
                 batch_preds = train_base_preds[batch_idx]
                 batch_targets = y_train[batch_idx]
 
@@ -377,6 +378,7 @@ class DynamicEnsemble(nn.Module):
 # Ensemble Factory and Utilities
 # =============================================================================
 
+
 class EnsembleFactory:
     """Factory for creating ensemble models."""
 
@@ -452,10 +454,7 @@ def create_best_ensemble(
 
         if ensemble_type == "stacking":
             ensemble = EnsembleFactory.create(ensemble_type, models)
-            ensemble.train_meta_learner(
-                X_val, y_val, X_val, y_val,
-                epochs=50, lr=0.001
-            )
+            ensemble.train_meta_learner(X_val, y_val, X_val, y_val, epochs=50, lr=0.001)
         elif ensemble_type == "weighted":
             ensemble = EnsembleFactory.create(ensemble_type, models)
             ensemble.train_weights(X_val, y_val, epochs=50)
@@ -501,8 +500,7 @@ if __name__ == "__main__":
 
         if ens_type == "dynamic":
             ensemble = EnsembleFactory.create(
-                ens_type, models,
-                input_dim=input_dim, seq_length=seq_len
+                ens_type, models, input_dim=input_dim, seq_length=seq_len
             )
         else:
             ensemble = EnsembleFactory.create(ens_type, models)

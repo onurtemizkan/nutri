@@ -2,6 +2,7 @@
 Configuration management for ML Service
 Uses pydantic-settings for type-safe environment variables
 """
+
 from typing import Optional, List
 from pydantic import ConfigDict
 from pydantic_settings import BaseSettings

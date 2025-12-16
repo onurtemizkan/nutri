@@ -23,21 +23,16 @@ Research basis:
 """
 
 import math
-import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import (
     Any,
-    Callable,
     Dict,
-    Generator,
     List,
     Optional,
-    Sequence,
     Tuple,
     Union,
 )
-from collections import defaultdict
 import logging
 
 # PyTorch imports (graceful handling)
@@ -46,6 +41,7 @@ try:
     import torch.nn as nn
     import torch.nn.functional as F
     from torch.utils.data import Dataset, DataLoader
+
     TORCH_AVAILABLE = True
 except ImportError:
     torch = nn = F = Dataset = DataLoader = None
@@ -54,6 +50,7 @@ except ImportError:
 # NumPy import
 try:
     import numpy as np
+
     NUMPY_AVAILABLE = True
 except ImportError:
     np = None
@@ -64,6 +61,7 @@ logger = logging.getLogger(__name__)
 
 class PatternType(Enum):
     """Types of temporal patterns detected."""
+
     IMMEDIATE_RESPONSE = "immediate"  # 0-30 min
     DELAYED_RESPONSE = "delayed"  # 30 min - 2 hr
     LATE_RESPONSE = "late"  # 2-6 hr
@@ -74,6 +72,7 @@ class PatternType(Enum):
 
 class ResponseSeverity(Enum):
     """Severity classification of detected responses."""
+
     NONE = 0
     MILD = 1
     MODERATE = 2
@@ -84,6 +83,7 @@ class ResponseSeverity(Enum):
 @dataclass
 class TemporalPattern:
     """Detected temporal pattern."""
+
     pattern_type: PatternType
     start_time_minutes: int
     end_time_minutes: int
@@ -109,6 +109,7 @@ class TemporalPattern:
 @dataclass
 class AnalysisResult:
     """Complete temporal analysis result."""
+
     detected_patterns: List[TemporalPattern]
     overall_sensitivity_score: float
     hrv_trajectory: List[float]
@@ -166,7 +167,6 @@ if TORCH_AVAILABLE:
             x = x + self.pe[: x.size(0)]
             return self.dropout(x)
 
-
     class TemporalConvBlock(nn.Module):
         """
         Temporal convolutional block for multi-scale feature extraction.
@@ -190,12 +190,18 @@ if TORCH_AVAILABLE:
             padding = (kernel_size - 1) * dilation // 2
 
             self.conv1 = nn.Conv1d(
-                in_channels, out_channels, kernel_size,
-                padding=padding, dilation=dilation
+                in_channels,
+                out_channels,
+                kernel_size,
+                padding=padding,
+                dilation=dilation,
             )
             self.conv2 = nn.Conv1d(
-                out_channels, out_channels, kernel_size,
-                padding=padding, dilation=dilation
+                out_channels,
+                out_channels,
+                kernel_size,
+                padding=padding,
+                dilation=dilation,
             )
 
             self.norm1 = nn.BatchNorm1d(out_channels)
@@ -229,7 +235,6 @@ if TORCH_AVAILABLE:
             out = F.gelu(out)
 
             return out
-
 
     class MultiHeadTemporalAttention(nn.Module):
         """
@@ -271,7 +276,7 @@ if TORCH_AVAILABLE:
             self,
             x: torch.Tensor,
             mask: Optional[torch.Tensor] = None,
-            return_attention: bool = False
+            return_attention: bool = False,
         ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
             """
             Args:
@@ -290,15 +295,21 @@ if TORCH_AVAILABLE:
             v = self.v_proj(x)
 
             # Reshape for multi-head attention
-            q = q.view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-            k = k.view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-            v = v.view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
+            q = q.view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(
+                1, 2
+            )
+            k = k.view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(
+                1, 2
+            )
+            v = v.view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(
+                1, 2
+            )
 
             # Attention scores
             scores = torch.matmul(q, k.transpose(-2, -1)) / self.scale
 
             if mask is not None:
-                scores = scores.masked_fill(mask == 0, float("-inf"))
+                scores = scores.masked_fill(mask == 0, float("-in"))
 
             attn = F.softmax(scores, dim=-1)
             attn = self.dropout(attn)
@@ -310,13 +321,14 @@ if TORCH_AVAILABLE:
             out = torch.matmul(attn, v)
 
             # Reshape back
-            out = out.transpose(1, 2).contiguous().view(batch_size, seq_len, self.d_model)
+            out = (
+                out.transpose(1, 2).contiguous().view(batch_size, seq_len, self.d_model)
+            )
             out = self.out_proj(out)
 
             if return_attention:
                 return out, attn
             return out
-
 
     class BiLSTMEncoder(nn.Module):
         """
@@ -357,7 +369,7 @@ if TORCH_AVAILABLE:
         def forward(
             self,
             x: torch.Tensor,
-            hidden: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
+            hidden: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
             """
             Args:
@@ -370,7 +382,6 @@ if TORCH_AVAILABLE:
             out, hidden = self.lstm(x, hidden)
             out = self.layer_norm(out)
             return out, hidden
-
 
     class VariationalDropout(nn.Module):
         """
@@ -390,12 +401,12 @@ if TORCH_AVAILABLE:
 
             # Create mask for (batch, 1, features) to broadcast across seq
             mask = torch.bernoulli(
-                torch.ones(x.size(0), 1, x.size(2), device=x.device) * (1 - self.dropout)
+                torch.ones(x.size(0), 1, x.size(2), device=x.device)
+                * (1 - self.dropout)
             )
             mask = mask / (1 - self.dropout)
 
             return x * mask
-
 
     class LSTMTemporalAnalyzer(nn.Module):
         """
@@ -442,13 +453,18 @@ if TORCH_AVAILABLE:
             self.pos_encoder = PositionalEncoding(hidden_size, dropout=dropout)
 
             # Multi-scale temporal convolution
-            self.conv_blocks = nn.ModuleList([
-                TemporalConvBlock(
-                    hidden_size, hidden_size,
-                    kernel_size=3, dilation=2**i, dropout=dropout
-                )
-                for i in range(num_conv_scales)
-            ])
+            self.conv_blocks = nn.ModuleList(
+                [
+                    TemporalConvBlock(
+                        hidden_size,
+                        hidden_size,
+                        kernel_size=3,
+                        dilation=2**i,
+                        dropout=dropout,
+                    )
+                    for i in range(num_conv_scales)
+                ]
+            )
 
             # BiLSTM encoder
             self.lstm = BiLSTMEncoder(
@@ -505,9 +521,7 @@ if TORCH_AVAILABLE:
             )
 
         def forward(
-            self,
-            x: torch.Tensor,
-            return_attention: bool = False
+            self, x: torch.Tensor, return_attention: bool = False
         ) -> Dict[str, torch.Tensor]:
             """
             Args:
@@ -573,9 +587,7 @@ if TORCH_AVAILABLE:
             return outputs
 
         def predict_with_uncertainty(
-            self,
-            x: torch.Tensor,
-            num_samples: int = 20
+            self, x: torch.Tensor, num_samples: int = 20
         ) -> Dict[str, torch.Tensor]:
             """
             Make predictions with uncertainty estimation using MC Dropout.
@@ -621,7 +633,6 @@ if TORCH_AVAILABLE:
                 "trajectory_std": trajectory_stack.std(dim=0),
             }
 
-
     class SensitivityDataset(Dataset):
         """Dataset for food sensitivity temporal data."""
 
@@ -658,6 +669,7 @@ if TORCH_AVAILABLE:
 
 # ==================== High-Level Analyzer ====================
 
+
 class LSTMTemporalPatternAnalyzer:
     """
     High-level interface for LSTM-based temporal pattern analysis.
@@ -674,8 +686,8 @@ class LSTMTemporalPatternAnalyzer:
         "hrv_sdnn",
         "hrv_rmssd",
         "hrv_pnn50",
-        "hrv_lf",
-        "hrv_hf",
+        "hrv_l",
+        "hrv_h",
         "hrv_lf_hf_ratio",
         "heart_rate",
         "respiratory_rate",
@@ -721,7 +733,11 @@ class LSTMTemporalPatternAnalyzer:
             return device
         if TORCH_AVAILABLE and torch.cuda.is_available():
             return "cuda"
-        if TORCH_AVAILABLE and hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        if (
+            TORCH_AVAILABLE
+            and hasattr(torch.backends, "mps")
+            and torch.backends.mps.is_available()
+        ):
             return "mps"
         return "cpu"
 
@@ -969,7 +985,7 @@ class LSTMTemporalPatternAnalyzer:
 
         # Find response windows using smoothed derivative
         if len(deviations) > 5:
-            smoothed = np.convolve(deviations, np.ones(5)/5, mode='valid')
+            smoothed = np.convolve(deviations, np.ones(5) / 5, mode="valid")
 
             # Find significant drops (assuming HRV drops indicate stress response)
             threshold = -np.std(smoothed)
@@ -1013,16 +1029,18 @@ class LSTMTemporalPatternAnalyzer:
 
         # If no patterns detected but sensitivity is high, add generic pattern
         if not patterns and sensitivity_score > self.sensitivity_threshold:
-            patterns.append(TemporalPattern(
-                pattern_type=PatternType.DELAYED_RESPONSE,
-                start_time_minutes=60,
-                end_time_minutes=180,
-                peak_time_minutes=120,
-                severity=severity,
-                confidence=sensitivity_score,
-                attention_weights=[sensitivity_score] * 24,
-                feature_importance=self._get_feature_importance(),
-            ))
+            patterns.append(
+                TemporalPattern(
+                    pattern_type=PatternType.DELAYED_RESPONSE,
+                    start_time_minutes=60,
+                    end_time_minutes=180,
+                    peak_time_minutes=120,
+                    severity=severity,
+                    confidence=sensitivity_score,
+                    attention_weights=[sensitivity_score] * 24,
+                    feature_importance=self._get_feature_importance(),
+                )
+            )
 
         return patterns
 
@@ -1040,10 +1058,7 @@ class LSTMTemporalPatternAnalyzer:
     def _get_feature_importance(self) -> Dict[str, float]:
         """Get feature importance (simplified version)."""
         # In a full implementation, this would use gradient-based attribution
-        return {
-            feat: 1.0 / len(self.HRV_FEATURES)
-            for feat in self.HRV_FEATURES
-        }
+        return {feat: 1.0 / len(self.HRV_FEATURES) for feat in self.HRV_FEATURES}
 
     def _generate_recommendations(
         self,
@@ -1063,10 +1078,10 @@ class LSTMTemporalPatternAnalyzer:
 
         if sensitivity_score > 0.7:
             recommendations.append("Strong sensitivity signal detected")
-            recommendations.append(f"Consider avoiding this food trigger")
+            recommendations.append("Consider avoiding this food trigger")
 
         if severity_idx >= 2:
-            recommendations.append(f"Moderate to severe response pattern observed")
+            recommendations.append("Moderate to severe response pattern observed")
             recommendations.append(
                 f"Expected recovery time: ~{recovery_hours:.1f} hours"
             )
@@ -1077,9 +1092,7 @@ class LSTMTemporalPatternAnalyzer:
                     "Immediate response suggests possible IgE-mediated reaction"
                 )
             elif pattern.pattern_type == PatternType.DELAYED_RESPONSE:
-                recommendations.append(
-                    "Delayed response typical of food intolerance"
-                )
+                recommendations.append("Delayed response typical of food intolerance")
             elif pattern.pattern_type == PatternType.LATE_RESPONSE:
                 recommendations.append(
                     "Late response may indicate slow-acting trigger compound"
@@ -1126,6 +1139,7 @@ def get_lstm_analyzer() -> LSTMTemporalPatternAnalyzer:
 
 
 # ==================== Convenience Functions ====================
+
 
 def analyze_hrv_patterns(
     hrv_data: List[Dict[str, float]],

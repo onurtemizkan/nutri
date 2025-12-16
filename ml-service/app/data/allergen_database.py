@@ -19,9 +19,9 @@ Sources:
 - Research: PMC10830535 (Biogenic Amines Review)
 - FDA Food Allergen Labeling Guidelines (2025)
 """
+
 from typing import Dict, List, Optional, Set
 from dataclasses import dataclass, field
-from enum import Enum
 
 from app.models.sensitivity import (
     AllergenType,
@@ -277,7 +277,7 @@ HIDDEN_ALLERGEN_KEYWORDS: Dict[str, AllergenType] = {
     "praline": AllergenType.TREE_NUTS,
     "marzipan": AllergenType.TREE_NUTS,
     "almond paste": AllergenType.TREE_NUTS,
-    "nougat": AllergenType.TREE_NUTS,
+    # nougat already mapped to MILK (contains both milk and nuts)
     "gianduja": AllergenType.TREE_NUTS,
     "nutella": AllergenType.TREE_NUTS,
     # FISH
@@ -404,7 +404,13 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         name="milk",
         display_name="Milk",
         category=IngredientCategory.DAIRY,
-        name_variants=["cow's milk", "whole milk", "2% milk", "skim milk", "low-fat milk"],
+        name_variants=[
+            "cow's milk",
+            "whole milk",
+            "2% milk",
+            "skim milk",
+            "low-fat milk",
+        ],
         allergens=[AllergenMapping(AllergenType.MILK)],
         fodmap_level=FodmapLevel.HIGH,
         fodmap_types=["lactose"],
@@ -416,9 +422,19 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         display_name="Aged Cheese",
         category=IngredientCategory.DAIRY,
         name_variants=[
-            "cheddar", "parmesan", "parmigiano", "gouda", "gruyere",
-            "blue cheese", "gorgonzola", "roquefort", "stilton",
-            "aged cheddar", "sharp cheddar", "romano", "asiago"
+            "cheddar",
+            "parmesan",
+            "parmigiano",
+            "gouda",
+            "gruyere",
+            "blue cheese",
+            "gorgonzola",
+            "roquefort",
+            "stilton",
+            "aged cheddar",
+            "sharp cheddar",
+            "romano",
+            "asiago",
         ],
         allergens=[AllergenMapping(AllergenType.MILK)],
         fodmap_level=FodmapLevel.LOW,  # Aged cheeses are low FODMAP
@@ -433,8 +449,15 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         display_name="Fresh Cheese",
         category=IngredientCategory.DAIRY,
         name_variants=[
-            "mozzarella", "cottage cheese", "cream cheese", "ricotta",
-            "mascarpone", "queso fresco", "feta", "brie", "camembert"
+            "mozzarella",
+            "cottage cheese",
+            "cream cheese",
+            "ricotta",
+            "mascarpone",
+            "queso fresco",
+            "feta",
+            "brie",
+            "camembert",
         ],
         allergens=[AllergenMapping(AllergenType.MILK)],
         fodmap_level=FodmapLevel.MEDIUM,
@@ -472,7 +495,11 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         category=IngredientCategory.DAIRY,
         name_variants=["clarified butter"],
         allergens=[
-            AllergenMapping(AllergenType.MILK, confidence=0.3, derivation=DerivationType.DERIVED_FROM)
+            AllergenMapping(
+                AllergenType.MILK,
+                confidence=0.3,
+                derivation=DerivationType.DERIVED_FROM,
+            )
         ],  # Very low milk protein
         fodmap_level=FodmapLevel.LOW,
         histamine_mg=0.1,
@@ -483,7 +510,9 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         display_name="Whey Protein",
         category=IngredientCategory.DAIRY,
         name_variants=["whey", "whey protein isolate", "whey protein concentrate"],
-        allergens=[AllergenMapping(AllergenType.MILK, derivation=DerivationType.DERIVED_FROM)],
+        allergens=[
+            AllergenMapping(AllergenType.MILK, derivation=DerivationType.DERIVED_FROM)
+        ],
         fodmap_level=FodmapLevel.LOW,
         histamine_mg=1,
         histamine_level=CompoundLevel.NEGLIGIBLE,
@@ -493,12 +522,13 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         display_name="Casein",
         category=IngredientCategory.DAIRY,
         name_variants=["sodium caseinate", "calcium caseinate", "casein protein"],
-        allergens=[AllergenMapping(AllergenType.MILK, derivation=DerivationType.DERIVED_FROM)],
+        allergens=[
+            AllergenMapping(AllergenType.MILK, derivation=DerivationType.DERIVED_FROM)
+        ],
         fodmap_level=FodmapLevel.LOW,
         histamine_mg=1,
         histamine_level=CompoundLevel.NEGLIGIBLE,
     ),
-
     # =========================================================================
     # EGGS
     # =========================================================================
@@ -539,13 +569,14 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         name_variants=["mayo", "aioli"],
         allergens=[
             AllergenMapping(AllergenType.EGGS),
-            AllergenMapping(AllergenType.SOY, confidence=0.7, derivation=DerivationType.MAY_CONTAIN),
+            AllergenMapping(
+                AllergenType.SOY, confidence=0.7, derivation=DerivationType.MAY_CONTAIN
+            ),
         ],
         fodmap_level=FodmapLevel.LOW,
         histamine_mg=1,
         histamine_level=CompoundLevel.NEGLIGIBLE,
     ),
-
     # =========================================================================
     # WHEAT & GLUTEN
     # =========================================================================
@@ -554,8 +585,14 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         display_name="Wheat Flour",
         category=IngredientCategory.GRAINS,
         name_variants=[
-            "flour", "all-purpose flour", "bread flour", "cake flour",
-            "pastry flour", "enriched flour", "bleached flour", "unbleached flour"
+            "flour",
+            "all-purpose flour",
+            "bread flour",
+            "cake flour",
+            "pastry flour",
+            "enriched flour",
+            "bleached flour",
+            "unbleached flour",
         ],
         allergens=[
             AllergenMapping(AllergenType.WHEAT),
@@ -571,11 +608,19 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         name="bread",
         display_name="Bread",
         category=IngredientCategory.GRAINS,
-        name_variants=["white bread", "whole wheat bread", "toast", "baguette", "ciabatta"],
+        name_variants=[
+            "white bread",
+            "whole wheat bread",
+            "toast",
+            "baguette",
+            "ciabatta",
+        ],
         allergens=[
             AllergenMapping(AllergenType.WHEAT),
             AllergenMapping(AllergenType.GLUTEN_CEREALS),
-            AllergenMapping(AllergenType.SOY, confidence=0.5, derivation=DerivationType.MAY_CONTAIN),
+            AllergenMapping(
+                AllergenType.SOY, confidence=0.5, derivation=DerivationType.MAY_CONTAIN
+            ),
         ],
         fodmap_level=FodmapLevel.HIGH,
         fodmap_types=["fructans"],
@@ -588,13 +633,21 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         display_name="Pasta",
         category=IngredientCategory.GRAINS,
         name_variants=[
-            "spaghetti", "penne", "fettuccine", "linguine", "macaroni",
-            "noodles", "egg noodles", "lasagna"
+            "spaghetti",
+            "penne",
+            "fettuccine",
+            "linguine",
+            "macaroni",
+            "noodles",
+            "egg noodles",
+            "lasagna",
         ],
         allergens=[
             AllergenMapping(AllergenType.WHEAT),
             AllergenMapping(AllergenType.GLUTEN_CEREALS),
-            AllergenMapping(AllergenType.EGGS, confidence=0.6, derivation=DerivationType.MAY_CONTAIN),
+            AllergenMapping(
+                AllergenType.EGGS, confidence=0.6, derivation=DerivationType.MAY_CONTAIN
+            ),
         ],
         fodmap_level=FodmapLevel.HIGH,
         fodmap_types=["fructans"],
@@ -631,7 +684,6 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         tyramine_level=CompoundLevel.MEDIUM,
         is_fermented=True,
     ),
-
     # =========================================================================
     # SOY PRODUCTS
     # =========================================================================
@@ -695,13 +747,14 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         category=IngredientCategory.ADDITIVES,
         name_variants=["lecithin (soy)", "E322"],
         allergens=[
-            AllergenMapping(AllergenType.SOY, confidence=0.7, derivation=DerivationType.DERIVED_FROM)
+            AllergenMapping(
+                AllergenType.SOY, confidence=0.7, derivation=DerivationType.DERIVED_FROM
+            )
         ],
         fodmap_level=FodmapLevel.LOW,
         histamine_mg=0.1,
         histamine_level=CompoundLevel.NEGLIGIBLE,
     ),
-
     # =========================================================================
     # PEANUTS
     # =========================================================================
@@ -727,7 +780,6 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         histamine_level=CompoundLevel.NEGLIGIBLE,
         lectin_level=CompoundLevel.MEDIUM,
     ),
-
     # =========================================================================
     # TREE NUTS
     # =========================================================================
@@ -800,7 +852,6 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         histamine_mg=0.5,
         histamine_level=CompoundLevel.NEGLIGIBLE,
     ),
-
     # =========================================================================
     # FISH & SEAFOOD
     # =========================================================================
@@ -932,7 +983,6 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         histamine_mg=10,
         histamine_level=CompoundLevel.LOW,
     ),
-
     # =========================================================================
     # SESAME
     # =========================================================================
@@ -969,7 +1019,6 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         histamine_mg=1,
         histamine_level=CompoundLevel.NEGLIGIBLE,
     ),
-
     # =========================================================================
     # FERMENTED & HIGH-HISTAMINE FOODS
     # =========================================================================
@@ -980,8 +1029,12 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         name_variants=["red wine", "merlot", "cabernet", "pinot noir", "shiraz"],
         allergens=[
             AllergenMapping(AllergenType.SULFITES),
-            AllergenMapping(AllergenType.EGGS, confidence=0.3, derivation=DerivationType.MAY_CONTAIN),
-            AllergenMapping(AllergenType.FISH, confidence=0.2, derivation=DerivationType.MAY_CONTAIN),
+            AllergenMapping(
+                AllergenType.EGGS, confidence=0.3, derivation=DerivationType.MAY_CONTAIN
+            ),
+            AllergenMapping(
+                AllergenType.FISH, confidence=0.2, derivation=DerivationType.MAY_CONTAIN
+            ),
         ],
         fodmap_level=FodmapLevel.LOW,  # One glass
         histamine_mg=30,
@@ -1038,8 +1091,14 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         category=IngredientCategory.FERMENTED,
         name_variants=["korean kimchi"],
         allergens=[
-            AllergenMapping(AllergenType.FISH, confidence=0.7, derivation=DerivationType.MAY_CONTAIN),
-            AllergenMapping(AllergenType.SHELLFISH_CRUSTACEAN, confidence=0.5, derivation=DerivationType.MAY_CONTAIN),
+            AllergenMapping(
+                AllergenType.FISH, confidence=0.7, derivation=DerivationType.MAY_CONTAIN
+            ),
+            AllergenMapping(
+                AllergenType.SHELLFISH_CRUSTACEAN,
+                confidence=0.5,
+                derivation=DerivationType.MAY_CONTAIN,
+            ),
         ],
         fodmap_level=FodmapLevel.LOW,  # Small serving
         histamine_mg=100,
@@ -1064,7 +1123,12 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         name="vinegar",
         display_name="Vinegar",
         category=IngredientCategory.FERMENTED,
-        name_variants=["apple cider vinegar", "white vinegar", "red wine vinegar", "balsamic"],
+        name_variants=[
+            "apple cider vinegar",
+            "white vinegar",
+            "red wine vinegar",
+            "balsamic",
+        ],
         allergens=[
             AllergenMapping(AllergenType.SULFITES, confidence=0.5),
         ],
@@ -1084,7 +1148,6 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         histamine_level=CompoundLevel.MEDIUM,
         is_fermented=True,
     ),
-
     # =========================================================================
     # CURED & PROCESSED MEATS
     # =========================================================================
@@ -1094,7 +1157,11 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         category=IngredientCategory.MEAT,
         name_variants=["pork bacon", "smoked bacon", "streaky bacon"],
         allergens=[
-            AllergenMapping(AllergenType.SULFITES, confidence=0.3, derivation=DerivationType.MAY_CONTAIN),
+            AllergenMapping(
+                AllergenType.SULFITES,
+                confidence=0.3,
+                derivation=DerivationType.MAY_CONTAIN,
+            ),
         ],
         fodmap_level=FodmapLevel.LOW,
         histamine_mg=30,
@@ -1109,7 +1176,9 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         category=IngredientCategory.MEAT,
         name_variants=["pepperoni", "soppressata", "genoa salami"],
         allergens=[
-            AllergenMapping(AllergenType.MILK, confidence=0.3, derivation=DerivationType.MAY_CONTAIN),
+            AllergenMapping(
+                AllergenType.MILK, confidence=0.3, derivation=DerivationType.MAY_CONTAIN
+            ),
         ],
         fodmap_level=FodmapLevel.LOW,
         histamine_mg=100,
@@ -1138,15 +1207,22 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         category=IngredientCategory.MEAT,
         name_variants=["frankfurter", "wiener", "sausage"],
         allergens=[
-            AllergenMapping(AllergenType.MILK, confidence=0.5, derivation=DerivationType.MAY_CONTAIN),
-            AllergenMapping(AllergenType.SOY, confidence=0.5, derivation=DerivationType.MAY_CONTAIN),
-            AllergenMapping(AllergenType.WHEAT, confidence=0.3, derivation=DerivationType.MAY_CONTAIN),
+            AllergenMapping(
+                AllergenType.MILK, confidence=0.5, derivation=DerivationType.MAY_CONTAIN
+            ),
+            AllergenMapping(
+                AllergenType.SOY, confidence=0.5, derivation=DerivationType.MAY_CONTAIN
+            ),
+            AllergenMapping(
+                AllergenType.WHEAT,
+                confidence=0.3,
+                derivation=DerivationType.MAY_CONTAIN,
+            ),
         ],
         fodmap_level=FodmapLevel.LOW,
         histamine_mg=20,
         histamine_level=CompoundLevel.MEDIUM,
     ),
-
     # =========================================================================
     # NIGHTSHADES
     # =========================================================================
@@ -1154,7 +1230,13 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         name="tomato",
         display_name="Tomato",
         category=IngredientCategory.VEGETABLES,
-        name_variants=["tomatoes", "cherry tomato", "roma tomato", "tomato sauce", "tomato paste"],
+        name_variants=[
+            "tomatoes",
+            "cherry tomato",
+            "roma tomato",
+            "tomato sauce",
+            "tomato paste",
+        ],
         allergens=[],
         fodmap_level=FodmapLevel.LOW,  # Fresh, small serving
         histamine_mg=20,
@@ -1179,7 +1261,13 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         name="bell_pepper",
         display_name="Bell Pepper",
         category=IngredientCategory.VEGETABLES,
-        name_variants=["capsicum", "sweet pepper", "red pepper", "green pepper", "yellow pepper"],
+        name_variants=[
+            "capsicum",
+            "sweet pepper",
+            "red pepper",
+            "green pepper",
+            "yellow pepper",
+        ],
         allergens=[],
         fodmap_level=FodmapLevel.LOW,
         histamine_mg=0.5,
@@ -1209,7 +1297,6 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         histamine_level=CompoundLevel.NEGLIGIBLE,
         is_nightshade=True,
     ),
-
     # =========================================================================
     # HIGH-FODMAP VEGETABLES
     # =========================================================================
@@ -1272,7 +1359,13 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         name="mushroom",
         display_name="Mushroom",
         category=IngredientCategory.VEGETABLES,
-        name_variants=["mushrooms", "button mushroom", "shiitake", "portobello", "cremini"],
+        name_variants=[
+            "mushrooms",
+            "button mushroom",
+            "shiitake",
+            "portobello",
+            "cremini",
+        ],
         allergens=[],
         fodmap_level=FodmapLevel.HIGH,
         fodmap_types=["polyols"],  # Mannitol
@@ -1290,7 +1383,6 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         histamine_mg=0.5,
         histamine_level=CompoundLevel.NEGLIGIBLE,
     ),
-
     # =========================================================================
     # HIGH-OXALATE VEGETABLES
     # =========================================================================
@@ -1343,7 +1435,6 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         oxalate_mg=860,
         oxalate_level=CompoundLevel.VERY_HIGH,
     ),
-
     # =========================================================================
     # LEGUMES (HIGH FODMAP)
     # =========================================================================
@@ -1395,7 +1486,6 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         histamine_level=CompoundLevel.NEGLIGIBLE,
         lectin_level=CompoundLevel.VERY_HIGH,
     ),
-
     # =========================================================================
     # HISTAMINE LIBERATORS (Not high histamine, but trigger release)
     # =========================================================================
@@ -1403,7 +1493,14 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         name="citrus",
         display_name="Citrus",
         category=IngredientCategory.FRUITS,
-        name_variants=["orange", "lemon", "lime", "grapefruit", "tangerine", "mandarin"],
+        name_variants=[
+            "orange",
+            "lemon",
+            "lime",
+            "grapefruit",
+            "tangerine",
+            "mandarin",
+        ],
         allergens=[],
         fodmap_level=FodmapLevel.LOW,  # Small serving
         histamine_mg=0.5,
@@ -1449,9 +1546,17 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         category=IngredientCategory.OTHER,
         name_variants=["dark chocolate", "milk chocolate", "cocoa", "cacao"],
         allergens=[
-            AllergenMapping(AllergenType.MILK, confidence=0.7, derivation=DerivationType.MAY_CONTAIN),
-            AllergenMapping(AllergenType.SOY, confidence=0.6, derivation=DerivationType.MAY_CONTAIN),
-            AllergenMapping(AllergenType.TREE_NUTS, confidence=0.5, derivation=DerivationType.MAY_CONTAIN),
+            AllergenMapping(
+                AllergenType.MILK, confidence=0.7, derivation=DerivationType.MAY_CONTAIN
+            ),
+            AllergenMapping(
+                AllergenType.SOY, confidence=0.6, derivation=DerivationType.MAY_CONTAIN
+            ),
+            AllergenMapping(
+                AllergenType.TREE_NUTS,
+                confidence=0.5,
+                derivation=DerivationType.MAY_CONTAIN,
+            ),
         ],
         fodmap_level=FodmapLevel.LOW,  # Small serving
         histamine_mg=10,
@@ -1462,7 +1567,6 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         oxalate_mg=117,
         oxalate_level=CompoundLevel.HIGH,
     ),
-
     # =========================================================================
     # ADDITIVES & SULFITES
     # =========================================================================
@@ -1470,7 +1574,13 @@ INGREDIENT_DATABASE: Dict[str, IngredientData] = {
         name="dried_fruit",
         display_name="Dried Fruit",
         category=IngredientCategory.FRUITS,
-        name_variants=["dried apricots", "raisins", "dried mango", "dried cranberries", "prunes"],
+        name_variants=[
+            "dried apricots",
+            "raisins",
+            "dried mango",
+            "dried cranberries",
+            "prunes",
+        ],
         allergens=[
             AllergenMapping(AllergenType.SULFITES),
         ],
@@ -1543,16 +1653,14 @@ def get_all_ingredients() -> Dict[str, IngredientData]:
 
 def get_ingredients_by_category(category: IngredientCategory) -> List[IngredientData]:
     """Get all ingredients in a category"""
-    return [
-        ing for ing in INGREDIENT_DATABASE.values()
-        if ing.category == category
-    ]
+    return [ing for ing in INGREDIENT_DATABASE.values() if ing.category == category]
 
 
 def get_high_histamine_ingredients() -> List[IngredientData]:
     """Get all ingredients with high or very high histamine"""
     return [
-        ing for ing in INGREDIENT_DATABASE.values()
+        ing
+        for ing in INGREDIENT_DATABASE.values()
         if ing.histamine_level in [CompoundLevel.HIGH, CompoundLevel.VERY_HIGH]
     ]
 
@@ -1560,25 +1668,20 @@ def get_high_histamine_ingredients() -> List[IngredientData]:
 def get_high_fodmap_ingredients() -> List[IngredientData]:
     """Get all high FODMAP ingredients"""
     return [
-        ing for ing in INGREDIENT_DATABASE.values()
+        ing
+        for ing in INGREDIENT_DATABASE.values()
         if ing.fodmap_level == FodmapLevel.HIGH
     ]
 
 
 def get_nightshade_ingredients() -> List[IngredientData]:
     """Get all nightshade ingredients"""
-    return [
-        ing for ing in INGREDIENT_DATABASE.values()
-        if ing.is_nightshade
-    ]
+    return [ing for ing in INGREDIENT_DATABASE.values() if ing.is_nightshade]
 
 
 def get_histamine_liberators() -> List[IngredientData]:
     """Get all histamine-liberating ingredients"""
-    return [
-        ing for ing in INGREDIENT_DATABASE.values()
-        if ing.is_histamine_liberator
-    ]
+    return [ing for ing in INGREDIENT_DATABASE.values() if ing.is_histamine_liberator]
 
 
 def get_histamine_level(ingredient_name: str) -> Optional[CompoundLevel]:

@@ -1,6 +1,7 @@
 """
 Pytest fixtures and configuration for food analysis tests.
 """
+
 import pytest
 import asyncio
 from typing import Generator

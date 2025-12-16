@@ -186,9 +186,11 @@ class PredictionService:
                 predicted_value, historical_stats["values"]
             ),
             model_id=model_id,
-            model_version=model_artifacts["metadata"]["model_version"]
-            if "model_version" in model_artifacts["metadata"]
-            else "v1.0.0",
+            model_version=(
+                model_artifacts["metadata"]["model_version"]
+                if "model_version" in model_artifacts["metadata"]
+                else "v1.0.0"
+            ),
             architecture=request.architecture or ModelArchitecture.LSTM,
         )
 
@@ -459,9 +461,7 @@ class PredictionService:
         confidence_text = (
             "high confidence"
             if confidence_score > 0.8
-            else "moderate confidence"
-            if confidence_score > 0.6
-            else "low confidence"
+            else "moderate confidence" if confidence_score > 0.6 else "low confidence"
         )
 
         if abs(deviation_pct) < 5:

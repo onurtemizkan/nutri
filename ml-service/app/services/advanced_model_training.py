@@ -15,7 +15,7 @@ Features:
 import pickle
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional
 
 import numpy as np
 import torch
@@ -25,24 +25,16 @@ from sklearn.preprocessing import StandardScaler
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ml_models.advanced_lstm import (
-    AdvancedLSTMConfig,
-    BiLSTMWithResiduals,
-    EnhancedLSTMWithAttention,
     ModelFactory,
-    TCNConfig,
-    TemporalConvNet,
 )
 from app.ml_models.ensemble import (
-    EnsembleFactory,
     WeightedEnsemble,
-    StackingEnsemble,
 )
 from app.schemas.predictions import (
     PredictionMetric,
     ModelArchitecture,
     TrainRequest,
     TrainResponse,
-    TrainingResult,
     ModelMetrics,
 )
 from app.services.data_preparation import DataPreparationService
@@ -156,7 +148,7 @@ class AdvancedModelTrainingService:
         num_features = training_data["num_features"]
         sequence_length = training_data["sequence_length"]
 
-        print(f"✅ Data prepared:")
+        print("✅ Data prepared:")
         print(f"   - Training samples: {len(training_data['X_train'])}")
         print(f"   - Validation samples: {len(training_data['X_val'])}")
         print(f"   - Features: {num_features}")
@@ -193,13 +185,15 @@ class AdvancedModelTrainingService:
             label_scaler=training_data["label_scaler"],
         )
 
-        print(f"✅ Validation Metrics:")
+        print("✅ Validation Metrics:")
         print(f"   - MAE: {val_metrics['mae']:.4f}")
         print(f"   - RMSE: {val_metrics['rmse']:.4f}")
         print(f"   - R²: {val_metrics['r2']:.4f}")
 
         # Save model
-        model_id = self._generate_model_id(request.user_id, request.metric, architecture)
+        model_id = self._generate_model_id(
+            request.user_id, request.metric, architecture
+        )
         print(f"\n💾 Saving model: {model_id}")
 
         self._save_model(
@@ -215,7 +209,7 @@ class AdvancedModelTrainingService:
         training_time = (datetime.now() - start_time).total_seconds()
 
         print(f"\n{'='*70}")
-        print(f"✅ Training complete!")
+        print("✅ Training complete!")
         print(f"   Model ID: {model_id}")
         print(f"   Training time: {training_time:.1f}s")
         print(f"{'='*70}\n")
@@ -335,14 +329,12 @@ class AdvancedModelTrainingService:
             label_scaler=training_data["label_scaler"],
         )
 
-        print(f"\n📊 Ensemble Performance:")
+        print("\n📊 Ensemble Performance:")
         print(f"   Ensemble MAE: {ensemble_metrics['mae']:.4f}")
         print(f"   Weights: {ensemble.get_weights_dict()}")
 
         # Save ensemble
-        model_id = self._generate_model_id(
-            request.user_id, request.metric, "ensemble"
-        )
+        model_id = self._generate_model_id(request.user_id, request.metric, "ensemble")
 
         self._save_ensemble(
             ensemble=ensemble,
@@ -488,7 +480,9 @@ class AdvancedModelTrainingService:
                     break
 
             if (epoch + 1) % 10 == 0:
-                print(f"   Epoch {epoch + 1}: Train={train_loss:.6f}, Val={val_loss:.6f}")
+                print(
+                    f"   Epoch {epoch + 1}: Train={train_loss:.6f}, Val={val_loss:.6f}"
+                )
 
         # Restore best model
         if best_model_state:
@@ -528,9 +522,15 @@ class AdvancedModelTrainingService:
         # MAPE
         mask = actuals_real != 0
         if mask.sum() > 0:
-            mape = np.mean(np.abs(
-                (actuals_real[mask] - predictions_real[mask]) / actuals_real[mask]
-            )) * 100
+            mape = (
+                np.mean(
+                    np.abs(
+                        (actuals_real[mask] - predictions_real[mask])
+                        / actuals_real[mask]
+                    )
+                )
+                * 100
+            )
         else:
             mape = 0.0
 

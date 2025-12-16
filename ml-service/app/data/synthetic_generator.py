@@ -17,15 +17,16 @@ Features:
 
 import numpy as np
 import pandas as pd
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 import random
 
 
 class UserPersona(Enum):
     """Five diverse user personas with different lifestyle patterns."""
+
     ATHLETE = "athlete"  # High activity, strict nutrition, excellent recovery
     OFFICE_WORKER = "office_worker"  # Sedentary, irregular meals, moderate stress
     HEALTH_ENTHUSIAST = "health_enthusiast"  # Balanced, tracks everything, improving
@@ -36,6 +37,7 @@ class UserPersona(Enum):
 @dataclass
 class PersonaConfig:
     """Configuration for each user persona."""
+
     name: str
     age: int
     weight_kg: float
@@ -278,7 +280,9 @@ class SyntheticDataGenerator:
             all_health_metrics.extend(daily_health)
 
             # Update rolling state
-            self._update_state(state, daily_meals, daily_activities, daily_health, config)
+            self._update_state(
+                state, daily_meals, daily_activities, daily_health, config
+            )
 
         return {
             "meals": pd.DataFrame(all_meals),
@@ -299,7 +303,7 @@ class SyntheticDataGenerator:
         is_weekend = current_date.weekday() >= 5
 
         # Determine number of meals (3-5 typically)
-        base_meals = 3
+        _ = 3
         snack_prob = 0.4 if config.meal_regularity > 0.7 else 0.6
         num_snacks = np.random.binomial(2, snack_prob)
 
@@ -311,7 +315,8 @@ class SyntheticDataGenerator:
 
         # Generate main meals
         meal_times = {
-            "breakfast": breakfast_time_mean + np.random.normal(0, 0.5 * (1 - config.meal_regularity)),
+            "breakfast": breakfast_time_mean
+            + np.random.normal(0, 0.5 * (1 - config.meal_regularity)),
             "lunch": 12.5 + np.random.normal(0, 0.5 * (1 - config.meal_regularity)),
             "dinner": 18.5 + np.random.normal(0, 1.0 * (1 - config.meal_regularity)),
         }
@@ -322,7 +327,9 @@ class SyntheticDataGenerator:
             daily_calories *= np.random.uniform(1.0, 1.2)  # Weekend eating
 
         # Macro distribution (protein-focused for athletes, carb-focused for others)
-        protein_g = config.protein_target * config.weight_kg * np.random.normal(1.0, 0.1)
+        protein_g = (
+            config.protein_target * config.weight_kg * np.random.normal(1.0, 0.1)
+        )
         fat_ratio = np.random.uniform(0.25, 0.35)
 
         # Calculate macros
@@ -351,18 +358,20 @@ class SyntheticDataGenerator:
                 minute=int((time_hour % 1) * 60),
             )
 
-            meals.append({
-                "user_id": user_id,
-                "name": f"{meal_type.capitalize()}",
-                "meal_type": meal_type.upper(),
-                "calories": int(daily_calories * portion),
-                "protein": round(protein_g * portion, 1),
-                "carbs": round(carbs_g * portion, 1),
-                "fat": round(fat_g * portion, 1),
-                "fiber": round(np.random.uniform(5, 15) * portion, 1),
-                "sugar": round(np.random.uniform(10, 40) * portion, 1),
-                "consumed_at": meal_time,
-            })
+            meals.append(
+                {
+                    "user_id": user_id,
+                    "name": f"{meal_type.capitalize()}",
+                    "meal_type": meal_type.upper(),
+                    "calories": int(daily_calories * portion),
+                    "protein": round(protein_g * portion, 1),
+                    "carbs": round(carbs_g * portion, 1),
+                    "fat": round(fat_g * portion, 1),
+                    "fiber": round(np.random.uniform(5, 15) * portion, 1),
+                    "sugar": round(np.random.uniform(10, 40) * portion, 1),
+                    "consumed_at": meal_time,
+                }
+            )
 
         # Add snacks
         for i in range(num_snacks):
@@ -379,18 +388,20 @@ class SyntheticDataGenerator:
                 minute=int((snack_time % 1) * 60),
             )
 
-            meals.append({
-                "user_id": user_id,
-                "name": f"Snack {i+1}",
-                "meal_type": "SNACK",
-                "calories": int(snack_calories),
-                "protein": round(snack_calories * 0.1 / 4, 1),
-                "carbs": round(snack_calories * 0.5 / 4, 1),
-                "fat": round(snack_calories * 0.4 / 9, 1),
-                "fiber": round(np.random.uniform(1, 5), 1),
-                "sugar": round(np.random.uniform(5, 20), 1),
-                "consumed_at": snack_time_dt,
-            })
+            meals.append(
+                {
+                    "user_id": user_id,
+                    "name": f"Snack {i+1}",
+                    "meal_type": "SNACK",
+                    "calories": int(snack_calories),
+                    "protein": round(snack_calories * 0.1 / 4, 1),
+                    "carbs": round(snack_calories * 0.5 / 4, 1),
+                    "fat": round(snack_calories * 0.4 / 9, 1),
+                    "fiber": round(np.random.uniform(1, 5), 1),
+                    "sugar": round(np.random.uniform(5, 20), 1),
+                    "consumed_at": snack_time_dt,
+                }
+            )
 
         return meals
 
@@ -413,7 +424,7 @@ class SyntheticDataGenerator:
         # Rest day pattern (every 3-4 days for athletes, random for others)
         if config.activity_level == "very_active":
             # Athletes typically rest every 3-4 days
-            rest_day = (day_of_week % 4 == 3)
+            rest_day = day_of_week % 4 == 3
             if rest_day:
                 workout_prob *= 0.2
 
@@ -450,15 +461,17 @@ class SyntheticDataGenerator:
             started_at = datetime.combine(current_date, datetime.min.time())
             started_at = started_at.replace(hour=workout_hour, minute=0)
 
-            activities.append({
-                "user_id": user_id,
-                "activity_type": activity_type,
-                "intensity": intensity,
-                "duration": duration,
-                "calories_burned": int(duration * calories_per_min),
-                "started_at": started_at,
-                "notes": None,
-            })
+            activities.append(
+                {
+                    "user_id": user_id,
+                    "activity_type": activity_type,
+                    "intensity": intensity,
+                    "duration": duration,
+                    "calories_burned": int(duration * calories_per_min),
+                    "started_at": started_at,
+                    "notes": None,
+                }
+            )
 
         # Add daily steps as walking activity
         base_steps = {
@@ -478,15 +491,19 @@ class SyntheticDataGenerator:
         # Convert steps to walking activity (rough: 100 steps/minute)
         walking_minutes = daily_steps / 100
 
-        activities.append({
-            "user_id": user_id,
-            "activity_type": "WALKING",
-            "intensity": "LOW",
-            "duration": int(walking_minutes),
-            "calories_burned": int(walking_minutes * 4),
-            "started_at": datetime.combine(current_date, datetime.min.time()).replace(hour=12),
-            "notes": f"Daily steps: {daily_steps}",
-        })
+        activities.append(
+            {
+                "user_id": user_id,
+                "activity_type": "WALKING",
+                "intensity": "LOW",
+                "duration": int(walking_minutes),
+                "calories_burned": int(walking_minutes * 4),
+                "started_at": datetime.combine(
+                    current_date, datetime.min.time()
+                ).replace(hour=12),
+                "notes": f"Daily steps: {daily_steps}",
+            }
+        )
 
         return activities
 
@@ -516,8 +533,12 @@ class SyntheticDataGenerator:
         total_calories = sum(m["calories"] for m in daily_meals)
         total_protein = sum(m["protein"] for m in daily_meals)
 
-        protein_adequacy = min(1.0, total_protein / (config.protein_target * config.weight_kg))
-        calorie_adequacy = 1.0 - abs(total_calories - config.calories_target) / config.calories_target
+        protein_adequacy = min(
+            1.0, total_protein / (config.protein_target * config.weight_kg)
+        )
+        calorie_adequacy = (
+            1.0 - abs(total_calories - config.calories_target) / config.calories_target
+        )
         calorie_adequacy = max(0, min(1, calorie_adequacy))
 
         # Check late eating
@@ -526,14 +547,19 @@ class SyntheticDataGenerator:
 
         # Calculate activity load
         high_intensity_mins = sum(
-            a["duration"] for a in daily_activities
-            if a.get("intensity") == "HIGH"
+            a["duration"] for a in daily_activities if a.get("intensity") == "HIGH"
         )
-        total_activity_mins = sum(a["duration"] for a in daily_activities)
+        _ = sum(a["duration"] for a in daily_activities)
 
         # Get 7-day rolling averages from state
-        avg_nutrition_quality = np.mean(state["nutrition_quality_7d"][-7:]) if state["nutrition_quality_7d"] else 0.5
-        avg_activity_load = np.mean(state["activity_load_7d"][-7:]) if state["activity_load_7d"] else 0
+        avg_nutrition_quality = (
+            np.mean(state["nutrition_quality_7d"][-7:])
+            if state["nutrition_quality_7d"]
+            else 0.5
+        )
+        avg_activity_load = (
+            np.mean(state["activity_load_7d"][-7:]) if state["activity_load_7d"] else 0
+        )
 
         # ========== RHR Calculation ==========
         # Base RHR with circadian variation
@@ -547,7 +573,9 @@ class SyntheticDataGenerator:
 
         # 2. High activity yesterday increases RHR temporarily
         if state["activity_load_7d"]:
-            yesterday_load = state["activity_load_7d"][-1] if state["activity_load_7d"] else 0
+            yesterday_load = (
+                state["activity_load_7d"][-1] if state["activity_load_7d"] else 0
+            )
             rhr_modifiers.append(yesterday_load * 0.05)
 
         # 3. Poor nutrition increases RHR
@@ -564,7 +592,9 @@ class SyntheticDataGenerator:
             rhr_modifiers.append(-2)
 
         # 7. Alcohol increases RHR
-        if config.alcohol_frequency > 0 and np.random.random() < (config.alcohol_frequency / 7):
+        if config.alcohol_frequency > 0 and np.random.random() < (
+            config.alcohol_frequency / 7
+        ):
             rhr_modifiers.append(np.random.uniform(2, 6))
 
         # Apply correlation strength
@@ -631,76 +661,103 @@ class SyntheticDataGenerator:
         sleep_modifiers.append(-config.stress_level * 1.0)
 
         # 5. Alcohol disrupts sleep quality
-        if config.alcohol_frequency > 0 and np.random.random() < (config.alcohol_frequency / 7):
+        if config.alcohol_frequency > 0 and np.random.random() < (
+            config.alcohol_frequency / 7
+        ):
             sleep_modifiers.append(-0.5)
 
-        sleep_duration = sleep_base + sum(sleep_modifiers) + np.random.normal(0, config.sleep_std)
+        sleep_duration = (
+            sleep_base + sum(sleep_modifiers) + np.random.normal(0, config.sleep_std)
+        )
         sleep_duration = max(3, min(12, sleep_duration))
 
         # Sleep quality (0-100)
-        sleep_quality = 70 + (sleep_duration - 6) * 5 - late_eating_impact * 10 - config.stress_level * 15
+        sleep_quality = (
+            70
+            + (sleep_duration - 6) * 5
+            - late_eating_impact * 10
+            - config.stress_level * 15
+        )
         sleep_quality = max(20, min(100, sleep_quality + np.random.normal(0, 8)))
 
         # ========== Recovery Score ==========
         # Composite metric based on HRV, RHR, and sleep
         rhr_component = (100 - rhr_value) / 60 * 30  # Lower RHR = better
-        hrv_component = min(40, hrv_value / config.hrv_baseline * 30)  # Higher HRV = better
+        hrv_component = min(
+            40, hrv_value / config.hrv_baseline * 30
+        )  # Higher HRV = better
         sleep_component = sleep_quality * 0.3
 
         recovery_score = rhr_component + hrv_component + sleep_component
         recovery_score = max(0, min(100, recovery_score + np.random.normal(0, 5)))
 
         # Record timestamp (morning measurement)
-        recorded_at = datetime.combine(current_date, datetime.min.time()).replace(hour=7, minute=0)
+        recorded_at = datetime.combine(current_date, datetime.min.time()).replace(
+            hour=7, minute=0
+        )
 
         # Add all health metrics
-        metrics.append({
-            "user_id": user_id,
-            "metric_type": "RESTING_HEART_RATE",
-            "value": round(rhr_value, 1),
-            "source": "SYNTHETIC",
-            "recorded_at": recorded_at,
-        })
+        metrics.append(
+            {
+                "user_id": user_id,
+                "metric_type": "RESTING_HEART_RATE",
+                "value": round(rhr_value, 1),
+                "source": "SYNTHETIC",
+                "recorded_at": recorded_at,
+            }
+        )
 
-        metrics.append({
-            "user_id": user_id,
-            "metric_type": "HEART_RATE_VARIABILITY_RMSSD",
-            "value": round(hrv_value, 1),
-            "source": "SYNTHETIC",
-            "recorded_at": recorded_at,
-        })
+        metrics.append(
+            {
+                "user_id": user_id,
+                "metric_type": "HEART_RATE_VARIABILITY_RMSSD",
+                "value": round(hrv_value, 1),
+                "source": "SYNTHETIC",
+                "recorded_at": recorded_at,
+            }
+        )
 
-        metrics.append({
-            "user_id": user_id,
-            "metric_type": "HEART_RATE_VARIABILITY_SDNN",
-            "value": round(hrv_value * 1.2, 1),  # SDNN typically ~20% higher than RMSSD
-            "source": "SYNTHETIC",
-            "recorded_at": recorded_at,
-        })
+        metrics.append(
+            {
+                "user_id": user_id,
+                "metric_type": "HEART_RATE_VARIABILITY_SDNN",
+                "value": round(
+                    hrv_value * 1.2, 1
+                ),  # SDNN typically ~20% higher than RMSSD
+                "source": "SYNTHETIC",
+                "recorded_at": recorded_at,
+            }
+        )
 
-        metrics.append({
-            "user_id": user_id,
-            "metric_type": "SLEEP_DURATION",
-            "value": round(sleep_duration, 2),
-            "source": "SYNTHETIC",
-            "recorded_at": recorded_at,
-        })
+        metrics.append(
+            {
+                "user_id": user_id,
+                "metric_type": "SLEEP_DURATION",
+                "value": round(sleep_duration, 2),
+                "source": "SYNTHETIC",
+                "recorded_at": recorded_at,
+            }
+        )
 
-        metrics.append({
-            "user_id": user_id,
-            "metric_type": "SLEEP_SCORE",
-            "value": round(sleep_quality, 1),
-            "source": "SYNTHETIC",
-            "recorded_at": recorded_at,
-        })
+        metrics.append(
+            {
+                "user_id": user_id,
+                "metric_type": "SLEEP_SCORE",
+                "value": round(sleep_quality, 1),
+                "source": "SYNTHETIC",
+                "recorded_at": recorded_at,
+            }
+        )
 
-        metrics.append({
-            "user_id": user_id,
-            "metric_type": "RECOVERY_SCORE",
-            "value": round(recovery_score, 1),
-            "source": "SYNTHETIC",
-            "recorded_at": recorded_at,
-        })
+        metrics.append(
+            {
+                "user_id": user_id,
+                "metric_type": "RECOVERY_SCORE",
+                "value": round(recovery_score, 1),
+                "source": "SYNTHETIC",
+                "recorded_at": recorded_at,
+            }
+        )
 
         return metrics
 
@@ -717,8 +774,12 @@ class SyntheticDataGenerator:
         total_calories = sum(m["calories"] for m in daily_meals)
         total_protein = sum(m["protein"] for m in daily_meals)
 
-        protein_adequacy = min(1.0, total_protein / (config.protein_target * config.weight_kg))
-        calorie_adequacy = 1.0 - abs(total_calories - config.calories_target) / config.calories_target
+        protein_adequacy = min(
+            1.0, total_protein / (config.protein_target * config.weight_kg)
+        )
+        calorie_adequacy = (
+            1.0 - abs(total_calories - config.calories_target) / config.calories_target
+        )
         nutrition_quality = (protein_adequacy + max(0, calorie_adequacy)) / 2
 
         state["nutrition_quality_7d"].append(nutrition_quality)
@@ -728,8 +789,7 @@ class SyntheticDataGenerator:
         # Calculate activity load
         total_activity = sum(a["duration"] for a in daily_activities)
         high_intensity = sum(
-            a["duration"] for a in daily_activities
-            if a.get("intensity") == "HIGH"
+            a["duration"] for a in daily_activities if a.get("intensity") == "HIGH"
         )
         activity_load = total_activity + high_intensity * 0.5
 
@@ -741,23 +801,30 @@ class SyntheticDataGenerator:
         fatigue_increase = high_intensity / 60 * 0.1
         fatigue_decay = 0.15
         state["cumulative_fatigue"] = max(
-            0,
-            min(1, state["cumulative_fatigue"] + fatigue_increase - fatigue_decay)
+            0, min(1, state["cumulative_fatigue"] + fatigue_increase - fatigue_decay)
         )
 
         # Update sleep debt
         sleep_metric = next(
-            (m for m in daily_health if m["metric_type"] == "SLEEP_DURATION"),
-            None
+            (m for m in daily_health if m["metric_type"] == "SLEEP_DURATION"), None
         )
         if sleep_metric:
             sleep_deficit = config.sleep_baseline - sleep_metric["value"]
-            state["sleep_debt"] = max(0, min(3, state["sleep_debt"] + sleep_deficit * 0.3))
+            state["sleep_debt"] = max(
+                0, min(3, state["sleep_debt"] + sleep_deficit * 0.3)
+            )
 
     def _get_activity_types_for_persona(self, config: PersonaConfig) -> List[str]:
         """Get relevant activity types for a persona."""
         if config.activity_level == "very_active":
-            return ["RUNNING", "CYCLING", "SWIMMING", "WEIGHT_TRAINING", "CROSSFIT", "ROWING"]
+            return [
+                "RUNNING",
+                "CYCLING",
+                "SWIMMING",
+                "WEIGHT_TRAINING",
+                "CROSSFIT",
+                "ROWING",
+            ]
         elif config.activity_level in ["active", "moderate"]:
             return ["RUNNING", "CYCLING", "YOGA", "WEIGHT_TRAINING", "PILATES"]
         else:
@@ -770,7 +837,8 @@ class SyntheticDataGenerator:
             "email": f"{config.name.lower().replace(' ', '.')}@example.com",
             "name": config.name,
             "current_weight": config.weight_kg,
-            "goal_weight": config.weight_kg * (0.95 if config.activity_level == "sedentary" else 1.0),
+            "goal_weight": config.weight_kg
+            * (0.95 if config.activity_level == "sedentary" else 1.0),
             "height": config.height_cm,
             "activity_level": config.activity_level.upper(),
             "goal_calories": config.calories_target,
@@ -811,6 +879,7 @@ class SyntheticDataGenerator:
     ) -> None:
         """Export generated data to CSV files."""
         import os
+
         os.makedirs(output_dir, exist_ok=True)
 
         # Combine all users' data
@@ -835,9 +904,7 @@ class SyntheticDataGenerator:
         pd.concat(all_health_metrics, ignore_index=True).to_csv(
             f"{output_dir}/health_metrics.csv", index=False
         )
-        pd.DataFrame(all_users).to_csv(
-            f"{output_dir}/users.csv", index=False
-        )
+        pd.DataFrame(all_users).to_csv(f"{output_dir}/users.csv", index=False)
 
         print(f"Data exported to {output_dir}/")
 
@@ -888,4 +955,6 @@ if __name__ == "__main__":
         health_df = user_data["health_metrics"]
         for metric_type in ["RESTING_HEART_RATE", "HEART_RATE_VARIABILITY_RMSSD"]:
             metric_data = health_df[health_df["metric_type"] == metric_type]["value"]
-            print(f"  {metric_type}: mean={metric_data.mean():.1f}, std={metric_data.std():.1f}")
+            print(
+                f"  {metric_type}: mean={metric_data.mean():.1f}, std={metric_data.std():.1f}"
+            )

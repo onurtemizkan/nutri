@@ -22,22 +22,16 @@ Performance Targets:
 - Accuracy: >85% sensitivity detection
 """
 
-import asyncio
 import hashlib
-import json
 import time
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 from typing import (
     Any,
-    Callable,
     Dict,
     List,
     Optional,
-    Set,
-    Tuple,
-    Union,
 )
 from collections import defaultdict
 import logging
@@ -46,44 +40,34 @@ import logging
 from .nlp_ingredient_extractor import (
     NLPIngredientExtractor,
     ExtractedIngredient,
-    ExtractionResult,
     get_nlp_extractor,
 )
 from .advanced_ingredient_matcher import (
     AdvancedIngredientMatcher,
-    MatchResult,
 )
 from .sensitivity_cache_service import (
     SensitivityCacheService,
     get_cache_service,
-    cached,
 )
 from .bayesian_sensitivity_engine import (
     BayesianSensitivityEngine,
     ExposureEvidence,
-    SensitivityInference,
     BayesianBelief,
 )
 from .lstm_temporal_analyzer import (
     LSTMTemporalPatternAnalyzer,
     AnalysisResult as LSTMAnalysisResult,
     TemporalPattern,
-    PatternType,
-    ResponseSeverity,
     get_lstm_analyzer,
 )
 
 # Import existing services
 from app.data.allergen_database import (
-    INGREDIENT_DATABASE,
     IngredientData,
-    AllergenMapping,
     get_ingredient,
-    get_allergens_for_ingredient,
     get_all_ingredients,
 )
 from app.models.sensitivity import (
-    AllergenType,
     CompoundLevel,
 )
 from .compound_quantification_service import (
@@ -96,6 +80,7 @@ logger = logging.getLogger(__name__)
 
 class AnalysisMode(Enum):
     """Analysis mode selection."""
+
     QUICK = "quick"  # Fast, uses cache only
     STANDARD = "standard"  # Balanced speed/accuracy
     COMPREHENSIVE = "comprehensive"  # Full analysis, all components
@@ -104,6 +89,7 @@ class AnalysisMode(Enum):
 
 class ConfidenceLevel(Enum):
     """Confidence classification."""
+
     VERY_LOW = "very_low"
     LOW = "low"
     MODERATE = "moderate"
@@ -114,6 +100,7 @@ class ConfidenceLevel(Enum):
 @dataclass
 class IngredientAnalysis:
     """Analysis result for a single ingredient."""
+
     name: str
     matched_name: Optional[str]
     match_confidence: float
@@ -128,6 +115,7 @@ class IngredientAnalysis:
 @dataclass
 class HRVAnalysis:
     """HRV-specific analysis results."""
+
     baseline_hrv: float
     current_hrv: float
     percent_change: float
@@ -140,6 +128,7 @@ class HRVAnalysis:
 @dataclass
 class SensitivityAnalysisResult:
     """Complete sensitivity analysis result."""
+
     # Request info
     request_id: str
     user_id: str
@@ -222,9 +211,7 @@ class SensitivityAnalysisResult:
                     for k, v in self.bayesian_beliefs.items()
                 },
             },
-            "lstm_analysis": (
-                self.lstm_result.to_dict() if self.lstm_result else None
-            ),
+            "lstm_analysis": (self.lstm_result.to_dict() if self.lstm_result else None),
             "assessment": {
                 "overall_risk_score": self.overall_risk_score,
                 "confidence_level": self.confidence_level.value,
@@ -350,16 +337,22 @@ class OptimizedSensitivityPipeline:
         # Add all known ingredients
         for name, data in self._ingredient_db.items():
             # Extract allergen info
-            allergen_types = [a.allergen.value for a in data.allergens] if data.allergens else []
+            allergen_types = (
+                [a.allergen.value for a in data.allergens] if data.allergens else []
+            )
 
             self._ingredient_matcher.add_ingredient(
                 name,
                 {
                     "category": data.category.value if data.category else "unknown",
                     "allergens": allergen_types,
-                    "histamine_level": data.histamine_level.value if data.histamine_level else None,
-                    "fodmap_level": data.fodmap_level.value if data.fodmap_level else None,
-                }
+                    "histamine_level": (
+                        data.histamine_level.value if data.histamine_level else None
+                    ),
+                    "fodmap_level": (
+                        data.fodmap_level.value if data.fodmap_level else None
+                    ),
+                },
             )
 
             # Add name variants as aliases
@@ -369,7 +362,7 @@ class OptimizedSensitivityPipeline:
                     {
                         "canonical_name": name,
                         "category": data.category.value if data.category else "unknown",
-                    }
+                    },
                 )
 
     async def _warm_cache(self) -> None:
@@ -388,8 +381,10 @@ class OptimizedSensitivityPipeline:
                         "category": data.category.value if data.category else "unknown",
                         "allergens": [a.allergen.value for a in data.allergens],
                         "histamine_mg": data.histamine_mg,
-                        "histamine_level": data.histamine_level.value if data.histamine_level else None,
-                    }
+                        "histamine_level": (
+                            data.histamine_level.value if data.histamine_level else None
+                        ),
+                    },
                 )
                 count += 1
 
@@ -446,13 +441,15 @@ class OptimizedSensitivityPipeline:
         # Add explicit ingredients
         if ingredients:
             for ing_name in ingredients:
-                extracted_ingredients.append(ExtractedIngredient(
-                    name=ing_name,
-                    original_text=ing_name,
-                    confidence=1.0,
-                    start_char=0,
-                    end_char=len(ing_name),
-                ))
+                extracted_ingredients.append(
+                    ExtractedIngredient(
+                        name=ing_name,
+                        original_text=ing_name,
+                        confidence=1.0,
+                        start_char=0,
+                        end_char=len(ing_name),
+                    )
+                )
 
         # Step 2: Match ingredients to database
         matched_ingredients = []
@@ -489,39 +486,39 @@ class OptimizedSensitivityPipeline:
                     allergen_labels = []
                     trigger_types = []
                     if ingredient_data and ingredient_data.allergens:
-                        allergen_labels = [a.allergen.value for a in ingredient_data.allergens]
+                        allergen_labels = [
+                            a.allergen.value for a in ingredient_data.allergens
+                        ]
                         trigger_types = allergen_labels  # Same as allergen types
 
                     # Quantify compounds
                     compound_quantities = {}
                     if (
-                        self._compound_service and
-                        extracted.quantity and
-                        mode != AnalysisMode.QUICK
+                        self._compound_service
+                        and extracted.quantity
+                        and mode != AnalysisMode.QUICK
                     ):
                         components_used.append("compound_quantification")
-                        compound_quantities = (
-                            self._compound_service.quantify_compounds(
-                                best_match.ingredient,
-                                extracted.quantity.normalized_grams or 100.0
-                            )
+                        compound_quantities = self._compound_service.quantify_compounds(
+                            best_match.ingredient,
+                            extracted.quantity.normalized_grams or 100.0,
                         )
                         for compound, amount in compound_quantities.items():
                             total_compounds[compound] += amount
 
                     # Get historical reaction count from Bayesian engine
                     user_engine = self._get_user_engine(user_id)
-                    belief = user_engine.get_belief(
-                        "ingredient", best_match.ingredient
-                    )
+                    belief = user_engine.get_belief("ingredient", best_match.ingredient)
                     historical_reactions = int(belief.alpha - 1)  # α - 1 = successes
 
                     # Determine if this is a known trigger
                     is_trigger = bool(
-                        ingredient_data and (
-                            ingredient_data.allergens or
-                            ingredient_data.histamine_level in [CompoundLevel.HIGH, CompoundLevel.VERY_HIGH] or
-                            ingredient_data.is_histamine_liberator
+                        ingredient_data
+                        and (
+                            ingredient_data.allergens
+                            or ingredient_data.histamine_level
+                            in [CompoundLevel.HIGH, CompoundLevel.VERY_HIGH]
+                            or ingredient_data.is_histamine_liberator
                         )
                     )
 
@@ -542,17 +539,19 @@ class OptimizedSensitivityPipeline:
                         total_allergens += 1
                 else:
                     # No match found
-                    matched_ingredients.append(IngredientAnalysis(
-                        name=extracted.name,
-                        matched_name=None,
-                        match_confidence=0.0,
-                        allergens=[],
-                        trigger_types=[],
-                        compounds={},
-                        is_known_trigger=False,
-                        sensitivity_probability=0.0,
-                        historical_reactions=0,
-                    ))
+                    matched_ingredients.append(
+                        IngredientAnalysis(
+                            name=extracted.name,
+                            matched_name=None,
+                            match_confidence=0.0,
+                            allergens=[],
+                            trigger_types=[],
+                            compounds={},
+                            is_known_trigger=False,
+                            sensitivity_probability=0.0,
+                            historical_reactions=0,
+                        )
+                    )
 
         # Step 3: HRV analysis
         hrv_analysis = None
@@ -562,13 +561,16 @@ class OptimizedSensitivityPipeline:
             components_used.append("hrv_analysis")
 
             # Calculate basic HRV metrics
-            hrv_values = [d.get("hrv_sdnn", 0) or d.get("hrv_rmssd", 0) for d in hrv_data]
+            hrv_values = [
+                d.get("hrv_sdnn", 0) or d.get("hrv_rmssd", 0) for d in hrv_data
+            ]
             if hrv_values:
-                baseline = sum(hrv_values[:min(5, len(hrv_values))]) / min(5, len(hrv_values))
+                baseline = sum(hrv_values[: min(5, len(hrv_values))]) / min(
+                    5, len(hrv_values)
+                )
                 current = hrv_values[-1]
                 percent_change = (
-                    ((current - baseline) / baseline * 100)
-                    if baseline > 0 else 0
+                    ((current - baseline) / baseline * 100) if baseline > 0 else 0
                 )
 
                 # Significant change threshold: >15% drop
@@ -586,10 +588,10 @@ class OptimizedSensitivityPipeline:
 
                 # LSTM temporal analysis (for comprehensive mode)
                 if (
-                    self._lstm_analyzer and
-                    self.enable_lstm and
-                    mode in [AnalysisMode.STANDARD, AnalysisMode.COMPREHENSIVE] and
-                    len(hrv_data) >= 10
+                    self._lstm_analyzer
+                    and self.enable_lstm
+                    and mode in [AnalysisMode.STANDARD, AnalysisMode.COMPREHENSIVE]
+                    and len(hrv_data) >= 10
                 ):
                     components_used.append("lstm_analyzer")
                     lstm_result = self._lstm_analyzer.analyze(hrv_data)
@@ -712,8 +714,7 @@ class OptimizedSensitivityPipeline:
         # Ingredient-based risk
         if matched_ingredients:
             max_ing_prob = max(
-                (i.sensitivity_probability for i in matched_ingredients),
-                default=0.0
+                (i.sensitivity_probability for i in matched_ingredients), default=0.0
             )
             scores.append(max_ing_prob)
             weights.append(0.3)
@@ -729,8 +730,7 @@ class OptimizedSensitivityPipeline:
         # Bayesian-based risk
         if bayesian_beliefs:
             max_belief = max(
-                (b.mean_probability for b in bayesian_beliefs.values()),
-                default=0.0
+                (b.mean_probability for b in bayesian_beliefs.values()), default=0.0
             )
             scores.append(max_belief)
             weights.append(0.3)
@@ -770,8 +770,7 @@ class OptimizedSensitivityPipeline:
         # Bayesian evidence
         if bayesian_beliefs:
             avg_confidence = sum(
-                1 - (b.upper_ci - b.lower_ci)
-                for b in bayesian_beliefs.values()
+                1 - (b.upper_ci - b.lower_ci) for b in bayesian_beliefs.values()
             ) / len(bayesian_beliefs)
             score += avg_confidence * 0.25
 
@@ -805,7 +804,9 @@ class OptimizedSensitivityPipeline:
         for ing in matched_ingredients:
             if ing.is_known_trigger and ing.matched_name:
                 belief = bayesian_beliefs.get(ing.matched_name)
-                prob = belief.mean_probability if belief else ing.sensitivity_probability
+                prob = (
+                    belief.mean_probability if belief else ing.sensitivity_probability
+                )
 
                 if prob > 0.3:  # Threshold for consideration
                     candidates.append((ing.matched_name, prob))
@@ -839,14 +840,11 @@ class OptimizedSensitivityPipeline:
 
         # Ingredient-specific recommendations
         high_risk_ingredients = [
-            i for i in matched_ingredients
-            if i.sensitivity_probability > 0.5
+            i for i in matched_ingredients if i.sensitivity_probability > 0.5
         ]
         if high_risk_ingredients:
             names = [i.matched_name for i in high_risk_ingredients[:3]]
-            recommendations.append(
-                f"Likely triggers: {', '.join(filter(None, names))}"
-            )
+            recommendations.append(f"Likely triggers: {', '.join(filter(None, names))}")
 
         # HRV-based recommendations
         if hrv_analysis and hrv_analysis.is_significant_change:
@@ -881,15 +879,10 @@ class OptimizedSensitivityPipeline:
 
     def _generate_request_id(self) -> str:
         """Generate unique request ID."""
-        return hashlib.md5(
-            f"{time.time()}{id(self)}".encode()
-        ).hexdigest()[:12]
+        return hashlib.md5(f"{time.time()}{id(self)}".encode()).hexdigest()[:12]
 
     def _create_error_result(
-        self,
-        request_id: str,
-        user_id: str,
-        error: str
+        self, request_id: str, user_id: str, error: str
     ) -> SensitivityAnalysisResult:
         """Create error result."""
         return SensitivityAnalysisResult(
@@ -948,7 +941,9 @@ class OptimizedSensitivityPipeline:
         if self._nlp_extractor:
             health["components"]["nlp_extractor"] = "ok"
         else:
-            health["components"]["nlp_extractor"] = "disabled" if not self.enable_nlp else "error"
+            health["components"]["nlp_extractor"] = (
+                "disabled" if not self.enable_nlp else "error"
+            )
 
         if self._ingredient_matcher:
             health["components"]["ingredient_matcher"] = "ok"
@@ -965,7 +960,9 @@ class OptimizedSensitivityPipeline:
         if self._lstm_analyzer:
             health["components"]["lstm_analyzer"] = "ok"
         else:
-            health["components"]["lstm_analyzer"] = "disabled" if not self.enable_lstm else "error"
+            health["components"]["lstm_analyzer"] = (
+                "disabled" if not self.enable_lstm else "error"
+            )
 
         # Overall status
         if any(v == "error" for v in health["components"].values()):
@@ -996,6 +993,7 @@ async def get_pipeline() -> OptimizedSensitivityPipeline:
 
 
 # ==================== Convenience Functions ====================
+
 
 async def analyze_food_sensitivity(
     user_id: str,

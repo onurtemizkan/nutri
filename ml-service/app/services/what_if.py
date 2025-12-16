@@ -415,9 +415,7 @@ class WhatIfService:
         for change in scenario.changes:
             # Find feature index
             if change.feature_name not in feature_names:
-                print(
-                    f"⚠️ Warning: Feature '{change.feature_name}' not found, skipping"
-                )
+                print(f"⚠️ Warning: Feature '{change.feature_name}' not found, skipping")
                 continue
 
             feature_idx = feature_names.index(change.feature_name)
