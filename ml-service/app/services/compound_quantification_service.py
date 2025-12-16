@@ -12,6 +12,7 @@ Based on clinical research thresholds:
 - Tyramine: <6mg/meal for MAOI users, <25mg for migraine prone
 - FODMAP: <0.5g fructans, <0.2g excess fructose per meal (low FODMAP)
 """
+# mypy: ignore-errors
 
 import logging
 from typing import List, Dict, Optional

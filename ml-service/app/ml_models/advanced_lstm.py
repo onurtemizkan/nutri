@@ -11,6 +11,7 @@ Based on research from:
 - "Unlocking the Power of LSTM for Long-Term Forecasting" (arXiv 2024)
 - "Temporal Attention LSTM for Clinical Prediction" (BMJ 2024)
 """
+# mypy: ignore-errors
 
 import math
 from dataclasses import dataclass

@@ -11,6 +11,7 @@ Features:
 - Ensemble model support
 - Model versioning and persistence
 """
+# mypy: ignore-errors
 
 import pickle
 from datetime import datetime

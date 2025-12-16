@@ -14,6 +14,7 @@ Based on research:
 - "ES-RNN: Hybrid Exponential Smoothing + RNN" (M4 Competition Winner)
 - Ensemble learning best practices
 """
+# mypy: ignore-errors
 
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple

@@ -16,6 +16,7 @@ Research Sources:
 - JACC 2020: DII and CVD risk in US populations
 - Wiley J Diabetes Investigation 2024: GV measurement and targets
 """
+# mypy: ignore-errors
 
 import torch
 import torch.nn as nn

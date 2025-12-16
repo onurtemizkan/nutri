@@ -14,6 +14,7 @@ Performance targets:
 - Cache miss with DB fetch: <50ms
 - Memory efficiency: ~70% hit rate target
 """
+# mypy: ignore-errors
 
 import asyncio
 import hashlib

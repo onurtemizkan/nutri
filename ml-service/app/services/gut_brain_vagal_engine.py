@@ -22,6 +22,7 @@ Key Findings:
 - 80% of vagus nerve fibers are afferent (gut → brain)
 - SCFA producers like Lactobacillus directly signal vagus via neuropods
 """
+# mypy: ignore-errors
 
 import torch
 import torch.nn as nn

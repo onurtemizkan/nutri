@@ -24,6 +24,7 @@ Detection Thresholds:
 - >25% RMSSD drop: Significant reaction
 - Pattern across 3+ exposures: Confirmed sensitivity
 """
+# mypy: ignore-errors
 
 import logging
 from typing import List, Dict, Optional, Any

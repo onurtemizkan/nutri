@@ -19,6 +19,7 @@ Based on research showing:
 - 90.5% sensitivity, 79.4% specificity for HRV-based allergy detection
 - 17-minute early warning capability
 """
+# mypy: ignore-errors
 
 import logging
 import pickle

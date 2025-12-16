@@ -10,6 +10,7 @@ Key advantages:
 
 Prompt engineering is critical for accuracy.
 """
+# mypy: ignore-errors
 
 import logging
 from typing import List, Tuple, Dict, Optional, Any

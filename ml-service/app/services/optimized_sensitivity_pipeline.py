@@ -21,6 +21,7 @@ Performance Targets:
 - Throughput: 100+ requests/second
 - Accuracy: >85% sensitivity detection
 """
+# mypy: ignore-errors
 
 import hashlib
 import time

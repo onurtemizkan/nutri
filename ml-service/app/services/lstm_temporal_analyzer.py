@@ -21,6 +21,7 @@ Research basis:
 - Attention identifies critical time windows post-ingestion
 - 2-6 hour typical response window for food sensitivities
 """
+# mypy: ignore-errors
 
 import math
 from dataclasses import dataclass

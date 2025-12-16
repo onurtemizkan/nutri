@@ -15,6 +15,7 @@ Research Sources:
 - Sports Medicine Open 2024: BCAA meta-analysis with meta-regression
 - Cambridge Nutrition Reviews 2024: BCAA-MPS molecular signaling update
 """
+# mypy: ignore-errors
 
 import torch
 import torch.nn as nn

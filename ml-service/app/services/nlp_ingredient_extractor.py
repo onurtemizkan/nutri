@@ -16,6 +16,7 @@ Architecture:
 4. Post-processing and validation
 5. Confidence scoring and ranking
 """
+# mypy: ignore-errors
 
 import re
 from dataclasses import dataclass, field

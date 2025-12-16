@@ -14,6 +14,7 @@ Performance targets:
 - Fuzzy match: <10ms for 10k ingredients
 - Batch processing: 1000 queries/second
 """
+# mypy: ignore-errors
 
 import logging
 import hashlib

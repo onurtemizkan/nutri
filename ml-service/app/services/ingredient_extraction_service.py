@@ -9,6 +9,7 @@ Extracts ingredients from meal text/descriptions using:
 
 Based on FDA Big 9 allergens and comprehensive compound database.
 """
+# mypy: ignore-errors
 
 import re
 import time

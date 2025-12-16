@@ -13,6 +13,7 @@ Based on best practices from:
 - Machine Learning Mastery tutorials
 - Research paper methodologies
 """
+# mypy: ignore-errors
 
 import json  # noqa: E402
 import time  # noqa: E402

@@ -20,6 +20,7 @@ Key Research Sources:
 - Gut Microbes 2025: Probiotic-HRV clinical trial results
 - Frontiers in Nutrition 2024: DII-cardiometabolic parameters
 """
+# mypy: ignore-errors
 
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Any

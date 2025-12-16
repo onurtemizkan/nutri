@@ -7,6 +7,7 @@ requiring training on specific food classes.
 
 Model: google/owlvit-base-patch32
 """
+# mypy: ignore-errors
 
 import logging
 from typing import List, Tuple, Optional

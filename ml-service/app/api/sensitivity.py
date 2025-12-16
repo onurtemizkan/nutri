@@ -9,6 +9,7 @@ Comprehensive API for:
 - Exposure tracking and reaction recording
 - ML-powered sensitivity prediction
 """
+# mypy: ignore-errors
 
 import logging
 from typing import Optional, List

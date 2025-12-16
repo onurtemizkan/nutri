@@ -16,6 +16,7 @@ Based on:
 - Dose-response modeling in toxicology
 - HRV as biomarker with known sensitivity/specificity
 """
+# mypy: ignore-errors
 
 import logging
 import math

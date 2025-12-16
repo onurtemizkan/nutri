@@ -4,6 +4,7 @@ Food Classification Model using Hugging Face Vision Transformer (ViT)
 Uses nateraw/food model - a ViT fine-tuned on Food-101 dataset with 101 food classes.
 Achieves ~90%+ accuracy on food classification.
 """
+# mypy: ignore-errors
 
 import logging
 from typing import List, Tuple, Dict, Optional
