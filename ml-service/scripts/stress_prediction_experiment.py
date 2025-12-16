@@ -486,19 +486,26 @@ class StressDataGenerator:
             rhr = self._generate_rhr(config, acute_stress, state)
 
             # Generate sleep metrics (affected by previous day's stress)
-            sleep_duration, sleep_quality, sleep_efficiency, deep_sleep_pct = (
-                self._generate_sleep_metrics(config, state, is_weekend)
-            )
+            (
+                sleep_duration,
+                sleep_quality,
+                sleep_efficiency,
+                deep_sleep_pct,
+            ) = self._generate_sleep_metrics(config, state, is_weekend)
 
             # Generate activity metrics
-            activity_load, workout_duration, workout_intensity = (
-                self._generate_activity_metrics(config, day_of_week, state)
-            )
+            (
+                activity_load,
+                workout_duration,
+                workout_intensity,
+            ) = self._generate_activity_metrics(config, day_of_week, state)
 
             # Generate nutrition metrics
-            nutrition_score, late_eating, meal_regularity = (
-                self._generate_nutrition_metrics(config, is_weekend)
-            )
+            (
+                nutrition_score,
+                late_eating,
+                meal_regularity,
+            ) = self._generate_nutrition_metrics(config, is_weekend)
 
             # Calculate composite stress score (0-100)
             stress_score = self._calculate_stress_score(
@@ -1487,10 +1494,15 @@ class StressExperiment:
         y_cls = np.array(all_targets_cls)
 
         if test_size > 0:
-            X_train, X_test, y_reg_train, y_reg_test, y_cls_train, y_cls_test = (
-                train_test_split(
-                    X, y_reg, y_cls, test_size=test_size, random_state=self.seed
-                )
+            (
+                X_train,
+                X_test,
+                y_reg_train,
+                y_reg_test,
+                y_cls_train,
+                y_cls_test,
+            ) = train_test_split(
+                X, y_reg, y_cls, test_size=test_size, random_state=self.seed
             )
             return (
                 X_train,

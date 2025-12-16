@@ -568,9 +568,9 @@ class IngredientExtractionService:
     ) -> List[AllergenWarning]:
         """Build allergen warnings from matches and hidden allergens."""
         warnings: List[AllergenWarning] = []
-        seen_allergens: Dict[AllergenType, float] = (
-            {}
-        )  # Track highest confidence per allergen
+        seen_allergens: Dict[
+            AllergenType, float
+        ] = {}  # Track highest confidence per allergen
 
         # Process ingredient matches
         for match in matches:

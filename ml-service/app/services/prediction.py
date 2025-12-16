@@ -461,7 +461,9 @@ class PredictionService:
         confidence_text = (
             "high confidence"
             if confidence_score > 0.8
-            else "moderate confidence" if confidence_score > 0.6 else "low confidence"
+            else "moderate confidence"
+            if confidence_score > 0.6
+            else "low confidence"
         )
 
         if abs(deviation_pct) < 5:

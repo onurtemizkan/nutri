@@ -101,9 +101,9 @@ class FoodEntry:
     sodium: Optional[float] = None  # mg
     saturated_fat: Optional[float] = None
     lysine: Optional[float] = None  # mg per serving - essential amino acid
-    arginine: Optional[float] = (
-        None  # mg per serving - conditionally essential amino acid
-    )
+    arginine: Optional[
+        float
+    ] = None  # mg per serving - conditionally essential amino acid
     fdc_id: Optional[str] = None  # USDA FoodData Central ID
     aliases: Optional[List[str]] = None  # Alternative names for fuzzy matching
     default_cooking_method: CookingMethod = CookingMethod.RAW

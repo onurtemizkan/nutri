@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__task-master-ai__*",
+      "mcp__ios-simulator__*",
+      "Bash(npm run ios:*)",
+      "Bash(./scripts/start-full.sh:*)",
+      "Bash(xcrun simctl list:*)",
+      "Bash(npm start)",
+      "Bash(npm install:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(xcrun simctl runtime list:*)",
+      "Bash(xcrun simctl boot:*)",
+      "Bash(open -a Simulator)",
+      "Bash(unset:*)",
+      "Bash(env)",
+      "Bash(rm:*)",
+      "Bash(RCT_NEW_ARCH_ENABLED=1 npm run ios:*)",
+      "Bash(npx expo start:*)",
+      "Bash(npx expo run:ios:*)",
+      "Bash(gh:*)",
+      "Bash(cliclick:*)",
+      "mcp__ios-simulator__open_simulator",
+      "mcp__ios-simulator__get_booted_sim_id",
+      "mcp__ios-simulator__ui_view",
+      "mcp__ios-simulator__screenshot",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "mcp__ios-simulator__launch_app",
+      "mcp__ios-simulator__ui_tap",
+      "WebSearch",
+      "WebFetch(domain:arxiv.org)"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "enabledMcpjsonServers": [
+    "task-master-ai",
+    "ios-simulator"
+  ]
+}
