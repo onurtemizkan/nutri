@@ -2,6 +2,7 @@
 Food Analysis API endpoints.
 Handles food scanning, classification, and nutrition estimation.
 """
+
 import logging
 import hashlib
 from typing import Optional

@@ -12,20 +12,15 @@ Uses multiple datasets:
 
 Quick training approach using transfer learning from a pre-trained ViT.
 """
-import os
-import sys
+
 import logging
 import argparse
-from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-import json
+from typing import Dict, List, Optional
 import io
 import requests
-import time
 
 import torch
-import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset, ConcatDataset
 from PIL import Image
 import numpy as np
@@ -35,13 +30,12 @@ from tqdm import tqdm
 from transformers import (
     AutoImageProcessor,
     AutoModelForImageClassification,
-    get_linear_schedule_with_warmup
+    get_linear_schedule_with_warmup,
 )
 from datasets import load_dataset
 
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -50,19 +44,56 @@ logger = logging.getLogger(__name__)
 # These are the classes we need to improve (map to our database keys)
 TARGET_CLASSES = [
     # Fruits
-    "apple", "avocado", "banana", "blueberry", "cherry", "grape", "kiwi",
-    "lemon", "lime", "mango", "orange", "peach", "pear", "pineapple",
-    "raspberry", "strawberry", "watermelon",
+    "apple",
+    "avocado",
+    "banana",
+    "blueberry",
+    "cherry",
+    "grape",
+    "kiwi",
+    "lemon",
+    "lime",
+    "mango",
+    "orange",
+    "peach",
+    "pear",
+    "pineapple",
+    "raspberry",
+    "strawberry",
+    "watermelon",
     # Vegetables
-    "asparagus", "bell_pepper", "broccoli", "cabbage", "carrot", "cauliflower",
-    "celery", "corn", "cucumber", "eggplant", "lettuce", "mushroom", "onion",
-    "potato", "spinach", "tomato", "zucchini",
+    "asparagus",
+    "bell_pepper",
+    "broccoli",
+    "cabbage",
+    "carrot",
+    "cauliflower",
+    "celery",
+    "corn",
+    "cucumber",
+    "eggplant",
+    "lettuce",
+    "mushroom",
+    "onion",
+    "potato",
+    "spinach",
+    "tomato",
+    "zucchini",
     # Nuts
-    "almond", "cashew", "peanut", "walnut",
+    "almond",
+    "cashew",
+    "peanut",
+    "walnut",
     # Proteins (standalone)
-    "bacon", "chicken_breast", "salmon", "shrimp",
+    "bacon",
+    "chicken_breast",
+    "salmon",
+    "shrimp",
     # Breakfast items
-    "bagel", "croissant", "donut", "toast",
+    "bagel",
+    "croissant",
+    "donut",
+    "toast",
 ]
 
 
@@ -73,14 +104,16 @@ class WebImageDataset(Dataset):
         self,
         image_urls: Dict[str, List[str]],  # {class_name: [url1, url2, ...]}
         processor,
-        cache_dir: str = "/tmp/web_images_cache"
+        cache_dir: str = "/tmp/web_images_cache",
     ):
         self.processor = processor
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
         self.samples = []  # [(image_path_or_bytes, label)]
-        self.class_to_idx = {name: idx for idx, name in enumerate(sorted(image_urls.keys()))}
+        self.class_to_idx = {
+            name: idx for idx, name in enumerate(sorted(image_urls.keys()))
+        }
         self.idx_to_class = {v: k for k, v in self.class_to_idx.items()}
 
         # Download images
@@ -88,7 +121,9 @@ class WebImageDataset(Dataset):
             for url in urls:
                 self.samples.append((url, self.class_to_idx[class_name]))
 
-        logger.info(f"WebImageDataset: {len(self.samples)} samples, {len(self.class_to_idx)} classes")
+        logger.info(
+            f"WebImageDataset: {len(self.samples)} samples, {len(self.class_to_idx)} classes"
+        )
 
     def _download_image(self, url: str) -> Optional[Image.Image]:
         """Download image from URL with caching."""
@@ -102,9 +137,7 @@ class WebImageDataset(Dataset):
                 pass
 
         try:
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
-            }
+            headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"}
             resp = requests.get(url, headers=headers, timeout=30)
             resp.raise_for_status()
             image = Image.open(io.BytesIO(resp.content))
@@ -134,7 +167,7 @@ class WebImageDataset(Dataset):
 
         return {
             "pixel_values": pixel_values,
-            "labels": torch.tensor(label, dtype=torch.long)
+            "labels": torch.tensor(label, dtype=torch.long),
         }
 
 
@@ -191,7 +224,9 @@ def get_pexels_urls(query: str, num_images: int = 50) -> List[str]:
     return CURATED_URLS.get(query, [])
 
 
-def create_training_dataset(processor, use_food101: bool = True, max_samples_per_class: int = 500):
+def create_training_dataset(
+    processor, use_food101: bool = True, max_samples_per_class: int = 500
+):
     """Create combined training dataset."""
 
     datasets_to_combine = []
@@ -220,11 +255,13 @@ def create_training_dataset(processor, use_food101: bool = True, max_samples_per
                     self.processor = processor
                     self.mapping = mapping
                     # Limit samples
-                    if max_per_class and len(self.dataset) > max_per_class * len(mapping):
+                    if max_per_class and len(self.dataset) > max_per_class * len(
+                        mapping
+                    ):
                         indices = np.random.choice(
                             len(self.dataset),
                             max_per_class * len(mapping),
-                            replace=False
+                            replace=False,
                         )
                         # Can't use .select() with filter result, just limit __len__
                         self._limit = max_per_class * len(mapping)
@@ -245,20 +282,34 @@ def create_training_dataset(processor, use_food101: bool = True, max_samples_per
                     inputs = self.processor(images=image, return_tensors="pt")
 
                     # Map to our class index
-                    label_idx = TARGET_CLASSES.index(label_name) if label_name in TARGET_CLASSES else 0
+                    label_idx = (
+                        TARGET_CLASSES.index(label_name)
+                        if label_name in TARGET_CLASSES
+                        else 0
+                    )
 
                     return {
                         "pixel_values": inputs["pixel_values"].squeeze(0),
-                        "labels": torch.tensor(label_idx, dtype=torch.long)
+                        "labels": torch.tensor(label_idx, dtype=torch.long),
                     }
 
             datasets_to_combine.append(
-                Food101Subset(filtered, processor, FOOD101_TARGET_MAPPING, max_samples_per_class)
+                Food101Subset(
+                    filtered, processor, FOOD101_TARGET_MAPPING, max_samples_per_class
+                )
             )
 
     # 2. Add web images for problematic classes
     logger.info("Adding web images for problematic classes...")
-    problem_classes = ["avocado", "shrimp", "bell_pepper", "bacon", "donut", "walnut", "croissant"]
+    problem_classes = [
+        "avocado",
+        "shrimp",
+        "bell_pepper",
+        "bacon",
+        "donut",
+        "walnut",
+        "croissant",
+    ]
 
     web_urls = {}
     for cls in problem_classes:
@@ -295,7 +346,7 @@ def train_model(
     device,
     epochs: int = 5,
     lr: float = 2e-5,
-    output_dir: str = "./specialist_checkpoints"
+    output_dir: str = "./specialist_checkpoints",
 ):
     """Train the model."""
     output_path = Path(output_dir)
@@ -305,9 +356,7 @@ def train_model(
 
     total_steps = len(train_loader) * epochs
     scheduler = get_linear_schedule_with_warmup(
-        optimizer,
-        num_warmup_steps=total_steps // 10,
-        num_training_steps=total_steps
+        optimizer, num_warmup_steps=total_steps // 10, num_training_steps=total_steps
     )
 
     best_accuracy = 0
@@ -358,37 +407,48 @@ def train_model(
             if accuracy > best_accuracy:
                 best_accuracy = accuracy
                 # Save best model
-                torch.save({
-                    "epoch": epoch,
-                    "model_state_dict": model.state_dict(),
-                    "accuracy": accuracy,
-                    "classes": TARGET_CLASSES,
-                }, output_path / "best_specialist.pt")
+                torch.save(
+                    {
+                        "epoch": epoch,
+                        "model_state_dict": model.state_dict(),
+                        "accuracy": accuracy,
+                        "classes": TARGET_CLASSES,
+                    },
+                    output_path / "best_specialist.pt",
+                )
                 logger.info(f"Saved new best model (accuracy: {accuracy:.4f})")
 
         # Save checkpoint
-        torch.save({
-            "epoch": epoch,
-            "model_state_dict": model.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-            "classes": TARGET_CLASSES,
-        }, output_path / f"checkpoint_epoch_{epoch+1}.pt")
+        torch.save(
+            {
+                "epoch": epoch,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "classes": TARGET_CLASSES,
+            },
+            output_path / f"checkpoint_epoch_{epoch+1}.pt",
+        )
 
     return best_accuracy
 
 
 def main():
     parser = argparse.ArgumentParser(description="Train specialist food classifier")
-    parser.add_argument("--base-model", default="google/vit-base-patch16-224",
-                       help="Base model for transfer learning")
+    parser.add_argument(
+        "--base-model",
+        default="google/vit-base-patch16-224",
+        help="Base model for transfer learning",
+    )
     parser.add_argument("--epochs", type=int, default=5, help="Training epochs")
     parser.add_argument("--batch-size", type=int, default=16, help="Batch size")
     parser.add_argument("--lr", type=float, default=2e-5, help="Learning rate")
-    parser.add_argument("--output-dir", default="./specialist_checkpoints",
-                       help="Output directory")
+    parser.add_argument(
+        "--output-dir", default="./specialist_checkpoints", help="Output directory"
+    )
     parser.add_argument("--device", default=None, help="Device (cuda/mps/cpu)")
-    parser.add_argument("--quick-test", action="store_true",
-                       help="Quick test with minimal data")
+    parser.add_argument(
+        "--quick-test", action="store_true", help="Quick test with minimal data"
+    )
     args = parser.parse_args()
 
     # Detect device
@@ -409,7 +469,7 @@ def main():
     model = AutoModelForImageClassification.from_pretrained(
         args.base_model,
         num_labels=len(TARGET_CLASSES),
-        ignore_mismatched_sizes=True  # Allow changing classifier head
+        ignore_mismatched_sizes=True,  # Allow changing classifier head
     )
 
     # Update config
@@ -422,9 +482,7 @@ def main():
     logger.info("Creating training dataset...")
     max_samples = 50 if args.quick_test else 500
     train_dataset = create_training_dataset(
-        processor,
-        use_food101=not args.quick_test,
-        max_samples_per_class=max_samples
+        processor, use_food101=not args.quick_test, max_samples_per_class=max_samples
     )
 
     # Split into train/val
@@ -439,7 +497,7 @@ def main():
         batch_size=args.batch_size,
         shuffle=True,
         num_workers=0,  # Disable multiprocessing for web downloads
-        pin_memory=(device != "cpu")
+        pin_memory=(device != "cpu"),
     )
 
     val_loader = DataLoader(
@@ -447,7 +505,7 @@ def main():
         batch_size=args.batch_size,
         shuffle=False,
         num_workers=0,
-        pin_memory=(device != "cpu")
+        pin_memory=(device != "cpu"),
     )
 
     logger.info(f"Training samples: {train_size}, Validation samples: {val_size}")
@@ -460,7 +518,7 @@ def main():
         device,
         epochs=args.epochs,
         lr=args.lr,
-        output_dir=args.output_dir
+        output_dir=args.output_dir,
     )
 
     logger.info(f"\nTraining complete! Best accuracy: {best_acc:.4f}")

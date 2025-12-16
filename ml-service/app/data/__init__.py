@@ -1,6 +1,7 @@
 """
 Data module for food database and related utilities.
 """
+
 from app.data.food_database import (
     FOOD_DATABASE,
     COOKING_MODIFIERS,

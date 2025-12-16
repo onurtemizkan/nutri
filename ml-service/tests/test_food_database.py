@@ -8,6 +8,7 @@ Tests the comprehensive food database including:
 - Portion validation
 - Weight estimation from volume
 """
+
 from app.data.food_database import (
     FOOD_DATABASE,
     PORTION_VALIDATION,

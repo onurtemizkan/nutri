@@ -1,6 +1,7 @@
 """
 Pydantic schemas for food analysis endpoints.
 """
+
 from typing import Optional, List
 from pydantic import BaseModel, Field, validator
 

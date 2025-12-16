@@ -13,20 +13,16 @@ Features:
 - Early stopping and checkpointing
 - Support for adding new food classes
 """
-import os
-import sys
+
 import logging
 import argparse
-from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-import json
+from typing import List, Optional, Tuple
 
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, Dataset, ConcatDataset, random_split
+from torch.utils.data import DataLoader, Dataset
 from torch.optim import AdamW
-from torch.optim.lr_scheduler import CosineAnnealingLR
 from PIL import Image
 import numpy as np
 from tqdm import tqdm
@@ -35,66 +31,188 @@ from tqdm import tqdm
 from transformers import (
     ViTImageProcessor,
     ViTForImageClassification,
-    get_linear_schedule_with_warmup
+    get_linear_schedule_with_warmup,
 )
 from datasets import load_dataset
 
 # Optional: LoRA for efficient fine-tuning
 try:
     from peft import get_peft_model, LoraConfig, TaskType
+
     PEFT_AVAILABLE = True
 except ImportError:
     PEFT_AVAILABLE = False
     print("Warning: PEFT not available. Full fine-tuning will be used.")
 
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
 
 # Original Food-101 classes
 FOOD_101_CLASSES = [
-    "apple_pie", "baby_back_ribs", "baklava", "beef_carpaccio", "beef_tartare",
-    "beet_salad", "beignets", "bibimbap", "bread_pudding", "breakfast_burrito",
-    "bruschetta", "caesar_salad", "cannoli", "caprese_salad", "carrot_cake",
-    "ceviche", "cheesecake", "cheese_plate", "chicken_curry", "chicken_quesadilla",
-    "chicken_wings", "chocolate_cake", "chocolate_mousse", "churros", "clam_chowder",
-    "club_sandwich", "crab_cakes", "creme_brulee", "croque_madame", "cup_cakes",
-    "deviled_eggs", "donuts", "dumplings", "edamame", "eggs_benedict",
-    "escargots", "falafel", "filet_mignon", "fish_and_chips", "foie_gras",
-    "french_fries", "french_onion_soup", "french_toast", "fried_calamari", "fried_rice",
-    "frozen_yogurt", "garlic_bread", "gnocchi", "greek_salad", "grilled_cheese_sandwich",
-    "grilled_salmon", "guacamole", "gyoza", "hamburger", "hot_and_sour_soup",
-    "hot_dog", "huevos_rancheros", "hummus", "ice_cream", "lasagna",
-    "lobster_bisque", "lobster_roll_sandwich", "macaroni_and_cheese", "macarons", "miso_soup",
-    "mussels", "nachos", "omelette", "onion_rings", "oysters",
-    "pad_thai", "paella", "pancakes", "panna_cotta", "peking_duck",
-    "pho", "pizza", "pork_chop", "poutine", "prime_rib",
-    "pulled_pork_sandwich", "ramen", "ravioli", "red_velvet_cake", "risotto",
-    "samosa", "sashimi", "scallops", "seaweed_salad", "shrimp_and_grits",
-    "spaghetti_bolognese", "spaghetti_carbonara", "spring_rolls", "steak", "strawberry_shortcake",
-    "sushi", "tacos", "takoyaki", "tiramisu", "tuna_tartare", "waffles",
+    "apple_pie",
+    "baby_back_ribs",
+    "baklava",
+    "beef_carpaccio",
+    "beef_tartare",
+    "beet_salad",
+    "beignets",
+    "bibimbap",
+    "bread_pudding",
+    "breakfast_burrito",
+    "bruschetta",
+    "caesar_salad",
+    "cannoli",
+    "caprese_salad",
+    "carrot_cake",
+    "ceviche",
+    "cheesecake",
+    "cheese_plate",
+    "chicken_curry",
+    "chicken_quesadilla",
+    "chicken_wings",
+    "chocolate_cake",
+    "chocolate_mousse",
+    "churros",
+    "clam_chowder",
+    "club_sandwich",
+    "crab_cakes",
+    "creme_brulee",
+    "croque_madame",
+    "cup_cakes",
+    "deviled_eggs",
+    "donuts",
+    "dumplings",
+    "edamame",
+    "eggs_benedict",
+    "escargots",
+    "falafel",
+    "filet_mignon",
+    "fish_and_chips",
+    "foie_gras",
+    "french_fries",
+    "french_onion_soup",
+    "french_toast",
+    "fried_calamari",
+    "fried_rice",
+    "frozen_yogurt",
+    "garlic_bread",
+    "gnocchi",
+    "greek_salad",
+    "grilled_cheese_sandwich",
+    "grilled_salmon",
+    "guacamole",
+    "gyoza",
+    "hamburger",
+    "hot_and_sour_soup",
+    "hot_dog",
+    "huevos_rancheros",
+    "hummus",
+    "ice_cream",
+    "lasagna",
+    "lobster_bisque",
+    "lobster_roll_sandwich",
+    "macaroni_and_cheese",
+    "macarons",
+    "miso_soup",
+    "mussels",
+    "nachos",
+    "omelette",
+    "onion_rings",
+    "oysters",
+    "pad_thai",
+    "paella",
+    "pancakes",
+    "panna_cotta",
+    "peking_duck",
+    "pho",
+    "pizza",
+    "pork_chop",
+    "poutine",
+    "prime_rib",
+    "pulled_pork_sandwich",
+    "ramen",
+    "ravioli",
+    "red_velvet_cake",
+    "risotto",
+    "samosa",
+    "sashimi",
+    "scallops",
+    "seaweed_salad",
+    "shrimp_and_grits",
+    "spaghetti_bolognese",
+    "spaghetti_carbonara",
+    "spring_rolls",
+    "steak",
+    "strawberry_shortcake",
+    "sushi",
+    "tacos",
+    "takoyaki",
+    "tiramisu",
+    "tuna_tartare",
+    "waffles",
 ]
 
 # New classes to add (not in original Food-101)
 NEW_FOOD_CLASSES = [
     # Fruits (raw)
-    "avocado", "banana", "orange", "strawberry", "mango", "watermelon", "pineapple",
-    "grapes", "blueberry", "raspberry", "peach", "pear", "kiwi", "cherry",
+    "avocado",
+    "banana",
+    "orange",
+    "strawberry",
+    "mango",
+    "watermelon",
+    "pineapple",
+    "grapes",
+    "blueberry",
+    "raspberry",
+    "peach",
+    "pear",
+    "kiwi",
+    "cherry",
     # Vegetables (raw)
-    "broccoli", "carrot", "bell_pepper", "cucumber", "tomato", "spinach",
-    "asparagus", "zucchini", "corn", "lettuce", "cabbage", "cauliflower",
+    "broccoli",
+    "carrot",
+    "bell_pepper",
+    "cucumber",
+    "tomato",
+    "spinach",
+    "asparagus",
+    "zucchini",
+    "corn",
+    "lettuce",
+    "cabbage",
+    "cauliflower",
     # Proteins
-    "shrimp", "salmon_fillet", "chicken_breast", "bacon", "beef_steak",
-    "lobster", "crab",
+    "shrimp",
+    "salmon_fillet",
+    "chicken_breast",
+    "bacon",
+    "beef_steak",
+    "lobster",
+    "crab",
     # Nuts & Seeds
-    "almonds", "walnuts", "peanuts", "cashews", "mixed_nuts",
+    "almonds",
+    "walnuts",
+    "peanuts",
+    "cashews",
+    "mixed_nuts",
     # Breakfast
-    "croissant", "bagel", "muffin", "toast", "oatmeal", "cereal",
+    "croissant",
+    "bagel",
+    "muffin",
+    "toast",
+    "oatmeal",
+    "cereal",
     # Beverages
-    "coffee", "tea", "orange_juice", "smoothie", "beer", "wine",
+    "coffee",
+    "tea",
+    "orange_juice",
+    "smoothie",
+    "beer",
+    "wine",
 ]
 
 # Combined classes for extended model
@@ -109,7 +227,7 @@ class FoodDataset(Dataset):
         images: List[Image.Image],
         labels: List[int],
         processor: ViTImageProcessor,
-        augment: bool = False
+        augment: bool = False,
     ):
         self.images = images
         self.labels = labels
@@ -137,7 +255,7 @@ class FoodDataset(Dataset):
 
         return {
             "pixel_values": pixel_values,
-            "labels": torch.tensor(label, dtype=torch.long)
+            "labels": torch.tensor(label, dtype=torch.long),
         }
 
     def _augment(self, image: Image.Image) -> Image.Image:
@@ -175,7 +293,7 @@ class HuggingFaceFood101Dataset(Dataset):
         split: str = "train",
         processor: ViTImageProcessor = None,
         max_samples: Optional[int] = None,
-        class_subset: Optional[List[str]] = None
+        class_subset: Optional[List[str]] = None,
     ):
         logger.info(f"Loading Food-101 dataset (split={split})...")
         self.dataset = load_dataset("ethz/food101", split=split)
@@ -184,10 +302,10 @@ class HuggingFaceFood101Dataset(Dataset):
         # Filter to specific classes if requested
         if class_subset:
             class_indices = {name: idx for idx, name in enumerate(FOOD_101_CLASSES)}
-            valid_indices = [class_indices[c] for c in class_subset if c in class_indices]
-            self.dataset = self.dataset.filter(
-                lambda x: x["label"] in valid_indices
-            )
+            valid_indices = [
+                class_indices[c] for c in class_subset if c in class_indices
+            ]
+            self.dataset = self.dataset.filter(lambda x: x["label"] in valid_indices)
 
         # Limit samples if requested
         if max_samples and len(self.dataset) > max_samples:
@@ -212,14 +330,12 @@ class HuggingFaceFood101Dataset(Dataset):
 
         return {
             "pixel_values": pixel_values,
-            "labels": torch.tensor(label, dtype=torch.long)
+            "labels": torch.tensor(label, dtype=torch.long),
         }
 
 
 def download_additional_food_images(
-    class_name: str,
-    num_images: int = 100,
-    output_dir: str = "data/additional_foods"
+    class_name: str, num_images: int = 100, output_dir: str = "data/additional_foods"
 ) -> List[str]:
     """
     Download additional food images from the web.
@@ -247,7 +363,7 @@ def create_extended_model(
     num_new_classes: int = 0,
     use_lora: bool = True,
     lora_rank: int = 16,
-    lora_alpha: int = 32
+    lora_alpha: int = 32,
 ) -> Tuple[ViTForImageClassification, ViTImageProcessor]:
     """
     Create an extended model with optional new classes and LoRA.
@@ -277,10 +393,7 @@ def create_extended_model(
 
         # Create new classification head
         old_classifier = model.classifier
-        new_classifier = nn.Linear(
-            old_classifier.in_features,
-            total_classes
-        )
+        new_classifier = nn.Linear(old_classifier.in_features, total_classes)
 
         # Initialize new classifier with old weights
         with torch.no_grad():
@@ -329,7 +442,7 @@ def train_epoch(
     scheduler,
     device: str,
     accumulation_steps: int = 1,
-    use_amp: bool = True
+    use_amp: bool = True,
 ) -> float:
     """Train for one epoch."""
     model.train()
@@ -370,9 +483,7 @@ def train_epoch(
 
 
 def evaluate(
-    model: nn.Module,
-    dataloader: DataLoader,
-    device: str
+    model: nn.Module, dataloader: DataLoader, device: str
 ) -> Tuple[float, float]:
     """Evaluate model accuracy."""
     model.eval()
@@ -400,15 +511,25 @@ def evaluate(
 
 def main():
     parser = argparse.ArgumentParser(description="Fine-tune Food-101 ViT model")
-    parser.add_argument("--base-model", default="nateraw/food", help="Base model to fine-tune")
-    parser.add_argument("--output-dir", default="./checkpoints", help="Output directory")
+    parser.add_argument(
+        "--base-model", default="nateraw/food", help="Base model to fine-tune"
+    )
+    parser.add_argument(
+        "--output-dir", default="./checkpoints", help="Output directory"
+    )
     parser.add_argument("--epochs", type=int, default=10, help="Number of epochs")
     parser.add_argument("--batch-size", type=int, default=16, help="Batch size")
     parser.add_argument("--lr", type=float, default=5e-5, help="Learning rate")
-    parser.add_argument("--use-lora", action="store_true", help="Use LoRA for efficient fine-tuning")
+    parser.add_argument(
+        "--use-lora", action="store_true", help="Use LoRA for efficient fine-tuning"
+    )
     parser.add_argument("--lora-rank", type=int, default=16, help="LoRA rank")
-    parser.add_argument("--add-classes", action="store_true", help="Add new food classes")
-    parser.add_argument("--max-train-samples", type=int, default=None, help="Max training samples")
+    parser.add_argument(
+        "--add-classes", action="store_true", help="Add new food classes"
+    )
+    parser.add_argument(
+        "--max-train-samples", type=int, default=None, help="Max training samples"
+    )
     parser.add_argument("--device", default=None, help="Device (cuda/mps/cpu)")
     parser.add_argument("--resume", default=None, help="Resume from checkpoint")
     args = parser.parse_args()
@@ -435,22 +556,20 @@ def main():
         base_model_name=args.base_model,
         num_new_classes=num_new_classes,
         use_lora=args.use_lora,
-        lora_rank=args.lora_rank
+        lora_rank=args.lora_rank,
     )
     model = model.to(device)
 
     # Load datasets
     logger.info("Loading training data...")
     train_dataset = HuggingFaceFood101Dataset(
-        split="train",
-        processor=processor,
-        max_samples=args.max_train_samples
+        split="train", processor=processor, max_samples=args.max_train_samples
     )
 
     val_dataset = HuggingFaceFood101Dataset(
         split="validation",
         processor=processor,
-        max_samples=args.max_train_samples // 5 if args.max_train_samples else None
+        max_samples=args.max_train_samples // 5 if args.max_train_samples else None,
     )
 
     # Create dataloaders
@@ -459,7 +578,7 @@ def main():
         batch_size=args.batch_size,
         shuffle=True,
         num_workers=4,
-        pin_memory=True
+        pin_memory=True,
     )
 
     val_loader = DataLoader(
@@ -467,7 +586,7 @@ def main():
         batch_size=args.batch_size,
         shuffle=False,
         num_workers=4,
-        pin_memory=True
+        pin_memory=True,
     )
 
     # Optimizer and scheduler
@@ -476,9 +595,7 @@ def main():
     total_steps = len(train_loader) * args.epochs
     warmup_steps = total_steps // 10
     scheduler = get_linear_schedule_with_warmup(
-        optimizer,
-        num_warmup_steps=warmup_steps,
-        num_training_steps=total_steps
+        optimizer, num_warmup_steps=warmup_steps, num_training_steps=total_steps
     )
 
     # Training loop
@@ -500,8 +617,12 @@ def main():
 
         # Train
         train_loss = train_epoch(
-            model, train_loader, optimizer, scheduler, device,
-            use_amp=(device == "cuda")
+            model,
+            train_loader,
+            optimizer,
+            scheduler,
+            device,
+            use_amp=(device == "cuda"),
         )
         logger.info(f"Train loss: {train_loss:.4f}")
 
@@ -511,38 +632,44 @@ def main():
 
         # Save checkpoint
         checkpoint_path = output_dir / f"checkpoint_epoch_{epoch + 1}.pt"
-        torch.save({
-            "epoch": epoch,
-            "model_state_dict": model.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-            "train_loss": train_loss,
-            "val_loss": val_loss,
-            "val_accuracy": val_accuracy,
-            "best_accuracy": best_accuracy,
-            "config": {
-                "base_model": args.base_model,
-                "use_lora": args.use_lora,
-                "lora_rank": args.lora_rank,
-                "num_classes": model.config.num_labels,
-            }
-        }, checkpoint_path)
+        torch.save(
+            {
+                "epoch": epoch,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "train_loss": train_loss,
+                "val_loss": val_loss,
+                "val_accuracy": val_accuracy,
+                "best_accuracy": best_accuracy,
+                "config": {
+                    "base_model": args.base_model,
+                    "use_lora": args.use_lora,
+                    "lora_rank": args.lora_rank,
+                    "num_classes": model.config.num_labels,
+                },
+            },
+            checkpoint_path,
+        )
         logger.info(f"Saved checkpoint: {checkpoint_path}")
 
         # Save best model
         if val_accuracy > best_accuracy:
             best_accuracy = val_accuracy
             best_path = output_dir / "best_model.pt"
-            torch.save({
-                "epoch": epoch,
-                "model_state_dict": model.state_dict(),
-                "val_accuracy": val_accuracy,
-                "config": {
-                    "base_model": args.base_model,
-                    "use_lora": args.use_lora,
-                    "lora_rank": args.lora_rank,
-                    "num_classes": model.config.num_labels,
-                }
-            }, best_path)
+            torch.save(
+                {
+                    "epoch": epoch,
+                    "model_state_dict": model.state_dict(),
+                    "val_accuracy": val_accuracy,
+                    "config": {
+                        "base_model": args.base_model,
+                        "use_lora": args.use_lora,
+                        "lora_rank": args.lora_rank,
+                        "num_classes": model.config.num_labels,
+                    },
+                },
+                best_path,
+            )
             logger.info(f"New best model! Accuracy: {val_accuracy:.4f}")
 
     logger.info(f"\nTraining complete! Best accuracy: {best_accuracy:.4f}")

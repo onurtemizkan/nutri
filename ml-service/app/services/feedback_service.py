@@ -7,6 +7,7 @@ Handles:
 3. Generating new CLIP prompts from feedback
 4. Applying learned improvements to the classifier
 """
+
 import logging
 import json
 from typing import List, Dict, Any, Optional, Tuple
@@ -289,9 +290,11 @@ class FeedbackService:
             {
                 "prompt": lp.prompt,
                 "source": lp.source,
-                "confidence": (lp.success_count / max(lp.times_used, 1))
-                if lp.times_used > 0
-                else 0.5,
+                "confidence": (
+                    (lp.success_count / max(lp.times_used, 1))
+                    if lp.times_used > 0
+                    else 0.5
+                ),
                 "feedback_count": lp.times_used,
             }
             for lp in learned_query.scalars()
@@ -473,9 +476,9 @@ class FeedbackService:
                 "original": orig,
                 "corrected": corr,
                 "count": count,
-                "percentage": count / total_corrections * 100
-                if total_corrections > 0
-                else 0,
+                "percentage": (
+                    count / total_corrections * 100 if total_corrections > 0 else 0
+                ),
                 "suggested_action": self._suggest_action(orig, corr, count),
             }
             for (orig, corr), count in sorted(

@@ -186,9 +186,11 @@ class PredictionService:
                 predicted_value, historical_stats["values"]
             ),
             model_id=model_id,
-            model_version=model_artifacts["metadata"]["model_version"]
-            if "model_version" in model_artifacts["metadata"]
-            else "v1.0.0",
+            model_version=(
+                model_artifacts["metadata"]["model_version"]
+                if "model_version" in model_artifacts["metadata"]
+                else "v1.0.0"
+            ),
             architecture=request.architecture or ModelArchitecture.LSTM,
         )
 

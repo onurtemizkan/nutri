@@ -1,0 +1,13 @@
+[
+  {
+    "name": "lstm_attention_rhr",
+    "model_type": "lstm_attention",
+    "target_metric": "RESTING_HEART_RATE",
+    "train_loss": 0.5420925406848683,
+    "val_loss": 1.0299045890569687,
+    "test_metrics": {
+      "mae": 4.432369709014893,
+      "mse": 29.6079158782959,
+      "rmse": 5.441315638546977,
+      "r2": -0.18989789485931396,
+      "mape": 

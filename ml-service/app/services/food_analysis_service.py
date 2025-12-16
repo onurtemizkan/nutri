@@ -5,6 +5,7 @@ Handles food classification, portion estimation, and nutrition calculation.
 Uses state-of-the-art Vision Transformer (ViT) model for food classification.
 Supports multi-food detection using OWL-ViT for detecting multiple foods on a plate.
 """
+
 import time
 import logging
 from typing import List, Optional, Tuple
@@ -680,9 +681,9 @@ class FoodAnalysisService:
             fiber=round(fiber, 1) if fiber is not None else None,
             sugar=round(sugar, 1) if sugar is not None else None,
             sodium=round(sodium, 1) if sodium is not None else None,
-            saturated_fat=round(saturated_fat, 1)
-            if saturated_fat is not None
-            else None,
+            saturated_fat=(
+                round(saturated_fat, 1) if saturated_fat is not None else None
+            ),
             lysine=amino_acids["lysine"],
             arginine=amino_acids["arginine"],
         )

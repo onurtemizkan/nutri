@@ -2,6 +2,7 @@
 Redis client for caching features, predictions, and models
 Uses async redis for non-blocking operations
 """
+
 import json
 import logging
 from typing import Any, Optional

@@ -33,5 +33,16 @@ class User(Base):
     health_metrics = relationship("HealthMetric", back_populates="user", lazy="select")
     activities = relationship("Activity", back_populates="user", lazy="select")
 
+    # Sensitivity tracking relationships
+    sensitivities = relationship(
+        "UserSensitivity", back_populates="user", lazy="select", cascade="all, delete-orphan"
+    )
+    sensitivity_exposures = relationship(
+        "SensitivityExposure", back_populates="user", lazy="select", cascade="all, delete-orphan"
+    )
+    sensitivity_insights = relationship(
+        "SensitivityInsight", back_populates="user", lazy="select", cascade="all, delete-orphan"
+    )
+
     def __repr__(self):
         return f"<User(id={self.id}, email={self.email})>"

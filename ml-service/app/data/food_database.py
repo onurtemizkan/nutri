@@ -9,6 +9,7 @@ Sources:
 - Food Science Literature
 - Standardized food density tables
 """
+
 from typing import Optional, Dict, List, Union
 from dataclasses import dataclass
 from enum import Enum
@@ -2967,9 +2968,11 @@ def estimate_weight_from_volume(
     return {
         "weight": round(final_weight, 1),
         "confidence": confidence,
-        "method": "density-lookup"
-        if entry
-        else ("category-default" if category else "generic-default"),
+        "method": (
+            "density-lookup"
+            if entry
+            else ("category-default" if category else "generic-default")
+        ),
         "density_used": density,
         "shape_factor_used": shape_factor,
         "cooking_method": cooking_method.value,
