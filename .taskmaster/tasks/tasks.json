@@ -9,7 +9,7 @@
         "testStrategy": "1. Unit tests for model loading and inference\n2. Test classification accuracy on held-out test set (target >80% top-5)\n3. Integration test: POST /api/food/analyze with real food images\n4. Performance test: Inference time <3s per image\n5. Test model fallback when GPU not available",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -123,7 +123,7 @@
               6
             ],
             "details": "Create test files in `__tests__/screens/health/` directory:\n\n**1. __tests__/screens/health/HealthDashboard.test.tsx:**\n```typescript\nimport React from 'react';\nimport { render, fireEvent, waitFor } from '@testing-library/react-native';\nimport HealthDashboard from '@/app/(tabs)/health';\nimport { healthMetricsApi } from '@/lib/api/health-metrics';\n\njest.mock('@/lib/api/health-metrics');\njest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));\njest.mock('@/lib/context/AuthContext', () => ({ useAuth: () => ({ user: { id: '1', name: 'Test' } }) }));\n```\n\nTest cases:\n- Renders loading state with ActivityIndicator initially\n- Renders metric cards when data loads successfully\n- Renders empty state when no health data available\n- Time range selector updates displayed data (Today/Week/Month)\n- Pull-to-refresh triggers API reload (test RefreshControl onRefresh)\n- Tapping metric card calls router.push with correct metric type\n- Error state renders when API fails\n\n**2. __tests__/screens/health/HealthMetricDetail.test.tsx:**\n\nTest cases:\n- Renders line chart with historical data points\n- Displays statistics (avg, min, max, trend arrow, percentage)\n- Shows correct data source indicator icon/text\n- Date range filter buttons update chart data (7d/30d/90d)\n- Handles empty data gracefully with message\n- Loading state shows ActivityIndicator\n- Error state with retry button\n\n**3. __tests__/screens/health/AddHealthMetric.test.tsx:**\n\nTest cases:\n- Metric type picker renders all HealthMetricType enum values\n- Value input accepts numeric input and shows correct unit dynamically\n- Date/time picker defaults to current time and opens modal\n- Source automatically displays \"Manual\"\n- Shows validation error for out-of-range values (test per metric type bounds)\n- Shows required field validation when value empty\n- Successful submission calls API and navigates back\n- Cancel button navigates back without saving\n- Form inputs disabled during submission (isLoading state)\n- Shows loading indicator on Save button during submission\n\n**Common Mocks:**\n- Mock @react-native-community/datetimepicker\n- Mock @react-native-picker/picker\n- Mock react-native-chart-kit or victory-native\n- Mock expo-linear-gradient",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Run with `npm test __tests__/screens/health/`. Verify all user interactions are tested. Use `fireEvent` for button presses and text input. Use `waitFor` for async operations. Target 80%+ coverage for all three screens.",
             "parentId": "undefined",
             "updatedAt": "2025-12-05T01:46:30.166Z"
@@ -139,7 +139,7 @@
         "testStrategy": "1. Component tests for each screen\n2. Test form validation (duration, time constraints)\n3. Test activity type filtering\n4. Test CRUD operations with mock API\n5. Test weekly summary calculation display\n6. Test edit/delete flows with confirmation dialogs",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -376,7 +376,7 @@
               3
             ],
             "details": "1. Update scan-food.tsx after photo capture (line 114 area)\n2. Add 'Measure with AR' button alongside 'Analyze Food' button\n3. Implement AR measurement flow:\n   - Launch ar-measure-portion modal\n   - Receive ARMeasurement result from modal\n   - Store measurements in component state\n4. Update foodAnalysisApi.analyzeFood() call to include measurements\n5. Replace mockMeasurements with real AR data\n6. Display measurement quality indicator in UI (high/medium/low badge)\n7. Show captured dimensions in preview (width x height x depth)\n8. Allow re-measurement before final analysis\n9. Handle AR not available gracefully (hide button, show alternative)\n10. Update UI flow: Photo → Measure (optional) → Analyze → Results",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. Test button visibility after photo capture\n2. Test modal launch with expo-router\n3. Test receiving ARMeasurement data from modal\n4. Test API call includes measurements in request\n5. Test UI updates with measurement quality indicator\n6. Integration test: full scan flow with AR measurement\n7. Test fallback when AR not available",
             "parentId": "undefined"
           },
@@ -388,7 +388,7 @@
               2
             ],
             "details": "1. Create lib/components/ARCalibration.tsx component\n2. Implement credit card calibration mode:\n   - Standard dimensions: 85.60mm × 53.98mm\n   - AR measurement of credit card\n   - Calculate calibration factor: measured/actual\n3. Build calibration wizard UI:\n   - Introduction screen explaining calibration\n   - Place credit card on surface instructions\n   - Measure card with AR (4 corner points)\n   - Validation: check if dimensions are reasonable (within 20% of standard)\n   - Success/failure feedback\n4. Store calibration factor in AsyncStorage/SecureStore\n5. Apply calibration to subsequent measurements (multiply by factor)\n6. Add calibration status indicator in AR measurement screen\n7. Optional: Allow re-calibration from settings\n8. Optional: Support other reference objects (smartphone, hand span)\n9. Create lib/utils/calibration.ts for storage and retrieval",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. Test calibration factor calculation\n2. Test storage and retrieval of calibration data\n3. Test validation of measured card dimensions\n4. Test applying calibration to measurements\n5. Component tests for calibration wizard\n6. Integration test: calibrate then measure food\n7. Test calibration persistence across app restarts",
             "parentId": "undefined"
           },

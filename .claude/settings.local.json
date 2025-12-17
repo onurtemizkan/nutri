@@ -28,7 +28,9 @@
       "mcp__ios-simulator__launch_app",
       "mcp__ios-simulator__ui_tap",
       "WebSearch",
-      "WebFetch(domain:arxiv.org)"
+      "WebFetch(domain:arxiv.org)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:docs.maestro.dev)"
     ],
     "deny": [],
     "ask": []

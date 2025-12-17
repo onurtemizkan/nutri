@@ -129,14 +129,15 @@ module.exports = {
      */
     extra: {
       // Custom API URL override (works in dev and prod)
-      apiUrl: API_URL || undefined,
+      // For physical device development, set this to your computer's IP
+      apiUrl: API_URL || 'http://192.168.1.68:3000/api',
       // Production API URL (only used in production builds when apiUrl is not set)
       productionApiUrl: PRODUCTION_API_URL || undefined,
       // ML Service URL (for food analysis)
       mlServiceUrl: ML_SERVICE_URL || undefined,
       // EAS configuration
       eas: {
-        projectId: 'your-project-id', // Replace with your EAS project ID
+        projectId: '543d7d98-c664-4db6-bffe-fceabff545d0',
       },
     },
   },

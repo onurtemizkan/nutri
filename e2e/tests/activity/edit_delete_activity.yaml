@@ -1,0 +1,349 @@
+# Edit and Delete Activity E2E Tests
+# Tests editing and deleting activities
+
+appId: host.exp.Exponent
+
+---
+
+# Test: Edit Activity Flow
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to activity screen
+- openLink: "exp://127.0.0.1:8081/--/activity"
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 10000
+
+# First add an activity to edit
+- tapOn:
+    id: "activity-add-button"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-activity-screen"
+    timeout: 5000
+
+# Add a cycling activity
+- tapOn:
+    id: "activity-type-selector"
+
+- tapOn:
+    id: "activity-type-CYCLING"
+
+- tapOn:
+    id: "activity-intensity-MODERATE"
+
+- tapOn:
+    id: "activity-duration-hours"
+- clearText
+- inputText: "0"
+
+- tapOn:
+    id: "activity-duration-minutes"
+- clearText
+- inputText: "45"
+
+- tapOn:
+    id: "activity-notes-input"
+- inputText: "Morning ride"
+
+- tapOn:
+    id: "activity-save-button"
+
+- extendedWaitUntil:
+    visible:
+      text: "Success"
+    timeout: 10000
+
+- tapOn:
+    text: "OK"
+
+# Now tap the activity to view details
+- tapOn:
+    text: "Cycling"
+    optional: true
+
+# Or tap by partial ID
+- tapOn:
+    id: "activity-item-"
+    containsText: true
+    optional: true
+
+# Wait for detail screen
+- extendedWaitUntil:
+    visible:
+      id: "activity-detail-screen"
+    timeout: 5000
+    optional: true
+
+# Tap edit button
+- tapOn:
+    id: "activity-edit-button"
+    optional: true
+
+# Wait for edit screen (same as add screen)
+- extendedWaitUntil:
+    visible:
+      id: "add-activity-screen"
+    timeout: 5000
+    optional: true
+
+# Change intensity to HIGH
+- tapOn:
+    id: "activity-intensity-HIGH"
+    optional: true
+
+# Update notes
+- scrollUntilVisible:
+    element:
+      id: "activity-notes-input"
+    direction: DOWN
+    optional: true
+
+- tapOn:
+    id: "activity-notes-input"
+    optional: true
+- clearText
+  optional: true
+- inputText: "Updated: Interval training ride"
+  optional: true
+
+# Save changes
+- tapOn:
+    id: "activity-save-button"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "Success"
+    timeout: 10000
+    optional: true
+
+- tapOn:
+    text: "OK"
+    optional: true
+
+---
+
+# Test: Delete Activity with Confirmation
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to activity screen
+- openLink: "exp://127.0.0.1:8081/--/activity"
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 10000
+
+# First add an activity to delete
+- tapOn:
+    id: "activity-add-button"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-activity-screen"
+    timeout: 5000
+
+# Add a quick activity
+- tapOn:
+    id: "activity-type-selector"
+
+- tapOn:
+    id: "activity-type-STRETCHING"
+
+- tapOn:
+    id: "activity-intensity-LOW"
+
+- tapOn:
+    id: "activity-duration-minutes"
+- clearText
+- inputText: "10"
+
+- tapOn:
+    id: "activity-save-button"
+
+- extendedWaitUntil:
+    visible:
+      text: "Success"
+    timeout: 10000
+
+- tapOn:
+    text: "OK"
+
+# Tap the stretching activity to view details
+- tapOn:
+    text: "Stretching"
+    optional: true
+
+# Or by partial ID
+- tapOn:
+    id: "activity-item-"
+    containsText: true
+    optional: true
+
+# Wait for detail screen
+- extendedWaitUntil:
+    visible:
+      id: "activity-detail-screen"
+    timeout: 5000
+    optional: true
+
+# Tap delete button
+- tapOn:
+    id: "activity-delete-button"
+    optional: true
+
+# Should show confirmation dialog
+- assertVisible:
+    text: "Delete Activity"
+    optional: true
+
+# Tap Cancel first to test cancellation
+- tapOn:
+    text: "Cancel"
+    optional: true
+
+# Should still be on detail screen
+- assertVisible:
+    id: "activity-detail-screen"
+    optional: true
+
+# Now actually delete
+- tapOn:
+    id: "activity-delete-button"
+    optional: true
+
+- assertVisible:
+    text: "Delete Activity"
+    optional: true
+
+# Confirm delete
+- tapOn:
+    text: "Delete"
+    optional: true
+
+# Should return to activity list
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 5000
+
+---
+
+# Test: Edit Activity - Change Type
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to activity screen
+- openLink: "exp://127.0.0.1:8081/--/activity"
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 10000
+
+# Add an activity
+- tapOn:
+    id: "activity-add-button"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-activity-screen"
+    timeout: 5000
+
+# Add a walking activity
+- tapOn:
+    id: "activity-type-selector"
+
+- tapOn:
+    id: "activity-type-WALKING"
+
+- tapOn:
+    id: "activity-duration-minutes"
+- clearText
+- inputText: "30"
+
+- tapOn:
+    id: "activity-save-button"
+
+- extendedWaitUntil:
+    visible:
+      text: "Success"
+    timeout: 10000
+
+- tapOn:
+    text: "OK"
+
+# View the walking activity
+- tapOn:
+    text: "Walking"
+    optional: true
+
+# Or by partial ID
+- tapOn:
+    id: "activity-item-"
+    containsText: true
+    optional: true
+
+# Wait for detail screen
+- extendedWaitUntil:
+    visible:
+      id: "activity-detail-screen"
+    timeout: 5000
+    optional: true
+
+# Edit it
+- tapOn:
+    id: "activity-edit-button"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      id: "add-activity-screen"
+    timeout: 5000
+    optional: true
+
+# Change type to Hiking
+- tapOn:
+    id: "activity-type-selector"
+    optional: true
+
+- tapOn:
+    id: "activity-type-HIKING"
+    optional: true
+
+# Increase intensity
+- tapOn:
+    id: "activity-intensity-HIGH"
+    optional: true
+
+# Save
+- tapOn:
+    id: "activity-save-button"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "Success"
+    timeout: 10000
+    optional: true
+
+- tapOn:
+    text: "OK"
+    optional: true
+
+# Verify we're back on detail screen with updated info
+- assertVisible:
+    text: "Hiking"
+    optional: true

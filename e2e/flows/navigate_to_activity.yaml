@@ -1,0 +1,24 @@
+# Navigate to Activity Screen Flow
+# Navigates from home to the activity screen
+
+appId: host.exp.Exponent
+
+---
+
+# Ensure we're signed in and on home screen
+- assertVisible:
+    id: "home-screen"
+    optional: true
+
+# Navigate to Activity screen
+# Using deep link is most reliable
+- openLink: "exp://127.0.0.1:8081/--/activity"
+
+# Wait for activity screen to load
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 10000
+
+- assertVisible:
+    id: "activity-screen"

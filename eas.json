@@ -1,40 +1,57 @@
 {
+  "cli": {
+    "version": ">= 15.0.0",
+    "appVersionSource": "remote"
+  },
   "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "resourceClass": "default"
+      }
+    },
+    "development-local": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "buildConfiguration": "Debug",
+        "resourceClass": "default"
+      }
+    },
+    "development-xcode": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "buildConfiguration": "Debug",
+        "credentialsSource": "local"
+      }
+    },
+    "device": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "buildConfiguration": "Release",
+        "resourceClass": "default"
+      }
+    },
+    "simulator": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true,
+        "resourceClass": "default"
+      }
+    },
     "preview": {
+      "distribution": "internal",
       "ios": {
-        "resourceClass": "default",
-        "buildType": "simulator"
-      }
-    },
-    "preview2": {
-      "ios": {
-        "resourceClass": "default",
-        "buildType": "simulator"
-      }
-    },
-    "preview3": {
-      "ios": {
-        "resourceClass": "default",
-        "buildType": "simulator"
+        "resourceClass": "default"
       }
     },
     "production": {
       "ios": {
         "resourceClass": "default"
-      }
-    },
-    "development": {
-      "ios": {
-        "resourceClass": "default",
-        "buildType": "simulator",
-        "distribution": "simulator"
-      }
-    },
-    "devicebuild": {
-      "ios": {
-        "resourceClass": "default",
-        "buildType": "client",
-        "distribution": "internal"
       }
     }
   },

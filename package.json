@@ -29,7 +29,17 @@
     "dev:stop": "./scripts/stop-all.sh",
     "dev:full": "./scripts/start-full.sh",
     "services:start": "./scripts/start-dev.sh",
-    "services:stop": "./scripts/stop-dev.sh"
+    "services:stop": "./scripts/stop-dev.sh",
+    "deploy:device": "./scripts/deploy-device.sh",
+    "deploy:device:local": "./scripts/deploy-device.sh --local",
+    "deploy:device:clean": "./scripts/deploy-device.sh --local --clean",
+    "build:ios": "eas build --profile development --platform ios",
+    "build:ios:local": "eas build --profile development-local --platform ios --local",
+    "build:ios:simulator": "eas build --profile simulator --platform ios --local",
+    "prebuild:ios": "npx expo prebuild --platform ios",
+    "prebuild:ios:clean": "npx expo prebuild --platform ios --clean",
+    "ios:device": "npx expo run:ios --device",
+    "build:ios:xcode": "eas build --profile development-xcode --platform ios --local"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -48,6 +58,7 @@
     "expo-camera": "~17.0.10",
     "expo-constants": "~18.0.12",
     "expo-crypto": "~15.0.8",
+    "expo-dev-client": "~6.0.20",
     "expo-file-system": "~19.0.21",
     "expo-font": "~14.0.10",
     "expo-gl": "~16.0.9",

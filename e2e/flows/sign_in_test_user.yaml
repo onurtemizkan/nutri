@@ -12,9 +12,9 @@ env:
 # Launch and navigate to app
 - runFlow: launch_app.yaml
 
-# Navigate to sign in
+# Navigate to sign in - use testID for reliability
 - tapOn:
-    text: "Sign In"
+    id: "welcome-signin-button"
 
 # Wait for sign in screen
 - assertVisible:

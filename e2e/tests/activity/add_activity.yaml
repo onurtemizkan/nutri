@@ -1,0 +1,358 @@
+# Add Activity E2E Tests
+# Tests manually adding activities with various types and configurations
+
+appId: host.exp.Exponent
+
+env:
+  ACTIVITY_DURATION_HOURS: "1"
+  ACTIVITY_DURATION_MINUTES: "30"
+  ACTIVITY_CALORIES: "450"
+  ACTIVITY_AVG_HR: "145"
+  ACTIVITY_MAX_HR: "175"
+  ACTIVITY_DISTANCE: "5.5"
+  ACTIVITY_STEPS: "6500"
+  ACTIVITY_NOTES: "Great workout session!"
+
+---
+
+# Test: Navigate to Activity Screen
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to activity via deep link
+- openLink: "exp://127.0.0.1:8081/--/activity"
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 10000
+
+- assertVisible:
+    id: "activity-screen"
+
+---
+
+# Test: Add Running Activity with Full Details
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to activity screen
+- openLink: "exp://127.0.0.1:8081/--/activity"
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 10000
+
+# Tap add activity button
+- tapOn:
+    id: "activity-add-button"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-activity-screen"
+    timeout: 5000
+
+# Select activity type - Running should be default
+- assertVisible:
+    id: "activity-type-selector"
+
+# Select MODERATE intensity (should be default)
+- tapOn:
+    id: "activity-intensity-MODERATE"
+    optional: true
+
+# Enter duration
+- tapOn:
+    id: "activity-duration-hours"
+- clearText
+- inputText: ${ACTIVITY_DURATION_HOURS}
+
+- tapOn:
+    id: "activity-duration-minutes"
+- clearText
+- inputText: ${ACTIVITY_DURATION_MINUTES}
+
+# Enter calories
+- tapOn:
+    id: "activity-calories-input"
+- clearText
+- inputText: ${ACTIVITY_CALORIES}
+
+# Enter heart rate
+- tapOn:
+    id: "activity-avg-hr-input"
+- inputText: ${ACTIVITY_AVG_HR}
+
+- tapOn:
+    id: "activity-max-hr-input"
+- inputText: ${ACTIVITY_MAX_HR}
+
+# Enter distance (Running has distance field)
+- tapOn:
+    id: "activity-distance-input"
+    optional: true
+- inputText: ${ACTIVITY_DISTANCE}
+  optional: true
+
+# Enter steps (Running has steps field)
+- tapOn:
+    id: "activity-steps-input"
+    optional: true
+- inputText: ${ACTIVITY_STEPS}
+  optional: true
+
+# Enter notes
+- scrollUntilVisible:
+    element:
+      id: "activity-notes-input"
+    direction: DOWN
+
+- tapOn:
+    id: "activity-notes-input"
+- inputText: ${ACTIVITY_NOTES}
+
+# Save the activity
+- tapOn:
+    id: "activity-save-button"
+
+# Should show success alert
+- extendedWaitUntil:
+    visible:
+      text: "Success"
+    timeout: 10000
+
+- tapOn:
+    text: "OK"
+
+# Should return to activity screen
+- assertVisible:
+    id: "activity-screen"
+
+---
+
+# Test: Add Yoga Activity (No distance/steps)
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to activity screen
+- openLink: "exp://127.0.0.1:8081/--/activity"
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 10000
+
+# Tap add activity button
+- tapOn:
+    id: "activity-add-button"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-activity-screen"
+    timeout: 5000
+
+# Open type picker
+- tapOn:
+    id: "activity-type-selector"
+
+# Select Yoga
+- tapOn:
+    id: "activity-type-YOGA"
+
+# Select LOW intensity
+- tapOn:
+    id: "activity-intensity-LOW"
+
+# Enter duration - 45 minutes
+- tapOn:
+    id: "activity-duration-hours"
+- clearText
+- inputText: "0"
+
+- tapOn:
+    id: "activity-duration-minutes"
+- clearText
+- inputText: "45"
+
+# Save
+- tapOn:
+    id: "activity-save-button"
+
+# Should show success
+- extendedWaitUntil:
+    visible:
+      text: "Success"
+    timeout: 10000
+
+- tapOn:
+    text: "OK"
+
+# Should return to activity screen
+- assertVisible:
+    id: "activity-screen"
+
+---
+
+# Test: Add Weight Training Activity (High Intensity)
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to activity screen
+- openLink: "exp://127.0.0.1:8081/--/activity"
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 10000
+
+# Tap add activity button
+- tapOn:
+    id: "activity-add-button"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-activity-screen"
+    timeout: 5000
+
+# Open type picker
+- tapOn:
+    id: "activity-type-selector"
+
+# Select Weight Training
+- tapOn:
+    id: "activity-type-WEIGHT_TRAINING"
+
+# Select HIGH intensity
+- tapOn:
+    id: "activity-intensity-HIGH"
+
+# Enter duration - 1 hour
+- tapOn:
+    id: "activity-duration-hours"
+- clearText
+- inputText: "1"
+
+- tapOn:
+    id: "activity-duration-minutes"
+- clearText
+- inputText: "0"
+
+# Enter notes
+- scrollUntilVisible:
+    element:
+      id: "activity-notes-input"
+    direction: DOWN
+
+- tapOn:
+    id: "activity-notes-input"
+- inputText: "Upper body day - bench press, rows, shoulders"
+
+# Save
+- tapOn:
+    id: "activity-save-button"
+
+# Should show success
+- extendedWaitUntil:
+    visible:
+      text: "Success"
+    timeout: 10000
+
+- tapOn:
+    text: "OK"
+
+# Should return to activity screen
+- assertVisible:
+    id: "activity-screen"
+
+---
+
+# Test: Cancel Adding Activity
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to activity screen
+- openLink: "exp://127.0.0.1:8081/--/activity"
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 10000
+
+# Tap add activity button
+- tapOn:
+    id: "activity-add-button"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-activity-screen"
+    timeout: 5000
+
+# Enter some data
+- tapOn:
+    id: "activity-duration-minutes"
+- clearText
+- inputText: "20"
+
+# Cancel
+- tapOn:
+    id: "activity-cancel-button"
+
+# Should return to activity screen without saving
+- assertVisible:
+    id: "activity-screen"
+
+---
+
+# Test: Validation - Duration Required
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to activity screen
+- openLink: "exp://127.0.0.1:8081/--/activity"
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 10000
+
+# Tap add activity button
+- tapOn:
+    id: "activity-add-button"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-activity-screen"
+    timeout: 5000
+
+# Clear duration to 0
+- tapOn:
+    id: "activity-duration-hours"
+- clearText
+- inputText: "0"
+
+- tapOn:
+    id: "activity-duration-minutes"
+- clearText
+- inputText: "0"
+
+# Try to save
+- tapOn:
+    id: "activity-save-button"
+
+# Should show validation error (duration must be at least 1 minute)
+- assertVisible:
+    text: "Duration must be at least 1 minute"
+    optional: true

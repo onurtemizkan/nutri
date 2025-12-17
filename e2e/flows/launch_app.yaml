@@ -16,51 +16,19 @@ appId: host.exp.Exponent
       text: "Expo Go"
     timeout: 30000
 
-# Open the dev server URL
-- openLink: "exp://localhost:8081"
+# Open the dev server URL (use 127.0.0.1 for reliability)
+- openLink: "exp://127.0.0.1:8081"
 
-# Wait for the bundle to load and dev menu to appear
-# The Expo Go dev menu doesn't expose text to accessibility
-# We wait for the "nutri" app title in the header which IS exposed
+# Wait for the app to load - look for the app title or welcome screen
 - extendedWaitUntil:
     visible:
-      text: "nutri"
-    timeout: 120000
+      text: "Nutri"
+    timeout: 180000
 
-# Swipe down on the dev menu modal to dismiss it
-# The modal is a bottom sheet that can be swiped away
-# Try swiping down multiple times to ensure dismissal
-- swipe:
-    start: "50%,65%"
-    end: "50%,98%"
-    duration: 300
+# Wait for any loading to complete
+- extendedWaitUntil:
+    visible:
+      id: "welcome-screen"
+    timeout: 30000
 
-- swipe:
-    start: "50%,65%"
-    end: "50%,98%"
-    duration: 300
-
-- swipe:
-    start: "50%,65%"
-    end: "50%,98%"
-    duration: 300
-
-# Dismiss any iOS system dialogs (like "Save Password?")
-- tapOn:
-    text: "Not Now"
-    optional: true
-
-- tapOn:
-    text: "Cancel"
-    optional: true
-
-# Wait a moment for any transitions
-- swipe:
-    direction: DOWN
-    duration: 500
-
-# At this point, app should show either welcome screen OR home screen
-# Check for welcome screen first
-- assertVisible:
-    id: "welcome-screen"
-    optional: true
+# At this point, app should show welcome screen with Sign In button

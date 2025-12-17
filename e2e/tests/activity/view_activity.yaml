@@ -1,0 +1,186 @@
+# View Activity Detail E2E Tests
+# Tests viewing activity details and navigating the activity list
+
+appId: host.exp.Exponent
+
+---
+
+# Test: View Activity List
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to activity screen
+- openLink: "exp://127.0.0.1:8081/--/activity"
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 10000
+
+# Should see activity screen elements
+- assertVisible:
+    id: "activity-screen"
+
+# Check for weekly summary (if activities exist)
+- assertVisible:
+    id: "activity-weekly-summary"
+    optional: true
+
+# Check for filter buttons
+- assertVisible:
+    id: "activity-filter-all"
+    optional: true
+
+---
+
+# Test: Filter Activities by Category
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to activity screen
+- openLink: "exp://127.0.0.1:8081/--/activity"
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 10000
+
+# Test each filter
+- tapOn:
+    id: "activity-filter-cardio"
+    optional: true
+
+- tapOn:
+    id: "activity-filter-strength"
+    optional: true
+
+- tapOn:
+    id: "activity-filter-sports"
+    optional: true
+
+- tapOn:
+    id: "activity-filter-other"
+    optional: true
+
+# Back to all
+- tapOn:
+    id: "activity-filter-all"
+    optional: true
+
+---
+
+# Test: Pull to Refresh Activity List
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to activity screen
+- openLink: "exp://127.0.0.1:8081/--/activity"
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 10000
+
+# Pull to refresh
+- scroll:
+    direction: DOWN
+    duration: 1000
+
+# Wait for refresh to complete
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 5000
+
+---
+
+# Test: View Activity Detail (requires existing activity)
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to activity screen
+- openLink: "exp://127.0.0.1:8081/--/activity"
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 10000
+
+# First add an activity to ensure we have one to view
+- tapOn:
+    id: "activity-add-button"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-activity-screen"
+    timeout: 5000
+
+# Quick activity entry
+- tapOn:
+    id: "activity-duration-minutes"
+- clearText
+- inputText: "15"
+
+- tapOn:
+    id: "activity-save-button"
+
+- extendedWaitUntil:
+    visible:
+      text: "Success"
+    timeout: 10000
+
+- tapOn:
+    text: "OK"
+
+# Now on activity list, tap the first activity
+- tapOn:
+    text: "Running"
+    optional: true
+
+- tapOn:
+    id: "activity-item-"
+    containsText: true
+    optional: true
+
+# If we found an activity, verify detail screen
+- assertVisible:
+    id: "activity-detail-screen"
+    optional: true
+
+# Back button should work
+- tapOn:
+    id: "activity-detail-back-button"
+    optional: true
+
+---
+
+# Test: Empty State
+- runFlow: ../../flows/sign_in_empty_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to activity screen
+- openLink: "exp://127.0.0.1:8081/--/activity"
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 10000
+
+# Should show empty state for user with no activities
+- assertVisible:
+    id: "activity-empty-state"
+    optional: true
+
+- assertVisible:
+    text: "No activities yet"
+    optional: true

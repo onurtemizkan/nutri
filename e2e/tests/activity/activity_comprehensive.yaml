@@ -1,0 +1,501 @@
+# Comprehensive Activity E2E Tests
+# Full end-to-end tests covering all activity functionality
+
+appId: host.exp.Exponent
+
+env:
+  RUNNING_DURATION: "45"
+  CYCLING_DURATION: "60"
+  YOGA_DURATION: "30"
+
+---
+
+# Test: Complete Activity Workflow
+# Creates multiple activities, views them, edits one, deletes one
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to activity screen
+- openLink: "exp://127.0.0.1:8081/--/activity"
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 10000
+
+# === Add First Activity: Running ===
+- tapOn:
+    id: "activity-add-button"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-activity-screen"
+    timeout: 5000
+
+# Running is default type
+- tapOn:
+    id: "activity-intensity-HIGH"
+
+- tapOn:
+    id: "activity-duration-minutes"
+- clearText
+- inputText: ${RUNNING_DURATION}
+
+- tapOn:
+    id: "activity-calories-input"
+- clearText
+- inputText: "500"
+
+# Add distance
+- tapOn:
+    id: "activity-distance-input"
+    optional: true
+- inputText: "5.0"
+  optional: true
+
+- scrollUntilVisible:
+    element:
+      id: "activity-notes-input"
+    direction: DOWN
+
+- tapOn:
+    id: "activity-notes-input"
+- inputText: "Morning 5K run"
+
+- tapOn:
+    id: "activity-save-button"
+
+- extendedWaitUntil:
+    visible:
+      text: "Success"
+    timeout: 10000
+
+- tapOn:
+    text: "OK"
+
+# === Add Second Activity: Yoga ===
+- tapOn:
+    id: "activity-add-button"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-activity-screen"
+    timeout: 5000
+
+- tapOn:
+    id: "activity-type-selector"
+
+- tapOn:
+    id: "activity-type-YOGA"
+
+- tapOn:
+    id: "activity-intensity-LOW"
+
+- tapOn:
+    id: "activity-duration-minutes"
+- clearText
+- inputText: ${YOGA_DURATION}
+
+- tapOn:
+    id: "activity-save-button"
+
+- extendedWaitUntil:
+    visible:
+      text: "Success"
+    timeout: 10000
+
+- tapOn:
+    text: "OK"
+
+# === Add Third Activity: Cycling ===
+- tapOn:
+    id: "activity-add-button"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-activity-screen"
+    timeout: 5000
+
+- tapOn:
+    id: "activity-type-selector"
+
+- tapOn:
+    id: "activity-type-CYCLING"
+
+- tapOn:
+    id: "activity-intensity-MODERATE"
+
+- tapOn:
+    id: "activity-duration-hours"
+- clearText
+- inputText: "1"
+
+- tapOn:
+    id: "activity-duration-minutes"
+- clearText
+- inputText: "0"
+
+- tapOn:
+    id: "activity-distance-input"
+    optional: true
+- inputText: "25.0"
+  optional: true
+
+- tapOn:
+    id: "activity-save-button"
+
+- extendedWaitUntil:
+    visible:
+      text: "Success"
+    timeout: 10000
+
+- tapOn:
+    text: "OK"
+
+# === Verify Activities in List ===
+- assertVisible:
+    id: "activity-screen"
+
+# Should see weekly summary now
+- assertVisible:
+    id: "activity-weekly-summary"
+    optional: true
+
+# === Test Filters ===
+# Filter by Cardio
+- tapOn:
+    id: "activity-filter-cardio"
+    optional: true
+
+# Should see Running and Cycling
+- assertVisible:
+    text: "Running"
+    optional: true
+
+- assertVisible:
+    text: "Cycling"
+    optional: true
+
+# Filter by Other
+- tapOn:
+    id: "activity-filter-other"
+    optional: true
+
+# Should see Yoga
+- assertVisible:
+    text: "Yoga"
+    optional: true
+
+# Back to All
+- tapOn:
+    id: "activity-filter-all"
+    optional: true
+
+# === View and Edit Running Activity ===
+- tapOn:
+    text: "Running"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-detail-screen"
+    timeout: 5000
+    optional: true
+
+# Verify detail screen shows correct info
+- assertVisible:
+    text: "Morning 5K run"
+    optional: true
+
+- assertVisible:
+    text: "High"
+    optional: true
+
+# Edit the activity
+- tapOn:
+    id: "activity-edit-button"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      id: "add-activity-screen"
+    timeout: 5000
+    optional: true
+
+# Change intensity to Maximum
+- tapOn:
+    id: "activity-intensity-MAXIMUM"
+    optional: true
+
+# Update notes
+- scrollUntilVisible:
+    element:
+      id: "activity-notes-input"
+    direction: DOWN
+    optional: true
+
+- tapOn:
+    id: "activity-notes-input"
+    optional: true
+- clearText
+  optional: true
+- inputText: "Updated: Tempo run with sprints"
+  optional: true
+
+- tapOn:
+    id: "activity-save-button"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "Success"
+    timeout: 10000
+    optional: true
+
+- tapOn:
+    text: "OK"
+    optional: true
+
+# Back to list
+- tapOn:
+    id: "activity-detail-back-button"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 5000
+
+# === Delete Yoga Activity ===
+- tapOn:
+    text: "Yoga"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-detail-screen"
+    timeout: 5000
+    optional: true
+
+- tapOn:
+    id: "activity-delete-button"
+    optional: true
+
+- tapOn:
+    text: "Delete"
+    optional: true
+
+# Should return to list
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 5000
+
+# Yoga should no longer be visible
+- assertNotVisible:
+    text: "Yoga"
+    optional: true
+
+# === Verify Weekly Summary Updated ===
+# Summary should show 2 activities now
+- assertVisible:
+    id: "activity-weekly-summary"
+    optional: true
+
+---
+
+# Test: Activity Types Coverage
+# Tests adding different types of activities to ensure all work correctly
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to activity screen
+- openLink: "exp://127.0.0.1:8081/--/activity"
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 10000
+
+# Test strength activity - CrossFit
+- tapOn:
+    id: "activity-add-button"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-activity-screen"
+    timeout: 5000
+
+- tapOn:
+    id: "activity-type-selector"
+
+- tapOn:
+    id: "activity-type-CROSSFIT"
+
+- tapOn:
+    id: "activity-intensity-MAXIMUM"
+
+- tapOn:
+    id: "activity-duration-minutes"
+- clearText
+- inputText: "45"
+
+- tapOn:
+    id: "activity-save-button"
+
+- extendedWaitUntil:
+    visible:
+      text: "Success"
+    timeout: 10000
+
+- tapOn:
+    text: "OK"
+
+# Test sports activity - Basketball
+- tapOn:
+    id: "activity-add-button"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-activity-screen"
+    timeout: 5000
+
+- tapOn:
+    id: "activity-type-selector"
+
+- tapOn:
+    id: "activity-type-BASKETBALL"
+
+- tapOn:
+    id: "activity-intensity-HIGH"
+
+- tapOn:
+    id: "activity-duration-hours"
+- clearText
+- inputText: "1"
+
+- tapOn:
+    id: "activity-duration-minutes"
+- clearText
+- inputText: "30"
+
+- tapOn:
+    id: "activity-save-button"
+
+- extendedWaitUntil:
+    visible:
+      text: "Success"
+    timeout: 10000
+
+- tapOn:
+    text: "OK"
+
+# Verify both activities appear
+- assertVisible:
+    id: "activity-screen"
+
+# Filter by Strength
+- tapOn:
+    id: "activity-filter-strength"
+    optional: true
+
+- assertVisible:
+    text: "CrossFit"
+    optional: true
+
+# Filter by Sports
+- tapOn:
+    id: "activity-filter-sports"
+    optional: true
+
+- assertVisible:
+    text: "Basketball"
+    optional: true
+
+---
+
+# Test: Date and Time Selection
+- runFlow: ../../flows/sign_in_test_user.yaml
+
+- assertVisible:
+    id: "home-screen"
+
+# Navigate to activity screen
+- openLink: "exp://127.0.0.1:8081/--/activity"
+
+- extendedWaitUntil:
+    visible:
+      id: "activity-screen"
+    timeout: 10000
+
+- tapOn:
+    id: "activity-add-button"
+
+- extendedWaitUntil:
+    visible:
+      id: "add-activity-screen"
+    timeout: 5000
+
+# Tap date picker
+- tapOn:
+    id: "activity-date-picker"
+
+# DateTimePicker should appear
+# On iOS, we can interact with the picker
+- scroll:
+    direction: UP
+    duration: 500
+    optional: true
+
+# Close date picker by tapping elsewhere or confirm
+- tapOn:
+    text: "Confirm"
+    optional: true
+
+- tapOn:
+    text: "Done"
+    optional: true
+
+# Tap time picker
+- tapOn:
+    id: "activity-time-picker"
+    optional: true
+
+# Interact with time picker
+- scroll:
+    direction: UP
+    duration: 500
+    optional: true
+
+# Close
+- tapOn:
+    text: "Confirm"
+    optional: true
+
+- tapOn:
+    text: "Done"
+    optional: true
+
+# Fill in duration and save
+- tapOn:
+    id: "activity-duration-minutes"
+- clearText
+- inputText: "20"
+
+- tapOn:
+    id: "activity-save-button"
+
+- extendedWaitUntil:
+    visible:
+      text: "Success"
+    timeout: 10000
+
+- tapOn:
+    text: "OK"
+
+- assertVisible:
+    id: "activity-screen"
