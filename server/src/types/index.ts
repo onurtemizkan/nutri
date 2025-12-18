@@ -43,6 +43,33 @@ export interface CreateMealInput {
   servingSize?: string;
   notes?: string;
   consumedAt?: Date;
+
+  // Fat breakdown (optional)
+  saturatedFat?: number;
+  transFat?: number;
+  cholesterol?: number;
+
+  // Minerals (optional)
+  sodium?: number;
+  potassium?: number;
+  calcium?: number;
+  iron?: number;
+  magnesium?: number;
+  zinc?: number;
+  phosphorus?: number;
+
+  // Vitamins (optional)
+  vitaminA?: number;
+  vitaminC?: number;
+  vitaminD?: number;
+  vitaminE?: number;
+  vitaminK?: number;
+  vitaminB6?: number;
+  vitaminB12?: number;
+  folate?: number;
+  thiamin?: number;
+  riboflavin?: number;
+  niacin?: number;
 }
 
 export interface UpdateMealInput {
@@ -57,6 +84,33 @@ export interface UpdateMealInput {
   servingSize?: string;
   notes?: string;
   consumedAt?: Date;
+
+  // Fat breakdown (optional)
+  saturatedFat?: number;
+  transFat?: number;
+  cholesterol?: number;
+
+  // Minerals (optional)
+  sodium?: number;
+  potassium?: number;
+  calcium?: number;
+  iron?: number;
+  magnesium?: number;
+  zinc?: number;
+  phosphorus?: number;
+
+  // Vitamins (optional)
+  vitaminA?: number;
+  vitaminC?: number;
+  vitaminD?: number;
+  vitaminE?: number;
+  vitaminK?: number;
+  vitaminB6?: number;
+  vitaminB12?: number;
+  folate?: number;
+  thiamin?: number;
+  riboflavin?: number;
+  niacin?: number;
 }
 
 export interface UpdateUserProfileInput {

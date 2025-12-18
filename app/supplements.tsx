@@ -14,12 +14,18 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import { showAlert } from '@/lib/utils/alert';
 import { useResponsive } from '@/hooks/useResponsive';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 import { supplementsApi } from '@/lib/api/supplements';
+import { SupplementMicronutrientDisplay } from '@/lib/components/SupplementMicronutrientDisplay';
+import {
+  estimateMicronutrientsFromName,
+  sanitizeSupplementNutrients,
+  hasSupplementMicronutrients,
+} from '@/lib/utils/supplementMicronutrients';
 import type {
   Supplement,
   TodaySupplementStatus,
@@ -49,6 +55,117 @@ const TIME_OF_DAY_OPTIONS: { value: SupplementTimeOfDay; label: string }[] = [
   { value: 'EMPTY_STOMACH', label: 'Empty Stomach' },
 ];
 
+const DOSAGE_UNIT_OPTIONS: { value: string; label: string }[] = [
+  { value: 'mg', label: 'mg' },
+  { value: 'g', label: 'g' },
+  { value: 'mcg', label: 'mcg (μg)' },
+  { value: 'IU', label: 'IU' },
+  { value: 'ml', label: 'ml' },
+  { value: 'drops', label: 'drops' },
+  { value: 'capsules', label: 'capsules' },
+  { value: 'tablets', label: 'tablets' },
+  { value: 'softgels', label: 'softgels' },
+  { value: 'scoops', label: 'scoops' },
+];
+
+/**
+ * Parses serving size string to extract serving type and amount
+ * Examples: "1 tablet (500mg)", "2 capsules", "1 scoop (5g)"
+ */
+function parseServingSize(servingSize?: string): {
+  servingType: string;
+  servingAmount: number;
+  dosageAmount?: number;
+  dosageUnit?: string;
+} {
+  if (!servingSize) {
+    return { servingType: 'serving', servingAmount: 1 };
+  }
+
+  const lowerServing = servingSize.toLowerCase();
+
+  // Detect serving type
+  const servingTypes = [
+    { keywords: ['tablet', 'tab'], type: 'tablet' },
+    { keywords: ['capsule', 'cap', 'vcap'], type: 'capsule' },
+    { keywords: ['softgel', 'soft gel'], type: 'softgel' },
+    { keywords: ['gummy', 'gummies'], type: 'gummy' },
+    { keywords: ['scoop'], type: 'scoop' },
+    { keywords: ['dropper', 'drop'], type: 'drops' },
+    { keywords: ['lozenge'], type: 'lozenge' },
+    { keywords: ['chewable', 'chew'], type: 'chewable' },
+    { keywords: ['packet', 'sachet'], type: 'packet' },
+    { keywords: ['teaspoon', 'tsp'], type: 'tsp' },
+    { keywords: ['tablespoon', 'tbsp'], type: 'tbsp' },
+  ];
+
+  let servingType = 'serving';
+  for (const st of servingTypes) {
+    if (st.keywords.some(kw => lowerServing.includes(kw))) {
+      servingType = st.type;
+      break;
+    }
+  }
+
+  // Extract serving amount (e.g., "2 tablets" -> 2)
+  const amountMatch = servingSize.match(/^(\d+(?:\.\d+)?)\s*/);
+  const servingAmount = amountMatch ? parseFloat(amountMatch[1]) : 1;
+
+  // Extract dosage from parentheses (e.g., "(500mg)" or "(5g)")
+  let dosageAmount: number | undefined;
+  let dosageUnit: string | undefined;
+
+  const dosageMatch = servingSize.match(/\((\d+(?:\.\d+)?)\s*(mg|g|mcg|μg|iu|ml)\)/i);
+  if (dosageMatch) {
+    dosageAmount = parseFloat(dosageMatch[1]);
+    dosageUnit = dosageMatch[2].toLowerCase();
+    if (dosageUnit === 'μg') dosageUnit = 'mcg';
+    if (dosageUnit === 'iu') dosageUnit = 'IU';
+  }
+
+  return { servingType, servingAmount, dosageAmount, dosageUnit };
+}
+
+/**
+ * Extracts supplement dosage from Open Food Facts nutriments
+ * For supplements, we look at vitamin/mineral content per serving
+ */
+function extractSupplementDosage(
+  nutriments: Record<string, number | string | undefined>,
+  servingSize?: string
+): { amount: number; unit: string } | null {
+  // Parse serving size for dosage info first
+  const parsed = parseServingSize(servingSize);
+  if (parsed.dosageAmount && parsed.dosageUnit) {
+    return { amount: parsed.dosageAmount, unit: parsed.dosageUnit };
+  }
+
+  // Common supplement nutrients to check (per serving values preferred)
+  const nutrientKeys = [
+    { key: 'vitamin-d_serving', unit: 'mcg' },
+    { key: 'vitamin-d_100g', unit: 'mcg', perServing: false },
+    { key: 'vitamin-c_serving', unit: 'mg' },
+    { key: 'vitamin-c_100g', unit: 'mg', perServing: false },
+    { key: 'calcium_serving', unit: 'mg' },
+    { key: 'calcium_100g', unit: 'mg', perServing: false },
+    { key: 'iron_serving', unit: 'mg' },
+    { key: 'iron_100g', unit: 'mg', perServing: false },
+    { key: 'magnesium_serving', unit: 'mg' },
+    { key: 'magnesium_100g', unit: 'mg', perServing: false },
+    { key: 'zinc_serving', unit: 'mg' },
+    { key: 'zinc_100g', unit: 'mg', perServing: false },
+  ];
+
+  for (const nk of nutrientKeys) {
+    const value = nutriments[nk.key];
+    if (typeof value === 'number' && value > 0) {
+      return { amount: Math.round(value * 10) / 10, unit: nk.unit };
+    }
+  }
+
+  return null;
+}
+
 const SUPPLEMENT_COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4',
   '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F',
@@ -57,6 +174,15 @@ const SUPPLEMENT_COLORS = [
 
 export default function SupplementsScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{
+    fromScan?: string;
+    name?: string;
+    brand?: string;
+    dosageAmount?: string;
+    dosageUnit?: string;
+    servingType?: string;
+    barcode?: string;
+  }>();
   const { getResponsiveValue } = useResponsive();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -116,6 +242,28 @@ export default function SupplementsScreen() {
     loadData();
   }, [loadData]);
 
+  // Handle incoming barcode scan data
+  useEffect(() => {
+    if (params.fromScan === 'true' && params.name) {
+      // Pre-fill form with scanned data
+      setFormName(params.name);
+      setFormBrand(params.brand || '');
+      if (params.dosageAmount) {
+        setFormDosageAmount(params.dosageAmount);
+      }
+      if (params.dosageUnit) {
+        // Normalize unit to match our options
+        const unit = params.dosageUnit.toLowerCase();
+        const matchedUnit = DOSAGE_UNIT_OPTIONS.find(
+          opt => opt.value.toLowerCase() === unit || opt.label.toLowerCase().includes(unit)
+        );
+        setFormDosageUnit(matchedUnit?.value || params.dosageUnit);
+      }
+      setFormColor(SUPPLEMENT_COLORS[Math.floor(Math.random() * SUPPLEMENT_COLORS.length)]);
+      setShowModal(true);
+    }
+  }, [params.fromScan, params.name, params.brand, params.dosageAmount, params.dosageUnit]);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     loadData();
@@ -165,16 +313,28 @@ export default function SupplementsScreen() {
 
     setIsSaving(true);
     try {
+      const dosageAmount = parseFloat(formDosageAmount);
+
+      // Estimate micronutrients from supplement name and dosage
+      const estimatedNutrients = estimateMicronutrientsFromName(
+        formName.trim(),
+        dosageAmount,
+        formDosageUnit
+      );
+      const sanitizedNutrients = sanitizeSupplementNutrients(estimatedNutrients);
+
       const data: CreateSupplementInput = {
         name: formName.trim(),
         brand: formBrand.trim() || undefined,
-        dosageAmount: parseFloat(formDosageAmount),
+        dosageAmount,
         dosageUnit: formDosageUnit,
         frequency: formFrequency,
         timeOfDay: formTimeOfDay,
         withFood: formWithFood,
         color: formColor,
         notes: formNotes.trim() || undefined,
+        // Include estimated micronutrients
+        ...sanitizedNutrients,
       };
 
       if (editingSupplement) {
@@ -316,6 +476,29 @@ export default function SupplementsScreen() {
       .map(t => TIME_OF_DAY_OPTIONS.find(opt => opt.value === t)?.label || t)
       .join(', ');
 
+    // Check if supplement has micronutrient data
+    const hasMicronutrients = hasSupplementMicronutrients({
+      vitaminA: supplement.vitaminA,
+      vitaminC: supplement.vitaminC,
+      vitaminD: supplement.vitaminD,
+      vitaminE: supplement.vitaminE,
+      vitaminK: supplement.vitaminK,
+      vitaminB6: supplement.vitaminB6,
+      vitaminB12: supplement.vitaminB12,
+      folate: supplement.folate,
+      thiamin: supplement.thiamin,
+      riboflavin: supplement.riboflavin,
+      niacin: supplement.niacin,
+      calcium: supplement.calcium,
+      iron: supplement.iron,
+      magnesium: supplement.magnesium,
+      zinc: supplement.zinc,
+      potassium: supplement.potassium,
+      sodium: supplement.sodium,
+      phosphorus: supplement.phosphorus,
+      omega3: supplement.omega3,
+    });
+
     return (
       <TouchableOpacity
         key={supplement.id}
@@ -345,6 +528,11 @@ export default function SupplementsScreen() {
               {timeLabels}
               {supplement.withFood && ' (with food)'}
             </Text>
+            {hasMicronutrients && (
+              <View style={styles.supplementCardMicronutrients}>
+                <SupplementMicronutrientDisplay supplement={supplement} compact />
+              </View>
+            )}
           </View>
         </View>
 
@@ -525,6 +713,23 @@ export default function SupplementsScreen() {
               </TouchableOpacity>
             </View>
 
+            {/* Scan Barcode Button - Only show when adding new supplement */}
+            {!editingSupplement && (
+              <TouchableOpacity
+                style={styles.scanBarcodeButton}
+                onPress={() => {
+                  setShowModal(false);
+                  router.push('/scan-supplement-barcode');
+                }}
+                activeOpacity={0.7}
+                accessibilityLabel="Scan supplement barcode"
+              >
+                <Ionicons name="barcode-outline" size={20} color={colors.primary.main} />
+                <Text style={styles.scanBarcodeText}>Scan Barcode to Auto-Fill</Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.text.tertiary} />
+              </TouchableOpacity>
+            )}
+
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
               {/* Form Fields */}
@@ -554,10 +759,10 @@ export default function SupplementsScreen() {
                 </View>
               </View>
 
-              <View style={styles.formRow}>
-                <View style={[styles.formSection, { flex: 1 }]}>
-                  <Text style={styles.formLabel}>Dosage *</Text>
-                  <View style={styles.inputWrapper}>
+              <View style={styles.formSection}>
+                <Text style={styles.formLabel}>Dosage *</Text>
+                <View style={styles.dosageRow}>
+                  <View style={[styles.inputWrapper, { flex: 1 }]}>
                     <TextInput
                       style={styles.input}
                       value={formDosageAmount}
@@ -568,17 +773,30 @@ export default function SupplementsScreen() {
                     />
                   </View>
                 </View>
-                <View style={[styles.formSection, { flex: 1, marginLeft: spacing.md }]}>
-                  <Text style={styles.formLabel}>Unit</Text>
-                  <View style={styles.inputWrapper}>
-                    <TextInput
-                      style={styles.input}
-                      value={formDosageUnit}
-                      onChangeText={setFormDosageUnit}
-                      placeholder="mg"
-                      placeholderTextColor={colors.text.disabled}
-                    />
-                  </View>
+              </View>
+
+              <View style={styles.formSection}>
+                <Text style={styles.formLabel}>Unit</Text>
+                <View style={styles.unitChipContainer}>
+                  {DOSAGE_UNIT_OPTIONS.map(option => (
+                    <TouchableOpacity
+                      key={option.value}
+                      style={[
+                        styles.unitChip,
+                        formDosageUnit === option.value && styles.unitChipSelected,
+                      ]}
+                      onPress={() => setFormDosageUnit(option.value)}
+                    >
+                      <Text
+                        style={[
+                          styles.unitChipText,
+                          formDosageUnit === option.value && styles.unitChipTextSelected,
+                        ]}
+                      >
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
               </View>
 
@@ -926,6 +1144,9 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     marginTop: 2,
   },
+  supplementCardMicronutrients: {
+    marginTop: spacing.sm,
+  },
   supplementCardRight: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -983,12 +1204,30 @@ const styles = StyleSheet.create({
     color: colors.primary.main,
   },
 
+  // Scan Barcode Button
+  scanBarcodeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.special.highlight,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
+  },
+  scanBarcodeText: {
+    flex: 1,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.primary.main,
+  },
+
   // Form
   formSection: {
     marginBottom: spacing.lg,
   },
-  formRow: {
+  dosageRow: {
     flexDirection: 'row',
+    gap: spacing.md,
   },
   formLabel: {
     fontSize: typography.fontSize.sm,
@@ -1037,6 +1276,35 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   chipTextSelected: {
+    color: colors.text.primary,
+    fontWeight: typography.fontWeight.semibold,
+  },
+
+  // Unit Chips (more compact)
+  unitChipContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  unitChip: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.background.elevated,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+    minWidth: 44,
+    alignItems: 'center',
+  },
+  unitChipSelected: {
+    backgroundColor: colors.primary.main,
+    borderColor: colors.primary.main,
+  },
+  unitChipText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+  },
+  unitChipTextSelected: {
     color: colors.text.primary,
     fontWeight: typography.fontWeight.semibold,
   },

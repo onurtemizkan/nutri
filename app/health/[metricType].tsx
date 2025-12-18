@@ -37,11 +37,12 @@ export default function HealthMetricDetailScreen() {
   const { isTablet, getSpacing, width: screenWidth } = useResponsive();
   const responsiveSpacing = getSpacing();
 
-  // Calculate chart width based on responsive layout
-  const effectiveContentWidth = isTablet
-    ? Math.min(screenWidth, FORM_MAX_WIDTH)
-    : screenWidth;
-  const chartWidth = effectiveContentWidth - responsiveSpacing.horizontal * 2 - spacing.md * 2;
+  // Calculate chart width to fill container
+  // Account for: scroll padding + chartCard padding (spacing.md on each side)
+  const scrollPadding = responsiveSpacing.horizontal * 2;
+  const cardPadding = spacing.md * 2;
+  const maxContentWidth = isTablet ? Math.min(screenWidth, FORM_MAX_WIDTH) : screenWidth;
+  const chartWidth = maxContentWidth - scrollPadding - cardPadding;
 
   const [timeSeries, setTimeSeries] = useState<TimeSeriesDataPoint[]>([]);
   const [stats, setStats] = useState<HealthMetricStats | null>(null);
@@ -49,6 +50,9 @@ export default function HealthMetricDetailScreen() {
   const [dateRange, setDateRange] = useState<DateRange>('30d');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [visibleEntriesCount, setVisibleEntriesCount] = useState(5);
+
+  const ENTRIES_PER_PAGE = 5;
 
   // Validate metricType
   const validMetricType = metricType as HealthMetricType;
@@ -105,6 +109,7 @@ export default function HealthMetricDetailScreen() {
 
   useEffect(() => {
     setIsLoading(true);
+    setVisibleEntriesCount(ENTRIES_PER_PAGE); // Reset pagination when data changes
     loadData();
   }, [loadData]);
 
@@ -132,6 +137,11 @@ export default function HealthMetricDetailScreen() {
     // For heart rate and similar, show as integers
     if (config.unit === 'bpm' || config.unit === 'ms') {
       return Math.round(value).toString();
+    }
+
+    // For steps and calories, show as integers
+    if (config.unit === 'steps' || config.unit === 'kcal') {
+      return Math.round(value).toLocaleString();
     }
 
     return value.toFixed(1);
@@ -191,32 +201,98 @@ export default function HealthMetricDetailScreen() {
     );
   };
 
-  // Prepare chart data
+  // Get number of chart points based on date range - reduced for readability
+  const getChartPointCount = (range: DateRange): number => {
+    switch (range) {
+      case '7d':
+        return 7;
+      case '30d':
+        return 6;  // Show fewer points to prevent overlap
+      case '90d':
+        return 6;
+      case '1y':
+        return 6;
+    }
+  };
+
+  // Prepare chart data - sample evenly across the time series based on date range
+  const prepareChartData = () => {
+    if (timeSeries.length === 0) {
+      return { labels: [''], data: [0] };
+    }
+
+    const maxPoints = getChartPointCount(dateRange);
+    let sampledData: TimeSeriesDataPoint[];
+
+    if (timeSeries.length <= maxPoints) {
+      sampledData = [...timeSeries];
+    } else {
+      // Sample evenly across the data, always including first and last
+      sampledData = [timeSeries[0]];
+      const step = (timeSeries.length - 1) / (maxPoints - 1);
+      for (let i = 1; i < maxPoints - 1; i++) {
+        const index = Math.round(i * step);
+        sampledData.push(timeSeries[index]);
+      }
+      sampledData.push(timeSeries[timeSeries.length - 1]);
+    }
+
+    // Format labels based on date range - keep short to prevent overlap
+    const labels = sampledData.map((d, index) => {
+      const date = new Date(d.date);
+      if (dateRange === '7d') {
+        // Show short day name for 7d (Mon, Tue, etc.)
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        return dayNames[date.getDay()];
+      } else if (dateRange === '30d') {
+        // Show day number only for 30d
+        return `${date.getDate()}`;
+      } else {
+        // For 90d and 1y, show short month or month+day
+        const month = date.toLocaleDateString('en-US', { month: 'short' });
+        // Only show month for first point or when month changes
+        if (index === 0) {
+          return month;
+        }
+        const prevDate = new Date(sampledData[index - 1].date);
+        if (prevDate.getMonth() !== date.getMonth()) {
+          return month;
+        }
+        return `${date.getDate()}`;
+      }
+    });
+
+    return {
+      labels,
+      data: sampledData.map((d) => d.value),
+    };
+  };
+
+  const { labels: chartLabels, data: chartValues } = prepareChartData();
+
   const chartData = {
-    labels:
-      timeSeries.length > 0
-        ? timeSeries.slice(-7).map((d) => {
-            const date = new Date(d.date);
-            return `${date.getMonth() + 1}/${date.getDate()}`;
-          })
-        : ['--'],
+    labels: chartLabels,
     datasets: [
       {
-        data:
-          timeSeries.length > 0
-            ? timeSeries.slice(-7).map((d) => d.value)
-            : [0],
+        data: chartValues,
         color: (opacity = 1) => `rgba(139, 92, 246, ${opacity})`,
         strokeWidth: 2,
       },
     ],
   };
 
+  // Determine decimal places based on unit type
+  const getDecimalPlaces = (): number => {
+    if (!config) return 1;
+    const integerUnits = ['bpm', 'ms', 'steps', 'kcal', '%', 'pts'];
+    return integerUnits.includes(config.unit) ? 0 : 1;
+  };
+
   const chartConfig = {
     backgroundColor: colors.background.tertiary,
     backgroundGradientFrom: colors.background.tertiary,
     backgroundGradientTo: colors.background.tertiary,
-    decimalPlaces: config?.unit === 'bpm' || config?.unit === 'ms' ? 0 : 1,
+    decimalPlaces: getDecimalPlaces(),
     color: (opacity = 1) => `rgba(139, 92, 246, ${opacity})`,
     labelColor: (opacity = 1) => `rgba(156, 163, 175, ${opacity})`,
     style: {
@@ -226,6 +302,9 @@ export default function HealthMetricDetailScreen() {
       r: '4',
       strokeWidth: '2',
       stroke: colors.primary.main,
+    },
+    propsForLabels: {
+      fontSize: 10,
     },
   };
 
@@ -342,11 +421,13 @@ export default function HealthMetricDetailScreen() {
                 bezier
                 style={styles.chart}
                 withInnerLines={false}
-                withOuterLines={true}
+                withOuterLines={false}
                 withVerticalLines={false}
                 withHorizontalLines={true}
                 withDots={true}
                 withShadow={false}
+                fromZero={false}
+                segments={4}
               />
             </View>
           )}
@@ -430,11 +511,16 @@ export default function HealthMetricDetailScreen() {
           {/* Recent Entries */}
           {!isLoading && !error && recentMetrics.length > 0 && (
             <View style={styles.recentEntriesSection}>
-              <Text style={styles.recentEntriesTitle}>Recent Entries</Text>
+              <View style={styles.recentEntriesHeader}>
+                <Text style={styles.recentEntriesTitle}>Recent Entries</Text>
+                <Text style={styles.recentEntriesCount}>
+                  {Math.min(visibleEntriesCount, recentMetrics.length)} of {recentMetrics.length}
+                </Text>
+              </View>
               <Text style={styles.recentEntriesHint}>
                 Swipe left or long-press to edit or delete
               </Text>
-              {recentMetrics.map((metric) => (
+              {recentMetrics.slice(0, visibleEntriesCount).map((metric) => (
                 <SwipeableHealthMetricCard
                   key={metric.id}
                   metric={metric}
@@ -442,6 +528,18 @@ export default function HealthMetricDetailScreen() {
                   onDelete={handleDeleteMetric}
                 />
               ))}
+              {visibleEntriesCount < recentMetrics.length && (
+                <TouchableOpacity
+                  style={styles.showMoreButton}
+                  onPress={() => setVisibleEntriesCount(prev => prev + ENTRIES_PER_PAGE)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.showMoreText}>
+                    Show More ({recentMetrics.length - visibleEntriesCount} remaining)
+                  </Text>
+                  <Ionicons name="chevron-down" size={16} color={colors.primary.main} />
+                </TouchableOpacity>
+              )}
             </View>
           )}
         </View>
@@ -751,15 +849,41 @@ const styles = StyleSheet.create({
   recentEntriesSection: {
     marginTop: spacing.lg,
   },
+  recentEntriesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
   recentEntriesTitle: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text.primary,
-    marginBottom: spacing.xs,
+  },
+  recentEntriesCount: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.tertiary,
   },
   recentEntriesHint: {
     fontSize: typography.fontSize.xs,
     color: colors.text.tertiary,
     marginBottom: spacing.md,
+  },
+  showMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    gap: spacing.xs,
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+    marginTop: spacing.sm,
+  },
+  showMoreText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.primary.main,
   },
 });

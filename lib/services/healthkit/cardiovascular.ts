@@ -1,25 +1,33 @@
 /**
  * Cardiovascular Metrics Sync
  * Syncs heart rate, resting heart rate, and HRV data from HealthKit
+ * Using @kingstinct/react-native-healthkit
  */
 
 import { Platform } from 'react-native';
 import {
-  HealthKitSample,
   ProcessedHealthMetric,
   HealthKitSyncOptions,
   METRIC_UNITS,
 } from '@/lib/types/healthkit';
-import { getHealthKit } from './permissions';
 
-/**
- * Query options for react-native-health
- */
-interface HealthKitQueryOptions {
-  startDate: string;
-  endDate: string;
-  ascending?: boolean;
-  limit?: number;
+// Type for QuantitySample from the library
+interface QuantitySample {
+  readonly quantity: number;
+  readonly startDate: Date;
+  readonly endDate: Date;
+  readonly uuid?: string;
+  readonly device?: {
+    name?: string;
+    manufacturer?: string;
+    model?: string;
+  };
+  readonly sourceRevision?: {
+    source?: {
+      name: string;
+      bundleIdentifier: string;
+    };
+  };
 }
 
 /**
@@ -32,31 +40,24 @@ export async function fetchRestingHeartRate(
     return [];
   }
 
-  const healthKit = await getHealthKit();
-  if (!healthKit) {
+  try {
+    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
+
+    const samples = await queryQuantitySamples('HKQuantityTypeIdentifierRestingHeartRate', {
+      limit: -1,
+      filter: {
+        date: {
+          startDate: options.startDate,
+          endDate: options.endDate,
+        },
+      },
+    });
+
+    return samples.map((sample) => transformToHealthMetric(sample, 'RESTING_HEART_RATE'));
+  } catch (error) {
+    console.warn('Error fetching resting heart rate:', error);
     return [];
   }
-
-  const queryOptions: HealthKitQueryOptions = {
-    startDate: options.startDate.toISOString(),
-    endDate: options.endDate.toISOString(),
-    ascending: false,
-  };
-
-  return new Promise((resolve) => {
-    healthKit.getRestingHeartRateSamples(queryOptions, (error, results) => {
-      if (error) {
-        console.warn('Error fetching resting heart rate:', error);
-        resolve([]);
-        return;
-      }
-
-      const processed = (results || []).map((sample: HealthKitSample) =>
-        transformToHealthMetric(sample, 'RESTING_HEART_RATE')
-      );
-      resolve(processed);
-    });
-  });
 }
 
 /**
@@ -69,31 +70,28 @@ export async function fetchHeartRateVariability(
     return [];
   }
 
-  const healthKit = await getHealthKit();
-  if (!healthKit) {
+  try {
+    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
+
+    const samples = await queryQuantitySamples('HKQuantityTypeIdentifierHeartRateVariabilitySDNN', {
+      limit: -1,
+      filter: {
+        date: {
+          startDate: options.startDate,
+          endDate: options.endDate,
+        },
+      },
+    });
+
+    // HRV SDNN is returned in seconds, convert to milliseconds
+    return samples.map((sample) => {
+      const valueInMs = sample.quantity < 1 ? sample.quantity * 1000 : sample.quantity;
+      return transformToHealthMetric({ ...sample, quantity: valueInMs }, 'HEART_RATE_VARIABILITY_SDNN');
+    });
+  } catch (error) {
+    console.warn('Error fetching HRV:', error);
     return [];
   }
-
-  const queryOptions: HealthKitQueryOptions = {
-    startDate: options.startDate.toISOString(),
-    endDate: options.endDate.toISOString(),
-    ascending: false,
-  };
-
-  return new Promise((resolve) => {
-    healthKit.getHeartRateVariabilitySamples(queryOptions, (error, results) => {
-      if (error) {
-        console.warn('Error fetching HRV:', error);
-        resolve([]);
-        return;
-      }
-
-      const processed = (results || []).map((sample: HealthKitSample) =>
-        transformToHealthMetric(sample, 'HEART_RATE_VARIABILITY_SDNN')
-      );
-      resolve(processed);
-    });
-  });
 }
 
 /**
@@ -102,54 +100,52 @@ export async function fetchHeartRateVariability(
  */
 export async function fetchHeartRateSamples(
   options: HealthKitSyncOptions
-): Promise<HealthKitSample[]> {
+): Promise<QuantitySample[]> {
   if (Platform.OS !== 'ios') {
     return [];
   }
 
-  const healthKit = await getHealthKit();
-  if (!healthKit) {
+  try {
+    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
+
+    const samples = await queryQuantitySamples('HKQuantityTypeIdentifierHeartRate', {
+      limit: 1000, // Limit to avoid memory issues
+      filter: {
+        date: {
+          startDate: options.startDate,
+          endDate: options.endDate,
+        },
+      },
+    });
+
+    return [...samples];
+  } catch (error) {
+    console.warn('Error fetching heart rate samples:', error);
     return [];
   }
-
-  const queryOptions: HealthKitQueryOptions = {
-    startDate: options.startDate.toISOString(),
-    endDate: options.endDate.toISOString(),
-    ascending: false,
-    limit: 1000, // Limit to avoid memory issues
-  };
-
-  return new Promise((resolve) => {
-    healthKit.getHeartRateSamples(queryOptions, (error, results) => {
-      if (error) {
-        console.warn('Error fetching heart rate samples:', error);
-        resolve([]);
-        return;
-      }
-      resolve(results || []);
-    });
-  });
 }
 
 /**
  * Transform a HealthKit sample to our ProcessedHealthMetric format
  */
 function transformToHealthMetric(
-  sample: HealthKitSample,
+  sample: QuantitySample,
   metricType: 'RESTING_HEART_RATE' | 'HEART_RATE_VARIABILITY_SDNN'
 ): ProcessedHealthMetric {
+  const sourceName = sample.sourceRevision?.source?.name || sample.device?.name;
+
   return {
     metricType,
-    value: sample.value,
+    value: sample.quantity,
     unit: METRIC_UNITS[metricType],
-    recordedAt: sample.startDate,
+    recordedAt: sample.startDate.toISOString(),
     source: 'apple_health',
-    sourceId: sample.id,
+    sourceId: sample.uuid,
     metadata: {
-      sourceName: sample.sourceName,
-      device: sample.sourceName || 'Apple Watch',
+      sourceName,
+      device: sourceName || 'Apple Watch',
       quality: 'high',
-      endDate: sample.endDate,
+      endDate: sample.endDate.toISOString(),
     },
   };
 }
@@ -178,14 +174,14 @@ export async function syncCardiovascularMetrics(
  * Useful for aggregating instantaneous HR readings
  */
 export function calculateDailyAverageHeartRate(
-  samples: HealthKitSample[]
+  samples: QuantitySample[]
 ): Map<string, number> {
   const dailyTotals = new Map<string, { sum: number; count: number }>();
 
   for (const sample of samples) {
-    const date = new Date(sample.startDate).toISOString().split('T')[0];
+    const date = sample.startDate.toISOString().split('T')[0];
     const existing = dailyTotals.get(date) || { sum: 0, count: 0 };
-    existing.sum += sample.value;
+    existing.sum += sample.quantity;
     existing.count += 1;
     dailyTotals.set(date, existing);
   }

@@ -95,6 +95,13 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
+        name="scan-supplement-barcode"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_bottom'
+        }}
+      />
+      <Stack.Screen
         name="health-settings"
         options={{
           headerShown: false,

@@ -1,7 +1,13 @@
-# Multi-stage build for optimized Python ML service
+# =============================================================================
+# Nutri ML Service - Production Dockerfile
+# Multi-stage build for optimized Python ML service with security hardening
+# =============================================================================
 
+# -----------------------------------------------------------------------------
 # Stage 1: Builder
-FROM python:3.11-slim as builder
+# Install dependencies and compile any native extensions
+# -----------------------------------------------------------------------------
+FROM python:3.11-slim AS builder
 
 WORKDIR /build
 
@@ -16,7 +22,10 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir --user -r requirements.txt
 
+# -----------------------------------------------------------------------------
 # Stage 2: Runtime
+# Minimal production image with security hardening
+# -----------------------------------------------------------------------------
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -26,17 +35,28 @@ RUN apt-get update && apt-get install -y \
     libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Python dependencies from builder
-COPY --from=builder /root/.local /root/.local
+# Create non-root user for security
+RUN groupadd --system --gid 1001 mlservice && \
+    useradd --system --uid 1001 --gid mlservice mlservice
 
-# Make sure scripts in .local are usable
-ENV PATH=/root/.local/bin:$PATH
+# Copy Python dependencies from builder with proper ownership
+COPY --from=builder --chown=mlservice:mlservice /root/.local /home/mlservice/.local
 
-# Copy application code
-COPY ./app /app/app
+# Update PATH for non-root user
+ENV PATH=/home/mlservice/.local/bin:$PATH
 
-# Create directories for ML models
-RUN mkdir -p /app/app/ml_models
+# Python production optimizations
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Copy application code with proper ownership
+COPY --chown=mlservice:mlservice ./app /app/app
+
+# Create directories for ML models with correct ownership
+RUN mkdir -p /app/app/ml_models && chown -R mlservice:mlservice /app
+
+# Switch to non-root user
+USER mlservice
 
 # Expose port
 EXPOSE 8000

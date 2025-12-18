@@ -44,6 +44,32 @@ function getMealTypeByTime(): 'breakfast' | 'lunch' | 'dinner' | 'snack' {
   }
 }
 
+// Micronutrient params type for barcode/AI scan
+interface MicronutrientParams {
+  sugar?: string;
+  saturatedFat?: string;
+  transFat?: string;
+  cholesterol?: string;
+  sodium?: string;
+  potassium?: string;
+  calcium?: string;
+  iron?: string;
+  magnesium?: string;
+  zinc?: string;
+  phosphorus?: string;
+  vitaminA?: string;
+  vitaminC?: string;
+  vitaminD?: string;
+  vitaminE?: string;
+  vitaminK?: string;
+  vitaminB6?: string;
+  vitaminB12?: string;
+  folate?: string;
+  thiamin?: string;
+  riboflavin?: string;
+  niacin?: string;
+}
+
 export default function AddMealScreen() {
   const params = useLocalSearchParams<{
     name?: string;
@@ -55,7 +81,7 @@ export default function AddMealScreen() {
     servingSize?: string;
     fromScan?: string;
     barcode?: string;
-  }>();
+  } & MicronutrientParams>();
 
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>(getMealTypeByTime);
   const [name, setName] = useState('');
@@ -68,6 +94,10 @@ export default function AddMealScreen() {
   const [notes, setNotes] = useState('');
   const [consumedAt, setConsumedAt] = useState(new Date());
   const [isLoading, setIsLoading] = useState(false);
+
+  // Store micronutrients from scan (hidden state, passed through to API)
+  const [micronutrients, setMicronutrients] = useState<Partial<MicronutrientParams>>({});
+
   const router = useRouter();
   const { isTablet, getSpacing } = useResponsive();
   const responsiveSpacing = getSpacing();
@@ -82,6 +112,33 @@ export default function AddMealScreen() {
       if (params.fat) setFat(params.fat);
       if (params.fiber) setFiber(params.fiber);
       if (params.servingSize) setServingSize(params.servingSize);
+
+      // Store micronutrients from scan params
+      const scannedMicronutrients: Partial<MicronutrientParams> = {};
+      if (params.sugar) scannedMicronutrients.sugar = params.sugar;
+      if (params.saturatedFat) scannedMicronutrients.saturatedFat = params.saturatedFat;
+      if (params.transFat) scannedMicronutrients.transFat = params.transFat;
+      if (params.cholesterol) scannedMicronutrients.cholesterol = params.cholesterol;
+      if (params.sodium) scannedMicronutrients.sodium = params.sodium;
+      if (params.potassium) scannedMicronutrients.potassium = params.potassium;
+      if (params.calcium) scannedMicronutrients.calcium = params.calcium;
+      if (params.iron) scannedMicronutrients.iron = params.iron;
+      if (params.magnesium) scannedMicronutrients.magnesium = params.magnesium;
+      if (params.zinc) scannedMicronutrients.zinc = params.zinc;
+      if (params.phosphorus) scannedMicronutrients.phosphorus = params.phosphorus;
+      if (params.vitaminA) scannedMicronutrients.vitaminA = params.vitaminA;
+      if (params.vitaminC) scannedMicronutrients.vitaminC = params.vitaminC;
+      if (params.vitaminD) scannedMicronutrients.vitaminD = params.vitaminD;
+      if (params.vitaminE) scannedMicronutrients.vitaminE = params.vitaminE;
+      if (params.vitaminK) scannedMicronutrients.vitaminK = params.vitaminK;
+      if (params.vitaminB6) scannedMicronutrients.vitaminB6 = params.vitaminB6;
+      if (params.vitaminB12) scannedMicronutrients.vitaminB12 = params.vitaminB12;
+      if (params.folate) scannedMicronutrients.folate = params.folate;
+      if (params.thiamin) scannedMicronutrients.thiamin = params.thiamin;
+      if (params.riboflavin) scannedMicronutrients.riboflavin = params.riboflavin;
+      if (params.niacin) scannedMicronutrients.niacin = params.niacin;
+
+      setMicronutrients(scannedMicronutrients);
     }
   }, [params]);
 
@@ -100,6 +157,13 @@ export default function AddMealScreen() {
 
     setIsLoading(true);
     try {
+      // Parse a micronutrient value to number, returning undefined if invalid
+      const parseNutrient = (val: string | undefined): number | undefined => {
+        if (!val) return undefined;
+        const num = parseFloat(val);
+        return isNaN(num) ? undefined : num;
+      };
+
       const mealData: CreateMealInput = {
         name,
         mealType,
@@ -111,6 +175,30 @@ export default function AddMealScreen() {
         servingSize: servingSize || undefined,
         notes: notes || undefined,
         consumedAt: consumedAt.toISOString(),
+
+        // Micronutrients from scan (if available)
+        sugar: parseNutrient(micronutrients.sugar),
+        saturatedFat: parseNutrient(micronutrients.saturatedFat),
+        transFat: parseNutrient(micronutrients.transFat),
+        cholesterol: parseNutrient(micronutrients.cholesterol),
+        sodium: parseNutrient(micronutrients.sodium),
+        potassium: parseNutrient(micronutrients.potassium),
+        calcium: parseNutrient(micronutrients.calcium),
+        iron: parseNutrient(micronutrients.iron),
+        magnesium: parseNutrient(micronutrients.magnesium),
+        zinc: parseNutrient(micronutrients.zinc),
+        phosphorus: parseNutrient(micronutrients.phosphorus),
+        vitaminA: parseNutrient(micronutrients.vitaminA),
+        vitaminC: parseNutrient(micronutrients.vitaminC),
+        vitaminD: parseNutrient(micronutrients.vitaminD),
+        vitaminE: parseNutrient(micronutrients.vitaminE),
+        vitaminK: parseNutrient(micronutrients.vitaminK),
+        vitaminB6: parseNutrient(micronutrients.vitaminB6),
+        vitaminB12: parseNutrient(micronutrients.vitaminB12),
+        folate: parseNutrient(micronutrients.folate),
+        thiamin: parseNutrient(micronutrients.thiamin),
+        riboflavin: parseNutrient(micronutrients.riboflavin),
+        niacin: parseNutrient(micronutrients.niacin),
       };
 
       await mealsApi.createMeal(mealData);

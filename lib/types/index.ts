@@ -48,6 +48,34 @@ export interface Meal {
   fat: number;
   fiber?: number;
   sugar?: number;
+
+  // Fat breakdown (optional)
+  saturatedFat?: number; // grams
+  transFat?: number; // grams
+  cholesterol?: number; // mg
+
+  // Minerals (optional) - values in mg unless noted
+  sodium?: number; // mg
+  potassium?: number; // mg
+  calcium?: number; // mg
+  iron?: number; // mg
+  magnesium?: number; // mg
+  zinc?: number; // mg
+  phosphorus?: number; // mg
+
+  // Vitamins (optional) - values in appropriate units
+  vitaminA?: number; // mcg RAE
+  vitaminC?: number; // mg
+  vitaminD?: number; // mcg
+  vitaminE?: number; // mg
+  vitaminK?: number; // mcg
+  vitaminB6?: number; // mg
+  vitaminB12?: number; // mcg
+  folate?: number; // mcg DFE
+  thiamin?: number; // mg (B1)
+  riboflavin?: number; // mg (B2)
+  niacin?: number; // mg (B3)
+
   servingSize?: string;
   notes?: string;
   imageUrl?: string;
@@ -65,6 +93,34 @@ export interface CreateMealInput {
   fat: number;
   fiber?: number;
   sugar?: number;
+
+  // Fat breakdown (optional)
+  saturatedFat?: number;
+  transFat?: number;
+  cholesterol?: number;
+
+  // Minerals (optional)
+  sodium?: number;
+  potassium?: number;
+  calcium?: number;
+  iron?: number;
+  magnesium?: number;
+  zinc?: number;
+  phosphorus?: number;
+
+  // Vitamins (optional)
+  vitaminA?: number;
+  vitaminC?: number;
+  vitaminD?: number;
+  vitaminE?: number;
+  vitaminK?: number;
+  vitaminB6?: number;
+  vitaminB12?: number;
+  folate?: number;
+  thiamin?: number;
+  riboflavin?: number;
+  niacin?: number;
+
   servingSize?: string;
   notes?: string;
   consumedAt?: string;
@@ -79,6 +135,34 @@ export interface UpdateMealInput {
   fat?: number;
   fiber?: number;
   sugar?: number;
+
+  // Fat breakdown (optional)
+  saturatedFat?: number;
+  transFat?: number;
+  cholesterol?: number;
+
+  // Minerals (optional)
+  sodium?: number;
+  potassium?: number;
+  calcium?: number;
+  iron?: number;
+  magnesium?: number;
+  zinc?: number;
+  phosphorus?: number;
+
+  // Vitamins (optional)
+  vitaminA?: number;
+  vitaminC?: number;
+  vitaminD?: number;
+  vitaminE?: number;
+  vitaminK?: number;
+  vitaminB6?: number;
+  vitaminB12?: number;
+  folate?: number;
+  thiamin?: number;
+  riboflavin?: number;
+  niacin?: number;
+
   servingSize?: string;
   notes?: string;
   consumedAt?: string;
@@ -148,6 +232,33 @@ export interface Supplement {
   endDate?: string | null;
   notes?: string;
   color?: string;
+
+  // Micronutrient content (estimated or from barcode)
+  // Vitamins
+  vitaminA?: number; // mcg RAE
+  vitaminC?: number; // mg
+  vitaminD?: number; // mcg
+  vitaminE?: number; // mg
+  vitaminK?: number; // mcg
+  vitaminB6?: number; // mg
+  vitaminB12?: number; // mcg
+  folate?: number; // mcg DFE
+  thiamin?: number; // mg (B1)
+  riboflavin?: number; // mg (B2)
+  niacin?: number; // mg (B3)
+
+  // Minerals
+  calcium?: number; // mg
+  iron?: number; // mg
+  magnesium?: number; // mg
+  zinc?: number; // mg
+  potassium?: number; // mg
+  sodium?: number; // mg
+  phosphorus?: number; // mg
+
+  // Special
+  omega3?: number; // mg (total EPA + DHA)
+
   createdAt: string;
   updatedAt: string;
 }
@@ -178,6 +289,27 @@ export interface CreateSupplementInput {
   endDate?: string | null;
   notes?: string;
   color?: string;
+
+  // Micronutrient content (optional)
+  vitaminA?: number;
+  vitaminC?: number;
+  vitaminD?: number;
+  vitaminE?: number;
+  vitaminK?: number;
+  vitaminB6?: number;
+  vitaminB12?: number;
+  folate?: number;
+  thiamin?: number;
+  riboflavin?: number;
+  niacin?: number;
+  calcium?: number;
+  iron?: number;
+  magnesium?: number;
+  zinc?: number;
+  potassium?: number;
+  sodium?: number;
+  phosphorus?: number;
+  omega3?: number;
 }
 
 export interface UpdateSupplementInput {
@@ -194,6 +326,27 @@ export interface UpdateSupplementInput {
   endDate?: string | null;
   notes?: string;
   color?: string;
+
+  // Micronutrient content (optional)
+  vitaminA?: number;
+  vitaminC?: number;
+  vitaminD?: number;
+  vitaminE?: number;
+  vitaminK?: number;
+  vitaminB6?: number;
+  vitaminB12?: number;
+  folate?: number;
+  thiamin?: number;
+  riboflavin?: number;
+  niacin?: number;
+  calcium?: number;
+  iron?: number;
+  magnesium?: number;
+  zinc?: number;
+  potassium?: number;
+  sodium?: number;
+  phosphorus?: number;
+  omega3?: number;
 }
 
 export interface CreateSupplementLogInput {

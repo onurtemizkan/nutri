@@ -22,6 +22,8 @@ import { showAlert } from '@/lib/utils/alert';
 import { useResponsive } from '@/hooks/useResponsive';
 import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 import { TimePicker } from '@/lib/components/TimePicker';
+import { MicronutrientDisplay } from '@/lib/components/MicronutrientDisplay';
+import { Meal } from '@/lib/types';
 
 export default function EditMealScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -46,6 +48,9 @@ export default function EditMealScreen() {
   const [servingSize, setServingSize] = useState('');
   const [notes, setNotes] = useState('');
 
+  // Store the full meal object for micronutrient display
+  const [currentMeal, setCurrentMeal] = useState<Meal | null>(null);
+
   const mealTypes: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
 
   // Load meal data
@@ -59,6 +64,7 @@ export default function EditMealScreen() {
 
       try {
         const meal = await mealsApi.getMealById(id);
+        setCurrentMeal(meal);
         setMealType(meal.mealType);
         setName(meal.name);
         setConsumedAt(new Date(meal.consumedAt));
@@ -382,6 +388,13 @@ export default function EditMealScreen() {
                 />
               </View>
             </View>
+
+            {/* Micronutrients Display */}
+            {currentMeal && (
+              <View style={styles.section}>
+                <MicronutrientDisplay meal={currentMeal} />
+              </View>
+            )}
 
             {/* Delete Button */}
             <View style={styles.deleteSection}>

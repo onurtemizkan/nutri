@@ -1,0 +1,39 @@
+# =============================================================================
+# Nutri Backend API - Development Dockerfile
+# Hot reload enabled for rapid development
+# =============================================================================
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install build dependencies for native modules
+RUN apk add --no-cache python3 make g++
+
+# Copy package files first for better layer caching
+COPY package.json package-lock.json ./
+
+# Install ALL dependencies (including devDependencies)
+RUN npm ci
+
+# Copy Prisma schema
+COPY prisma ./prisma/
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Copy tsconfig for TypeScript
+COPY tsconfig.json ./
+
+# Note: Source code is mounted as a volume, not copied
+# This enables hot reloading
+
+# Development environment
+ENV NODE_ENV=development
+
+# Expose the application port
+EXPOSE 3000
+
+# Use tsx watch for hot reloading
+# The source code will be mounted via docker-compose
+CMD ["npm", "run", "dev"]

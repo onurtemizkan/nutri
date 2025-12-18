@@ -30,7 +30,13 @@
       "WebSearch",
       "WebFetch(domain:arxiv.org)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:docs.maestro.dev)"
+      "WebFetch(domain:docs.maestro.dev)",
+      "mcp__task-master-ai__parse_prd",
+      "mcp__task-master-ai__get_tasks",
+      "mcp__task-master-ai__analyze_project_complexity",
+      "mcp__task-master-ai__expand_task",
+      "mcp__task-master-ai__get_task",
+      "mcp__task-master-ai__set_task_status"
     ],
     "deny": [],
     "ask": []

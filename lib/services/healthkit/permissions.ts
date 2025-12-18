@@ -1,63 +1,16 @@
 /**
  * HealthKit Permission Management
  * Handles HealthKit availability checks and permission requests
+ * Using @kingstinct/react-native-healthkit
  */
 
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import {
   HEALTHKIT_READ_PERMISSIONS,
-  HEALTHKIT_WRITE_PERMISSIONS,
   PermissionRequestResult,
   SYNC_TIMESTAMP_KEYS,
 } from '@/lib/types/healthkit';
-
-// Type for react-native-health module
-type HealthKitModule = typeof import('react-native-health').default;
-
-// Cached HealthKit instance
-let AppleHealthKit: HealthKitModule | null = null;
-let loadAttempted = false;
-
-/**
- * Get the HealthKit module
- * Uses require() for better Jest compatibility
- */
-function loadHealthKit(): HealthKitModule | null {
-  if (Platform.OS !== 'ios') {
-    return null;
-  }
-
-  if (!loadAttempted) {
-    loadAttempted = true;
-    try {
-      // Use require for Jest compatibility
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const module = require('react-native-health');
-      AppleHealthKit = module.default || module;
-
-      // Verify the native module is actually available
-      if (!AppleHealthKit || typeof AppleHealthKit.isAvailable !== 'function') {
-        console.warn(
-          'HealthKit native module not available. Are you running in Expo Go? HealthKit requires a development build.'
-        );
-        AppleHealthKit = null;
-      }
-    } catch (error) {
-      console.warn('Failed to load react-native-health:', error);
-      AppleHealthKit = null;
-    }
-  }
-
-  return AppleHealthKit;
-}
-
-/**
- * Get the HealthKit instance (for internal use)
- */
-export function getHealthKit(): HealthKitModule | null {
-  return loadHealthKit();
-}
 
 /**
  * Storage key for permission status
@@ -72,21 +25,13 @@ export async function isHealthKitAvailable(): Promise<boolean> {
     return false;
   }
 
-  const healthKit = getHealthKit();
-  if (!healthKit) {
+  try {
+    const { isHealthDataAvailable } = await import('@kingstinct/react-native-healthkit');
+    return isHealthDataAvailable();
+  } catch (error) {
+    console.warn('HealthKit availability check error:', error);
     return false;
   }
-
-  return new Promise((resolve) => {
-    healthKit.isAvailable((error, available) => {
-      if (error) {
-        console.warn('HealthKit availability check error:', error);
-        resolve(false);
-        return;
-      }
-      resolve(available);
-    });
-  });
 }
 
 /**
@@ -128,52 +73,30 @@ export async function requestHealthKitPermissions(): Promise<PermissionRequestRe
     };
   }
 
-  const healthKit = getHealthKit();
-  if (!healthKit) {
-    return {
-      success: false,
-      granted: {},
-      denied: [],
-      error: 'HealthKit native module not available. Please use a development build instead of Expo Go.',
-    };
-  }
+  try {
+    const { isHealthDataAvailable, requestAuthorization } = await import(
+      '@kingstinct/react-native-healthkit'
+    );
 
-  const isAvailable = await isHealthKitAvailable();
-  if (!isAvailable) {
-    return {
-      success: false,
-      granted: {},
-      denied: [],
-      error: 'HealthKit is not available on this device',
-    };
-  }
+    const isAvailable = isHealthDataAvailable();
+    if (!isAvailable) {
+      return {
+        success: false,
+        granted: {},
+        denied: [],
+        error: 'HealthKit is not available on this device',
+      };
+    }
 
-  // Build permissions object for react-native-health
-  // Cast is needed because our string array doesn't match library's HealthPermission enum type
-  const permissions = {
-    permissions: {
-      read: HEALTHKIT_READ_PERMISSIONS as unknown as string[],
-      write: HEALTHKIT_WRITE_PERMISSIONS,
-    },
-  } as Parameters<typeof healthKit.initHealthKit>[0];
+    // Request authorization for all read permissions
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const authorized = await requestAuthorization({
+      toRead: HEALTHKIT_READ_PERMISSIONS as any,
+    });
 
-  return new Promise((resolve) => {
-    healthKit.initHealthKit(permissions, (error: string | { message?: string } | null) => {
-      if (error) {
-        console.warn('HealthKit initialization error:', error);
-        setStoredPermissionStatus('denied');
-        const errorMessage = typeof error === 'string' ? error : error.message || 'Failed to initialize HealthKit';
-        resolve({
-          success: false,
-          granted: {},
-          denied: HEALTHKIT_READ_PERMISSIONS as unknown as string[],
-          error: errorMessage,
-        });
-        return;
-      }
-
-      setStoredPermissionStatus('granted');
-      resolve({
+    if (authorized) {
+      await setStoredPermissionStatus('granted');
+      return {
         success: true,
         granted: {
           heartRate: true,
@@ -187,9 +110,26 @@ export async function requestHealthKitPermissions(): Promise<PermissionRequestRe
           activeEnergy: true,
         },
         denied: [],
-      });
-    });
-  });
+      };
+    } else {
+      await setStoredPermissionStatus('denied');
+      return {
+        success: false,
+        granted: {},
+        denied: HEALTHKIT_READ_PERMISSIONS,
+        error: 'User denied HealthKit permissions',
+      };
+    }
+  } catch (error) {
+    console.warn('HealthKit permission request error:', error);
+    await setStoredPermissionStatus('error');
+    return {
+      success: false,
+      granted: {},
+      denied: HEALTHKIT_READ_PERMISSIONS,
+      error: error instanceof Error ? error.message : 'Failed to request HealthKit permissions',
+    };
+  }
 }
 
 /**
@@ -211,7 +151,7 @@ export async function isHealthKitInitialized(): Promise<boolean> {
 export async function ensureHealthKitInitialized(): Promise<boolean> {
   const isInitialized = await isHealthKitInitialized();
   if (isInitialized) {
-    // Re-initialize to ensure connection is active
+    // Re-request to ensure connection is active
     const result = await requestHealthKitPermissions();
     return result.success;
   }

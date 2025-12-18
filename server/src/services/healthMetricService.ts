@@ -253,6 +253,9 @@ export class HealthMetricService {
           gte: startDate,
         },
       },
+      orderBy: {
+        recordedAt: 'asc',
+      },
     });
 
     if (metrics.length === 0) {
@@ -269,6 +272,9 @@ export class HealthMetricService {
     const variance = values.reduce((sum, val) => sum + Math.pow(val - avg, 2), 0) / values.length;
     const stdDev = Math.sqrt(variance);
 
+    // Calculate trend by comparing first half vs second half of the period
+    const { trend, percentChange } = this.calculateTrend(metrics.map(m => m.value));
+
     return {
       metricType,
       days,
@@ -278,7 +284,51 @@ export class HealthMetricService {
       max,
       stdDev,
       unit: metrics[0].unit,
+      trend,
+      percentChange,
     };
+  }
+
+  /**
+   * Calculate trend direction by comparing first half vs second half of values
+   * Returns trend direction ('up', 'down', 'stable') and percent change
+   */
+  private calculateTrend(values: number[]): { trend: 'up' | 'down' | 'stable'; percentChange: number } {
+    if (values.length < 2) {
+      return { trend: 'stable', percentChange: 0 };
+    }
+
+    // Split values into first half and second half (more recent)
+    const midpoint = Math.floor(values.length / 2);
+    const firstHalf = values.slice(0, midpoint);
+    const secondHalf = values.slice(midpoint);
+
+    // Calculate averages for each half
+    const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+    const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+
+    // Avoid division by zero
+    if (firstAvg === 0) {
+      return { trend: 'stable', percentChange: 0 };
+    }
+
+    // Calculate percent change
+    const percentChange = ((secondAvg - firstAvg) / firstAvg) * 100;
+
+    // Determine trend direction with a threshold to avoid noise
+    // Use 3% threshold to filter out small variations
+    const TREND_THRESHOLD = 3;
+
+    let trend: 'up' | 'down' | 'stable';
+    if (percentChange > TREND_THRESHOLD) {
+      trend = 'up';
+    } else if (percentChange < -TREND_THRESHOLD) {
+      trend = 'down';
+    } else {
+      trend = 'stable';
+    }
+
+    return { trend, percentChange };
   }
 }
 

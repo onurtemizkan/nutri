@@ -28,6 +28,7 @@ from app.data.food_database import (
     get_cooking_modifier,
     validate_portion,
     get_amino_acids,
+    get_micronutrient_estimates,
     PORTION_VALIDATION,
 )
 from app.ml_models.food_classifier import get_food_classifier, FoodClassifier
@@ -42,8 +43,136 @@ from app.ml_models.food_detector import (
     DetectionResult,
     DetectedRegion,
 )
+from app.services.feedback_service import feedback_service
 
 logger = logging.getLogger(__name__)
+
+
+# Cache for common corrections (refreshed periodically)
+_correction_cache: dict = {"patterns": {}, "last_updated": None}
+
+
+def _apply_feedback_boost(
+    primary_class: str,
+    confidence: float,
+    alternatives: List[FoodItemAlternative],
+    threshold: float = 0.8,
+) -> List[FoodItemAlternative]:
+    """
+    Apply learned corrections from user feedback to boost/add likely alternatives.
+
+    Strategy:
+    1. If confidence < threshold, check feedback patterns for this food
+    2. Boost alternatives that users frequently correct TO
+    3. Add new alternatives from correction history if not already present
+    4. Sort alternatives by boosted confidence
+
+    Args:
+        primary_class: The model's primary prediction
+        confidence: Model's confidence in the prediction
+        alternatives: Current alternatives from model
+        threshold: Confidence threshold for applying feedback boost
+
+    Returns:
+        Enhanced alternatives list with feedback-based boosts
+    """
+    if confidence >= threshold:
+        # High confidence - don't modify alternatives
+        return alternatives
+
+    # Check if we have correction patterns for this food
+    patterns = _correction_cache.get("patterns", {})
+    corrections = patterns.get(primary_class.lower(), [])
+
+    if not corrections:
+        return alternatives
+
+    # Create a map of existing alternatives
+    alt_map = {alt.name.lower(): alt for alt in alternatives}
+    boosted_alternatives = []
+
+    # Process corrections - boost or add based on feedback
+    for correction in corrections[:5]:  # Top 5 corrections
+        corrected_food = correction.get("corrected", "").lower()
+        correction_count = correction.get("count", 1)
+        original_count = correction.get("total_for_original", 10)
+
+        # Calculate boost factor (how often users correct to this food)
+        boost_factor = min(correction_count / max(original_count, 1), 0.5)
+
+        if corrected_food in alt_map:
+            # Boost existing alternative
+            existing = alt_map[corrected_food]
+            boosted_conf = min(existing.confidence + boost_factor, 0.99)
+            boosted_alternatives.append(
+                FoodItemAlternative(
+                    name=existing.name,
+                    display_name=existing.display_name,
+                    confidence=round(boosted_conf, 2),
+                    boosted=True,
+                    from_feedback=True,
+                )
+            )
+            del alt_map[corrected_food]
+        else:
+            # Add new alternative from feedback
+            food_entry = get_food_entry(corrected_food)
+            display_name = (
+                food_entry.display_name
+                if food_entry
+                else corrected_food.replace("_", " ").title()
+            )
+            # Feedback-based alternatives get moderate confidence
+            feedback_conf = min(0.3 + boost_factor, 0.7)
+            boosted_alternatives.append(
+                FoodItemAlternative(
+                    name=corrected_food,
+                    display_name=display_name,
+                    confidence=round(feedback_conf, 2),
+                    boosted=True,
+                    from_feedback=True,
+                )
+            )
+
+    # Add remaining non-boosted alternatives
+    for alt in alt_map.values():
+        boosted_alternatives.append(alt)
+
+    # Sort by confidence descending
+    boosted_alternatives.sort(key=lambda x: x.confidence, reverse=True)
+
+    # Limit to top 5
+    return boosted_alternatives[:5]
+
+
+async def refresh_correction_cache(db_session) -> None:
+    """
+    Refresh the correction patterns cache from feedback database.
+    Should be called periodically (e.g., every 10 minutes).
+    """
+    global _correction_cache
+    try:
+        stats = await feedback_service.get_stats(db_session)
+        misclassifications = stats.get("top_misclassifications", [])
+
+        # Build patterns dict: {original_prediction: [{corrected, count}, ...]}
+        patterns: dict = {}
+        for m in misclassifications:
+            original = m.get("original", "").lower()
+            corrected = m.get("corrected", "").lower()
+            count = m.get("count", 1)
+
+            if original not in patterns:
+                patterns[original] = []
+            patterns[original].append({"corrected": corrected, "count": count})
+
+        _correction_cache["patterns"] = patterns
+        _correction_cache["last_updated"] = time.time()
+        logger.info(
+            f"Refreshed correction cache: {len(patterns)} foods with corrections"
+        )
+    except Exception as e:
+        logger.warning(f"Failed to refresh correction cache: {e}")
 
 
 class FoodAnalysisService:
@@ -52,6 +181,9 @@ class FoodAnalysisService:
     # Multi-food detection settings
     MULTI_FOOD_MIN_REGIONS = 1  # Minimum regions to trigger multi-food mode
     MULTI_FOOD_CONFIDENCE_THRESHOLD = 0.15  # Minimum detection confidence
+
+    # User confirmation settings
+    CONFIRMATION_THRESHOLD = 0.8  # Below this, ask user to confirm/correct
 
     def __init__(self, use_ensemble: bool = True, enable_multi_food: bool = True):
         self._food_classifier: Optional[FoodClassifier] = None
@@ -248,17 +380,24 @@ class FoodAnalysisService:
                 # Create food item
                 portion_size = self._format_portion_size(portion_weight, food_entry)
                 category = food_entry.category.value if food_entry else "unknown"
+                combined_confidence = round(confidence * region.confidence, 2)
+
+                # Determine if user should confirm/correct this classification
+                needs_confirmation = combined_confidence < self.CONFIRMATION_THRESHOLD
 
                 food_item = FoodItem(
-                    name=self._format_food_name(food_class, cooking_method_enum),
-                    confidence=round(
-                        confidence * region.confidence, 2
-                    ),  # Combine confidences
+                    name=food_class,  # Internal name for API lookups
+                    display_name=self._format_food_name(
+                        food_class, cooking_method_enum
+                    ),  # Human-readable
+                    confidence=combined_confidence,
                     portion_size=portion_size,
                     portion_weight=portion_weight,
                     nutrition=nutrition_info,
                     category=category,
                     alternatives=alternatives,
+                    needs_confirmation=needs_confirmation,
+                    confidence_threshold=self.CONFIRMATION_THRESHOLD,
                 )
 
                 food_items.append(food_item)
@@ -382,20 +521,32 @@ class FoodAnalysisService:
         portion_size = self._format_portion_size(portion_weight, food_entry)
         category = food_entry.category.value if food_entry else "unknown"
 
+        # Determine if user should confirm/correct this classification
+        needs_confirmation = confidence < self.CONFIRMATION_THRESHOLD
+
         # Add confidence warning
         if confidence < 0.7:
             suggestions.append(
                 "Low classification confidence - consider verifying the food type"
             )
+        elif needs_confirmation:
+            suggestions.append(
+                "Please confirm this is correct or select from alternatives"
+            )
 
         return FoodItem(
-            name=self._format_food_name(food_class, cooking_method_enum),
+            name=food_class,  # Internal name for API lookups
+            display_name=self._format_food_name(
+                food_class, cooking_method_enum
+            ),  # Human-readable
             confidence=confidence,
             portion_size=portion_size,
             portion_weight=portion_weight,
             nutrition=nutrition_info,
             category=category,
             alternatives=alternatives,
+            needs_confirmation=needs_confirmation,
+            confidence_threshold=self.CONFIRMATION_THRESHOLD,
         )
 
     def _preprocess_image(self, image: Image.Image) -> np.ndarray:
@@ -458,15 +609,18 @@ class FoodAnalysisService:
                 alternatives = []
                 for alt_class, alt_conf in result.alternatives:
                     alt_entry = get_food_entry(alt_class)
-                    display_name = (
+                    alt_display_name = (
                         alt_entry.display_name
                         if alt_entry
                         else alt_class.replace("_", " ").title()
                     )
                     alternatives.append(
                         FoodItemAlternative(
-                            name=display_name,
+                            name=alt_class,  # Internal name for API lookups
+                            display_name=alt_display_name,  # Human-readable
                             confidence=round(alt_conf, 2),
+                            boosted=False,  # Not boosted by feedback
+                            from_feedback=False,  # Not from historical corrections
                         )
                     )
 
@@ -475,7 +629,21 @@ class FoodAnalysisService:
                     f"(confidence: {result.confidence:.2f}, "
                     f"models: {', '.join(result.contributing_models)})"
                 )
-                return result.primary_class, round(result.confidence, 2), alternatives
+
+                # Apply feedback-based boosting for low-confidence predictions
+                boosted_alternatives = _apply_feedback_boost(
+                    result.primary_class,
+                    result.confidence,
+                    alternatives,
+                    threshold=self.CONFIRMATION_THRESHOLD,
+                )
+                if boosted_alternatives != alternatives:
+                    logger.info(
+                        f"Applied feedback boost: "
+                        f"{sum(1 for a in boosted_alternatives if a.boosted)} alternatives boosted"
+                    )
+
+                return result.primary_class, round(result.confidence, 2), boosted_alternatives
 
             else:
                 # Single model classification (Food-101 only)
@@ -491,22 +659,34 @@ class FoodAnalysisService:
                 alternatives = []
                 for alt_class, alt_conf in alt_predictions:
                     alt_entry = get_food_entry(alt_class)
-                    display_name = (
+                    alt_display_name = (
                         alt_entry.display_name
                         if alt_entry
                         else alt_class.replace("_", " ").title()
                     )
                     alternatives.append(
                         FoodItemAlternative(
-                            name=display_name,
+                            name=alt_class,  # Internal name for API lookups
+                            display_name=alt_display_name,  # Human-readable
                             confidence=round(alt_conf, 2),
+                            boosted=False,  # Not boosted by feedback
+                            from_feedback=False,  # Not from historical corrections
                         )
                     )
 
                 logger.info(
                     f"ViT classified as: {primary_class} (confidence: {confidence:.2f})"
                 )
-                return primary_class, round(confidence, 2), alternatives
+
+                # Apply feedback-based boosting for low-confidence predictions
+                boosted_alternatives = _apply_feedback_boost(
+                    primary_class,
+                    confidence,
+                    alternatives,
+                    threshold=self.CONFIRMATION_THRESHOLD,
+                )
+
+                return primary_class, round(confidence, 2), boosted_alternatives
 
         except Exception as e:
             logger.error(f"Classification error: {e}, falling back to default")
@@ -618,6 +798,7 @@ class FoodAnalysisService:
     ) -> NutritionInfo:
         """
         Calculate nutrition info based on food class, portion size, and cooking method.
+        Includes both macronutrients and estimated micronutrients.
 
         Args:
             food_class: Food category
@@ -625,7 +806,7 @@ class FoodAnalysisService:
             cooking_method: How the food was prepared
 
         Returns:
-            NutritionInfo object with scaled values
+            NutritionInfo object with scaled values including micronutrients
         """
         food_entry = get_food_entry(food_class)
 
@@ -635,6 +816,8 @@ class FoodAnalysisService:
             estimated_protein = portion_weight * 0.1
             # Estimate amino acids based on generic protein content
             amino_acids = get_amino_acids(food_class, estimated_protein)
+            # Get micronutrient estimates for unknown category
+            micros = get_micronutrient_estimates(food_class, portion_weight)
             return NutritionInfo(
                 calories=round(portion_weight * 1.5, 1),  # ~1.5 cal/g average
                 protein=round(estimated_protein, 1),
@@ -642,6 +825,24 @@ class FoodAnalysisService:
                 fat=round(portion_weight * 0.1, 1),
                 lysine=amino_acids["lysine"],
                 arginine=amino_acids["arginine"],
+                # Micronutrients from category estimates
+                potassium=micros.get("potassium"),
+                calcium=micros.get("calcium"),
+                iron=micros.get("iron"),
+                magnesium=micros.get("magnesium"),
+                zinc=micros.get("zinc"),
+                phosphorus=micros.get("phosphorus"),
+                vitamin_a=micros.get("vitamin_a"),
+                vitamin_c=micros.get("vitamin_c"),
+                vitamin_d=micros.get("vitamin_d"),
+                vitamin_e=micros.get("vitamin_e"),
+                vitamin_k=micros.get("vitamin_k"),
+                vitamin_b6=micros.get("vitamin_b6"),
+                vitamin_b12=micros.get("vitamin_b12"),
+                folate=micros.get("folate"),
+                thiamin=micros.get("thiamin"),
+                riboflavin=micros.get("riboflavin"),
+                niacin=micros.get("niacin"),
             )
 
         # Calculate scale factor based on portion vs serving weight
@@ -662,12 +863,105 @@ class FoodAnalysisService:
             oil_fat_added = (portion_weight / 100) * 5
             fat += oil_fat_added
 
-        # Optional nutrients
+        # Optional macronutrients
         fiber = food_entry.fiber * scale if food_entry.fiber else None
         sugar = food_entry.sugar * scale if food_entry.sugar else None
         sodium = food_entry.sodium * scale if food_entry.sodium else None
         saturated_fat = (
             food_entry.saturated_fat * scale if food_entry.saturated_fat else None
+        )
+        trans_fat = food_entry.trans_fat * scale if food_entry.trans_fat else None
+        cholesterol = (
+            food_entry.cholesterol * scale if food_entry.cholesterol else None
+        )
+
+        # Get micronutrient estimates based on food category
+        # Use explicit values from food_entry if available, otherwise estimate
+        micros = get_micronutrient_estimates(
+            food_class, portion_weight, food_entry.category
+        )
+
+        # Override with explicit values if available in food_entry
+        potassium = (
+            food_entry.potassium * scale
+            if food_entry.potassium
+            else micros.get("potassium")
+        )
+        calcium = (
+            food_entry.calcium * scale
+            if food_entry.calcium
+            else micros.get("calcium")
+        )
+        iron = (
+            food_entry.iron * scale if food_entry.iron else micros.get("iron")
+        )
+        magnesium = (
+            food_entry.magnesium * scale
+            if food_entry.magnesium
+            else micros.get("magnesium")
+        )
+        zinc = (
+            food_entry.zinc * scale if food_entry.zinc else micros.get("zinc")
+        )
+        phosphorus = (
+            food_entry.phosphorus * scale
+            if food_entry.phosphorus
+            else micros.get("phosphorus")
+        )
+        vitamin_a = (
+            food_entry.vitamin_a * scale
+            if food_entry.vitamin_a
+            else micros.get("vitamin_a")
+        )
+        vitamin_c = (
+            food_entry.vitamin_c * scale
+            if food_entry.vitamin_c
+            else micros.get("vitamin_c")
+        )
+        vitamin_d = (
+            food_entry.vitamin_d * scale
+            if food_entry.vitamin_d
+            else micros.get("vitamin_d")
+        )
+        vitamin_e = (
+            food_entry.vitamin_e * scale
+            if food_entry.vitamin_e
+            else micros.get("vitamin_e")
+        )
+        vitamin_k = (
+            food_entry.vitamin_k * scale
+            if food_entry.vitamin_k
+            else micros.get("vitamin_k")
+        )
+        vitamin_b6 = (
+            food_entry.vitamin_b6 * scale
+            if food_entry.vitamin_b6
+            else micros.get("vitamin_b6")
+        )
+        vitamin_b12 = (
+            food_entry.vitamin_b12 * scale
+            if food_entry.vitamin_b12
+            else micros.get("vitamin_b12")
+        )
+        folate = (
+            food_entry.folate * scale
+            if food_entry.folate
+            else micros.get("folate")
+        )
+        thiamin = (
+            food_entry.thiamin * scale
+            if food_entry.thiamin
+            else micros.get("thiamin")
+        )
+        riboflavin = (
+            food_entry.riboflavin * scale
+            if food_entry.riboflavin
+            else micros.get("riboflavin")
+        )
+        niacin = (
+            food_entry.niacin * scale
+            if food_entry.niacin
+            else micros.get("niacin")
         )
 
         # Amino acids - use explicit values if available, otherwise estimate
@@ -684,6 +978,28 @@ class FoodAnalysisService:
             saturated_fat=(
                 round(saturated_fat, 1) if saturated_fat is not None else None
             ),
+            trans_fat=round(trans_fat, 1) if trans_fat is not None else None,
+            cholesterol=round(cholesterol, 1) if cholesterol is not None else None,
+            # Minerals
+            potassium=round(potassium, 1) if potassium is not None else None,
+            calcium=round(calcium, 1) if calcium is not None else None,
+            iron=round(iron, 2) if iron is not None else None,
+            magnesium=round(magnesium, 1) if magnesium is not None else None,
+            zinc=round(zinc, 2) if zinc is not None else None,
+            phosphorus=round(phosphorus, 1) if phosphorus is not None else None,
+            # Vitamins
+            vitamin_a=round(vitamin_a, 1) if vitamin_a is not None else None,
+            vitamin_c=round(vitamin_c, 1) if vitamin_c is not None else None,
+            vitamin_d=round(vitamin_d, 2) if vitamin_d is not None else None,
+            vitamin_e=round(vitamin_e, 2) if vitamin_e is not None else None,
+            vitamin_k=round(vitamin_k, 1) if vitamin_k is not None else None,
+            vitamin_b6=round(vitamin_b6, 2) if vitamin_b6 is not None else None,
+            vitamin_b12=round(vitamin_b12, 2) if vitamin_b12 is not None else None,
+            folate=round(folate, 1) if folate is not None else None,
+            thiamin=round(thiamin, 2) if thiamin is not None else None,
+            riboflavin=round(riboflavin, 2) if riboflavin is not None else None,
+            niacin=round(niacin, 1) if niacin is not None else None,
+            # Amino acids
             lysine=amino_acids["lysine"],
             arginine=amino_acids["arginine"],
         )

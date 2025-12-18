@@ -233,21 +233,54 @@ export default function ScanBarcodeScreen() {
     const serving = parseFloat(servingAmount) || 100;
     const nutrition = calculateServingNutrition(product, serving);
 
+    // Build params with all available nutrition data including micronutrients
+    const params: Record<string, string> = {
+      name: product.brand
+        ? `${product.name} (${product.brand})`
+        : product.name,
+      calories: nutrition.calories.toString(),
+      protein: nutrition.protein.toString(),
+      carbs: nutrition.carbs.toString(),
+      fat: nutrition.fat.toString(),
+      servingSize: `${serving}g`,
+      fromScan: 'true',
+      barcode: product.barcode,
+    };
+
+    // Add optional nutrients only if they have values
+    if (nutrition.fiber !== undefined) params.fiber = nutrition.fiber.toString();
+    if (nutrition.sugar !== undefined) params.sugar = nutrition.sugar.toString();
+
+    // Fat breakdown
+    if (nutrition.saturatedFat !== undefined) params.saturatedFat = nutrition.saturatedFat.toString();
+    if (nutrition.transFat !== undefined) params.transFat = nutrition.transFat.toString();
+    if (nutrition.cholesterol !== undefined) params.cholesterol = nutrition.cholesterol.toString();
+
+    // Minerals
+    if (nutrition.sodium !== undefined) params.sodium = nutrition.sodium.toString();
+    if (nutrition.potassium !== undefined) params.potassium = nutrition.potassium.toString();
+    if (nutrition.calcium !== undefined) params.calcium = nutrition.calcium.toString();
+    if (nutrition.iron !== undefined) params.iron = nutrition.iron.toString();
+    if (nutrition.magnesium !== undefined) params.magnesium = nutrition.magnesium.toString();
+    if (nutrition.zinc !== undefined) params.zinc = nutrition.zinc.toString();
+    if (nutrition.phosphorus !== undefined) params.phosphorus = nutrition.phosphorus.toString();
+
+    // Vitamins
+    if (nutrition.vitaminA !== undefined) params.vitaminA = nutrition.vitaminA.toString();
+    if (nutrition.vitaminC !== undefined) params.vitaminC = nutrition.vitaminC.toString();
+    if (nutrition.vitaminD !== undefined) params.vitaminD = nutrition.vitaminD.toString();
+    if (nutrition.vitaminE !== undefined) params.vitaminE = nutrition.vitaminE.toString();
+    if (nutrition.vitaminK !== undefined) params.vitaminK = nutrition.vitaminK.toString();
+    if (nutrition.vitaminB6 !== undefined) params.vitaminB6 = nutrition.vitaminB6.toString();
+    if (nutrition.vitaminB12 !== undefined) params.vitaminB12 = nutrition.vitaminB12.toString();
+    if (nutrition.folate !== undefined) params.folate = nutrition.folate.toString();
+    if (nutrition.thiamin !== undefined) params.thiamin = nutrition.thiamin.toString();
+    if (nutrition.riboflavin !== undefined) params.riboflavin = nutrition.riboflavin.toString();
+    if (nutrition.niacin !== undefined) params.niacin = nutrition.niacin.toString();
+
     router.push({
       pathname: '/add-meal',
-      params: {
-        name: product.brand
-          ? `${product.name} (${product.brand})`
-          : product.name,
-        calories: nutrition.calories.toString(),
-        protein: nutrition.protein.toString(),
-        carbs: nutrition.carbs.toString(),
-        fat: nutrition.fat.toString(),
-        fiber: nutrition.fiber?.toString() || '',
-        servingSize: `${serving}g`,
-        fromScan: 'true',
-        barcode: product.barcode,
-      },
+      params,
     });
   };
 

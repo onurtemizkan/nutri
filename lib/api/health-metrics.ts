@@ -215,8 +215,10 @@ export const healthMetricsApi = {
   /**
    * Get dashboard data for key metrics (RHR, HRV, Sleep, Recovery)
    * Fetches latest values and stats for dashboard display
+   * @param metricTypes Array of metric types to fetch
+   * @param days Number of days for stats calculation (default: 30)
    */
-  async getDashboardData(metricTypes: HealthMetricType[]): Promise<
+  async getDashboardData(metricTypes: HealthMetricType[], days: number = 30): Promise<
     Record<HealthMetricType, { latest: HealthMetric | null; stats: HealthMetricStats | null }>
   > {
     const results: Record<HealthMetricType, { latest: HealthMetric | null; stats: HealthMetricStats | null }> = {} as Record<HealthMetricType, { latest: HealthMetric | null; stats: HealthMetricStats | null }>;
@@ -226,7 +228,7 @@ export const healthMetricsApi = {
       metricTypes.map(async (metricType) => {
         const [latest, stats] = await Promise.all([
           this.getLatest(metricType),
-          this.getStats(metricType, 30),
+          this.getStats(metricType, days),
         ]);
         results[metricType] = { latest, stats };
       })

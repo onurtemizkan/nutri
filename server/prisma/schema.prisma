@@ -78,6 +78,33 @@ model Meal {
   fiber       Float?
   sugar       Float?
 
+  // Fat breakdown (optional)
+  saturatedFat       Float?  // grams
+  transFat           Float?  // grams
+  cholesterol        Float?  // mg
+
+  // Minerals (optional) - values in mg unless noted
+  sodium             Float?  // mg
+  potassium          Float?  // mg
+  calcium            Float?  // mg
+  iron               Float?  // mg
+  magnesium          Float?  // mg
+  zinc               Float?  // mg
+  phosphorus         Float?  // mg
+
+  // Vitamins (optional) - values in appropriate units
+  vitaminA           Float?  // mcg RAE
+  vitaminC           Float?  // mg
+  vitaminD           Float?  // mcg
+  vitaminE           Float?  // mg
+  vitaminK           Float?  // mcg
+  vitaminB6          Float?  // mg
+  vitaminB12         Float?  // mcg
+  folate             Float?  // mcg DFE
+  thiamin            Float?  // mg (B1)
+  riboflavin         Float?  // mg (B2)
+  niacin             Float?  // mg (B3)
+
   servingSize String?
   notes       String?
   imageUrl    String?
@@ -349,6 +376,32 @@ model Supplement {
   // Additional info
   notes           String?             // Any notes about the supplement
   color           String?             // Optional color for UI display (hex code)
+
+  // Micronutrient content (estimated or from barcode)
+  // Vitamins (optional)
+  vitaminA        Float?              // mcg RAE
+  vitaminC        Float?              // mg
+  vitaminD        Float?              // mcg
+  vitaminE        Float?              // mg
+  vitaminK        Float?              // mcg
+  vitaminB6       Float?              // mg
+  vitaminB12      Float?              // mcg
+  folate          Float?              // mcg DFE
+  thiamin         Float?              // mg (B1)
+  riboflavin      Float?              // mg (B2)
+  niacin          Float?              // mg (B3)
+
+  // Minerals (optional)
+  calcium         Float?              // mg
+  iron            Float?              // mg
+  magnesium       Float?              // mg
+  zinc            Float?              // mg
+  potassium       Float?              // mg
+  sodium          Float?              // mg
+  phosphorus      Float?              // mg
+
+  // Special nutrients (optional)
+  omega3          Float?              // mg (total EPA + DHA)
 
   // Relations
   logs            SupplementLog[]

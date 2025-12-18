@@ -120,8 +120,39 @@ export default function HealthSettingsScreen() {
       const result = await healthKitService.requestPermissions();
       if (result.success) {
         setIsConnected(true);
-        showAlert('Success', 'Connected to Apple Health! Tap "Sync Now" to import your health data.');
-        await loadStatus();
+        setIsLoading(false);
+
+        // Auto-sync after successful permission grant
+        setIsSyncing(true);
+        setSyncProgress(0);
+        setSyncMessage('Starting initial sync...');
+
+        try {
+          const syncResult = await healthKitService.syncAll((message, progress) => {
+            setSyncMessage(message);
+            setSyncProgress(progress);
+          });
+
+          await loadStatus();
+
+          if (syncResult.success) {
+            showAlert(
+              'Connected & Synced',
+              `Successfully connected to Apple Health and synced ${syncResult.totalMetrics} health metrics.`
+            );
+          } else {
+            showAlert(
+              'Connected',
+              `Connected to Apple Health. Synced ${syncResult.totalMetrics} metrics with some errors.`
+            );
+          }
+        } catch (syncError) {
+          showAlert('Connected', 'Connected to Apple Health! You can sync data manually.');
+        } finally {
+          setIsSyncing(false);
+          setSyncProgress(0);
+          setSyncMessage('');
+        }
       } else {
         showAlert('Permission Required', result.error || 'Please grant access to Apple Health in Settings.');
       }
@@ -199,7 +230,7 @@ export default function HealthSettingsScreen() {
   const handleFullResync = async () => {
     showAlert(
       'Full Resync',
-      'This will re-sync all health data from the last 30 days. This may take a while.',
+      'This will re-sync all health data from the last year. This may take a while.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -210,7 +241,7 @@ export default function HealthSettingsScreen() {
             setSyncMessage('Starting full resync...');
 
             try {
-              const result = await healthKitService.forceFullSync(30, (message, progress) => {
+              const result = await healthKitService.forceFullSync(365, (message, progress) => {
                 setSyncMessage(message);
                 setSyncProgress(progress);
               });

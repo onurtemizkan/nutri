@@ -1,6 +1,7 @@
 /**
  * Activity Metrics Sync
  * Syncs steps, active calories, and other activity data from HealthKit
+ * Using @kingstinct/react-native-healthkit
  */
 
 import { Platform } from 'react-native';
@@ -10,31 +11,9 @@ import {
   HealthKitSyncOptions,
   METRIC_UNITS,
 } from '@/lib/types/healthkit';
-import { getHealthKit } from './permissions';
 
 /**
- * Query options for react-native-health
- */
-interface HealthKitQueryOptions {
-  startDate: string;
-  endDate: string;
-  ascending?: boolean;
-  limit?: number;
-  period?: number;
-  includeManuallyAdded?: boolean;
-}
-
-/**
- * Daily step count result
- */
-interface DailyStepCount {
-  value: number;
-  startDate: string;
-  endDate: string;
-}
-
-/**
- * Fetch daily step counts from HealthKit
+ * Fetch step count samples from HealthKit
  */
 export async function fetchStepCount(
   options: HealthKitSyncOptions
@@ -43,32 +22,26 @@ export async function fetchStepCount(
     return [];
   }
 
-  const healthKit = await getHealthKit();
-  if (!healthKit) {
+  try {
+    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
+
+    const samples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount', {
+      limit: -1,
+      filter: {
+        date: {
+          startDate: options.startDate,
+          endDate: options.endDate,
+        },
+      },
+    });
+
+    // Aggregate steps by day
+    const dailySteps = aggregateByDay([...samples]);
+    return dailySteps.map((daily) => transformStepsToHealthMetric(daily));
+  } catch (error) {
+    console.warn('Error fetching step count:', error);
     return [];
   }
-
-  const queryOptions: HealthKitQueryOptions = {
-    startDate: options.startDate.toISOString(),
-    endDate: options.endDate.toISOString(),
-    period: 1440, // Get daily totals (1440 minutes = 1 day)
-    includeManuallyAdded: false,
-  };
-
-  return new Promise((resolve) => {
-    healthKit.getDailyStepCountSamples(queryOptions, (error, results) => {
-      if (error) {
-        console.warn('Error fetching step count:', error);
-        resolve([]);
-        return;
-      }
-
-      const processed = (results || []).map((sample: DailyStepCount) =>
-        transformStepsToHealthMetric(sample)
-      );
-      resolve(processed);
-    });
-  });
 }
 
 /**
@@ -81,27 +54,24 @@ export async function fetchTotalStepCount(
     return 0;
   }
 
-  const healthKit = await getHealthKit();
-  if (!healthKit) {
+  try {
+    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
+
+    const samples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount', {
+      limit: -1,
+      filter: {
+        date: {
+          startDate: options.startDate,
+          endDate: options.endDate,
+        },
+      },
+    });
+
+    return samples.reduce((total, sample) => total + sample.quantity, 0);
+  } catch (error) {
+    console.warn('Error fetching total step count:', error);
     return 0;
   }
-
-  const queryOptions: HealthKitQueryOptions = {
-    startDate: options.startDate.toISOString(),
-    endDate: options.endDate.toISOString(),
-    includeManuallyAdded: false,
-  };
-
-  return new Promise((resolve) => {
-    healthKit.getStepCount(queryOptions, (error, results) => {
-      if (error) {
-        console.warn('Error fetching total step count:', error);
-        resolve(0);
-        return;
-      }
-      resolve(results?.value || 0);
-    });
-  });
 }
 
 /**
@@ -114,33 +84,26 @@ export async function fetchActiveCalories(
     return [];
   }
 
-  const healthKit = await getHealthKit();
-  if (!healthKit) {
+  try {
+    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
+
+    const samples = await queryQuantitySamples('HKQuantityTypeIdentifierActiveEnergyBurned', {
+      limit: -1,
+      filter: {
+        date: {
+          startDate: options.startDate,
+          endDate: options.endDate,
+        },
+      },
+    });
+
+    // Aggregate by day
+    const dailyCalories = aggregateByDay([...samples]);
+    return dailyCalories.map((daily) => transformCaloriesToHealthMetric(daily));
+  } catch (error) {
+    console.warn('Error fetching active calories:', error);
     return [];
   }
-
-  const queryOptions: HealthKitQueryOptions = {
-    startDate: options.startDate.toISOString(),
-    endDate: options.endDate.toISOString(),
-    ascending: false,
-  };
-
-  return new Promise((resolve) => {
-    healthKit.getActiveEnergyBurned(queryOptions, (error, results) => {
-      if (error) {
-        console.warn('Error fetching active calories:', error);
-        resolve([]);
-        return;
-      }
-
-      // Aggregate by day
-      const dailyCalories = aggregateByDay(results || []);
-      const processed = dailyCalories.map((daily) =>
-        transformCaloriesToHealthMetric(daily)
-      );
-      resolve(processed);
-    });
-  });
 }
 
 /**
@@ -153,27 +116,24 @@ export async function fetchBasalCalories(
     return [];
   }
 
-  const healthKit = await getHealthKit();
-  if (!healthKit) {
+  try {
+    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
+
+    const samples = await queryQuantitySamples('HKQuantityTypeIdentifierBasalEnergyBurned', {
+      limit: -1,
+      filter: {
+        date: {
+          startDate: options.startDate,
+          endDate: options.endDate,
+        },
+      },
+    });
+
+    return [...samples];
+  } catch (error) {
+    console.warn('Error fetching basal calories:', error);
     return [];
   }
-
-  const queryOptions: HealthKitQueryOptions = {
-    startDate: options.startDate.toISOString(),
-    endDate: options.endDate.toISOString(),
-    ascending: false,
-  };
-
-  return new Promise((resolve) => {
-    healthKit.getBasalEnergyBurned(queryOptions, (error, results) => {
-      if (error) {
-        console.warn('Error fetching basal calories:', error);
-        resolve([]);
-        return;
-      }
-      resolve(results || []);
-    });
-  });
 }
 
 /**
@@ -186,27 +146,24 @@ export async function fetchDistanceWalkingRunning(
     return [];
   }
 
-  const healthKit = await getHealthKit();
-  if (!healthKit) {
+  try {
+    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
+
+    const samples = await queryQuantitySamples('HKQuantityTypeIdentifierDistanceWalkingRunning', {
+      limit: -1,
+      filter: {
+        date: {
+          startDate: options.startDate,
+          endDate: options.endDate,
+        },
+      },
+    });
+
+    return [...samples];
+  } catch (error) {
+    console.warn('Error fetching distance:', error);
     return [];
   }
-
-  const queryOptions: HealthKitQueryOptions = {
-    startDate: options.startDate.toISOString(),
-    endDate: options.endDate.toISOString(),
-    ascending: false,
-  };
-
-  return new Promise((resolve) => {
-    healthKit.getDailyDistanceWalkingRunningSamples(queryOptions, (error, results) => {
-      if (error) {
-        console.warn('Error fetching distance:', error);
-        resolve([]);
-        return;
-      }
-      resolve(results || []);
-    });
-  });
 }
 
 /**
@@ -220,9 +177,10 @@ function aggregateByDay(samples: HealthKitSample[]): {
   const dailyTotals = new Map<string, { value: number; sourceName?: string }>();
 
   for (const sample of samples) {
-    const date = new Date(sample.startDate).toISOString().split('T')[0];
-    const existing = dailyTotals.get(date) || { value: 0, sourceName: sample.sourceName };
-    existing.value += sample.value;
+    const date = sample.startDate.toISOString().split('T')[0];
+    const sourceName = sample.sourceRevision?.source?.name || sample.device?.name;
+    const existing = dailyTotals.get(date) || { value: 0, sourceName };
+    existing.value += sample.quantity;
     dailyTotals.set(date, existing);
   }
 
@@ -236,17 +194,25 @@ function aggregateByDay(samples: HealthKitSample[]): {
 /**
  * Transform step count to ProcessedHealthMetric
  */
-function transformStepsToHealthMetric(sample: DailyStepCount): ProcessedHealthMetric {
+function transformStepsToHealthMetric(daily: {
+  date: string;
+  value: number;
+  sourceName?: string;
+}): ProcessedHealthMetric {
+  // Create a date at end of day
+  const recordedAt = new Date(daily.date);
+  recordedAt.setHours(23, 59, 59, 999);
+
   return {
     metricType: 'STEPS',
-    value: Math.round(sample.value),
+    value: Math.round(daily.value),
     unit: METRIC_UNITS.STEPS,
-    recordedAt: sample.startDate,
+    recordedAt: recordedAt.toISOString(),
     source: 'apple_health',
     metadata: {
-      device: 'iPhone/Apple Watch',
+      sourceName: daily.sourceName,
+      device: daily.sourceName || 'iPhone/Apple Watch',
       quality: 'high',
-      endDate: sample.endDate,
     },
   };
 }
@@ -259,13 +225,13 @@ function transformCaloriesToHealthMetric(daily: {
   value: number;
   sourceName?: string;
 }): ProcessedHealthMetric {
-  // Create a date at noon for the day
+  // Create a date at end of day
   const recordedAt = new Date(daily.date);
   recordedAt.setHours(23, 59, 59, 999);
 
   return {
     metricType: 'ACTIVE_CALORIES',
-    value: daily.value,
+    value: Math.round(daily.value),
     unit: METRIC_UNITS.ACTIVE_CALORIES,
     recordedAt: recordedAt.toISOString(),
     source: 'apple_health',

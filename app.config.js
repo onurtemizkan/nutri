@@ -27,6 +27,7 @@ module.exports = {
       bundleIdentifier: 'com.anonymous.nutri',
       bitcode: false,
       infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
         NSCameraUsageDescription:
           'Nutri needs camera access to scan and analyze your food for automatic nutrition tracking.',
         NSPhotoLibraryUsageDescription:
@@ -101,13 +102,13 @@ module.exports = {
         },
       ],
       [
-        'react-native-health',
+        '@kingstinct/react-native-healthkit',
         {
-          isClinicalDataEnabled: false,
-          healthSharePermission:
+          NSHealthShareUsageDescription:
             'Nutri needs to read your health data (heart rate, HRV, sleep, activity) to provide personalized nutrition insights and track how your diet affects your health metrics.',
-          healthUpdatePermission:
+          NSHealthUpdateUsageDescription:
             'Nutri would like to save nutrition and health data to Apple Health to keep your health records in sync.',
+          background: false,
         },
       ],
     ],

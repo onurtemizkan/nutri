@@ -760,6 +760,7 @@ class EnsembleFoodClassifier:
     """
 
     CONFIDENCE_THRESHOLD = 0.50  # Below this, consult Food-101 fallback
+    MINIMUM_CONFIDENCE = 0.12  # Below this, return "unknown" (too uncertain to classify)
     CLIP_WEIGHT = 1.0  # Primary classifier weight
     FOOD_101_WEIGHT = 0.7  # Secondary/fallback weight
     SPECIALIST_WEIGHT = 0.8  # Weight for specialist classifiers (fruit/veg, ingredient)
@@ -811,6 +812,31 @@ class EnsembleFoodClassifier:
             if keyword in hint_lower:
                 return True
         return False
+
+    def _make_low_confidence_unknown(
+        self,
+        best_class: str,
+        confidence: float,
+        all_predictions: Dict[str, ClassificationResult],
+        contributing_models: List[str],
+    ) -> EnsembleResult:
+        """
+        Create an 'unknown' result when confidence is below minimum threshold.
+
+        This prevents returning potentially wrong classifications like 'apple'
+        when the model is essentially guessing.
+        """
+        logger.warning(
+            f"Classification confidence too low ({confidence:.1%} for '{best_class}'). "
+            f"Minimum threshold: {self.MINIMUM_CONFIDENCE:.1%}. Returning 'unknown'."
+        )
+        return EnsembleResult(
+            primary_class="unknown",
+            confidence=confidence,  # Keep original confidence for debugging
+            alternatives=[(best_class, confidence)],  # Keep original guess as alternative
+            contributing_models=contributing_models + ["low_confidence_filter"],
+            all_predictions=all_predictions,
+        )
 
     def classify(
         self,
@@ -916,6 +942,14 @@ class EnsembleFoodClassifier:
                             logger.info(
                                 f"Food-101 more confident ({f101_conf:.2f} vs {clip_conf:.2f}), using Food-101"
                             )
+                            # Check if confidence is too low to be useful
+                            if f101_conf < self.MINIMUM_CONFIDENCE:
+                                return self._make_low_confidence_unknown(
+                                    f101_class,
+                                    f101_conf,
+                                    all_predictions,
+                                    contributing_models,
+                                )
                             return EnsembleResult(
                                 primary_class=f101_class,
                                 confidence=f101_conf,
@@ -927,6 +961,12 @@ class EnsembleFoodClassifier:
 
                     except Exception as e:
                         logger.warning(f"Food-101 backup failed: {e}")
+
+                # Check if confidence is too low to be useful
+                if clip_conf < self.MINIMUM_CONFIDENCE:
+                    return self._make_low_confidence_unknown(
+                        clip_class, clip_conf, all_predictions, contributing_models
+                    )
 
                 # Return CLIP result (primary)
                 return EnsembleResult(
@@ -957,6 +997,12 @@ class EnsembleFoodClassifier:
             )
             contributing_models.append("Food-101 ViT (fallback)")
 
+            # Check if confidence is too low to be useful
+            if f101_conf < self.MINIMUM_CONFIDENCE:
+                return self._make_low_confidence_unknown(
+                    f101_class, f101_conf, all_predictions, contributing_models
+                )
+
             return EnsembleResult(
                 primary_class=f101_class,
                 confidence=f101_conf,
@@ -968,14 +1014,121 @@ class EnsembleFoodClassifier:
         except Exception as e:
             logger.error(f"Food-101 fallback also failed: {e}")
 
-        # Ultimate fallback - return unknown
+        # Ultimate fallback - return "unknown" (NOT the first database key!)
+        # This prevents returning arbitrary foods like "apple" when classification fails
+        logger.warning("All classifiers failed - returning 'unknown'")
         return EnsembleResult(
-            primary_class=database_keys[0] if database_keys else "unknown",
+            primary_class="unknown",
             confidence=0.0,
             alternatives=[],
-            contributing_models=["none"],
+            contributing_models=["fallback"],
             all_predictions={},
         )
+
+    def classify_hierarchical(
+        self,
+        image: Image.Image,
+        database_keys: List[str],
+        top_k: int = 5,
+    ) -> EnsembleResult:
+        """
+        Classify food using hierarchical cuisine-first approach.
+
+        Two-stage classification:
+        1. First identify cuisine type (Japanese, Italian, etc.)
+        2. Then narrow down to specific dishes within detected cuisines
+        3. Combine cuisine and dish confidence for better accuracy
+
+        This approach excels at:
+        - International cuisines (Asian, Mediterranean, Latin)
+        - Prepared/cooked dishes
+        - Foods that look similar but are from different cuisines
+
+        Args:
+            image: PIL Image to classify
+            database_keys: Valid nutrition database keys
+            top_k: Number of alternatives to return
+
+        Returns:
+            EnsembleResult with hierarchical predictions including cuisine info
+        """
+        all_predictions: Dict[str, ClassificationResult] = {}
+        contributing_models: List[str] = []
+
+        try:
+            clip = self._get_clip()
+            hierarchical_result = clip.classify_hierarchical(image, top_k=top_k)
+
+            if hierarchical_result and hierarchical_result.get("predictions"):
+                predictions = hierarchical_result["predictions"]
+                cuisine_scores = hierarchical_result.get("cuisine_scores", {})
+
+                # Get best prediction
+                best = predictions[0]
+                best_class = best["food_key"]
+                best_conf = best["combined_score"]
+                cuisine = best.get("cuisine", "unknown")
+
+                # Map to database key if needed
+                if best_class not in database_keys:
+                    best_class_lower = best_class.lower().replace(" ", "_")
+                    for db_key in database_keys:
+                        if (
+                            db_key.lower() == best_class_lower
+                            or best_class_lower in db_key.lower()
+                        ):
+                            best_class = db_key
+                            break
+
+                all_predictions["clip_hierarchical"] = ClassificationResult(
+                    model_type=ModelType.CLIP,
+                    class_name=best_class,
+                    confidence=best_conf,
+                    raw_class=best["food_key"],
+                )
+                contributing_models.append(f"CLIP Hierarchical ({cuisine} cuisine)")
+
+                logger.info(
+                    f"Hierarchical: {best_class} ({best_conf:.2f}) - cuisine: {cuisine}"
+                )
+
+                # Build alternatives
+                alternatives = []
+                for pred in predictions[1:top_k]:
+                    alt_class = pred["food_key"]
+                    alt_conf = pred["combined_score"]
+                    # Map to database
+                    if alt_class not in database_keys:
+                        alt_lower = alt_class.lower().replace(" ", "_")
+                        for db_key in database_keys:
+                            if (
+                                db_key.lower() == alt_lower
+                                or alt_lower in db_key.lower()
+                            ):
+                                alt_class = db_key
+                                break
+                    alternatives.append((alt_class, alt_conf))
+
+                # Check minimum confidence
+                if best_conf < self.MINIMUM_CONFIDENCE:
+                    return self._make_low_confidence_unknown(
+                        best_class, best_conf, all_predictions, contributing_models
+                    )
+
+                return EnsembleResult(
+                    primary_class=best_class,
+                    confidence=best_conf,
+                    alternatives=alternatives,
+                    contributing_models=contributing_models,
+                    all_predictions=all_predictions,
+                )
+
+        except Exception as e:
+            logger.error(f"Hierarchical classification failed: {e}")
+
+        # Fall back to regular classify
+        logger.warning("Hierarchical failed, using standard classify")
+        return self.classify(image, database_keys, top_k)
 
     def _extract_food_from_hint(
         self, query_hint: str, database_keys: List[str]

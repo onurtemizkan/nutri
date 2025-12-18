@@ -202,6 +202,11 @@ export const bulkCreateActivitiesSchema = z.object({
 });
 
 /**
+ * Non-negative number schema (for micronutrients that can be 0)
+ */
+const nonNegativeNumberSchema = z.number().min(0, 'Value must be 0 or greater');
+
+/**
  * Meal Creation Schema
  */
 export const createMealSchema = z.object({
@@ -213,6 +218,34 @@ export const createMealSchema = z.object({
   fat: positiveNumberSchema,
   fiber: positiveNumberSchema.optional(),
   sugar: positiveNumberSchema.optional(),
+
+  // Fat breakdown (optional)
+  saturatedFat: nonNegativeNumberSchema.optional(),
+  transFat: nonNegativeNumberSchema.optional(),
+  cholesterol: nonNegativeNumberSchema.optional(),
+
+  // Minerals (optional) - all in mg
+  sodium: nonNegativeNumberSchema.optional(),
+  potassium: nonNegativeNumberSchema.optional(),
+  calcium: nonNegativeNumberSchema.optional(),
+  iron: nonNegativeNumberSchema.optional(),
+  magnesium: nonNegativeNumberSchema.optional(),
+  zinc: nonNegativeNumberSchema.optional(),
+  phosphorus: nonNegativeNumberSchema.optional(),
+
+  // Vitamins (optional) - various units
+  vitaminA: nonNegativeNumberSchema.optional(),    // mcg RAE
+  vitaminC: nonNegativeNumberSchema.optional(),    // mg
+  vitaminD: nonNegativeNumberSchema.optional(),    // mcg
+  vitaminE: nonNegativeNumberSchema.optional(),    // mg
+  vitaminK: nonNegativeNumberSchema.optional(),    // mcg
+  vitaminB6: nonNegativeNumberSchema.optional(),   // mg
+  vitaminB12: nonNegativeNumberSchema.optional(),  // mcg
+  folate: nonNegativeNumberSchema.optional(),      // mcg DFE
+  thiamin: nonNegativeNumberSchema.optional(),     // mg (B1)
+  riboflavin: nonNegativeNumberSchema.optional(),  // mg (B2)
+  niacin: nonNegativeNumberSchema.optional(),      // mg (B3)
+
   servingSize: z.string().optional(),
   notes: z.string().optional(),
   imageUrl: z.string().url().optional(),
@@ -328,6 +361,32 @@ export const createSupplementSchema = z.object({
   endDate: datetimeSchema.optional().nullable(),
   notes: z.string().max(500).optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color').optional(),
+
+  // Micronutrient content (estimated or from barcode)
+  // Vitamins (optional) - values with reasonable max limits
+  vitaminA: nonNegativeNumberSchema.max(50000).optional(), // mcg RAE
+  vitaminC: nonNegativeNumberSchema.max(10000).optional(), // mg
+  vitaminD: nonNegativeNumberSchema.max(500).optional(), // mcg
+  vitaminE: nonNegativeNumberSchema.max(1000).optional(), // mg
+  vitaminK: nonNegativeNumberSchema.max(5000).optional(), // mcg
+  vitaminB6: nonNegativeNumberSchema.max(500).optional(), // mg
+  vitaminB12: nonNegativeNumberSchema.max(50000).optional(), // mcg
+  folate: nonNegativeNumberSchema.max(10000).optional(), // mcg DFE
+  thiamin: nonNegativeNumberSchema.max(500).optional(), // mg (B1)
+  riboflavin: nonNegativeNumberSchema.max(500).optional(), // mg (B2)
+  niacin: nonNegativeNumberSchema.max(2000).optional(), // mg (B3)
+
+  // Minerals (optional)
+  calcium: nonNegativeNumberSchema.max(5000).optional(), // mg
+  iron: nonNegativeNumberSchema.max(200).optional(), // mg
+  magnesium: nonNegativeNumberSchema.max(2000).optional(), // mg
+  zinc: nonNegativeNumberSchema.max(200).optional(), // mg
+  potassium: nonNegativeNumberSchema.max(5000).optional(), // mg
+  sodium: nonNegativeNumberSchema.max(2000).optional(), // mg
+  phosphorus: nonNegativeNumberSchema.max(3000).optional(), // mg
+
+  // Special nutrients (optional)
+  omega3: nonNegativeNumberSchema.max(10000).optional(), // mg
 });
 
 /**

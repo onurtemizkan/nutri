@@ -1,0 +1,163 @@
+# =============================================================================
+# Nutri Database Migration Workflow
+# Safe database migration with dry-run mode and rollback capabilities
+# =============================================================================
+
+name: Database Migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (show changes without applying)'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+      target:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - 'production'
+          - 'staging'
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  migrate:
+    name: Run Migrations
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.target }}  # Requires approval for production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Migration info
+        run: |
+          echo "## Database Migration" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ github.event.inputs.target }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dry Run | ${{ github.event.inputs.dry_run }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered By | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Timestamp | $(date -u +%Y-%m-%dT%H:%M:%SZ) |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: cd server && npm ci
+
+      - name: Generate Prisma client
+        run: cd server && npx prisma generate
+
+      - name: Show current migration status
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "📊 Current Migration Status:"
+          echo "---"
+          cd server && npx prisma migrate status || true
+          echo "---"
+
+      - name: Show pending migrations (Dry Run)
+        if: github.event.inputs.dry_run == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "🔍 DRY RUN MODE - Showing changes without applying"
+          echo ""
+          echo "📋 Pending schema changes:"
+          echo "---"
+          cd server
+          npx prisma migrate diff \
+            --from-migrations ./prisma/migrations \
+            --to-schema-datamodel ./prisma/schema.prisma \
+            --exit-code || {
+              exit_code=$?
+              if [ $exit_code -eq 2 ]; then
+                echo "✅ No pending migrations - schema is up to date"
+              else
+                echo "⚠️ There are pending migrations (see above)"
+              fi
+            }
+          echo "---"
+          echo ""
+          echo "### Dry Run Results" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Dry run completed. Review changes above." >> $GITHUB_STEP_SUMMARY
+          echo "To apply migrations, re-run with dry_run=false" >> $GITHUB_STEP_SUMMARY
+
+      - name: Run migrations
+        if: github.event.inputs.dry_run == 'false'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "🚀 APPLYING MIGRATIONS..."
+          echo ""
+          cd server
+          npx prisma migrate deploy
+          echo ""
+          echo "✅ Migration complete!"
+          echo ""
+          echo "📊 Updated Migration Status:"
+          npx prisma migrate status
+          echo ""
+          echo "### Migration Results" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Migrations applied successfully!" >> $GITHUB_STEP_SUMMARY
+
+      - name: Send Success Notification
+        if: success() && github.event.inputs.dry_run == 'false'
+        run: |
+          if [ -z "${{ secrets.DISCORD_WEBHOOK_URL }}" ]; then
+            echo "Discord webhook not configured, skipping notification"
+            exit 0
+          fi
+
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "Database Migration Completed",
+                "description": "Nutri database migrations applied successfully",
+                "color": 5763719,
+                "fields": [
+                  {"name": "Environment", "value": "${{ github.event.inputs.target }}", "inline": true},
+                  {"name": "Triggered By", "value": "${{ github.actor }}", "inline": true}
+                ],
+                "timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"
+              }]
+            }' || true
+
+      - name: Send Failure Notification
+        if: failure()
+        run: |
+          if [ -z "${{ secrets.DISCORD_WEBHOOK_URL }}" ]; then
+            echo "Discord webhook not configured, skipping notification"
+            exit 0
+          fi
+
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "Database Migration Failed",
+                "description": "Nutri database migration failed! Check GitHub Actions logs.",
+                "color": 15548997,
+                "fields": [
+                  {"name": "Environment", "value": "${{ github.event.inputs.target }}", "inline": true},
+                  {"name": "Workflow Run", "value": "[View Logs]('"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"')", "inline": true}
+                ],
+                "timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"
+              }]
+            }' || true

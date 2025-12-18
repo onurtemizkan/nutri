@@ -12,6 +12,7 @@ import { Meal } from '@/lib/types';
 import { colors, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import { formatMealTime } from '@/lib/utils/formatters';
 import { showAlert } from '@/lib/utils/alert';
+import { MicronutrientDisplay } from './MicronutrientDisplay';
 
 interface SwipeableMealCardProps {
   meal: Meal;
@@ -126,6 +127,7 @@ export function SwipeableMealCard({
           <Text style={styles.mealMacros}>
             P: {Math.round(meal.protein)}g • C: {Math.round(meal.carbs)}g • F: {Math.round(meal.fat)}g
           </Text>
+          <MicronutrientDisplay meal={meal} compact />
         </View>
         <Text style={styles.mealCalories}>{Math.round(meal.calories)} cal</Text>
       </TouchableOpacity>

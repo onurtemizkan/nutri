@@ -23,9 +23,9 @@ import {
 } from './permissions';
 
 /**
- * Default sync period (30 days)
+ * Default sync period (1 year)
  */
-const DEFAULT_SYNC_DAYS = 30;
+const DEFAULT_SYNC_DAYS = 365;
 
 /**
  * Batch size for API uploads

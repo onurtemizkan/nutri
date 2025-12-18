@@ -3,7 +3,6 @@ Nutri ML Service - FastAPI Application
 Main entry point for the ML service
 """
 
-import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,12 +12,12 @@ from app.config import settings
 from app.database import init_db, close_db
 from app.redis_client import redis_client
 
-# Configure logging
-logging.basicConfig(
-    level=settings.log_level,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-logger = logging.getLogger(__name__)
+# Configure structured logging
+from app.core.logging import configure_logging, get_logger
+from app.middleware.logging import LoggingMiddleware
+
+configure_logging(environment=settings.environment, log_level=settings.log_level)
+logger = get_logger(__name__)
 
 
 @asynccontextmanager
@@ -28,40 +27,42 @@ async def lifespan(app: FastAPI):
     Runs on startup and shutdown.
     """
     # Startup
-    logger.info("🚀 Starting Nutri ML Service...")
-    logger.info(f"📝 Environment: {settings.environment}")
-    logger.info(f"🔧 Version: {settings.app_version}")
+    logger.info(
+        "ml_service_starting",
+        environment=settings.environment,
+        version=settings.app_version,
+    )
 
     # Initialize database
     try:
         await init_db()
-        logger.info("✅ Database initialized")
+        logger.info("database_initialized")
     except Exception as e:
-        logger.error(f"❌ Database initialization failed: {str(e)}")
+        logger.error("database_initialization_failed", error=str(e))
 
     # Initialize Redis
     try:
         await redis_client.connect()
-        logger.info("✅ Redis connected")
+        logger.info("redis_connected")
     except Exception as e:
-        logger.error(f"❌ Redis connection failed: {str(e)}")
+        logger.error("redis_connection_failed", error=str(e))
 
-    logger.info("🎉 ML Service ready!")
+    logger.info("ml_service_ready")
 
     yield
 
     # Shutdown
-    logger.info("👋 Shutting down Nutri ML Service...")
+    logger.info("ml_service_shutting_down")
 
     # Close database connections
     await close_db()
-    logger.info("✅ Database closed")
+    logger.info("database_closed")
 
     # Close Redis connection
     await redis_client.close()
-    logger.info("✅ Redis closed")
+    logger.info("redis_closed")
 
-    logger.info("🏁 Shutdown complete")
+    logger.info("ml_service_shutdown_complete")
 
 
 # Create FastAPI app
@@ -83,10 +84,18 @@ app.add_middleware(
     allow_headers=settings.cors_allow_headers,
 )
 
+# Request Logging Middleware
+app.add_middleware(LoggingMiddleware)
+
 
 # ============================================================================
 # HEALTH CHECK ENDPOINTS
 # ============================================================================
+
+import time
+from datetime import datetime, timezone
+from sqlalchemy import text
+from app.database import AsyncSessionLocal
 
 
 @app.get("/", tags=["Health"])
@@ -101,35 +110,79 @@ async def root():
     }
 
 
+@app.get("/health/live", tags=["Health"])
+async def liveness_check():
+    """
+    Liveness probe - just checks if server is running.
+    For container orchestrators to verify the process is alive.
+    """
+    return {"status": "ok"}
+
+
 @app.get("/health", tags=["Health"])
 async def health_check():
     """
-    Health check endpoint.
-    Returns service status and dependency health.
+    Comprehensive health check endpoint.
+    Returns service status and dependency health with latency measurements.
     """
-    # Check Redis connection
-    redis_healthy = False
+    checks = {}
+    overall_status = "healthy"
+
+    # Database check with latency measurement
+    db_start = time.time()
     try:
-        redis_healthy = await redis_client.redis.ping() if redis_client.redis else False
-    except Exception:
-        pass
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+        checks["database"] = {
+            "status": "healthy",
+            "latency_ms": int((time.time() - db_start) * 1000),
+        }
+    except Exception as e:
+        checks["database"] = {
+            "status": "unhealthy",
+            "latency_ms": int((time.time() - db_start) * 1000),
+            "error": str(e),
+        }
+        overall_status = "unhealthy"
 
-    # Check database (simplified check)
-    # In production, you'd want to do an actual query
-    db_healthy = True  # Assume healthy for now
+    # Redis check with latency measurement
+    redis_start = time.time()
+    try:
+        if redis_client.redis:
+            await redis_client.redis.ping()
+            checks["redis"] = {
+                "status": "healthy",
+                "latency_ms": int((time.time() - redis_start) * 1000),
+            }
+        else:
+            checks["redis"] = {
+                "status": "unavailable",
+                "latency_ms": int((time.time() - redis_start) * 1000),
+                "error": "Redis client not connected",
+            }
+            if overall_status == "healthy":
+                overall_status = "degraded"
+    except Exception as e:
+        checks["redis"] = {
+            "status": "unhealthy",
+            "latency_ms": int((time.time() - redis_start) * 1000),
+            "error": str(e),
+        }
+        if overall_status == "healthy":
+            overall_status = "degraded"
 
-    overall_status = "healthy" if (redis_healthy and db_healthy) else "degraded"
+    # Determine HTTP status code
+    status_code = 200 if overall_status in ["healthy", "degraded"] else 503
 
-    return {
-        "status": overall_status,
-        "service": settings.app_name,
-        "version": settings.app_version,
-        "environment": settings.environment,
-        "dependencies": {
-            "database": "healthy" if db_healthy else "unhealthy",
-            "redis": "healthy" if redis_healthy else "unhealthy",
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "status": overall_status,
+            "version": settings.app_version,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "checks": checks,
         },
-    }
+    )
 
 
 @app.get("/ready", tags=["Health"])
@@ -138,18 +191,28 @@ async def readiness_check():
     Readiness check endpoint for Kubernetes/load balancers.
     Returns 200 if service is ready to accept requests.
     """
+    # Check database connectivity
+    try:
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+        db_ready = True
+    except Exception:
+        db_ready = False
+
+    # Check Redis connectivity
     redis_ready = False
     try:
         redis_ready = await redis_client.redis.ping() if redis_client.redis else False
     except Exception:
         pass
 
-    if redis_ready:
-        return {"status": "ready"}
+    # Both database and redis should be ready for full readiness
+    if db_ready:
+        return {"status": "ready", "database": "ok", "redis": "ok" if redis_ready else "degraded"}
     else:
         return JSONResponse(
             status_code=503,
-            content={"status": "not ready", "reason": "dependencies not available"},
+            content={"status": "not ready", "reason": "database not available"},
         )
 
 
@@ -162,7 +225,7 @@ from app.api import api_router  # noqa: E402
 # Register all API routes
 app.include_router(api_router)
 
-logger.info("✅ API routes registered: /api/features, /api/correlations")
+logger.info("api_routes_registered", routes=["/api/features", "/api/correlations"])
 
 
 # ============================================================================

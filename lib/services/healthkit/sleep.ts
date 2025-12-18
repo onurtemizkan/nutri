@@ -1,6 +1,7 @@
 /**
  * Sleep Metrics Sync
  * Syncs sleep analysis data from HealthKit and calculates sleep metrics
+ * Using @kingstinct/react-native-healthkit
  */
 
 import { Platform } from 'react-native';
@@ -10,18 +11,8 @@ import {
   HealthKitSyncOptions,
   METRIC_UNITS,
   SleepCategory,
+  SleepAnalysisValue,
 } from '@/lib/types/healthkit';
-import { getHealthKit } from './permissions';
-
-/**
- * Query options for react-native-health
- */
-interface HealthKitQueryOptions {
-  startDate: string;
-  endDate: string;
-  ascending?: boolean;
-  limit?: number;
-}
 
 /**
  * Sleep session aggregated from multiple sleep samples
@@ -40,6 +31,25 @@ interface SleepSession {
 }
 
 /**
+ * Raw category sample from HealthKit
+ */
+interface RawCategorySample {
+  value: number;
+  startDate: Date;
+  endDate: Date;
+  uuid?: string;
+  sourceRevision?: {
+    source: {
+      name: string;
+      bundleIdentifier: string;
+    };
+  };
+  device?: {
+    name?: string;
+  };
+}
+
+/**
  * Fetch raw sleep samples from HealthKit
  */
 export async function fetchSleepSamples(
@@ -49,74 +59,61 @@ export async function fetchSleepSamples(
     return [];
   }
 
-  const healthKit = await getHealthKit();
-  if (!healthKit) {
+  try {
+    const { queryCategorySamples } = await import('@kingstinct/react-native-healthkit');
+
+    const samples = await queryCategorySamples('HKCategoryTypeIdentifierSleepAnalysis', {
+      limit: -1,
+      filter: {
+        date: {
+          startDate: options.startDate,
+          endDate: options.endDate,
+        },
+      },
+    }) as RawCategorySample[];
+
+    // Map the results to our SleepSample type
+    return samples.map((sample) => ({
+      value: mapSleepValue(sample.value),
+      startDate: sample.startDate,
+      endDate: sample.endDate,
+      uuid: sample.uuid,
+      sourceName: sample.sourceRevision?.source?.name || sample.device?.name,
+    }));
+  } catch (error) {
+    console.warn('Error fetching sleep samples:', error);
     return [];
   }
-
-  const queryOptions: HealthKitQueryOptions = {
-    startDate: options.startDate.toISOString(),
-    endDate: options.endDate.toISOString(),
-    ascending: true,
-  };
-
-  return new Promise((resolve) => {
-    healthKit.getSleepSamples(queryOptions, (error: string | null, results: unknown) => {
-      if (error) {
-        console.warn('Error fetching sleep samples:', error);
-        resolve([]);
-        return;
-      }
-
-      // Type the raw results from HealthKit
-      type RawSleepSample = {
-        value: string;
-        startDate: string;
-        endDate: string;
-        sourceName?: string;
-        sourceId?: string;
-        id?: string;
-      };
-
-      // Map the results to our SleepSample type
-      const rawResults = (results || []) as RawSleepSample[];
-      const samples: SleepSample[] = rawResults.map((sample) => ({
-        value: mapSleepValue(sample.value),
-        startDate: sample.startDate,
-        endDate: sample.endDate,
-        sourceName: sample.sourceName,
-        sourceId: sample.sourceId,
-        id: sample.id,
-      }));
-
-      resolve(samples);
-    });
-  });
 }
 
 /**
- * Map HealthKit sleep value string to our SleepCategory
+ * Map HealthKit sleep category value to our SleepCategory
  */
-function mapSleepValue(value: string): SleepCategory {
-  // HealthKit returns values like 'INBED', 'ASLEEP', 'AWAKE', 'CORE', 'DEEP', 'REM'
-  const upperValue = (value || '').toUpperCase();
-
-  if (upperValue.includes('DEEP')) return 'DEEP';
-  if (upperValue.includes('REM')) return 'REM';
-  if (upperValue.includes('CORE')) return 'CORE';
-  if (upperValue.includes('AWAKE')) return 'AWAKE';
-  if (upperValue.includes('INBED')) return 'INBED';
-  if (upperValue.includes('ASLEEP')) return 'ASLEEP';
-
-  return 'ASLEEP'; // Default fallback
+function mapSleepValue(value: number): SleepCategory {
+  switch (value) {
+    case SleepAnalysisValue.inBed:
+      return 'INBED';
+    case SleepAnalysisValue.asleepUnspecified:
+      return 'ASLEEPUNSPECIFIED';
+    case SleepAnalysisValue.awake:
+      return 'AWAKE';
+    case SleepAnalysisValue.asleepCore:
+      return 'ASLEEPCORE';
+    case SleepAnalysisValue.asleepDeep:
+      return 'ASLEEPDEEP';
+    case SleepAnalysisValue.asleepREM:
+      return 'ASLEEPREM';
+    default:
+      return 'ASLEEPUNSPECIFIED';
+  }
 }
 
 /**
  * Calculate duration in hours between two dates
  */
-function calculateDurationHours(startDate: string, endDate: string): number {
-  const start = new Date(startDate).getTime();
-  const end = new Date(endDate).getTime();
+function calculateDurationHours(startDate: Date, endDate: Date): number {
+  const start = startDate.getTime();
+  const end = endDate.getTime();
   return (end - start) / (1000 * 60 * 60); // Convert ms to hours
 }
 
@@ -129,11 +126,16 @@ function groupIntoSessions(samples: SleepSample[]): SleepSession[] {
     return [];
   }
 
+  // Sort samples by start date
+  const sortedSamples = [...samples].sort(
+    (a, b) => a.startDate.getTime() - b.startDate.getTime()
+  );
+
   const sessions: SleepSession[] = [];
   let currentSession: SleepSample[] = [];
   const SESSION_GAP_HOURS = 4;
 
-  for (const sample of samples) {
+  for (const sample of sortedSamples) {
     if (currentSession.length === 0) {
       currentSession.push(sample);
       continue;
@@ -174,13 +176,13 @@ function aggregateSession(samples: SleepSample[]): SleepSession {
     const duration = calculateDurationHours(sample.startDate, sample.endDate);
 
     switch (sample.value) {
-      case 'DEEP':
+      case 'ASLEEPDEEP':
         deepSleepDuration += duration;
         break;
-      case 'REM':
+      case 'ASLEEPREM':
         remSleepDuration += duration;
         break;
-      case 'CORE':
+      case 'ASLEEPCORE':
         coreSleepDuration += duration;
         break;
       case 'AWAKE':
@@ -189,7 +191,7 @@ function aggregateSession(samples: SleepSample[]): SleepSession {
       case 'INBED':
         inBedDuration += duration;
         break;
-      case 'ASLEEP':
+      case 'ASLEEPUNSPECIFIED':
         asleepDuration += duration;
         break;
     }
@@ -208,8 +210,8 @@ function aggregateSession(samples: SleepSample[]): SleepSession {
   const sleepEfficiency = totalInBed > 0 ? (totalSleep / totalInBed) * 100 : 0;
 
   return {
-    startDate: new Date(firstSample.startDate),
-    endDate: new Date(lastSample.endDate),
+    startDate: firstSample.startDate,
+    endDate: lastSample.endDate,
     totalDuration: totalSleep,
     deepSleepDuration,
     remSleepDuration,

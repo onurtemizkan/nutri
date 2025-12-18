@@ -1,0 +1,277 @@
+# =============================================================================
+# Nutri Deploy Workflow
+# Triggers Coolify webhooks after successful build, verifies health, and notifies
+# =============================================================================
+
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["Build and Push"]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy (default: latest)'
+        required: false
+        default: 'latest'
+      skip_ml_service:
+        description: 'Skip ML service deployment'
+        required: false
+        default: 'false'
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deployment info
+        run: |
+          echo "## 🚀 Starting Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Trigger | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Image Tag | ${{ github.event.inputs.image_tag || 'latest' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      # -------------------------------------------------------------------------
+      # Database Migration (runs before application deployment)
+      # -------------------------------------------------------------------------
+      - name: Setup Node.js for migrations
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install server dependencies
+        run: cd server && npm ci
+
+      - name: Generate Prisma client
+        run: cd server && npx prisma generate
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "🗄️ Running database migrations..."
+          cd server
+          npx prisma migrate deploy
+          echo "✅ Database migrations complete"
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Database" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Migrations applied successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      # -------------------------------------------------------------------------
+      # Application Deployment
+      # -------------------------------------------------------------------------
+      - name: Trigger Coolify Backend Deployment
+        id: deploy-backend
+        run: |
+          echo "Triggering backend deployment..."
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_WEBHOOK_SECRET }}" \
+            -H "Content-Type: application/json" \
+            "${{ secrets.COOLIFY_BACKEND_WEBHOOK_URL }}")
+
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "HTTP Status: $http_code"
+          echo "Response: $body"
+
+          if [ "$http_code" != "200" ] && [ "$http_code" != "201" ] && [ "$http_code" != "202" ]; then
+            echo "❌ Backend deployment trigger failed!"
+            echo "backend_status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          echo "✅ Backend deployment triggered successfully"
+          echo "backend_status=success" >> $GITHUB_OUTPUT
+
+      - name: Trigger Coolify ML Service Deployment
+        id: deploy-ml
+        if: ${{ github.event.inputs.skip_ml_service != 'true' }}
+        run: |
+          echo "Triggering ML service deployment..."
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_WEBHOOK_SECRET }}" \
+            -H "Content-Type: application/json" \
+            "${{ secrets.COOLIFY_ML_WEBHOOK_URL }}")
+
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "HTTP Status: $http_code"
+          echo "Response: $body"
+
+          if [ "$http_code" != "200" ] && [ "$http_code" != "201" ] && [ "$http_code" != "202" ]; then
+            echo "❌ ML service deployment trigger failed!"
+            echo "ml_status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          echo "✅ ML service deployment triggered successfully"
+          echo "ml_status=success" >> $GITHUB_OUTPUT
+
+      - name: Wait for containers to start
+        run: |
+          echo "⏳ Waiting 60 seconds for containers to start..."
+          sleep 60
+
+      - name: Verify Backend Health
+        id: health-backend
+        run: |
+          echo "🔍 Checking backend health..."
+
+          for i in {1..10}; do
+            echo "Health check attempt $i/10..."
+
+            response=$(curl -s -o /dev/null -w "%{http_code}" \
+              --connect-timeout 5 \
+              --max-time 10 \
+              "${{ secrets.PRODUCTION_API_URL }}/health" 2>/dev/null || echo "000")
+
+            echo "HTTP Status: $response"
+
+            if [ "$response" = "200" ]; then
+              echo "✅ Backend is healthy!"
+              echo "health_status=healthy" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+
+            if [ $i -lt 10 ]; then
+              echo "⏳ Waiting 10 seconds before next attempt..."
+              sleep 10
+            fi
+          done
+
+          echo "❌ Backend health check failed after 10 attempts!"
+          echo "health_status=unhealthy" >> $GITHUB_OUTPUT
+          exit 1
+
+      - name: Verify ML Service Health (internal check via backend)
+        id: health-ml
+        if: ${{ github.event.inputs.skip_ml_service != 'true' }}
+        continue-on-error: true
+        run: |
+          echo "🔍 Checking ML service health via backend..."
+
+          # ML service health is checked via the backend's /health endpoint
+          # which includes an ml_service check when ML_SERVICE_URL is configured
+          response=$(curl -s --connect-timeout 5 --max-time 10 \
+            "${{ secrets.PRODUCTION_API_URL }}/health" 2>/dev/null || echo "{}")
+
+          echo "Backend health response: $response"
+
+          # Check if ML service is reported in the health response
+          if echo "$response" | grep -q "ml_service"; then
+            ml_status=$(echo "$response" | grep -o '"ml_service"[^}]*' | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
+            if [ "$ml_status" = "healthy" ]; then
+              echo "✅ ML service is healthy!"
+            else
+              echo "⚠️ ML service status: $ml_status (may still be starting)"
+            fi
+          else
+            echo "⚠️ ML service health not reported (service may not be configured)"
+          fi
+
+      - name: Generate deployment summary
+        if: always()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Deployment Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.health-backend.outputs.health_status }}" = "healthy" ]; then
+            echo "| Service | Status |" >> $GITHUB_STEP_SUMMARY
+            echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Backend API | ✅ Healthy |" >> $GITHUB_STEP_SUMMARY
+            echo "| ML Service | ${{ steps.health-ml.outcome == 'success' && '✅ Healthy' || '⚠️ Unknown' }} |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🎉 **Deployment successful!**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Deployment failed** - Backend health check unsuccessful" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Send Success Notification
+        if: success()
+        run: |
+          # Skip if no Discord webhook configured
+          if [ -z "${{ secrets.DISCORD_WEBHOOK_URL }}" ]; then
+            echo "Discord webhook not configured, skipping notification"
+            exit 0
+          fi
+
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "✅ Deployment Successful",
+                "description": "Nutri has been deployed to production",
+                "color": 5763719,
+                "fields": [
+                  {"name": "Commit", "value": "`'"${{ github.sha }}"'`", "inline": true},
+                  {"name": "Branch", "value": "master", "inline": true},
+                  {"name": "Triggered By", "value": "${{ github.actor }}", "inline": true}
+                ],
+                "timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"
+              }]
+            }' || true
+
+      - name: Send Failure Notification
+        if: failure()
+        run: |
+          # Skip if no Discord webhook configured
+          if [ -z "${{ secrets.DISCORD_WEBHOOK_URL }}" ]; then
+            echo "Discord webhook not configured, skipping notification"
+            exit 0
+          fi
+
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "❌ Deployment Failed",
+                "description": "Nutri deployment to production failed",
+                "color": 15548997,
+                "fields": [
+                  {"name": "Commit", "value": "`'"${{ github.sha }}"'`", "inline": true},
+                  {"name": "Workflow Run", "value": "[View Logs]('"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"')", "inline": true}
+                ],
+                "timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"
+              }]
+            }' || true
+
+  # ---------------------------------------------------------------------------
+  # Rollback Job (manual trigger only)
+  # ---------------------------------------------------------------------------
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_tag != 'latest' }}
+    needs: deploy
+    # Only runs if deploy job fails when using a specific image tag
+    if: ${{ failure() && github.event_name == 'workflow_dispatch' }}
+
+    steps:
+      - name: Rollback notification
+        run: |
+          echo "## ⚠️ Rollback Required" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Deployment of tag \`${{ github.event.inputs.image_tag }}\` failed." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "To rollback manually:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "# Via Coolify UI or SSH to server:" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ghcr.io/${{ github.repository }}/backend:<previous-tag>" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ghcr.io/${{ github.repository }}/ml-service:<previous-tag>" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

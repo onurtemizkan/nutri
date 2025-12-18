@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -71,6 +71,18 @@ export default function HealthScreen() {
   });
   const cardWidth = (width - (contentPadding * 2) - (gridGap * (numColumns - 1))) / numColumns;
 
+  // Convert time range to days for API
+  const getTimeRangeDays = (range: TimeRange): number => {
+    switch (range) {
+      case 'today':
+        return 1;
+      case 'week':
+        return 7;
+      case 'month':
+        return 30;
+    }
+  };
+
   const loadHealthData = useCallback(async () => {
     if (!user) {
       setIsLoading(false);
@@ -79,8 +91,9 @@ export default function HealthScreen() {
 
     try {
       setError(null);
-      // Fetch data for all metric types to show any metrics with data
-      const data = await healthMetricsApi.getDashboardData(HEALTH_METRIC_TYPES);
+      // Fetch data for all metric types with the selected time range
+      const days = getTimeRangeDays(timeRange);
+      const data = await healthMetricsApi.getDashboardData(HEALTH_METRIC_TYPES, days);
       setMetrics(data);
     } catch (err) {
       console.error('Failed to load health data:', err);
@@ -88,7 +101,7 @@ export default function HealthScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, timeRange]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -103,6 +116,12 @@ export default function HealthScreen() {
       loadHealthData();
     }, [loadHealthData])
   );
+
+  // Reload data when time range changes
+  useEffect(() => {
+    setIsLoading(true);
+    loadHealthData();
+  }, [timeRange]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const timeRanges: TimeRange[] = ['today', 'week', 'month'];
 
@@ -148,9 +167,9 @@ export default function HealthScreen() {
       return Math.round(value).toString();
     }
 
-    // For heart rate and similar, show as integers
-    if (config.unit === 'bpm' || config.unit === 'ms') {
-      return Math.round(value).toString();
+    // For heart rate, HRV, steps, and calories - show as integers
+    if (config.unit === 'bpm' || config.unit === 'ms' || config.unit === 'steps' || config.unit === 'kcal') {
+      return Math.round(value).toLocaleString();
     }
 
     return value.toFixed(1);

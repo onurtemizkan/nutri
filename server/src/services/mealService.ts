@@ -19,6 +19,33 @@ export class MealService {
         servingSize: data.servingSize,
         notes: data.notes,
         consumedAt: data.consumedAt || new Date(),
+
+        // Fat breakdown
+        saturatedFat: data.saturatedFat,
+        transFat: data.transFat,
+        cholesterol: data.cholesterol,
+
+        // Minerals
+        sodium: data.sodium,
+        potassium: data.potassium,
+        calcium: data.calcium,
+        iron: data.iron,
+        magnesium: data.magnesium,
+        zinc: data.zinc,
+        phosphorus: data.phosphorus,
+
+        // Vitamins
+        vitaminA: data.vitaminA,
+        vitaminC: data.vitaminC,
+        vitaminD: data.vitaminD,
+        vitaminE: data.vitaminE,
+        vitaminK: data.vitaminK,
+        vitaminB6: data.vitaminB6,
+        vitaminB12: data.vitaminB12,
+        folate: data.folate,
+        thiamin: data.thiamin,
+        riboflavin: data.riboflavin,
+        niacin: data.niacin,
       },
     });
 

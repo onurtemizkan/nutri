@@ -1,30 +1,34 @@
 /**
  * HealthKit Integration Types
  * Maps HealthKit data types to our backend HealthMetric schema
+ * Using @kingstinct/react-native-healthkit
  */
 
 /**
- * HealthKit metric type identifiers
- * These match the react-native-health API
+ * HealthKit quantity type identifiers
+ * These match the @kingstinct/react-native-healthkit API
  */
-export type HealthKitIdentifier =
+export type HealthKitQuantityTypeIdentifier =
   // Cardiovascular
-  | 'HeartRate'
-  | 'RestingHeartRate'
-  | 'HeartRateVariabilitySDNN'
-  | 'WalkingHeartRateAverage'
+  | 'HKQuantityTypeIdentifierHeartRate'
+  | 'HKQuantityTypeIdentifierRestingHeartRate'
+  | 'HKQuantityTypeIdentifierHeartRateVariabilitySDNN'
+  | 'HKQuantityTypeIdentifierWalkingHeartRateAverage'
   // Respiratory
-  | 'RespiratoryRate'
-  | 'OxygenSaturation'
-  | 'Vo2Max'
-  // Sleep
-  | 'SleepAnalysis'
+  | 'HKQuantityTypeIdentifierRespiratoryRate'
+  | 'HKQuantityTypeIdentifierOxygenSaturation'
+  | 'HKQuantityTypeIdentifierVO2Max'
   // Activity
-  | 'StepCount'
-  | 'ActiveEnergyBurned'
-  | 'BasalEnergyBurned'
-  | 'DistanceWalkingRunning'
-  | 'FlightsClimbed';
+  | 'HKQuantityTypeIdentifierStepCount'
+  | 'HKQuantityTypeIdentifierActiveEnergyBurned'
+  | 'HKQuantityTypeIdentifierBasalEnergyBurned'
+  | 'HKQuantityTypeIdentifierDistanceWalkingRunning'
+  | 'HKQuantityTypeIdentifierFlightsClimbed';
+
+/**
+ * HealthKit category type identifiers
+ */
+export type HealthKitCategoryTypeIdentifier = 'HKCategoryTypeIdentifierSleepAnalysis';
 
 /**
  * Our backend HealthMetricType enum values
@@ -71,13 +75,13 @@ export type HealthMetricType =
  * Mapping from HealthKit identifiers to our backend metric types
  */
 export const HEALTHKIT_TO_METRIC_TYPE: Record<string, HealthMetricType> = {
-  RestingHeartRate: 'RESTING_HEART_RATE',
-  HeartRateVariabilitySDNN: 'HEART_RATE_VARIABILITY_SDNN',
-  RespiratoryRate: 'RESPIRATORY_RATE',
-  OxygenSaturation: 'OXYGEN_SATURATION',
-  Vo2Max: 'VO2_MAX',
-  StepCount: 'STEPS',
-  ActiveEnergyBurned: 'ACTIVE_CALORIES',
+  HKQuantityTypeIdentifierRestingHeartRate: 'RESTING_HEART_RATE',
+  HKQuantityTypeIdentifierHeartRateVariabilitySDNN: 'HEART_RATE_VARIABILITY_SDNN',
+  HKQuantityTypeIdentifierRespiratoryRate: 'RESPIRATORY_RATE',
+  HKQuantityTypeIdentifierOxygenSaturation: 'OXYGEN_SATURATION',
+  HKQuantityTypeIdentifierVO2Max: 'VO2_MAX',
+  HKQuantityTypeIdentifierStepCount: 'STEPS',
+  HKQuantityTypeIdentifierActiveEnergyBurned: 'ACTIVE_CALORIES',
 } as const;
 
 /**
@@ -115,15 +119,26 @@ export const METRIC_UNITS: Record<HealthMetricType, string> = {
 };
 
 /**
- * HealthKit sample result from react-native-health
+ * HealthKit sample result from @kingstinct/react-native-healthkit
  */
 export interface HealthKitSample {
-  value: number;
-  startDate: string;
-  endDate: string;
-  sourceName?: string;
-  sourceId?: string;
-  id?: string;
+  quantity: number;
+  startDate: Date;
+  endDate: Date;
+  uuid?: string;
+  device?: {
+    name?: string;
+    manufacturer?: string;
+    model?: string;
+    hardwareVersion?: string;
+    softwareVersion?: string;
+  };
+  sourceRevision?: {
+    source?: {
+      name: string;
+      bundleIdentifier: string;
+    };
+  };
   metadata?: Record<string, unknown>;
 }
 
@@ -132,23 +147,35 @@ export interface HealthKitSample {
  */
 export interface SleepSample {
   value: SleepCategory;
-  startDate: string;
-  endDate: string;
+  startDate: Date;
+  endDate: Date;
+  uuid?: string;
   sourceName?: string;
-  sourceId?: string;
-  id?: string;
 }
 
 /**
  * Sleep category values from HealthKit
+ * Using numeric values from @kingstinct/react-native-healthkit
  */
 export type SleepCategory =
   | 'INBED'
-  | 'ASLEEP'
+  | 'ASLEEPUNSPECIFIED'
   | 'AWAKE'
-  | 'CORE' // Light sleep
-  | 'DEEP'
-  | 'REM';
+  | 'ASLEEPCORE' // Light sleep
+  | 'ASLEEPDEEP'
+  | 'ASLEEPREM';
+
+/**
+ * Sleep analysis value enum (matches HKCategoryValueSleepAnalysis)
+ */
+export const SleepAnalysisValue = {
+  inBed: 0,
+  asleepUnspecified: 1,
+  awake: 2,
+  asleepCore: 3,
+  asleepDeep: 4,
+  asleepREM: 5,
+} as const;
 
 /**
  * Processed health metric ready for API upload
@@ -237,25 +264,25 @@ export interface PermissionRequestResult {
 }
 
 /**
- * HealthKit read permission types for react-native-health
+ * HealthKit read permission types for @kingstinct/react-native-healthkit
  */
-export const HEALTHKIT_READ_PERMISSIONS = [
-  'HeartRate',
-  'RestingHeartRate',
-  'HeartRateVariabilitySDNN',
-  'RespiratoryRate',
-  'OxygenSaturation',
-  'Vo2Max',
-  'SleepAnalysis',
-  'StepCount',
-  'ActiveEnergyBurned',
-  'BasalEnergyBurned',
-  'DistanceWalkingRunning',
-  'FlightsClimbed',
-] as const;
+export const HEALTHKIT_READ_PERMISSIONS: string[] = [
+  'HKQuantityTypeIdentifierHeartRate',
+  'HKQuantityTypeIdentifierRestingHeartRate',
+  'HKQuantityTypeIdentifierHeartRateVariabilitySDNN',
+  'HKQuantityTypeIdentifierRespiratoryRate',
+  'HKQuantityTypeIdentifierOxygenSaturation',
+  'HKQuantityTypeIdentifierVO2Max',
+  'HKCategoryTypeIdentifierSleepAnalysis',
+  'HKQuantityTypeIdentifierStepCount',
+  'HKQuantityTypeIdentifierActiveEnergyBurned',
+  'HKQuantityTypeIdentifierBasalEnergyBurned',
+  'HKQuantityTypeIdentifierDistanceWalkingRunning',
+  'HKQuantityTypeIdentifierFlightsClimbed',
+];
 
 /**
- * HealthKit write permission types for react-native-health
+ * HealthKit write permission types
  */
 export const HEALTHKIT_WRITE_PERMISSIONS: string[] = [
   // We don't write to HealthKit for now

@@ -1,6 +1,7 @@
 /**
  * Respiratory Metrics Sync
  * Syncs respiratory rate, oxygen saturation, and VO2Max from HealthKit
+ * Using @kingstinct/react-native-healthkit
  */
 
 import { Platform } from 'react-native';
@@ -11,17 +12,6 @@ import {
   METRIC_UNITS,
   HealthMetricType,
 } from '@/lib/types/healthkit';
-import { getHealthKit } from './permissions';
-
-/**
- * Query options for react-native-health
- */
-interface HealthKitQueryOptions {
-  startDate: string;
-  endDate: string;
-  ascending?: boolean;
-  limit?: number;
-}
 
 /**
  * Fetch respiratory rate samples from HealthKit
@@ -33,31 +23,24 @@ export async function fetchRespiratoryRate(
     return [];
   }
 
-  const healthKit = await getHealthKit();
-  if (!healthKit) {
+  try {
+    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
+
+    const samples = await queryQuantitySamples('HKQuantityTypeIdentifierRespiratoryRate', {
+      limit: -1,
+      filter: {
+        date: {
+          startDate: options.startDate,
+          endDate: options.endDate,
+        },
+      },
+    });
+
+    return samples.map((sample) => transformToHealthMetric(sample, 'RESPIRATORY_RATE'));
+  } catch (error) {
+    console.warn('Error fetching respiratory rate:', error);
     return [];
   }
-
-  const queryOptions: HealthKitQueryOptions = {
-    startDate: options.startDate.toISOString(),
-    endDate: options.endDate.toISOString(),
-    ascending: false,
-  };
-
-  return new Promise((resolve) => {
-    healthKit.getRespiratoryRateSamples(queryOptions, (error, results) => {
-      if (error) {
-        console.warn('Error fetching respiratory rate:', error);
-        resolve([]);
-        return;
-      }
-
-      const processed = (results || []).map((sample: HealthKitSample) =>
-        transformToHealthMetric(sample, 'RESPIRATORY_RATE')
-      );
-      resolve(processed);
-    });
-  });
 }
 
 /**
@@ -70,33 +53,28 @@ export async function fetchOxygenSaturation(
     return [];
   }
 
-  const healthKit = await getHealthKit();
-  if (!healthKit) {
+  try {
+    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
+
+    const samples = await queryQuantitySamples('HKQuantityTypeIdentifierOxygenSaturation', {
+      limit: -1,
+      filter: {
+        date: {
+          startDate: options.startDate,
+          endDate: options.endDate,
+        },
+      },
+    });
+
+    // SpO2 is returned as a decimal (0.98 for 98%), we convert to percentage
+    return samples.map((sample) => {
+      const value = sample.quantity > 1 ? sample.quantity : sample.quantity * 100;
+      return transformToHealthMetric({ ...sample, quantity: value }, 'OXYGEN_SATURATION');
+    });
+  } catch (error) {
+    console.warn('Error fetching oxygen saturation:', error);
     return [];
   }
-
-  const queryOptions: HealthKitQueryOptions = {
-    startDate: options.startDate.toISOString(),
-    endDate: options.endDate.toISOString(),
-    ascending: false,
-  };
-
-  return new Promise((resolve) => {
-    healthKit.getOxygenSaturationSamples(queryOptions, (error, results) => {
-      if (error) {
-        console.warn('Error fetching oxygen saturation:', error);
-        resolve([]);
-        return;
-      }
-
-      // SpO2 is returned as a decimal (0.98 for 98%), we convert to percentage
-      const processed = (results || []).map((sample: HealthKitSample) => {
-        const value = sample.value > 1 ? sample.value : sample.value * 100;
-        return transformToHealthMetric({ ...sample, value }, 'OXYGEN_SATURATION');
-      });
-      resolve(processed);
-    });
-  });
 }
 
 /**
@@ -110,32 +88,24 @@ export async function fetchVo2Max(
     return [];
   }
 
-  const healthKit = await getHealthKit();
-  if (!healthKit) {
+  try {
+    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
+
+    const samples = await queryQuantitySamples('HKQuantityTypeIdentifierVO2Max', {
+      limit: 100, // VO2Max is updated infrequently
+      filter: {
+        date: {
+          startDate: options.startDate,
+          endDate: options.endDate,
+        },
+      },
+    });
+
+    return samples.map((sample) => transformToHealthMetric(sample, 'VO2_MAX'));
+  } catch (error) {
+    console.warn('Error fetching VO2Max:', error);
     return [];
   }
-
-  const queryOptions: HealthKitQueryOptions = {
-    startDate: options.startDate.toISOString(),
-    endDate: options.endDate.toISOString(),
-    ascending: false,
-    limit: 100, // VO2Max is updated infrequently
-  };
-
-  return new Promise((resolve) => {
-    healthKit.getVo2MaxSamples(queryOptions, (error, results) => {
-      if (error) {
-        console.warn('Error fetching VO2Max:', error);
-        resolve([]);
-        return;
-      }
-
-      const processed = (results || []).map((sample: HealthKitSample) =>
-        transformToHealthMetric(sample, 'VO2_MAX')
-      );
-      resolve(processed);
-    });
-  });
 }
 
 /**
@@ -145,18 +115,20 @@ function transformToHealthMetric(
   sample: HealthKitSample,
   metricType: 'RESPIRATORY_RATE' | 'OXYGEN_SATURATION' | 'VO2_MAX'
 ): ProcessedHealthMetric {
+  const sourceName = sample.sourceRevision?.source?.name || sample.device?.name;
+
   return {
     metricType,
-    value: sample.value,
+    value: sample.quantity,
     unit: METRIC_UNITS[metricType as HealthMetricType],
-    recordedAt: sample.startDate,
+    recordedAt: sample.startDate.toISOString(),
     source: 'apple_health',
-    sourceId: sample.id,
+    sourceId: sample.uuid,
     metadata: {
-      sourceName: sample.sourceName,
-      device: sample.sourceName || 'Apple Watch',
+      sourceName,
+      device: sourceName || 'Apple Watch',
       quality: 'high',
-      endDate: sample.endDate,
+      endDate: sample.endDate.toISOString(),
     },
   };
 }

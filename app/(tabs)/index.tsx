@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,18 +13,23 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { mealsApi } from '@/lib/api/meals';
-import { DailySummary, Meal } from '@/lib/types';
+import { supplementsApi } from '@/lib/api/supplements';
+import { DailySummary, Meal, TodaySupplementStatus } from '@/lib/types';
 import { useAuth } from '@/lib/context/AuthContext';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import { useResponsive } from '@/hooks/useResponsive';
 import { SwipeableMealCard } from '@/lib/components/SwipeableMealCard';
+import { SupplementTracker } from '@/lib/components/SupplementTracker';
+import { DailyMicronutrientSummary } from '@/lib/components/DailyMicronutrientSummary';
 import { showAlert } from '@/lib/utils/alert';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 
 export default function HomeScreen() {
   const [summary, setSummary] = useState<DailySummary | null>(null);
+  const [supplementStatus, setSupplementStatus] = useState<TodaySupplementStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [supplementKey, setSupplementKey] = useState(0);
   const { user } = useAuth();
   const router = useRouter();
   const { isTablet, deviceCategory, getResponsiveValue, scale } = useResponsive();
@@ -60,8 +65,13 @@ export default function HomeScreen() {
     }
 
     try {
-      const data = await mealsApi.getDailySummary();
-      setSummary(data);
+      // Load meals and supplements in parallel
+      const [mealsData, supplementsData] = await Promise.all([
+        mealsApi.getDailySummary(),
+        supplementsApi.getTodayStatus().catch(() => null), // Don't fail if supplements fail
+      ]);
+      setSummary(mealsData);
+      setSupplementStatus(supplementsData);
     } catch (error) {
       console.error('Failed to load summary:', error);
     } finally {
@@ -72,14 +82,18 @@ export default function HomeScreen() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadSummary();
+    // Refresh supplement tracker
+    setSupplementKey(k => k + 1);
     setRefreshing(false);
   }, [loadSummary]);
 
   // Use useFocusEffect to reload data when screen comes into focus
-  // This ensures data is refreshed after adding/editing a meal
+  // This ensures data is refreshed after adding/editing a meal or supplement
   useFocusEffect(
     useCallback(() => {
       loadSummary();
+      // Refresh supplement tracker by incrementing key
+      setSupplementKey(k => k + 1);
     }, [loadSummary])
   );
 
@@ -249,6 +263,12 @@ export default function HomeScreen() {
             </View>
           </View>
 
+          {/* Daily Micronutrient Summary (Food + Supplements) */}
+          <DailyMicronutrientSummary
+            meals={summary?.meals || []}
+            supplements={supplementStatus?.supplements}
+          />
+
           {/* Today's Meals */}
           <View style={styles.mealsSection} testID="home-meals-section">
             <Text style={styles.sectionTitle}>Today's Meals</Text>
@@ -276,6 +296,12 @@ export default function HomeScreen() {
               );
             })}
           </View>
+
+          {/* Today's Supplements */}
+          <SupplementTracker
+            key={supplementKey}
+            onRefreshNeeded={() => setSupplementKey(k => k + 1)}
+          />
         </View>
       </ScrollView>
 

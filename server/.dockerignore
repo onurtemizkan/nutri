@@ -1,0 +1,70 @@
+# =============================================================================
+# Docker Ignore - Nutri Backend API
+# Exclude files from Docker build context for faster builds and smaller images
+# =============================================================================
+
+# Dependencies (will be installed fresh in container)
+node_modules
+
+# Build output (will be built fresh in container)
+dist
+
+# Environment files (should not be in image)
+.env
+.env.*
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test files (not needed in production)
+coverage
+__tests__
+*.test.ts
+*.spec.ts
+jest.config.*
+
+# Documentation
+*.md
+README*
+CHANGELOG*
+LICENSE*
+docs/
+
+# Development files
+.git
+.gitignore
+.gitattributes
+.editorconfig
+.eslintrc*
+.prettierrc*
+tsconfig.tsbuildinfo
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker files (prevent recursive context issues)
+Dockerfile*
+docker-compose*
+.docker*
+
+# Prisma migrations history (schema is needed, migrations are optional for runtime)
+# Keeping migrations for potential db:migrate commands
+# prisma/migrations
+
+# Seed files (not needed in production container)
+prisma/seed.ts

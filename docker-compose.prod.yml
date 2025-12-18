@@ -1,0 +1,166 @@
+# =============================================================================
+# Nutri Production Docker Compose
+# Mirrors production environment for local testing and deployment
+# =============================================================================
+#
+# Usage:
+#   1. Copy .env.example to .env.prod and fill in values
+#   2. docker-compose -f docker-compose.prod.yml --env-file .env.prod up --build
+#   3. Access backend at http://localhost:3000
+#
+# For Coolify deployment, this file serves as a reference for service configuration.
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Backend API (Node.js/Express)
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: nutri-backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - PORT=3000
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - ML_SERVICE_URL=http://ml-service:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
+    networks:
+      - nutri-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # ML Service (Python/FastAPI)
+  # Internal only - not exposed to host, only accessible by backend
+  # ---------------------------------------------------------------------------
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: nutri-ml-service
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=${ML_DATABASE_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/nutri_db}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+    # expose makes port available to other containers but not host
+    expose:
+      - "8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+    networks:
+      - nutri-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: nutri-postgres-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-nutri_db}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    # Not exposed to host in production - use DATABASE_URL from same network
+    # Uncomment for local testing if needed:
+    # ports:
+    #   - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nutri-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # Redis Cache
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: nutri-redis-prod
+    restart: unless-stopped
+    # Production-optimized settings:
+    # - 256MB max memory (suitable for ~200 daily users)
+    # - LRU eviction when memory full
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_prod_data:/data
+    # Not exposed to host in production
+    # Uncomment for local testing if needed:
+    # ports:
+    #   - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nutri-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# -----------------------------------------------------------------------------
+# Volumes - Named volumes for data persistence
+# -----------------------------------------------------------------------------
+volumes:
+  postgres_prod_data:
+    name: nutri_postgres_prod_data
+  redis_prod_data:
+    name: nutri_redis_prod_data
+
+# -----------------------------------------------------------------------------
+# Networks
+# -----------------------------------------------------------------------------
+networks:
+  nutri-network:
+    name: nutri-prod-network
+    driver: bridge

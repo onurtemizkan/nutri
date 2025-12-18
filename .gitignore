@@ -187,3 +187,4 @@ dev-debug.log
 
 # ML model backups (too large for GitHub)
 ml-service/model_backups/
+.taskmaster/reports/

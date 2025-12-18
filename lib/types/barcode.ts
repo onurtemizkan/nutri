@@ -33,20 +33,31 @@ export interface OpenFoodFactsNutriments {
   'monounsaturated-fat_100g'?: number;
   'polyunsaturated-fat_100g'?: number;
   'trans-fat_100g'?: number;
+  cholesterol_100g?: number;
 
-  // Minerals
+  // Minerals (all in mg per 100g unless noted)
   sodium_100g?: number;
   salt_100g?: number;
   calcium_100g?: number;
   iron_100g?: number;
   potassium_100g?: number;
   magnesium_100g?: number;
+  zinc_100g?: number;
+  phosphorus_100g?: number;
 
   // Vitamins
-  'vitamin-a_100g'?: number;
-  'vitamin-c_100g'?: number;
-  'vitamin-d_100g'?: number;
-  'vitamin-e_100g'?: number;
+  'vitamin-a_100g'?: number; // mcg RAE
+  'vitamin-c_100g'?: number; // mg
+  'vitamin-d_100g'?: number; // mcg
+  'vitamin-e_100g'?: number; // mg
+  'vitamin-k_100g'?: number; // mcg
+  'vitamin-b6_100g'?: number; // mg
+  'vitamin-b12_100g'?: number; // mcg
+  folate_100g?: number; // mcg
+  'folic-acid_100g'?: number; // mcg (alternative key)
+  thiamin_100g?: number; // mg (B1)
+  riboflavin_100g?: number; // mg (B2)
+  niacin_100g?: number; // mg (B3)
 
   // Serving info
   'energy-kcal_serving'?: number;
@@ -156,14 +167,42 @@ export interface BarcodeProduct {
   servingQuantity?: number;
   imageUrl?: string;
 
-  // Nutrition per serving (mapped to app schema)
+  // Nutrition per 100g (mapped to app schema)
   nutrition: {
+    // Core macros
     calories: number;
     protein: number;
     carbs: number;
     fat: number;
     fiber?: number;
     sugar?: number;
+
+    // Fat breakdown
+    saturatedFat?: number;
+    transFat?: number;
+    cholesterol?: number; // mg
+
+    // Minerals (mg)
+    sodium?: number;
+    potassium?: number;
+    calcium?: number;
+    iron?: number;
+    magnesium?: number;
+    zinc?: number;
+    phosphorus?: number;
+
+    // Vitamins
+    vitaminA?: number; // mcg RAE
+    vitaminC?: number; // mg
+    vitaminD?: number; // mcg
+    vitaminE?: number; // mg
+    vitaminK?: number; // mcg
+    vitaminB6?: number; // mg
+    vitaminB12?: number; // mcg
+    folate?: number; // mcg DFE
+    thiamin?: number; // mg (B1)
+    riboflavin?: number; // mg (B2)
+    niacin?: number; // mg (B3)
   };
 
   // Additional info

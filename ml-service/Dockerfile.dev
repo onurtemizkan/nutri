@@ -1,0 +1,43 @@
+# =============================================================================
+# Nutri ML Service - Development Dockerfile
+# Hot reload enabled for rapid development
+# =============================================================================
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install build dependencies and useful dev tools
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+
+# Install dependencies (including dev dependencies if any)
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install additional dev tools
+RUN pip install --no-cache-dir \
+    watchfiles \
+    debugpy
+
+# Python optimizations for development
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    ENVIRONMENT=development
+
+# Expose ports
+# 8000 - API
+# 5678 - Debug port (for VS Code debugging)
+EXPOSE 8000 5678
+
+# Note: App code is mounted as a volume, not copied
+# This enables hot reloading
+
+# Use uvicorn with --reload for hot reloading
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

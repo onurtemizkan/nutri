@@ -1,0 +1,89 @@
+# =============================================================================
+# Docker Ignore - Nutri ML Service
+# Exclude files from Docker build context for faster builds and smaller images
+# =============================================================================
+
+# Python cache files
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Test and coverage
+.pytest_cache
+.mypy_cache
+.coverage
+htmlcov
+coverage.xml
+*.cover
+.hypothesis
+tests/
+*_test.py
+test_*.py
+
+# Virtual environments
+venv
+.venv
+env
+.env
+ENV
+
+# Environment files (should not be in image)
+.env
+.env.*
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Logs
+*.log
+logs/
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.spyproject
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker files (prevent recursive context issues)
+Dockerfile*
+docker-compose*
+.docker*
+
+# Documentation
+*.md
+README*
+CHANGELOG*
+LICENSE*
+docs/
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
+
+# Jupyter notebooks (if any)
+*.ipynb
+.ipynb_checkpoints/
+
+# Type stubs
+*.pyi
+
+# Makefile and scripts (not needed in container)
+Makefile
+scripts/

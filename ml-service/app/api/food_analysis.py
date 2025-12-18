@@ -6,8 +6,9 @@ Handles food scanning, classification, and nutrition estimation.
 import logging
 import hashlib
 from typing import Optional
-from fastapi import APIRouter, File, UploadFile, Form, HTTPException
+from fastapi import APIRouter, File, UploadFile, Form, HTTPException, Depends
 from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 from PIL import Image
 import io
 
@@ -17,8 +18,20 @@ from app.schemas.food_analysis import (
     NutritionDBSearchResponse,
     ModelInfo,
     DimensionsInput,
+    MicronutrientEstimationRequest,
+    MicronutrientEstimationResponse,
+    FoodFeedbackRequest,
+    FoodFeedbackResponse,
+    FeedbackStatsResponse,
 )
 from app.services.food_analysis_service import food_analysis_service
+from app.services.feedback_service import feedback_service
+from app.data.food_database import (
+    FoodCategory,
+    get_micronutrient_estimates,
+    get_food_entry,
+)
+from app.database import get_db
 
 logger = logging.getLogger(__name__)
 
@@ -283,4 +296,426 @@ async def food_analysis_health():
                 "service": "food-analysis",
                 "error": str(e),
             },
+        )
+
+
+# ==============================================================================
+# MICRONUTRIENT ESTIMATION FOR BARCODE PRODUCTS
+# ==============================================================================
+
+# Mapping from Open Food Facts category tags to our FoodCategory enum
+# These are common patterns in Open Food Facts category_tags
+OFF_CATEGORY_MAPPING: dict[str, FoodCategory] = {
+    # Fruits
+    "en:fruits": FoodCategory.FRUIT,
+    "en:fresh-fruits": FoodCategory.FRUIT,
+    "en:dried-fruits": FoodCategory.FRUIT,
+    "en:fruit-juices": FoodCategory.BEVERAGE,
+    "en:citrus": FoodCategory.FRUIT,
+    "en:tropical-fruits": FoodCategory.FRUIT,
+    "en:berries": FoodCategory.FRUIT,
+    "en:apples": FoodCategory.FRUIT,
+    "en:bananas": FoodCategory.FRUIT,
+    # Vegetables
+    "en:vegetables": FoodCategory.VEGETABLE,
+    "en:fresh-vegetables": FoodCategory.VEGETABLE,
+    "en:frozen-vegetables": FoodCategory.VEGETABLE,
+    "en:canned-vegetables": FoodCategory.VEGETABLE,
+    "en:leafy-vegetables": FoodCategory.VEGETABLE,
+    "en:root-vegetables": FoodCategory.VEGETABLE,
+    "en:salads": FoodCategory.VEGETABLE,
+    # Proteins (meat)
+    "en:meats": FoodCategory.PROTEIN,
+    "en:poultry": FoodCategory.PROTEIN,
+    "en:beef": FoodCategory.PROTEIN,
+    "en:pork": FoodCategory.PROTEIN,
+    "en:chicken": FoodCategory.PROTEIN,
+    "en:turkey": FoodCategory.PROTEIN,
+    "en:lamb": FoodCategory.PROTEIN,
+    "en:sausages": FoodCategory.PROTEIN,
+    "en:deli-meats": FoodCategory.PROTEIN,
+    "en:eggs": FoodCategory.PROTEIN,
+    # Seafood
+    "en:seafood": FoodCategory.SEAFOOD,
+    "en:fish": FoodCategory.SEAFOOD,
+    "en:salmon": FoodCategory.SEAFOOD,
+    "en:tuna": FoodCategory.SEAFOOD,
+    "en:shrimp": FoodCategory.SEAFOOD,
+    "en:shellfish": FoodCategory.SEAFOOD,
+    "en:canned-fish": FoodCategory.SEAFOOD,
+    # Dairy
+    "en:dairies": FoodCategory.DAIRY,
+    "en:milks": FoodCategory.DAIRY,
+    "en:yogurts": FoodCategory.DAIRY,
+    "en:cheeses": FoodCategory.DAIRY,
+    "en:butter": FoodCategory.DAIRY,
+    "en:cream": FoodCategory.DAIRY,
+    "en:ice-cream": FoodCategory.DAIRY,
+    # Grains
+    "en:cereals-and-potatoes": FoodCategory.GRAIN,
+    "en:breads": FoodCategory.GRAIN,
+    "en:breakfast-cereals": FoodCategory.GRAIN,
+    "en:pasta": FoodCategory.GRAIN,
+    "en:rice": FoodCategory.GRAIN,
+    "en:noodles": FoodCategory.GRAIN,
+    "en:tortillas": FoodCategory.GRAIN,
+    "en:oats": FoodCategory.GRAIN,
+    # Legumes
+    "en:legumes": FoodCategory.LEGUME,
+    "en:beans": FoodCategory.LEGUME,
+    "en:lentils": FoodCategory.LEGUME,
+    "en:chickpeas": FoodCategory.LEGUME,
+    "en:tofu": FoodCategory.LEGUME,
+    "en:soy": FoodCategory.LEGUME,
+    # Nuts & Seeds
+    "en:nuts": FoodCategory.NUT,
+    "en:seeds": FoodCategory.NUT,
+    "en:almonds": FoodCategory.NUT,
+    "en:peanuts": FoodCategory.NUT,
+    "en:walnuts": FoodCategory.NUT,
+    "en:cashews": FoodCategory.NUT,
+    "en:nut-butters": FoodCategory.NUT,
+    # Baked goods
+    "en:biscuits-and-cakes": FoodCategory.BAKED,
+    "en:pastries": FoodCategory.BAKED,
+    "en:cookies": FoodCategory.BAKED,
+    "en:cakes": FoodCategory.BAKED,
+    "en:muffins": FoodCategory.BAKED,
+    "en:croissants": FoodCategory.BAKED,
+    # Snacks
+    "en:snacks": FoodCategory.SNACK,
+    "en:chips": FoodCategory.SNACK,
+    "en:crackers": FoodCategory.SNACK,
+    "en:popcorn": FoodCategory.SNACK,
+    "en:chocolate": FoodCategory.SNACK,
+    "en:candy": FoodCategory.SNACK,
+    "en:energy-bars": FoodCategory.SNACK,
+    "en:protein-bars": FoodCategory.SNACK,
+    # Beverages
+    "en:beverages": FoodCategory.BEVERAGE,
+    "en:sodas": FoodCategory.BEVERAGE,
+    "en:juices": FoodCategory.BEVERAGE,
+    "en:waters": FoodCategory.BEVERAGE,
+    "en:teas": FoodCategory.BEVERAGE,
+    "en:coffees": FoodCategory.BEVERAGE,
+    "en:energy-drinks": FoodCategory.BEVERAGE,
+    "en:smoothies": FoodCategory.BEVERAGE,
+    # Condiments
+    "en:condiments": FoodCategory.CONDIMENT,
+    "en:sauces": FoodCategory.CONDIMENT,
+    "en:dressings": FoodCategory.CONDIMENT,
+    "en:ketchup": FoodCategory.CONDIMENT,
+    "en:mayonnaise": FoodCategory.CONDIMENT,
+    "en:mustard": FoodCategory.CONDIMENT,
+    # Mixed/prepared foods
+    "en:meals": FoodCategory.MIXED,
+    "en:prepared-meals": FoodCategory.MIXED,
+    "en:frozen-meals": FoodCategory.MIXED,
+    "en:sandwiches": FoodCategory.MIXED,
+    "en:pizzas": FoodCategory.MIXED,
+    "en:soups": FoodCategory.MIXED,
+}
+
+
+def map_off_categories_to_food_category(
+    categories: Optional[list[str]],
+) -> tuple[FoodCategory, str]:
+    """
+    Map Open Food Facts category tags to our FoodCategory enum.
+
+    Args:
+        categories: List of Open Food Facts category tags (e.g., ["en:fruits", "en:apples"])
+
+    Returns:
+        Tuple of (FoodCategory, confidence level: "high", "medium", "low")
+    """
+    if not categories:
+        return FoodCategory.UNKNOWN, "low"
+
+    # Check each category in order (first match wins, as OFF puts most specific first)
+    for cat in categories:
+        cat_lower = cat.lower()
+        if cat_lower in OFF_CATEGORY_MAPPING:
+            return OFF_CATEGORY_MAPPING[cat_lower], "high"
+
+    # Try partial matching for less common categories
+    for cat in categories:
+        cat_lower = cat.lower()
+        # Check if any keyword matches
+        for key, food_cat in OFF_CATEGORY_MAPPING.items():
+            # Extract the main keyword from the mapping key (e.g., "fruits" from "en:fruits")
+            keyword = key.split(":")[-1]
+            if keyword in cat_lower:
+                return food_cat, "medium"
+
+    return FoodCategory.UNKNOWN, "low"
+
+
+# All micronutrient keys we track
+MICRONUTRIENT_KEYS = [
+    "potassium",
+    "calcium",
+    "iron",
+    "magnesium",
+    "zinc",
+    "phosphorus",
+    "vitamin_a",
+    "vitamin_c",
+    "vitamin_d",
+    "vitamin_e",
+    "vitamin_k",
+    "vitamin_b6",
+    "vitamin_b12",
+    "folate",
+    "thiamin",
+    "riboflavin",
+    "niacin",
+]
+
+
+@router.post("/estimate-micronutrients", response_model=MicronutrientEstimationResponse)
+async def estimate_micronutrients(request: MicronutrientEstimationRequest):
+    """
+    Sophisticated micronutrient estimation for barcode-scanned products.
+
+    This endpoint uses multiple signals to provide accurate estimates:
+    1. **Ingredient parsing** - Analyzes ingredients list to identify nutrient-rich components
+    2. **Food name matching** - Matches product name to our food database
+    3. **Macronutrient inference** - Uses protein/fiber levels to inform estimates
+    4. **Category baseline** - Falls back to category averages when other signals weak
+
+    **Example use case:**
+    Product: "Organic Spinach & Kale Smoothie"
+    - Ingredient parsing identifies spinach (high iron, folate, vitamin K) and kale (vitamin A, C, K)
+    - High fiber → boosts magnesium and folate estimates
+    - Category "beverage" provides baseline for any gaps
+
+    **Parameters:**
+    - **food_name**: Product name from Open Food Facts
+    - **categories**: Open Food Facts category tags (e.g., ["en:beverages", "en:smoothies"])
+    - **portion_weight**: Serving size in grams
+    - **ingredients_text**: Raw ingredients list (highly recommended for accuracy!)
+    - **protein**: Protein per 100g (helps identify B12-rich foods)
+    - **fiber**: Fiber per 100g (helps identify magnesium-rich foods)
+    - **fat**: Fat per 100g
+    - **existing**: Already known micronutrients (won't be overwritten)
+
+    **Returns:**
+    - **estimated**: Dictionary of estimated micronutrient values
+    - **category_used**: Primary food category identified
+    - **confidence**: Overall estimation confidence (high/medium/low)
+    - **source**: Signals used (e.g., "ingredients+macros+category")
+    """
+    try:
+        from app.services.ingredient_micronutrient_service import (
+            estimate_micronutrients_sophisticated
+        )
+
+        # Use sophisticated multi-signal estimation
+        estimated, category_used, confidence, source = estimate_micronutrients_sophisticated(
+            food_name=request.food_name,
+            categories=request.categories,
+            portion_weight=request.portion_weight,
+            ingredients_text=request.ingredients_text,
+            protein=request.protein,
+            fiber=request.fiber,
+            fat=request.fat,
+            existing=request.existing,
+        )
+
+        logger.info(
+            f"Sophisticated estimation for '{request.food_name}': "
+            f"{len(estimated)} nutrients, category={category_used}, "
+            f"confidence={confidence}, sources={source}"
+        )
+
+        return MicronutrientEstimationResponse(
+            estimated=estimated,
+            category_used=category_used,
+            confidence=confidence,
+            source=source,
+        )
+
+    except Exception as e:
+        logger.error(f"Micronutrient estimation error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Micronutrient estimation failed: {str(e)}",
+        )
+
+
+# ==============================================================================
+# FEEDBACK ENDPOINTS - For user corrections and model improvement
+# ==============================================================================
+
+
+@router.post("/feedback", response_model=FoodFeedbackResponse)
+async def submit_feedback(
+    request: FoodFeedbackRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Submit user feedback on a food classification.
+
+    This endpoint records user corrections when the classifier makes mistakes,
+    enabling the model to improve over time through:
+
+    1. **Pattern detection** - Identifies common misclassifications
+    2. **Prompt generation** - Creates new CLIP prompts from user descriptions
+    3. **Confidence boosting** - Suggests likely alternatives for similar images
+
+    **When to call:**
+    - When user confirms/corrects a low-confidence classification
+    - After user selects an alternative food from the suggestions
+    - When user manually enters a different food name
+
+    **Parameters:**
+    - **image_hash**: SHA-256 hash of the image (from analyze response)
+    - **original_prediction**: What the model predicted
+    - **original_confidence**: Model's confidence in original prediction
+    - **user_selected_food**: What the user confirmed as correct
+    - **alternatives_shown**: List of alternatives that were displayed
+    - **user_description** (optional): User's description of the food
+
+    **Returns:**
+    - **success**: Whether feedback was recorded
+    - **feedback_id**: ID of the recorded feedback (-1 if duplicate)
+    - **was_correction**: True if user selected different food than predicted
+    - **suggested_prompts**: New prompts generated from user description
+    """
+    try:
+        # Determine if this is a correction or confirmation
+        was_correction = (
+            request.original_prediction.lower().strip()
+            != request.user_selected_food.lower().strip()
+        )
+
+        # Submit feedback to the service
+        feedback_id, suggested_prompts = await feedback_service.submit_feedback(
+            db=db,
+            image_hash=request.image_hash,
+            original_prediction=request.original_prediction,
+            original_confidence=request.original_confidence,
+            corrected_label=request.user_selected_food,
+            alternatives=[{"name": alt} for alt in request.alternatives_shown],
+            user_description=request.user_description,
+            user_id=request.user_id,
+        )
+
+        await db.commit()
+
+        # Determine response message
+        if feedback_id == -1:
+            message = "Duplicate feedback - already recorded for this image"
+        elif was_correction:
+            message = (
+                f"Thank you! We've learned that this should be "
+                f"'{request.user_selected_food}' instead of "
+                f"'{request.original_prediction}'"
+            )
+        else:
+            message = "Thanks for confirming! This helps improve accuracy."
+
+        logger.info(
+            f"Feedback recorded: {request.original_prediction} -> "
+            f"{request.user_selected_food} "
+            f"(correction: {was_correction}, id: {feedback_id})"
+        )
+
+        return FoodFeedbackResponse(
+            success=feedback_id != -1,
+            feedback_id=max(feedback_id, 0),
+            was_correction=was_correction,
+            message=message,
+            suggested_prompts=suggested_prompts,
+        )
+
+    except Exception as e:
+        logger.error(f"Feedback submission error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to submit feedback: {str(e)}",
+        )
+
+
+@router.get("/feedback/stats", response_model=FeedbackStatsResponse)
+async def get_feedback_stats(db: AsyncSession = Depends(get_db)):
+    """
+    Get statistics about collected feedback and model accuracy.
+
+    **Returns:**
+    - **total_feedback**: Total number of feedback submissions
+    - **corrections**: Number of corrections (model was wrong)
+    - **confirmations**: Number of confirmations (model was right)
+    - **accuracy_rate**: Proportion of correct predictions
+    - **correction_rate**: Proportion of corrections needed
+    - **top_misclassifications**: Most common prediction errors
+    - **problem_foods**: Foods with highest correction rates
+
+    **Use cases:**
+    - Dashboard for monitoring model performance
+    - Identifying foods that need better training
+    - Planning prompt improvements
+    """
+    try:
+        stats = await feedback_service.get_stats(db)
+
+        # Calculate accuracy rate
+        total = stats.get("total_feedback", 0)
+        # Confirmations = when user selected same as prediction
+        # For now we estimate from approved feedback
+        confirmations = stats.get("approved_feedback", 0)
+        corrections = total - confirmations
+
+        accuracy_rate = confirmations / total if total > 0 else 0.0
+        correction_rate = corrections / total if total > 0 else 0.0
+
+        return FeedbackStatsResponse(
+            total_feedback=total,
+            corrections=corrections,
+            confirmations=confirmations,
+            accuracy_rate=round(accuracy_rate, 3),
+            correction_rate=round(correction_rate, 3),
+            top_misclassifications=stats.get("top_misclassifications", []),
+            problem_foods=stats.get("problem_foods", []),
+        )
+
+    except Exception as e:
+        logger.error(f"Feedback stats error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get feedback stats: {str(e)}",
+        )
+
+
+@router.get("/feedback/suggestions/{food_key}")
+async def get_food_suggestions(
+    food_key: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get prompt suggestions for a specific food based on feedback patterns.
+
+    This endpoint analyzes historical corrections to suggest:
+    - New prompts that might improve classification
+    - Common foods this is confused with
+    - Disambiguation strategies
+
+    **Parameters:**
+    - **food_key**: The food identifier (e.g., "apple", "grilled_chicken")
+
+    **Returns:**
+    - Current prompts being used
+    - Suggested new prompts from user feedback
+    - Common confusion patterns
+    """
+    try:
+        suggestions = await feedback_service.get_prompt_suggestions(db, food_key)
+        return suggestions
+
+    except Exception as e:
+        logger.error(f"Food suggestions error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get suggestions: {str(e)}",
         )

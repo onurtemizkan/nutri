@@ -159,21 +159,18 @@ export function SwipeableHealthMetricCard({
           />
         </View>
         <View style={styles.content}>
-          <View style={styles.header}>
-            <Text style={styles.dateTime}>{formatDateTime(metric.recordedAt)}</Text>
-            <View style={styles.sourceBadge}>
-              <Ionicons
-                name={sourceConfig.icon as keyof typeof Ionicons.glyphMap}
-                size={12}
-                color={colors.text.tertiary}
-              />
-              <Text style={styles.sourceText}>{sourceConfig.displayName}</Text>
-            </View>
-          </View>
+          <Text style={styles.dateTime}>{formatDateTime(metric.recordedAt)}</Text>
         </View>
         <View style={styles.valueContainer}>
           <Text style={styles.value}>{formatValue(metric.value)}</Text>
           <Text style={styles.unit}>{config.unit}</Text>
+        </View>
+        <View style={styles.sourceIcon}>
+          <Ionicons
+            name={sourceConfig.icon as keyof typeof Ionicons.glyphMap}
+            size={16}
+            color={colors.text.disabled}
+          />
         </View>
       </TouchableOpacity>
     </Swipeable>
@@ -202,30 +199,21 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    justifyContent: 'center',
   },
   dateTime: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.text.primary,
   },
-  sourceBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  sourceText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.tertiary,
-  },
   valueContainer: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginLeft: spacing.md,
+    marginLeft: spacing.sm,
+  },
+  sourceIcon: {
+    marginLeft: spacing.sm,
+    opacity: 0.5,
   },
   value: {
     fontSize: typography.fontSize.xl,

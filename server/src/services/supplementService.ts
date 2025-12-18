@@ -16,6 +16,27 @@ export interface CreateSupplementInput {
   endDate?: Date | null;
   notes?: string;
   color?: string;
+
+  // Micronutrient content (optional)
+  vitaminA?: number;
+  vitaminC?: number;
+  vitaminD?: number;
+  vitaminE?: number;
+  vitaminK?: number;
+  vitaminB6?: number;
+  vitaminB12?: number;
+  folate?: number;
+  thiamin?: number;
+  riboflavin?: number;
+  niacin?: number;
+  calcium?: number;
+  iron?: number;
+  magnesium?: number;
+  zinc?: number;
+  potassium?: number;
+  sodium?: number;
+  phosphorus?: number;
+  omega3?: number;
 }
 
 export interface UpdateSupplementInput {
@@ -32,6 +53,27 @@ export interface UpdateSupplementInput {
   endDate?: Date | null;
   notes?: string;
   color?: string;
+
+  // Micronutrient content (optional)
+  vitaminA?: number;
+  vitaminC?: number;
+  vitaminD?: number;
+  vitaminE?: number;
+  vitaminK?: number;
+  vitaminB6?: number;
+  vitaminB12?: number;
+  folate?: number;
+  thiamin?: number;
+  riboflavin?: number;
+  niacin?: number;
+  calcium?: number;
+  iron?: number;
+  magnesium?: number;
+  zinc?: number;
+  potassium?: number;
+  sodium?: number;
+  phosphorus?: number;
+  omega3?: number;
 }
 
 export interface CreateSupplementLogInput {
@@ -63,6 +105,26 @@ export class SupplementService {
         endDate: data.endDate,
         notes: data.notes,
         color: data.color,
+        // Micronutrients
+        vitaminA: data.vitaminA,
+        vitaminC: data.vitaminC,
+        vitaminD: data.vitaminD,
+        vitaminE: data.vitaminE,
+        vitaminK: data.vitaminK,
+        vitaminB6: data.vitaminB6,
+        vitaminB12: data.vitaminB12,
+        folate: data.folate,
+        thiamin: data.thiamin,
+        riboflavin: data.riboflavin,
+        niacin: data.niacin,
+        calcium: data.calcium,
+        iron: data.iron,
+        magnesium: data.magnesium,
+        zinc: data.zinc,
+        potassium: data.potassium,
+        sodium: data.sodium,
+        phosphorus: data.phosphorus,
+        omega3: data.omega3,
       },
     });
 
@@ -228,19 +290,75 @@ export class SupplementService {
   }
 
   /**
+   * Check if a supplement should be shown today based on its frequency
+   */
+  private shouldShowToday(supplement: {
+    frequency: SupplementFrequency;
+    startDate: Date;
+  }): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    switch (supplement.frequency) {
+      case 'DAILY':
+      case 'TWICE_DAILY':
+      case 'THREE_TIMES_DAILY':
+      case 'AS_NEEDED':
+        return true;
+
+      case 'WEEKLY': {
+        // Show on the same day of week as the start date
+        const startDay = supplement.startDate.getDay();
+        const todayDay = today.getDay();
+        return startDay === todayDay;
+      }
+
+      case 'EVERY_OTHER_DAY': {
+        // Calculate days since start and check if even
+        const startDate = new Date(supplement.startDate);
+        startDate.setHours(0, 0, 0, 0);
+        const diffTime = today.getTime() - startDate.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays % 2 === 0;
+      }
+
+      default:
+        return true;
+    }
+  }
+
+  /**
+   * Get target count for a supplement based on frequency
+   */
+  private getTargetCount(supplement: {
+    frequency: SupplementFrequency;
+    timesPerDay: number;
+  }): number {
+    // AS_NEEDED supplements have no required target
+    if (supplement.frequency === 'AS_NEEDED') {
+      return 0;
+    }
+    return supplement.timesPerDay;
+  }
+
+  /**
    * Get today's supplement status (which have been taken, which are pending)
+   * Smart filtering: Only shows supplements that should be taken today
    */
   async getTodayStatus(userId: string) {
     const { startOfDay, endOfDay } = getDayBoundaries();
 
     // Get all active supplements
-    const supplements = await prisma.supplement.findMany({
+    const allSupplements = await prisma.supplement.findMany({
       where: {
         userId,
         isActive: true,
       },
       orderBy: { name: 'asc' },
     });
+
+    // Filter supplements that should be shown today
+    const supplements = allSupplements.filter(s => this.shouldShowToday(s));
 
     // Get today's logs
     const todayLogs = await prisma.supplementLog.findMany({
@@ -260,20 +378,25 @@ export class SupplementService {
       );
       const takenCount = logsForSupplement.filter(log => !log.skipped).length;
       const skippedCount = logsForSupplement.filter(log => log.skipped).length;
-      const targetCount = supplement.timesPerDay;
+      const targetCount = this.getTargetCount(supplement);
 
       return {
         supplement,
         takenCount,
         skippedCount,
         targetCount,
-        isComplete: takenCount >= targetCount,
+        // AS_NEEDED is never "complete" in the traditional sense, but also never "pending"
+        isComplete: supplement.frequency === 'AS_NEEDED'
+          ? takenCount > 0
+          : takenCount >= targetCount,
         logs: logsForSupplement,
       };
     });
 
-    const totalSupplements = supplements.length;
-    const completedSupplements = status.filter(s => s.isComplete).length;
+    // Only count supplements with required doses toward completion
+    const requiredSupplements = status.filter(s => s.supplement.frequency !== 'AS_NEEDED');
+    const totalSupplements = requiredSupplements.length;
+    const completedSupplements = requiredSupplements.filter(s => s.isComplete).length;
 
     return {
       date: startOfDay,
