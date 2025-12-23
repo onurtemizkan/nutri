@@ -125,6 +125,9 @@ router.post(
  * DELETE /api/admin/users/:id
  * Delete user account for GDPR compliance
  * Requires SUPER_ADMIN role
+ *
+ * Body validation: { reason: string (min 10 chars) } - validated in controller
+ * using deleteUserSchema from validation/adminSchemas.ts
  */
 router.delete(
   '/users/:id',

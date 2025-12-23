@@ -207,6 +207,14 @@ export async function searchWebhooksByTransactionId(
 
 /**
  * Retry processing a failed webhook event
+ *
+ * This function marks the webhook event as PENDING for retry processing.
+ * In a production environment, a job queue system (e.g., Bull with Redis)
+ * should be used to handle the actual retry processing asynchronously.
+ *
+ * TODO: Integrate with a proper job queue system for webhook retry processing
+ * Current implementation only updates the status - actual reprocessing should
+ * be handled by a background worker/queue consumer.
  */
 export async function retryWebhookEvent(
   eventId: string,
@@ -220,7 +228,7 @@ export async function retryWebhookEvent(
     return null;
   }
 
-  // Update retry metadata
+  // Update retry metadata - marks the event as PENDING for retry
   const updated = await prisma.appStoreWebhookEvent.update({
     where: { id: eventId },
     data: {
@@ -238,39 +246,17 @@ export async function retryWebhookEvent(
       retryCount: updated.retryCount,
       notificationType: event.notificationType,
     },
-    'Webhook event retry initiated'
+    'Webhook event retry initiated - event marked as PENDING'
   );
 
-  // In a production environment, this would trigger actual reprocessing
-  // For now, we simulate by updating the status after a delay
-  // The actual webhook processing service from Task 38 would handle this
-
-  // Simulate processing (in production, this would be done by a queue worker)
-  setTimeout(async () => {
-    try {
-      // Placeholder for actual webhook processing logic
-      // In production, call the actual webhook handler with the stored payload
-      await prisma.appStoreWebhookEvent.update({
-        where: { id: eventId },
-        data: {
-          status: 'SUCCESS',
-          processedAt: new Date(),
-        },
-      });
-
-      logger.info({ eventId }, 'Webhook event retry succeeded');
-    } catch (error) {
-      await prisma.appStoreWebhookEvent.update({
-        where: { id: eventId },
-        data: {
-          status: 'FAILED',
-          errorMessage: error instanceof Error ? error.message : 'Unknown error',
-        },
-      });
-
-      logger.error({ eventId, error }, 'Webhook event retry failed');
-    }
-  }, 1000);
+  // NOTE: In production, this should trigger a job queue to process the retry.
+  // The queue worker would:
+  // 1. Fetch the event payload from the database
+  // 2. Call the appropriate webhook handler based on notificationType
+  // 3. Update the status to SUCCESS or FAILED based on the result
+  //
+  // Example with Bull queue:
+  // await webhookRetryQueue.add('process-retry', { eventId }, { attempts: 3 });
 
   return getWebhookDetail(eventId);
 }

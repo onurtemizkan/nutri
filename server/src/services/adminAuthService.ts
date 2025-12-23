@@ -7,9 +7,34 @@ import { AdminRole } from '@prisma/client';
 import { logger } from '../config/logger';
 
 // Constants
-const JWT_SECRET = process.env.JWT_SECRET || 'admin-secret-change-in-production';
 const ADMIN_SESSION_EXPIRY = '8h';
 const SALT_ROUNDS = 12;
+
+/**
+ * Get JWT secret with production validation
+ * Throws an error if JWT_SECRET is not set in production environment
+ */
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'FATAL: JWT_SECRET environment variable is not set. ' +
+        'This is required for secure admin authentication in production.'
+      );
+    }
+    // Development fallback with warning
+    logger.warn(
+      'JWT_SECRET not set - using insecure default. DO NOT use in production!'
+    );
+    return 'admin-secret-change-in-production-INSECURE';
+  }
+
+  return secret;
+}
+
+const JWT_SECRET = getJwtSecret();
 
 // Types
 export interface AdminSessionPayload {
