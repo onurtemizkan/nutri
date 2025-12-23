@@ -5,10 +5,82 @@
  * Run with: npm run db:seed
  */
 
-import { PrismaClient, HealthMetricType, ActivityType, ActivityIntensity, SubscriptionTier, SupplementFrequency, SupplementTimeOfDay } from '@prisma/client';
+import { PrismaClient, HealthMetricType, ActivityType, ActivityIntensity, SubscriptionTier, SupplementFrequency, SupplementTimeOfDay, AdminRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
+
+// ============================================================================
+// ADMIN USER DEFINITIONS
+// ============================================================================
+
+interface TestAdminUser {
+  email: string;
+  password: string;
+  name: string;
+  role: AdminRole;
+}
+
+const TEST_ADMIN_USERS: TestAdminUser[] = [
+  {
+    email: 'admin@nutri.app',
+    password: 'AdminPass123!',
+    name: 'Super Admin',
+    role: AdminRole.SUPER_ADMIN,
+  },
+  {
+    email: 'support@nutri.app',
+    password: 'SupportPass123!',
+    name: 'Support Admin',
+    role: AdminRole.SUPPORT,
+  },
+  {
+    email: 'analyst@nutri.app',
+    password: 'AnalystPass123!',
+    name: 'Analytics Admin',
+    role: AdminRole.ANALYST,
+  },
+];
+
+async function seedAdminUsers() {
+  console.log('═══════════════════════════════════════════════════════════════');
+  console.log('🔐 SEEDING ADMIN USERS');
+  console.log('═══════════════════════════════════════════════════════════════\n');
+
+  for (const admin of TEST_ADMIN_USERS) {
+    const passwordHash = await bcrypt.hash(admin.password, 10);
+
+    await prisma.adminUser.upsert({
+      where: { email: admin.email },
+      update: {
+        passwordHash,
+        name: admin.name,
+        role: admin.role,
+        isActive: true,
+      },
+      create: {
+        email: admin.email,
+        passwordHash,
+        name: admin.name,
+        role: admin.role,
+        mfaEnabled: false,
+        isActive: true,
+      },
+    });
+
+    console.log(`  ✅ Created admin user: ${admin.email} (${admin.role})`);
+  }
+
+  console.log('\n📋 ADMIN USER CREDENTIALS:');
+  console.log('---');
+  for (const admin of TEST_ADMIN_USERS) {
+    console.log(`📧 ${admin.email}`);
+    console.log(`🔑 ${admin.password}`);
+    console.log(`👤 ${admin.name} (${admin.role})`);
+    console.log('---');
+  }
+  console.log('');
+}
 
 // ============================================================================
 // TEST USER DEFINITIONS
@@ -538,6 +610,9 @@ async function seed() {
     where: { email: { endsWith: '@nutri-e2e.local' } },
   });
   console.log('✅ Cleaned existing test data\n');
+
+  // Seed admin users first
+  await seedAdminUsers();
 
   // Create test users
   console.log('👥 Creating test users...');

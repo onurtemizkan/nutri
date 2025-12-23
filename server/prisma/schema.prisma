@@ -626,3 +626,218 @@ enum InsightPriority {
   HIGH
   CRITICAL
 }
+
+// ============================================================================
+// FOOD FEEDBACK MODELS
+// ============================================================================
+
+// FoodFeedback - User corrections for food classification
+model FoodFeedback {
+  id                  String   @id @default(cuid())
+  userId              String?  // Optional - can be anonymous
+
+  // Classification context
+  imageHash           String   // Hash of the image for deduplication
+  classificationId    String?  // ID from the classification response
+
+  // What the model predicted
+  originalPrediction  String   // Predicted food category or name
+  originalConfidence  Float    // Confidence of the prediction (0.0 to 1.0)
+  originalCategory    String?  // Coarse category from classifier
+
+  // What the user selected
+  selectedFdcId       Int      // USDA FoodData Central ID
+  selectedFoodName    String   // Name of the selected food
+
+  // Feedback data
+  wasCorrect          Boolean  // Was the original prediction correct?
+  classificationHints Json?    // Additional hints from classification {alternatives, usda_datatypes, etc.}
+  userDescription     String?  // Optional user description of the food
+
+  // Status for learning loop
+  status              String   @default("pending") // pending, approved, rejected, applied
+
+  // Audit
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([imageHash])
+  @@index([originalPrediction, selectedFoodName])
+  @@index([status])
+  @@index([userId])
+  @@index([createdAt])
+  @@unique([imageHash, selectedFdcId]) // Prevent duplicate feedback for same image+food
+}
+
+// FoodFeedbackAggregation - Cached aggregation patterns
+model FoodFeedbackAggregation {
+  id                  String   @id @default(cuid())
+
+  // Pattern identification
+  originalPrediction  String   // What was predicted
+  correctedFood       String   // What was actually correct
+
+  // Statistics
+  correctionCount     Int      @default(0)
+  avgConfidence       Float    @default(0.0) // Average confidence when this mistake was made
+  firstOccurrence     DateTime @default(now())
+  lastOccurrence      DateTime @default(now())
+
+  // Status
+  needsReview         Boolean  @default(false) // Flagged when threshold exceeded
+  reviewedAt          DateTime?
+
+  // Audit
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([originalPrediction, correctedFood])
+  @@index([correctionCount])
+  @@index([needsReview])
+}
+
+// ============================================================================
+// ADMIN PANEL MODELS
+// ============================================================================
+
+// Admin user roles for RBAC
+enum AdminRole {
+  SUPER_ADMIN  // Full access, can manage other admins
+  SUPPORT      // User/subscription management, no settings
+  ANALYST      // Read-only analytics access
+  VIEWER       // Read-only all access
+}
+
+// Feature flag value types
+enum FeatureFlagType {
+  BOOLEAN
+  STRING
+  NUMBER
+  JSON
+}
+
+// Admin User - Separate from app users for security
+model AdminUser {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  passwordHash  String
+  name          String
+
+  // Role-based access control
+  role          AdminRole  @default(SUPPORT)
+
+  // MFA (TOTP) configuration
+  mfaSecret     String?    // TOTP secret key (encrypted)
+  mfaEnabled    Boolean    @default(false)
+
+  // Account status
+  isActive      Boolean    @default(true)
+  lastLoginAt   DateTime?
+  lastLoginIp   String?
+
+  // Audit
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  auditLogs     AdminAuditLog[]
+
+  @@index([email])
+  @@index([role, isActive])
+}
+
+// Admin Audit Log - Immutable record of all admin actions
+model AdminAuditLog {
+  id            String     @id @default(cuid())
+  adminUserId   String
+  adminUser     AdminUser  @relation(fields: [adminUserId], references: [id])
+
+  // Action details
+  action        String     // e.g., "USER_LOOKUP", "SUBSCRIPTION_GRANT", "USER_DELETE"
+  targetType    String?    // e.g., "User", "Subscription", "Webhook"
+  targetId      String?    // ID of affected record
+
+  // Additional context (JSON for flexibility)
+  details       Json?      // {reason: "Customer request", previousValue: {...}}
+
+  // Request metadata
+  ipAddress     String
+  userAgent     String?
+
+  // Timestamp (immutable - no updatedAt)
+  createdAt     DateTime   @default(now())
+
+  @@index([adminUserId])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+// App Store Webhook Events - Tracks StoreKit 2 server notifications
+model AppStoreWebhookEvent {
+  id                    String              @id @default(cuid())
+
+  // Notification details
+  notificationType      String              // SUBSCRIBED, DID_RENEW, DID_CHANGE_RENEWAL_STATUS, etc.
+  subtype               String?             // AUTO_RENEW_DISABLED, UPGRADE, DOWNGRADE, etc.
+
+  // Apple identifiers
+  originalTransactionId String?             // Links to subscription
+  transactionId         String?             // Current transaction
+  bundleId              String?             // App bundle identifier
+
+  // Full payload for debugging/replay
+  payload               Json                // Complete JWS decoded payload
+
+  // Processing status
+  status                WebhookEventStatus  @default(PENDING)
+  errorMessage          String?             // Error details if failed
+  retryCount            Int                 @default(0)
+  lastRetryAt           DateTime?
+
+  // Related user (if we can identify them)
+  userId                String?
+
+  // Timestamps
+  receivedAt            DateTime            @default(now())
+  processedAt           DateTime?
+  createdAt             DateTime            @default(now())
+
+  @@index([notificationType])
+  @@index([originalTransactionId])
+  @@index([userId])
+  @@index([status])
+  @@index([receivedAt])
+}
+
+enum WebhookEventStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+// Feature Flags - For gradual rollouts and A/B testing
+model FeatureFlag {
+  id            String          @id @default(cuid())
+  key           String          @unique  // e.g., "new_paywall_design"
+  name          String                   // Human-readable name
+  description   String?                  // Explanation of the flag
+
+  // Value configuration
+  type          FeatureFlagType @default(BOOLEAN)
+  value         Json            // Default value: true/false, "string", 123, or {...}
+
+  // Status
+  isEnabled     Boolean         @default(false)
+
+  // Targeting rules (JSON for flexibility)
+  // e.g., {userId: ["id1", "id2"], subscriptionTier: "PRO", percentage: 50}
+  targeting     Json?
+
+  // Audit
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([key])
+  @@index([isEnabled])
+}

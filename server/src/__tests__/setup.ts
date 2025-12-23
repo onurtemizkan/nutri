@@ -8,7 +8,7 @@
  * - Configures global test lifecycle hooks
  */
 
-import { PrismaClient, Activity, HealthMetric, ActivityType, ActivityIntensity, HealthMetricType } from '@prisma/client';
+import { PrismaClient, Activity, HealthMetric, ActivityType, ActivityIntensity, HealthMetricType, AdminRole, AdminUser } from '@prisma/client';
 
 // Set test environment variables before any imports
 (process.env as { NODE_ENV: string }).NODE_ENV = 'test';
@@ -36,6 +36,8 @@ export async function cleanDatabase() {
   // Delete in reverse order of dependencies to avoid foreign key constraints
   // Using $transaction to ensure atomicity
   await prisma.$transaction([
+    prisma.adminAuditLog.deleteMany(),
+    prisma.adminUser.deleteMany(),
     prisma.healthMetric.deleteMany(),
     prisma.activity.deleteMany(),
     prisma.meal.deleteMany(),
@@ -317,4 +319,60 @@ export function assertHealthMetricStructure(metric: unknown): void {
   expect(metric).toHaveProperty('recordedAt');
   expect(metric).toHaveProperty('unit');
   expect(metric).toHaveProperty('source');
+}
+
+// ============================================================================
+// Admin Test Utilities
+// ============================================================================
+
+/**
+ * Create a test admin user
+ */
+export async function createTestAdminUser(overrides?: Partial<{
+  email: string;
+  passwordHash: string;
+  name: string;
+  role: AdminRole;
+  mfaEnabled: boolean;
+}>): Promise<AdminUser> {
+  const bcrypt = require('bcryptjs');
+
+  const defaultPasswordHash = await bcrypt.hash('AdminPass123!', 10);
+
+  const defaultAdmin = {
+    email: 'admin@test.com',
+    passwordHash: defaultPasswordHash,
+    name: 'Test Admin',
+    role: AdminRole.SUPER_ADMIN,
+    mfaEnabled: false,
+    ...overrides,
+  };
+
+  return prisma.adminUser.create({
+    data: defaultAdmin,
+  });
+}
+
+/**
+ * Create a test admin JWT token
+ */
+export function createTestAdminToken(adminId: string): string {
+  const jwt = require('jsonwebtoken');
+  return jwt.sign(
+    { adminId, type: 'admin' },
+    process.env.JWT_SECRET,
+    { expiresIn: '8h' }
+  );
+}
+
+/**
+ * Assert that response has admin user data structure
+ */
+export function assertAdminUserStructure(admin: unknown): void {
+  expect(admin).toHaveProperty('id');
+  expect(admin).toHaveProperty('email');
+  expect(admin).toHaveProperty('name');
+  expect(admin).toHaveProperty('role');
+  expect(admin).not.toHaveProperty('password');
+  expect(admin).not.toHaveProperty('mfaSecret');
 }

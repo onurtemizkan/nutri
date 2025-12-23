@@ -12,6 +12,7 @@ import foodAnalysisRoutes from './routes/foodAnalysisRoutes';
 import supplementRoutes from './routes/supplementRoutes';
 import foodRoutes from './routes/foodRoutes';
 import foodFeedbackRoutes from './routes/foodFeedbackRoutes';
+import adminRoutes from './routes/admin';
 import prisma from './config/database';
 
 // Import version from package.json
@@ -134,6 +135,7 @@ app.use('/api/food', foodAnalysisRoutes);
 app.use('/api/foods', foodRoutes);
 app.use('/api/foods/feedback', foodFeedbackRoutes);
 app.use('/api/supplements', supplementRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

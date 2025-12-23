@@ -1,4 +1,5 @@
 import { Request } from 'express';
+import { AdminRole } from '@prisma/client';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -6,6 +7,26 @@ export interface AuthenticatedRequest extends Request {
 
 export interface JWTPayload {
   userId: string;
+}
+
+// Admin Authentication Types
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  role: AdminRole;
+}
+
+export interface AdminAuthenticatedRequest extends Request {
+  adminUser?: AdminUser;
+}
+
+export interface AdminJWTPayload {
+  adminUserId: string;
+  email: string;
+  role: AdminRole;
+  sessionId: string;
+  type: 'admin';
 }
 
 export interface RegisterInput {
