@@ -126,10 +126,12 @@ class TestClassMapping:
     def test_mapping_coverage(self):
         """Test that mappings are valid."""
         for food101_class, db_class in FOOD_101_TO_DB_MAPPING.items():
-            assert food101_class in FOOD_101_CLASSES, (
-                f"Mapped class {food101_class} not in Food-101"
-            )
-            assert isinstance(db_class, str), f"DB class for {food101_class} should be string"
+            assert (
+                food101_class in FOOD_101_CLASSES
+            ), f"Mapped class {food101_class} not in Food-101"
+            assert isinstance(
+                db_class, str
+            ), f"DB class for {food101_class} should be string"
 
     def test_common_foods_mapped(self):
         """Test that common foods are mapped."""
@@ -200,7 +202,12 @@ class TestImagePreprocessing:
         classifier = FoodClassifier(mock_config)
         tensor = classifier.preprocess(sample_image)
 
-        assert tensor.shape == (1, 3, 224, 224), "Output should be (batch, channels, H, W)"
+        assert tensor.shape == (
+            1,
+            3,
+            224,
+            224,
+        ), "Output should be (batch, channels, H, W)"
 
     def test_preprocess_output_dtype(self, mock_config, sample_image):
         """Test preprocessed output dtype."""
@@ -208,6 +215,7 @@ class TestImagePreprocessing:
         tensor = classifier.preprocess(sample_image)
 
         import torch
+
         assert tensor.dtype == torch.float32
 
     def test_preprocess_normalized_values(self, mock_config, sample_image):
