@@ -751,3 +751,145 @@ async def get_food_suggestions(
             status_code=500,
             detail=f"Failed to get suggestions: {str(e)}",
         )
+
+
+# ==============================================================================
+# COARSE CLASSIFICATION - For USDA search integration
+# ==============================================================================
+
+
+@router.post("/coarse-classify")
+async def coarse_classify(
+    image: UploadFile = File(..., description="Food image (JPEG/PNG, max 10MB)"),
+    query: Optional[str] = Form(None, description="Optional user-provided search query"),
+):
+    """
+    Coarse-grained food classification for USDA search integration.
+
+    This endpoint classifies food images into 25-30 high-level categories
+    aligned with USDA food groups. It's designed as Tier 1 of the multi-tier
+    classification architecture for scaling to 500K+ foods.
+
+    **Use cases:**
+    - Pre-filtering USDA search results by food category
+    - Determining appropriate USDA data types (Foundation, SR Legacy, Branded, etc.)
+    - Providing context hints for enhanced search queries
+
+    **Process:**
+    1. Classify image into coarse food category using CLIP zero-shot learning
+    2. Return category with confidence and alternatives
+    3. Include recommended USDA data types for search filtering
+    4. Provide search hints for query enhancement
+
+    **Parameters:**
+    - **image**: Food photo (JPEG or PNG format, max 10MB)
+    - **query** (optional): User's search query to enhance
+
+    **Returns:**
+    - **category**: High-level food category (e.g., "fruits_fresh", "meat_red")
+    - **confidence**: Classification confidence (0-1)
+    - **usda_datatypes**: Recommended USDA data types for search
+    - **alternatives**: Top alternative categories with confidence
+    - **search_hints**: Hints for enhancing USDA search
+
+    **Categories include:**
+    - Fruits: fresh, processed
+    - Vegetables: leafy, root, other, cooked
+    - Meat: red, poultry, processed
+    - Seafood: fish, shellfish
+    - Dairy: milk, cheese, yogurt, other
+    - Grains: bread, pasta, rice, cereal, other
+    - Legumes, Nuts & Seeds
+    - Beverages: hot, cold
+    - Snacks: sweet, savory
+    - Mixed dishes, Fast food
+    - Condiments & Sauces
+    - Eggs
+    """
+    try:
+        # Validate file size (10MB limit)
+        contents = await image.read()
+        if len(contents) > 10 * 1024 * 1024:
+            raise HTTPException(
+                status_code=413, detail="Image file too large (max 10MB)"
+            )
+
+        # Validate file type
+        if image.content_type not in ["image/jpeg", "image/png", "image/jpg"]:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid image format. Only JPEG and PNG are supported.",
+            )
+
+        # Load image
+        try:
+            pil_image = Image.open(io.BytesIO(contents))
+        except Exception as e:
+            logger.error(f"Error loading image: {str(e)}")
+            raise HTTPException(
+                status_code=400, detail="Invalid or corrupted image file"
+            )
+
+        # Import and use coarse classifier
+        from app.ml_models.coarse_classifier import get_coarse_classifier
+
+        classifier = get_coarse_classifier()
+        result = classifier.classify_with_usda_context(pil_image, query or "")
+
+        logger.info(
+            f"Coarse classification: {result['category']} "
+            f"(confidence: {result['confidence']:.2%})"
+        )
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Coarse classification error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Coarse classification failed: {str(e)}",
+        )
+
+
+@router.get("/coarse-classify/categories")
+async def get_coarse_categories():
+    """
+    Get list of coarse food categories and their USDA data type mappings.
+
+    **Returns:**
+    - List of all supported food categories
+    - Mapping of each category to recommended USDA data types
+    - Category descriptions
+    """
+    try:
+        from app.ml_models.coarse_classifier import (
+            FoodCategory,
+            CATEGORY_TO_USDA_DATATYPES,
+            get_coarse_classifier,
+        )
+
+        classifier = get_coarse_classifier()
+        model_info = classifier.get_model_info()
+
+        categories = []
+        for cat in FoodCategory:
+            if cat != FoodCategory.UNKNOWN:
+                categories.append({
+                    "category": cat.value,
+                    "usda_datatypes": CATEGORY_TO_USDA_DATATYPES.get(cat, []),
+                })
+
+        return {
+            "categories": categories,
+            "total": len(categories),
+            "model_info": model_info,
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting categories: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get categories: {str(e)}",
+        )

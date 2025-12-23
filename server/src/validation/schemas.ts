@@ -411,3 +411,128 @@ export const createSupplementLogSchema = z.object({
 export const bulkCreateSupplementLogsSchema = z.object({
   logs: z.array(createSupplementLogSchema).min(1, 'At least one log is required'),
 });
+
+// ============================================================================
+// USDA FOOD SEARCH SCHEMAS
+// ============================================================================
+
+/**
+ * USDA Data Types
+ */
+export const usdaDataTypeSchema = z.enum([
+  'Foundation',
+  'SR Legacy',
+  'Survey (FNDDS)',
+  'Branded',
+  'Experimental',
+]);
+
+/**
+ * Food Search Query Parameters
+ */
+export const foodSearchQuerySchema = z.object({
+  q: nonEmptyStringSchema.min(1, 'Search query is required').max(200),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
+  dataType: z.string().optional().transform((val) => {
+    if (!val) return undefined;
+    return val.split(',').filter(Boolean);
+  }),
+  sortBy: z.enum(['dataType.keyword', 'description', 'fdcId', 'publishedDate']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+  brandOwner: z.string().max(100).optional(),
+});
+
+/**
+ * FDC ID parameter schema
+ */
+export const fdcIdParamSchema = z.object({
+  fdcId: z.coerce.number().int().positive('Invalid FDC ID'),
+});
+
+/**
+ * Multiple FDC IDs body schema
+ */
+export const bulkFdcIdsSchema = z.object({
+  fdcIds: z.array(z.number().int().positive()).min(1).max(20),
+  format: z.enum(['abridged', 'full']).optional(),
+  nutrients: z.array(z.number().int().positive()).optional(),
+});
+
+/**
+ * Classification hints for hybrid search
+ */
+export const classificationHintsSchema = z.object({
+  coarseCategory: z.string().optional(),
+  finegrainedSuggestions: z.array(z.string()).optional(),
+  colorProfile: z.record(z.number()).optional(),
+  cookingMethod: z.string().optional(),
+  brandDetected: z.string().optional(),
+  portionEstimate: z.number().positive().optional(),
+});
+
+/**
+ * Classify and search request body
+ */
+export const classifyAndSearchSchema = z.object({
+  image: z.string().min(1, 'Image data is required'),
+  dimensions: z.object({
+    width: z.number().positive(),
+    height: z.number().positive(),
+    depth: z.number().positive().optional(),
+  }).optional(),
+});
+
+// ============================================================================
+// FOOD FEEDBACK SCHEMAS
+// ============================================================================
+
+/**
+ * Food feedback submission request body
+ */
+export const submitFoodFeedbackSchema = z.object({
+  imageHash: nonEmptyStringSchema.min(8, 'Image hash is required'),
+  classificationId: z.string().optional(),
+  originalPrediction: nonEmptyStringSchema.min(1, 'Original prediction is required'),
+  originalConfidence: z.number().min(0).max(1).default(0),
+  originalCategory: z.string().optional(),
+  selectedFdcId: z.number().int().positive('Valid FDC ID is required'),
+  selectedFoodName: nonEmptyStringSchema.min(1, 'Selected food name is required'),
+  wasCorrect: z.boolean(),
+  classificationHints: z.record(z.unknown()).optional(),
+  userDescription: z.string().max(500).optional(),
+});
+
+/**
+ * Feedback list query parameters
+ */
+export const feedbackListQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  status: z.enum(['pending', 'approved', 'rejected', 'applied']).optional(),
+});
+
+/**
+ * Update feedback status request body
+ */
+export const updateFeedbackStatusSchema = z.object({
+  status: z.enum(['pending', 'approved', 'rejected', 'applied']),
+});
+
+/**
+ * Food feedback ID parameter
+ */
+export const feedbackIdParamSchema = z.object({
+  feedbackId: nonEmptyStringSchema,
+});
+
+/**
+ * Legacy food feedback schema (for backwards compatibility)
+ */
+export const foodFeedbackSchema = z.object({
+  classificationId: z.string().optional(),
+  originalPrediction: z.string().optional(),
+  selectedFdcId: z.number().int().positive('Valid FDC ID is required'),
+  wasCorrect: z.boolean(),
+  imageHash: z.string().optional(),
+});
