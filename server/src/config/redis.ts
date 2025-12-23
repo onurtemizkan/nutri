@@ -29,7 +29,7 @@ export function initializeRedis(): Redis | null {
   try {
     redisClient = new Redis(REDIS_URL, {
       maxRetriesPerRequest: 3,
-      retryStrategy(times) {
+      retryStrategy(times: number) {
         if (times > 3) {
           logger.warn('Redis connection failed after 3 retries, giving up');
           return null; // Stop retrying
@@ -50,7 +50,7 @@ export function initializeRedis(): Redis | null {
       logger.info('Redis ready to accept commands');
     });
 
-    redisClient.on('error', (err) => {
+    redisClient.on('error', (err: Error) => {
       logger.error({ error: err.message }, 'Redis error');
       isConnected = false;
     });
@@ -61,7 +61,7 @@ export function initializeRedis(): Redis | null {
     });
 
     // Attempt to connect
-    redisClient.connect().catch((err) => {
+    redisClient.connect().catch((err: Error) => {
       logger.warn({ error: err.message }, 'Redis connection failed, caching disabled');
       isConnected = false;
     });
