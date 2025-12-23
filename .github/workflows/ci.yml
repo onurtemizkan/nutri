@@ -84,7 +84,7 @@ jobs:
         run: cd server && npx prisma db push --accept-data-loss --skip-generate
 
       - name: Run backend tests
-        run: cd server && npm test -- --coverage
+        run: cd server && npm test -- --coverage --forceExit
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
