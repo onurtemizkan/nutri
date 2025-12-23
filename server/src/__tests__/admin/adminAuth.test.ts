@@ -165,7 +165,9 @@ describe('Admin Authentication', () => {
     });
 
     it('should reject setup when admins already exist', async () => {
-      // Create an admin first
+      // Ensure clean state and create an admin
+      await prisma.adminAuditLog.deleteMany();
+      await prisma.adminUser.deleteMany();
       await createTestAdminUser();
 
       const response = await request(app)
