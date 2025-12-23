@@ -102,11 +102,14 @@ export class USDAApiService {
   private readonly client: AxiosInstance;
   private readonly rateLimiter: RateLimiter;
   private readonly log: Logger;
+  private readonly apiKey: string;
 
   constructor() {
     this.log = createChildLogger({ service: 'USDAApiService' });
+    // Read API key at construction time for testability
+    this.apiKey = process.env.USDA_API_KEY || '';
 
-    if (!USDA_API_KEY) {
+    if (!this.apiKey) {
       this.log.warn(
         'USDA_API_KEY not configured. USDA API requests will fail.'
       );
@@ -117,7 +120,7 @@ export class USDAApiService {
       timeout: USDA_REQUEST_TIMEOUT_MS,
       headers: {
         'Content-Type': 'application/json',
-        'X-Api-Key': USDA_API_KEY,
+        'X-Api-Key': this.apiKey,
       },
     });
 
@@ -265,7 +268,7 @@ export class USDAApiService {
    * Check if USDA API is configured and accessible
    */
   async healthCheck(): Promise<{ healthy: boolean; message: string }> {
-    if (!USDA_API_KEY) {
+    if (!this.apiKey) {
       return { healthy: false, message: 'USDA_API_KEY not configured' };
     }
 

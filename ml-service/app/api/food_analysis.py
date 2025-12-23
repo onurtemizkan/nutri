@@ -761,7 +761,10 @@ async def get_food_suggestions(
 @router.post("/coarse-classify")
 async def coarse_classify(
     image: UploadFile = File(..., description="Food image (JPEG/PNG, max 10MB)"),
-    query: Optional[str] = Form(None, description="Optional user-provided text to enhance classification context and search query"),
+    query: Optional[str] = Form(
+        None,
+        description="Optional user-provided text to enhance classification context and search query",
+    ),
 ):
     """
     Coarse-grained food classification for USDA search integration.
@@ -876,10 +879,12 @@ async def get_coarse_categories():
         categories = []
         for cat in FoodCategory:
             if cat != FoodCategory.UNKNOWN:
-                categories.append({
-                    "category": cat.value,
-                    "usda_datatypes": CATEGORY_TO_USDA_DATATYPES.get(cat, []),
-                })
+                categories.append(
+                    {
+                        "category": cat.value,
+                        "usda_datatypes": CATEGORY_TO_USDA_DATATYPES.get(cat, []),
+                    }
+                )
 
         return {
             "categories": categories,

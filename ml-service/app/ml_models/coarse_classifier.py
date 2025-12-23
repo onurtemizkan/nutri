@@ -33,6 +33,7 @@ class FoodCategory(str, Enum):
     - Prepared dishes → Survey (FNDDS)
     - Packaged foods → Branded
     """
+
     # Fruits
     FRUITS_FRESH = "fruits_fresh"
     FRUITS_PROCESSED = "fruits_processed"  # canned, dried, juice
@@ -109,7 +110,6 @@ CATEGORY_TO_USDA_DATATYPES: Dict[FoodCategory, List[str]] = {
     FoodCategory.NUTS_SEEDS: ["Foundation", "SR Legacy"],
     FoodCategory.EGGS: ["Foundation", "SR Legacy"],
     FoodCategory.GRAINS_RICE: ["Foundation", "SR Legacy"],
-
     # Processed/prepared → SR Legacy, Branded
     FoodCategory.FRUITS_PROCESSED: ["SR Legacy", "Branded"],
     FoodCategory.VEGETABLES_COOKED: ["SR Legacy", "Survey (FNDDS)"],
@@ -124,11 +124,9 @@ CATEGORY_TO_USDA_DATATYPES: Dict[FoodCategory, List[str]] = {
     FoodCategory.SNACKS_SWEET: ["Branded"],
     FoodCategory.SNACKS_SAVORY: ["Branded"],
     FoodCategory.CONDIMENTS_SAUCES: ["Branded", "SR Legacy"],
-
     # Mixed dishes → Survey (FNDDS)
     FoodCategory.MIXED_DISHES: ["Survey (FNDDS)", "Branded"],
     FoodCategory.FAST_FOOD: ["Branded", "Survey (FNDDS)"],
-
     # Unknown → search all
     FoodCategory.UNKNOWN: ["Foundation", "SR Legacy", "Survey (FNDDS)", "Branded"],
 }
@@ -323,6 +321,7 @@ CATEGORY_PROMPTS: Dict[FoodCategory, List[str]] = {
 @dataclass
 class CoarseClassification:
     """Result from coarse category classification."""
+
     category: FoodCategory
     confidence: float
     subcategory_hints: List[str]  # E.g., "appears grilled", "raw texture"
@@ -391,10 +390,7 @@ class CoarseFoodClassifier:
         for category, prompts in CATEGORY_PROMPTS.items():
             # Encode all prompts for this category
             inputs = self._processor(
-                text=prompts,
-                return_tensors="pt",
-                padding=True,
-                truncation=True
+                text=prompts, return_tensors="pt", padding=True, truncation=True
             )
             inputs = {k: v.to(self._device) for k, v in inputs.items()}
 
@@ -406,11 +402,7 @@ class CoarseFoodClassifier:
         return text_features
 
     @torch.no_grad()
-    def classify(
-        self,
-        image: Image.Image,
-        top_k: int = 3
-    ) -> CoarseClassification:
+    def classify(self, image: Image.Image, top_k: int = 3) -> CoarseClassification:
         """
         Classify a food image into a coarse category.
 
@@ -439,19 +431,13 @@ class CoarseFoodClassifier:
                     prompt_to_category[prompt] = category
 
             # Encode image
-            image_inputs = self._processor(
-                images=image,
-                return_tensors="pt"
-            )
+            image_inputs = self._processor(images=image, return_tensors="pt")
             image_inputs = {k: v.to(self._device) for k, v in image_inputs.items()}
             image_features = self._model.get_image_features(**image_inputs)
 
             # Encode all prompts
             text_inputs = self._processor(
-                text=all_prompts,
-                return_tensors="pt",
-                padding=True,
-                truncation=True
+                text=all_prompts, return_tensors="pt", padding=True, truncation=True
             )
             text_inputs = {k: v.to(self._device) for k, v in text_inputs.items()}
             text_features = self._model.get_text_features(**text_inputs)
@@ -498,8 +484,7 @@ class CoarseFoodClassifier:
 
             # Get recommended USDA data types
             usda_datatypes = CATEGORY_TO_USDA_DATATYPES.get(
-                best_category,
-                ["Foundation", "SR Legacy", "Survey (FNDDS)", "Branded"]
+                best_category, ["Foundation", "SR Legacy", "Survey (FNDDS)", "Branded"]
             )
 
             logger.info(
@@ -532,7 +517,7 @@ class CoarseFoodClassifier:
         similarities: torch.Tensor,
         prompts: List[str],
         prompt_to_category: Dict[str, FoodCategory],
-        best_category: FoodCategory
+        best_category: FoodCategory,
     ) -> List[str]:
         """Generate subcategory hints based on which prompts matched best."""
         hints = []
@@ -552,8 +537,18 @@ class CoarseFoodClassifier:
 
             # Extract descriptive words
             hint_keywords = [
-                "grilled", "raw", "cooked", "fried", "baked", "steamed",
-                "fresh", "sliced", "whole", "processed", "canned", "dried"
+                "grilled",
+                "raw",
+                "cooked",
+                "fried",
+                "baked",
+                "steamed",
+                "fresh",
+                "sliced",
+                "whole",
+                "processed",
+                "canned",
+                "dried",
             ]
 
             for keyword in hint_keywords:
@@ -562,11 +557,7 @@ class CoarseFoodClassifier:
 
         return hints[:3]  # Limit to top 3 hints
 
-    def classify_with_usda_context(
-        self,
-        image: Image.Image,
-        query: str = ""
-    ) -> Dict:
+    def classify_with_usda_context(self, image: Image.Image, query: str = "") -> Dict:
         """
         Classify and return context optimized for USDA search.
 
@@ -586,8 +577,7 @@ class CoarseFoodClassifier:
             "search_hints": {
                 "subcategory_hints": classification.subcategory_hints,
                 "suggested_query_enhancement": self._get_query_enhancement(
-                    classification.category,
-                    query
+                    classification.category, query
                 ),
             },
             "alternatives": [
@@ -596,11 +586,7 @@ class CoarseFoodClassifier:
             ],
         }
 
-    def _get_query_enhancement(
-        self,
-        category: FoodCategory,
-        query: str
-    ) -> str:
+    def _get_query_enhancement(self, category: FoodCategory, query: str) -> str:
         """Generate query enhancement based on category."""
         # Category-specific search terms to improve USDA results
         enhancements = {
@@ -629,7 +615,9 @@ class CoarseFoodClassifier:
             "version": "1.0.0",
             "model": "openai/clip-vit-base-patch32",
             "num_categories": len(FoodCategory) - 1,  # Exclude UNKNOWN
-            "categories": [cat.value for cat in FoodCategory if cat != FoodCategory.UNKNOWN],
+            "categories": [
+                cat.value for cat in FoodCategory if cat != FoodCategory.UNKNOWN
+            ],
             "target_accuracy": {
                 "top_1": 0.90,
                 "top_3": 0.98,

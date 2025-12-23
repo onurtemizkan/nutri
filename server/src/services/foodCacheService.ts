@@ -289,7 +289,7 @@ export class FoodCacheService {
       if (!items || items.length === 0) {
         return [];
       }
-      return items.map((id) => parseInt(id, 10));
+      return items.map((id: string) => parseInt(id, 10));
     } catch (error) {
       this.log.warn({ error, userId }, 'Error getting recent foods');
       return [];

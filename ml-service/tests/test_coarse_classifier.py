@@ -23,21 +23,43 @@ class TestFoodCategory:
         from app.ml_models.coarse_classifier import FoodCategory
 
         expected_categories = [
-            "fruits_fresh", "fruits_processed",
-            "vegetables_leafy", "vegetables_root", "vegetables_other", "vegetables_cooked",
-            "meat_red", "meat_poultry", "meat_processed",
-            "seafood_fish", "seafood_shellfish",
-            "dairy_milk", "dairy_cheese", "dairy_yogurt", "dairy_other",
-            "grains_bread", "grains_pasta", "grains_rice", "grains_cereal", "grains_other",
-            "legumes", "nuts_seeds",
-            "beverages_hot", "beverages_cold",
-            "snacks_sweet", "snacks_savory",
-            "mixed_dishes", "fast_food",
-            "condiments_sauces", "eggs", "unknown"
+            "fruits_fresh",
+            "fruits_processed",
+            "vegetables_leafy",
+            "vegetables_root",
+            "vegetables_other",
+            "vegetables_cooked",
+            "meat_red",
+            "meat_poultry",
+            "meat_processed",
+            "seafood_fish",
+            "seafood_shellfish",
+            "dairy_milk",
+            "dairy_cheese",
+            "dairy_yogurt",
+            "dairy_other",
+            "grains_bread",
+            "grains_pasta",
+            "grains_rice",
+            "grains_cereal",
+            "grains_other",
+            "legumes",
+            "nuts_seeds",
+            "beverages_hot",
+            "beverages_cold",
+            "snacks_sweet",
+            "snacks_savory",
+            "mixed_dishes",
+            "fast_food",
+            "condiments_sauces",
+            "eggs",
+            "unknown",
         ]
 
         for cat_name in expected_categories:
-            assert hasattr(FoodCategory, cat_name.upper()), f"Missing category: {cat_name}"
+            assert hasattr(
+                FoodCategory, cat_name.upper()
+            ), f"Missing category: {cat_name}"
 
     def test_category_values_are_strings(self):
         """All category values should be strings for JSON serialization."""
@@ -88,8 +110,9 @@ class TestUSDADataTypeMapping:
 
         for cat in fresh_categories:
             datatypes = CATEGORY_TO_USDA_DATATYPES[cat]
-            assert "Foundation" in datatypes or "SR Legacy" in datatypes, \
-                f"Fresh category {cat} should prefer Foundation/SR Legacy"
+            assert (
+                "Foundation" in datatypes or "SR Legacy" in datatypes
+            ), f"Fresh category {cat} should prefer Foundation/SR Legacy"
 
     def test_branded_categories_include_branded(self):
         """Packaged food categories should include Branded data type."""
@@ -106,8 +129,9 @@ class TestUSDADataTypeMapping:
 
         for cat in branded_categories:
             datatypes = CATEGORY_TO_USDA_DATATYPES[cat]
-            assert "Branded" in datatypes, \
-                f"Branded category {cat} should include Branded data type"
+            assert (
+                "Branded" in datatypes
+            ), f"Branded category {cat} should include Branded data type"
 
 
 class TestCategoryPrompts:
@@ -133,9 +157,14 @@ class TestCategoryPrompts:
                 assert isinstance(prompt, str)
                 assert len(prompt) > 10, f"Prompt too short for {category}: {prompt}"
                 # Most prompts should mention "photo" or describe food
-                assert "photo" in prompt.lower() or "food" in prompt.lower() or \
-                    any(word in prompt.lower() for word in ["fruit", "vegetable", "meat", "milk"]), \
-                    f"Prompt doesn't look like a food description: {prompt}"
+                assert (
+                    "photo" in prompt.lower()
+                    or "food" in prompt.lower()
+                    or any(
+                        word in prompt.lower()
+                        for word in ["fruit", "vegetable", "meat", "milk"]
+                    )
+                ), f"Prompt doesn't look like a food description: {prompt}"
 
 
 class TestCoarseClassification:
@@ -199,11 +228,12 @@ class TestCoarseFoodClassifier:
         classifier = CoarseFoodClassifier()
 
         # Mock the classify method
-        with patch.object(classifier, 'classify') as mock_classify:
+        with patch.object(classifier, "classify") as mock_classify:
             from app.ml_models.coarse_classifier import (
                 CoarseClassification,
                 FoodCategory,
             )
+
             mock_classify.return_value = CoarseClassification(
                 category=FoodCategory.FRUITS_FRESH,
                 confidence=0.85,
@@ -214,7 +244,7 @@ class TestCoarseFoodClassifier:
             )
 
             # Create test image
-            test_image = Image.new('RGB', (224, 224), color='red')
+            test_image = Image.new("RGB", (224, 224), color="red")
 
             result = classifier.classify_with_usda_context(test_image, "apple")
 
@@ -255,7 +285,9 @@ class TestQueryEnhancement:
         )
 
         classifier = CoarseFoodClassifier()
-        result = classifier._get_query_enhancement(FoodCategory.GRAINS_PASTA, "spaghetti")
+        result = classifier._get_query_enhancement(
+            FoodCategory.GRAINS_PASTA, "spaghetti"
+        )
 
         assert "spaghetti" in result.lower()
 
@@ -273,12 +305,14 @@ class TestEdgeCases:
         classifier = CoarseFoodClassifier()
 
         # Create invalid image
-        invalid_image = Image.new('L', (10, 10))  # Grayscale, small
+        invalid_image = Image.new("L", (10, 10))  # Grayscale, small
 
         # Mock model to raise exception
-        with patch.object(classifier, '_model', None):
-            with patch.object(classifier, '_loaded', False):
-                with patch.object(classifier, 'load_model', side_effect=Exception("Model load failed")):
+        with patch.object(classifier, "_model", None):
+            with patch.object(classifier, "_loaded", False):
+                with patch.object(
+                    classifier, "load_model", side_effect=Exception("Model load failed")
+                ):
                     result = classifier.classify(invalid_image)
 
                     assert result.category == FoodCategory.UNKNOWN
@@ -297,10 +331,7 @@ class TestEdgeCases:
         similarities = torch.tensor([0.5] * 10)
 
         hints = classifier._generate_hints(
-            similarities,
-            prompts,
-            prompt_to_category,
-            None  # best_category
+            similarities, prompts, prompt_to_category, None  # best_category
         )
 
         # Should be limited to max 3 hints
