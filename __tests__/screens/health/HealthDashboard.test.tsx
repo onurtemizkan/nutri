@@ -235,18 +235,17 @@ describe('HealthDashboard', () => {
     mockedHealthMetricsApi.getDashboardData.mockResolvedValue(mockDashboardData);
 
     // Act
-    const { findByText, getByText } = render(<HealthScreen />);
-    await findByText('Health');
+    const { findByText } = render(<HealthScreen />);
 
-    // Click on Week button
-    const weekButton = getByText('Week');
+    // Wait for content to load (Week button should be visible after loading)
+    const weekButton = await findByText('Week');
     fireEvent.press(weekButton);
 
     // Assert - Week button should be clickable
     expect(weekButton).toBeTruthy();
 
-    // Click on Month button
-    const monthButton = getByText('Month');
+    // Click on Month button (also wait for it)
+    const monthButton = await findByText('Month');
     fireEvent.press(monthButton);
 
     // Assert - Month button should be clickable

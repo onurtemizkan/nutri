@@ -1,14 +1,27 @@
 /**
  * Activity Sync Tests
+ * Tests for @kingstinct/react-native-healthkit integration
  */
 
-import { mockHealthKit, resetMocks, setupDefaultMocks, mockPlatform } from './test-utils';
+import { mockKingstinctHealthKit, resetMocks, setupDefaultMocks, mockPlatform } from './test-utils';
 import {
   fetchStepCount,
   fetchActiveCalories,
   syncActivityMetrics,
   getTodayActivitySummary,
 } from '@/lib/services/healthkit/activity';
+
+// Helper to create mock samples in @kingstinct/react-native-healthkit format
+function createKingstinctSample(quantity: number, startDate: Date, endDate?: Date) {
+  return {
+    quantity,
+    startDate,
+    endDate: endDate || startDate,
+    uuid: `uuid_${Date.now()}_${Math.random()}`,
+    device: { name: 'Apple Watch' },
+    sourceRevision: { source: { name: 'Apple Watch', bundleIdentifier: 'com.apple.health' } },
+  };
+}
 
 describe('Activity Sync', () => {
   beforeEach(() => {
@@ -36,21 +49,19 @@ describe('Activity Sync', () => {
 
     it('should transform daily step count samples correctly', async () => {
       const mockSamples = [
-        {
-          value: 8500,
-          startDate: '2024-01-01T00:00:00Z',
-          endDate: '2024-01-01T23:59:59Z',
-        },
-        {
-          value: 10200,
-          startDate: '2024-01-02T00:00:00Z',
-          endDate: '2024-01-02T23:59:59Z',
-        },
+        createKingstinctSample(
+          8500,
+          new Date('2024-01-01T00:00:00Z'),
+          new Date('2024-01-01T23:59:59Z')
+        ),
+        createKingstinctSample(
+          10200,
+          new Date('2024-01-02T00:00:00Z'),
+          new Date('2024-01-02T23:59:59Z')
+        ),
       ];
 
-      mockHealthKit.getDailyStepCountSamples.mockImplementation((options, callback) =>
-        callback(null, mockSamples)
-      );
+      mockKingstinctHealthKit.queryQuantitySamples.mockResolvedValue(mockSamples);
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -75,9 +86,7 @@ describe('Activity Sync', () => {
     });
 
     it('should return empty array on HealthKit error', async () => {
-      mockHealthKit.getDailyStepCountSamples.mockImplementation((options, callback) =>
-        callback('HealthKit error', null)
-      );
+      mockKingstinctHealthKit.queryQuantitySamples.mockRejectedValue(new Error('HealthKit error'));
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -92,23 +101,19 @@ describe('Activity Sync', () => {
   describe('fetchActiveCalories', () => {
     it('should transform active energy samples correctly', async () => {
       const mockSamples = [
-        {
-          value: 450,
-          startDate: '2024-01-01T00:00:00Z',
-          endDate: '2024-01-01T23:59:59Z',
-          sourceName: 'Apple Watch',
-        },
-        {
-          value: 380,
-          startDate: '2024-01-02T00:00:00Z',
-          endDate: '2024-01-02T23:59:59Z',
-          sourceName: 'Apple Watch',
-        },
+        createKingstinctSample(
+          450,
+          new Date('2024-01-01T00:00:00Z'),
+          new Date('2024-01-01T23:59:59Z')
+        ),
+        createKingstinctSample(
+          380,
+          new Date('2024-01-02T00:00:00Z'),
+          new Date('2024-01-02T23:59:59Z')
+        ),
       ];
 
-      mockHealthKit.getActiveEnergyBurned.mockImplementation((options, callback) =>
-        callback(null, mockSamples)
-      );
+      mockKingstinctHealthKit.queryQuantitySamples.mockResolvedValue(mockSamples);
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -127,9 +132,7 @@ describe('Activity Sync', () => {
     });
 
     it('should return empty array on HealthKit error', async () => {
-      mockHealthKit.getActiveEnergyBurned.mockImplementation((options, callback) =>
-        callback('HealthKit error', null)
-      );
+      mockKingstinctHealthKit.queryQuantitySamples.mockRejectedValue(new Error('HealthKit error'));
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -143,29 +146,21 @@ describe('Activity Sync', () => {
 
   describe('syncActivityMetrics', () => {
     it('should combine steps and active calories', async () => {
-      const stepSamples = [
-        {
-          value: 8500,
-          startDate: '2024-01-01T00:00:00Z',
-          endDate: '2024-01-01T23:59:59Z',
-        },
-      ];
-
-      const calorieSamples = [
-        {
-          value: 450,
-          startDate: '2024-01-01T00:00:00Z',
-          endDate: '2024-01-01T23:59:59Z',
-          sourceName: 'Apple Watch',
-        },
-      ];
-
-      mockHealthKit.getDailyStepCountSamples.mockImplementation((options, callback) =>
-        callback(null, stepSamples)
+      const stepSample = createKingstinctSample(
+        8500,
+        new Date('2024-01-01T00:00:00Z'),
+        new Date('2024-01-01T23:59:59Z')
       );
-      mockHealthKit.getActiveEnergyBurned.mockImplementation((options, callback) =>
-        callback(null, calorieSamples)
+      const calorieSample = createKingstinctSample(
+        450,
+        new Date('2024-01-01T00:00:00Z'),
+        new Date('2024-01-01T23:59:59Z')
       );
+
+      // First call for steps, second for calories
+      mockKingstinctHealthKit.queryQuantitySamples
+        .mockResolvedValueOnce([stepSample])
+        .mockResolvedValueOnce([calorieSample]);
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -181,29 +176,20 @@ describe('Activity Sync', () => {
     });
 
     it('should sort results by recordedAt (newest first)', async () => {
-      const stepSamples = [
-        {
-          value: 8500,
-          startDate: '2024-01-01T00:00:00Z',
-          endDate: '2024-01-01T23:59:59Z',
-        },
-      ];
-
-      const calorieSamples = [
-        {
-          value: 450,
-          startDate: '2024-01-03T00:00:00Z', // Newer
-          endDate: '2024-01-03T23:59:59Z',
-          sourceName: 'Apple Watch',
-        },
-      ];
-
-      mockHealthKit.getDailyStepCountSamples.mockImplementation((options, callback) =>
-        callback(null, stepSamples)
+      const stepSample = createKingstinctSample(
+        8500,
+        new Date('2024-01-01T00:00:00Z'),
+        new Date('2024-01-01T23:59:59Z')
       );
-      mockHealthKit.getActiveEnergyBurned.mockImplementation((options, callback) =>
-        callback(null, calorieSamples)
+      const calorieSample = createKingstinctSample(
+        450,
+        new Date('2024-01-03T00:00:00Z'), // Newer
+        new Date('2024-01-03T23:59:59Z')
       );
+
+      mockKingstinctHealthKit.queryQuantitySamples
+        .mockResolvedValueOnce([stepSample])
+        .mockResolvedValueOnce([calorieSample]);
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -221,29 +207,17 @@ describe('Activity Sync', () => {
   describe('getTodayActivitySummary', () => {
     it('should return today steps and calories', async () => {
       const today = new Date();
-      const todayStr = today.toISOString().split('T')[0];
+      const todayStart = new Date(today);
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date(today);
+      todayEnd.setHours(23, 59, 59, 999);
 
-      // getStepCount returns a single value object
-      mockHealthKit.getStepCount.mockImplementation(
-        (
-          options: unknown,
-          callback: (err: string | null, result: { value: number } | null) => void
-        ) => callback(null, { value: 5000 })
-      );
+      const stepSample = createKingstinctSample(5000, todayStart, todayEnd);
+      const calorieSample = createKingstinctSample(250, todayStart, todayEnd);
 
-      const calorieSamples = [
-        {
-          value: 250,
-          startDate: `${todayStr}T00:00:00Z`,
-          endDate: `${todayStr}T23:59:59Z`,
-          sourceName: 'Apple Watch',
-        },
-      ];
-
-      mockHealthKit.getActiveEnergyBurned.mockImplementation(
-        (options: unknown, callback: (err: string | null, data: unknown) => void) =>
-          callback(null, calorieSamples)
-      );
+      mockKingstinctHealthKit.queryQuantitySamples
+        .mockResolvedValueOnce([stepSample])
+        .mockResolvedValueOnce([calorieSample]);
 
       const result = await getTodayActivitySummary();
 
@@ -252,16 +226,9 @@ describe('Activity Sync', () => {
     });
 
     it('should return zeros when no data available', async () => {
-      mockHealthKit.getStepCount.mockImplementation(
-        (
-          options: unknown,
-          callback: (err: string | null, result: { value: number } | null) => void
-        ) => callback(null, { value: 0 })
-      );
-      mockHealthKit.getActiveEnergyBurned.mockImplementation(
-        (options: unknown, callback: (err: string | null, data: unknown) => void) =>
-          callback(null, [])
-      );
+      mockKingstinctHealthKit.queryQuantitySamples
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
 
       const result = await getTodayActivitySummary();
 
@@ -270,16 +237,7 @@ describe('Activity Sync', () => {
     });
 
     it('should handle HealthKit errors gracefully', async () => {
-      mockHealthKit.getStepCount.mockImplementation(
-        (
-          options: unknown,
-          callback: (err: string | null, result: { value: number } | null) => void
-        ) => callback('Error', null)
-      );
-      mockHealthKit.getActiveEnergyBurned.mockImplementation(
-        (options: unknown, callback: (err: string | null, data: unknown) => void) =>
-          callback('Error', null)
-      );
+      mockKingstinctHealthKit.queryQuantitySamples.mockRejectedValue(new Error('HealthKit error'));
 
       const result = await getTodayActivitySummary();
 

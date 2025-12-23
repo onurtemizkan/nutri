@@ -158,10 +158,62 @@ else
     print_success "Port 3000 is available"
 fi
 
+if port_in_use 8000; then
+    print_warning "Port 8000 is already in use (ML Service)."
+else
+    print_success "Port 8000 is available"
+fi
+
 # ============================================================================
-# Step 5: Get Local IP Address
+# Step 5: Start ML Service
 # ============================================================================
-print_header "📱 Step 5: Network Configuration"
+print_header "🧠 Step 5: Starting ML Service"
+
+# Get project root
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Create logs directory if needed
+mkdir -p "$PROJECT_ROOT/logs"
+
+# Check if already running
+if port_in_use 8000; then
+    print_warning "ML Service is already running on port 8000"
+else
+    print_info "Starting ML Service on port 8000..."
+
+    # Check if venv exists
+    if [ ! -f "$PROJECT_ROOT/ml-service/venv/bin/uvicorn" ]; then
+        print_warning "ML Service venv not set up. Installing dependencies..."
+        cd "$PROJECT_ROOT/ml-service"
+        python3 -m venv venv 2>/dev/null || true
+        ./venv/bin/pip install -r requirements.txt > "$PROJECT_ROOT/logs/ml-service-install.log" 2>&1
+        cd "$PROJECT_ROOT"
+        print_success "ML Service dependencies installed"
+    fi
+
+    # Start ML service in background
+    cd "$PROJECT_ROOT/ml-service"
+    ./venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload > "$PROJECT_ROOT/logs/ml-service.log" 2>&1 &
+    ML_PID=$!
+    echo $ML_PID > "$PROJECT_ROOT/logs/ml-service.pid"
+    cd "$PROJECT_ROOT"
+
+    # Wait for server to start
+    sleep 3
+
+    # Check if it's running
+    if port_in_use 8000; then
+        print_success "ML Service started (PID: $ML_PID)"
+        print_info "Logs: tail -f logs/ml-service.log"
+    else
+        print_warning "ML Service may still be starting. Check logs/ml-service.log"
+    fi
+fi
+
+# ============================================================================
+# Step 6: Get Local IP Address
+# ============================================================================
+print_header "📱 Step 6: Network Configuration"
 
 # Get local IP address for simulator/device access
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -176,7 +228,24 @@ print_success "Local IP address: $LOCAL_IP"
 print_info "Update lib/api/client.ts to use: http://$LOCAL_IP:3000/api"
 
 # ============================================================================
-# Step 6: Display Service Status
+# Step 7: Test ML Service Health
+# ============================================================================
+print_header "🔍 Step 7: Testing ML Service"
+
+print_info "Checking ML Service health endpoint..."
+sleep 2  # Give server a moment to fully start
+
+if curl -s http://localhost:8000/health >/dev/null 2>&1; then
+    ML_HEALTH_RESPONSE=$(curl -s http://localhost:8000/health)
+    print_success "ML Service is healthy!"
+    echo "    Response: $ML_HEALTH_RESPONSE"
+else
+    print_warning "ML Service health check failed. Server may still be starting..."
+    print_info "Check logs: tail -f logs/ml-service.log"
+fi
+
+# ============================================================================
+# Step 8: Display Service Status
 # ============================================================================
 print_header "📊 Service Status"
 
@@ -188,6 +257,16 @@ echo ""
 print_success "✅ All services are ready!"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "🎉 ${GREEN}SUCCESS!${NC} Infrastructure + ML Service running!"
+echo ""
+echo "📊 Service URLs:"
+echo "  • ML Service:      ${BLUE}http://localhost:8000${NC}"
+echo "  • ML Health:       ${BLUE}http://localhost:8000/health${NC}"
+echo ""
+echo "📝 Logs:"
+echo "  • ML Service:      ${BLUE}tail -f logs/ml-service.log${NC}"
+echo "  • Docker:          ${BLUE}docker-compose logs -f${NC}"
 echo ""
 echo "📌 Next Steps:"
 echo ""

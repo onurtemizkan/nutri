@@ -42,13 +42,33 @@ print_header() {
 
 print_header "🛑 Stopping Nutri Development Environment"
 
+# Get project root directory
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$PROJECT_ROOT"
+
 # ============================================================================
 # Step 1: Stop Node.js Backend (if running)
 # ============================================================================
 print_header "📦 Step 1: Stopping Backend API"
 
+# Try PID file first (graceful shutdown)
+if [ -f "$PROJECT_ROOT/logs/backend.pid" ]; then
+    BACKEND_PID=$(cat "$PROJECT_ROOT/logs/backend.pid")
+    if kill -0 $BACKEND_PID 2>/dev/null; then
+        print_info "Stopping backend API (PID: $BACKEND_PID)..."
+        kill -15 $BACKEND_PID 2>/dev/null || true
+        sleep 1
+        # Force kill if still running
+        if kill -0 $BACKEND_PID 2>/dev/null; then
+            kill -9 $BACKEND_PID 2>/dev/null || true
+        fi
+    fi
+    rm -f "$PROJECT_ROOT/logs/backend.pid"
+fi
+
+# Also kill by port (in case PID file is missing)
 if lsof -ti:3000 >/dev/null 2>&1; then
-    print_info "Stopping backend server on port 3000..."
+    print_info "Stopping process on port 3000..."
     kill -9 $(lsof -ti:3000) 2>/dev/null || true
     print_success "Backend server stopped"
 else
@@ -58,10 +78,26 @@ fi
 # ============================================================================
 # Step 2: Stop ML Service (if running)
 # ============================================================================
-print_header "🤖 Step 2: Stopping ML Service"
+print_header "🧠 Step 2: Stopping ML Service"
 
+# Try PID file first (graceful shutdown)
+if [ -f "$PROJECT_ROOT/logs/ml-service.pid" ]; then
+    ML_PID=$(cat "$PROJECT_ROOT/logs/ml-service.pid")
+    if kill -0 $ML_PID 2>/dev/null; then
+        print_info "Stopping ML Service (PID: $ML_PID)..."
+        kill -15 $ML_PID 2>/dev/null || true
+        sleep 1
+        # Force kill if still running
+        if kill -0 $ML_PID 2>/dev/null; then
+            kill -9 $ML_PID 2>/dev/null || true
+        fi
+    fi
+    rm -f "$PROJECT_ROOT/logs/ml-service.pid"
+fi
+
+# Also kill by port (in case PID file is missing)
 if lsof -ti:8000 >/dev/null 2>&1; then
-    print_info "Stopping ML service on port 8000..."
+    print_info "Stopping process on port 8000..."
     kill -9 $(lsof -ti:8000) 2>/dev/null || true
     print_success "ML service stopped"
 else

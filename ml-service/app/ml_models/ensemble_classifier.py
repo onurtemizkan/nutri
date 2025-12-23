@@ -760,7 +760,9 @@ class EnsembleFoodClassifier:
     """
 
     CONFIDENCE_THRESHOLD = 0.50  # Below this, consult Food-101 fallback
-    MINIMUM_CONFIDENCE = 0.12  # Below this, return "unknown" (too uncertain to classify)
+    MINIMUM_CONFIDENCE = (
+        0.12  # Below this, return "unknown" (too uncertain to classify)
+    )
     CLIP_WEIGHT = 1.0  # Primary classifier weight
     FOOD_101_WEIGHT = 0.7  # Secondary/fallback weight
     SPECIALIST_WEIGHT = 0.8  # Weight for specialist classifiers (fruit/veg, ingredient)
@@ -833,7 +835,9 @@ class EnsembleFoodClassifier:
         return EnsembleResult(
             primary_class="unknown",
             confidence=confidence,  # Keep original confidence for debugging
-            alternatives=[(best_class, confidence)],  # Keep original guess as alternative
+            alternatives=[
+                (best_class, confidence)
+            ],  # Keep original guess as alternative
             contributing_models=contributing_models + ["low_confidence_filter"],
             all_predictions=all_predictions,
         )

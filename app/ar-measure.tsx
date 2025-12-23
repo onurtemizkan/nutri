@@ -54,7 +54,8 @@ export default function ARMeasureScreen() {
   const [mode, setMode] = useState<MeasurementMode>('loading');
   const [previousMode, setPreviousMode] = useState<'ar' | 'manual' | null>(null);
   const [hasLiDAR, setHasLiDAR] = useState(false);
-  const [isLiDARAvailable, setIsLiDARAvailable] = useState(false);
+  const [supportsSceneDepth, setSupportsSceneDepth] = useState(false);
+  const [isARAvailable, setIsARAvailable] = useState(false);
   const [measurement, setMeasurement] = useState<ARMeasurement | null>(null);
   const [calibration, setCalibration] = useState<CalibrationResult | null>(null);
   const [isARSessionActive, setIsARSessionActive] = useState(false);
@@ -78,10 +79,14 @@ export default function ARMeasureScreen() {
 
         const capabilities = await LiDARModule.getDeviceCapabilities();
         setHasLiDAR(capabilities.hasLiDAR);
-        setIsLiDARAvailable(capabilities.hasARKit);
+        setSupportsSceneDepth(capabilities.supportsSceneDepth);
 
-        // Default to AR mode if AR is available, otherwise manual
-        if (capabilities.hasARKit) {
+        // AR is available if device has LiDAR OR supports ARKit Scene Depth (iPhone 12+ with A14 chip)
+        const arAvailable = capabilities.hasLiDAR || capabilities.supportsSceneDepth;
+        setIsARAvailable(arAvailable);
+
+        // Default to AR mode if AR depth is available (LiDAR or Scene Depth), otherwise manual
+        if (arAvailable) {
           setMode('ar');
         } else {
           setMode('manual');
@@ -105,13 +110,18 @@ export default function ARMeasureScreen() {
   // Start/stop AR session based on mode
   useEffect(() => {
     async function startARSession() {
-      if (mode === 'ar' && hasLiDAR && LiDARModule.isAvailable && !isARSessionActive) {
+      // Start AR session if AR mode is selected and device supports depth capture (LiDAR or Scene Depth)
+      if (mode === 'ar' && isARAvailable && LiDARModule.isAvailable && !isARSessionActive) {
         try {
-          console.log('Starting LiDAR AR session...');
-          await LiDARModule.startARSession('lidar');
+          // Use 'lidar' mode for LiDAR devices, 'ar_depth' for Scene Depth (non-LiDAR iPhone 12+)
+          const captureMode = hasLiDAR ? 'lidar' : 'ar_depth';
+          console.log(`Starting AR session with ${captureMode} mode...`);
+          await LiDARModule.startARSession(captureMode);
           setIsARSessionActive(true);
 
           // Start capturing depth frames periodically
+          // Use higher interval for Scene Depth (ML-based) to reduce CPU load
+          const captureInterval = hasLiDAR ? 100 : 200; // 10 FPS for LiDAR, 5 FPS for Scene Depth
           depthCaptureInterval.current = setInterval(async () => {
             try {
               const capture = await LiDARModule.captureDepthFrame();
@@ -120,9 +130,9 @@ export default function ARMeasureScreen() {
               // Silently handle capture errors (e.g., session not ready)
               console.debug('Depth capture error:', err);
             }
-          }, 100); // Capture every 100ms (10 FPS for depth)
+          }, captureInterval);
 
-          console.log('LiDAR AR session started successfully');
+          console.log(`AR session started successfully (${captureMode})`);
         } catch (err) {
           console.error('Failed to start AR session:', err);
         }
@@ -141,14 +151,14 @@ export default function ARMeasureScreen() {
           await LiDARModule.stopARSession();
           setIsARSessionActive(false);
           lastDepthCapture.current = null;
-          console.log('LiDAR AR session stopped');
+          console.log('AR session stopped');
         } catch (err) {
           console.error('Failed to stop AR session:', err);
         }
       }
     }
 
-    if (mode === 'ar' && hasLiDAR && LiDARModule.isAvailable) {
+    if (mode === 'ar' && isARAvailable && LiDARModule.isAvailable) {
       startARSession();
     } else {
       stopARSession();
@@ -158,7 +168,7 @@ export default function ARMeasureScreen() {
     return () => {
       stopARSession();
     };
-  }, [mode, hasLiDAR, isARSessionActive]);
+  }, [mode, hasLiDAR, isARAvailable, isARSessionActive]);
 
   /**
    * Get depth at a specific screen coordinate (in cm)
@@ -311,8 +321,8 @@ export default function ARMeasureScreen() {
   if (mode === 'manual') {
     return (
       <SafeAreaView style={styles.container} edges={['top']} testID="ar-measure-screen">
-        {/* Mode switcher (only if AR is available) */}
-        {isLiDARAvailable && (
+        {/* Mode switcher (only if AR depth is available - LiDAR or Scene Depth) */}
+        {isARAvailable && (
           <View style={styles.modeSwitcher}>
             <TouchableOpacity
               style={styles.modeSwitchButton}
@@ -452,11 +462,12 @@ export default function ARMeasureScreen() {
         {!measurement && (
           <ARMeasurementOverlay
             hasLiDAR={hasLiDAR}
+            hasSceneDepth={supportsSceneDepth && !hasLiDAR}
             onMeasurementComplete={handleARMeasurementComplete}
             onCancel={handleCancel}
             isActive={true}
-            getDepthAtPoint={hasLiDAR && isARSessionActive ? getDepthAtPoint : undefined}
-            lidarCapture={hasLiDAR && isARSessionActive ? lastDepthCapture.current : null}
+            getDepthAtPoint={isARAvailable && isARSessionActive ? getDepthAtPoint : undefined}
+            lidarCapture={isARAvailable && isARSessionActive ? lastDepthCapture.current : null}
             foodName={params.foodName}
           />
         )}

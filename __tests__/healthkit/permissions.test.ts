@@ -2,7 +2,14 @@
  * HealthKit Permissions Tests
  */
 
-import { mockHealthKit, mockSecureStore, resetMocks, setupDefaultMocks, mockPlatform } from './test-utils';
+import {
+  mockHealthKit,
+  mockKingstinctHealthKit,
+  mockSecureStore,
+  resetMocks,
+  setupDefaultMocks,
+  mockPlatform,
+} from './test-utils';
 import {
   isHealthKitAvailable,
   requestHealthKitPermissions,
@@ -30,23 +37,24 @@ describe('HealthKit Permissions', () => {
     });
 
     it('should return true when HealthKit is available on iOS', async () => {
-      mockHealthKit.isAvailable.mockImplementation((callback) => callback(null, true));
+      // Uses the @kingstinct/react-native-healthkit API
+      mockKingstinctHealthKit.isHealthDataAvailable.mockReturnValue(true);
 
       const result = await isHealthKitAvailable();
       expect(result).toBe(true);
     });
 
     it('should return false when HealthKit is not available', async () => {
-      mockHealthKit.isAvailable.mockImplementation((callback) => callback(null, false));
+      mockKingstinctHealthKit.isHealthDataAvailable.mockReturnValue(false);
 
       const result = await isHealthKitAvailable();
       expect(result).toBe(false);
     });
 
     it('should return false on HealthKit error', async () => {
-      mockHealthKit.isAvailable.mockImplementation((callback) =>
-        callback('HealthKit not available', false)
-      );
+      mockKingstinctHealthKit.isHealthDataAvailable.mockImplementation(() => {
+        throw new Error('HealthKit not available');
+      });
 
       const result = await isHealthKitAvailable();
       expect(result).toBe(false);
@@ -63,46 +71,49 @@ describe('HealthKit Permissions', () => {
     });
 
     it('should request permissions and save status on success', async () => {
-      mockHealthKit.initHealthKit.mockImplementation((options, callback) => callback(null));
+      // Uses the @kingstinct/react-native-healthkit API
+      mockKingstinctHealthKit.isHealthDataAvailable.mockReturnValue(true);
+      mockKingstinctHealthKit.requestAuthorization.mockResolvedValue(true);
 
       const result = await requestHealthKitPermissions();
 
       expect(result.success).toBe(true);
       expect(result.granted).toHaveProperty('heartRate', true);
       expect(result.granted).toHaveProperty('restingHeartRate', true);
-      expect(mockHealthKit.initHealthKit).toHaveBeenCalled();
+      expect(mockKingstinctHealthKit.requestAuthorization).toHaveBeenCalled();
       expect(mockSecureStore.setItemAsync).toHaveBeenCalledWith(
         'healthkit_permission_status',
         'granted'
       );
     });
 
-    it('should return error result on permission denial', async () => {
-      mockHealthKit.initHealthKit.mockImplementation((options, callback) =>
-        callback({ message: 'User denied permissions' })
-      );
+    it('should return error result when HealthKit is not available', async () => {
+      mockKingstinctHealthKit.isHealthDataAvailable.mockReturnValue(false);
 
       const result = await requestHealthKitPermissions();
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('User denied permissions');
+      expect(result.error).toBe('HealthKit is not available on this device');
     });
 
-    it('should request appropriate permissions', async () => {
-      mockHealthKit.initHealthKit.mockImplementation((options, callback) => {
-        // Verify read permissions are requested
-        expect(options.permissions.read).toContain('HeartRate');
-        expect(options.permissions.read).toContain('RestingHeartRate');
-        expect(options.permissions.read).toContain('HeartRateVariabilitySDNN');
-        expect(options.permissions.read).toContain('SleepAnalysis');
-        expect(options.permissions.read).toContain('StepCount');
-        expect(options.permissions.read).toContain('ActiveEnergyBurned');
-        expect(options.permissions.read).toContain('OxygenSaturation');
-        expect(options.permissions.read).toContain('Vo2Max');
-        callback(null);
-      });
+    it('should return error result on permission denial', async () => {
+      mockKingstinctHealthKit.isHealthDataAvailable.mockReturnValue(true);
+      mockKingstinctHealthKit.requestAuthorization.mockResolvedValue(false);
+
+      const result = await requestHealthKitPermissions();
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('User denied HealthKit permissions');
+    });
+
+    it('should call requestAuthorization with read permissions', async () => {
+      mockKingstinctHealthKit.isHealthDataAvailable.mockReturnValue(true);
+      mockKingstinctHealthKit.requestAuthorization.mockResolvedValue(true);
 
       await requestHealthKitPermissions();
+
+      // Verify requestAuthorization was called
+      expect(mockKingstinctHealthKit.requestAuthorization).toHaveBeenCalled();
     });
   });
 

@@ -1,9 +1,37 @@
 /**
  * Sleep Sync Tests
+ * Tests for @kingstinct/react-native-healthkit integration
  */
 
-import { mockHealthKit, resetMocks, setupDefaultMocks, mockPlatform } from './test-utils';
+import { mockKingstinctHealthKit, resetMocks, setupDefaultMocks, mockPlatform } from './test-utils';
 import { fetchSleepSamples, syncSleepMetrics } from '@/lib/services/healthkit/sleep';
+
+// Sleep analysis value enum (matches HKCategoryValueSleepAnalysis)
+const SleepAnalysisValueEnum = {
+  INBED: 0,
+  ASLEEP: 1, // asleepUnspecified
+  AWAKE: 2,
+  CORE: 3, // asleepCore (light sleep)
+  DEEP: 4, // asleepDeep
+  REM: 5, // asleepREM
+} as const;
+
+// Helper to create mock sleep samples in @kingstinct/react-native-healthkit format
+function createKingstinctSleepSample(
+  value: 'DEEP' | 'REM' | 'CORE' | 'AWAKE' | 'INBED' | 'ASLEEP',
+  startDate: Date,
+  durationHours: number
+) {
+  const endDate = new Date(startDate.getTime() + durationHours * 60 * 60 * 1000);
+  return {
+    value: SleepAnalysisValueEnum[value],
+    startDate,
+    endDate,
+    uuid: `uuid_${Date.now()}_${Math.random()}`,
+    device: { name: 'Apple Watch' },
+    sourceRevision: { source: { name: 'Apple Watch', bundleIdentifier: 'com.apple.health' } },
+  };
+}
 
 describe('Sleep Sync', () => {
   beforeEach(() => {
@@ -31,23 +59,11 @@ describe('Sleep Sync', () => {
 
     it('should map HealthKit sleep values correctly', async () => {
       const mockSamples = [
-        {
-          value: 'DEEP',
-          startDate: '2024-01-01T01:00:00Z',
-          endDate: '2024-01-01T02:00:00Z',
-          sourceName: 'Apple Watch',
-        },
-        {
-          value: 'REM',
-          startDate: '2024-01-01T02:00:00Z',
-          endDate: '2024-01-01T03:00:00Z',
-          sourceName: 'Apple Watch',
-        },
+        createKingstinctSleepSample('DEEP', new Date('2024-01-01T01:00:00Z'), 1),
+        createKingstinctSleepSample('REM', new Date('2024-01-01T02:00:00Z'), 1),
       ];
 
-      mockHealthKit.getSleepSamples.mockImplementation((options, callback) =>
-        callback(null, mockSamples)
-      );
+      mockKingstinctHealthKit.queryCategorySamples.mockResolvedValue(mockSamples);
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -57,16 +73,14 @@ describe('Sleep Sync', () => {
       const result = await fetchSleepSamples(options);
 
       expect(result).toHaveLength(2);
-      expect(result[0].value).toBe('DEEP');
-      expect(result[1].value).toBe('REM');
+      expect(result[0].value).toBe('ASLEEPDEEP');
+      expect(result[1].value).toBe('ASLEEPREM');
     });
   });
 
   describe('syncSleepMetrics', () => {
     it('should return empty array when no sleep data', async () => {
-      mockHealthKit.getSleepSamples.mockImplementation((options, callback) =>
-        callback(null, [])
-      );
+      mockKingstinctHealthKit.queryCategorySamples.mockResolvedValue([]);
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -82,31 +96,22 @@ describe('Sleep Sync', () => {
       const startTime = new Date('2024-01-01T23:00:00Z');
       const mockSamples = [
         // 2 hours deep sleep
-        {
-          value: 'DEEP',
-          startDate: new Date(startTime.getTime()).toISOString(),
-          endDate: new Date(startTime.getTime() + 2 * 60 * 60 * 1000).toISOString(),
-          sourceName: 'Apple Watch',
-        },
+        createKingstinctSleepSample('DEEP', startTime, 2),
         // 2 hours REM
-        {
-          value: 'REM',
-          startDate: new Date(startTime.getTime() + 2 * 60 * 60 * 1000).toISOString(),
-          endDate: new Date(startTime.getTime() + 4 * 60 * 60 * 1000).toISOString(),
-          sourceName: 'Apple Watch',
-        },
+        createKingstinctSleepSample(
+          'REM',
+          new Date(startTime.getTime() + 2 * 60 * 60 * 1000),
+          2
+        ),
         // 4 hours core/light sleep
-        {
-          value: 'CORE',
-          startDate: new Date(startTime.getTime() + 4 * 60 * 60 * 1000).toISOString(),
-          endDate: new Date(startTime.getTime() + 8 * 60 * 60 * 1000).toISOString(),
-          sourceName: 'Apple Watch',
-        },
+        createKingstinctSleepSample(
+          'CORE',
+          new Date(startTime.getTime() + 4 * 60 * 60 * 1000),
+          4
+        ),
       ];
 
-      mockHealthKit.getSleepSamples.mockImplementation((options, callback) =>
-        callback(null, mockSamples)
-      );
+      mockKingstinctHealthKit.queryCategorySamples.mockResolvedValue(mockSamples);
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -139,31 +144,22 @@ describe('Sleep Sync', () => {
       const startTime = new Date('2024-01-01T23:00:00Z');
       const mockSamples = [
         // 1 hour in bed (not asleep)
-        {
-          value: 'INBED',
-          startDate: new Date(startTime.getTime()).toISOString(),
-          endDate: new Date(startTime.getTime() + 1 * 60 * 60 * 1000).toISOString(),
-          sourceName: 'Apple Watch',
-        },
+        createKingstinctSleepSample('INBED', startTime, 1),
         // 6 hours asleep
-        {
-          value: 'ASLEEP',
-          startDate: new Date(startTime.getTime() + 1 * 60 * 60 * 1000).toISOString(),
-          endDate: new Date(startTime.getTime() + 7 * 60 * 60 * 1000).toISOString(),
-          sourceName: 'Apple Watch',
-        },
+        createKingstinctSleepSample(
+          'ASLEEP',
+          new Date(startTime.getTime() + 1 * 60 * 60 * 1000),
+          6
+        ),
         // 1 hour awake
-        {
-          value: 'AWAKE',
-          startDate: new Date(startTime.getTime() + 7 * 60 * 60 * 1000).toISOString(),
-          endDate: new Date(startTime.getTime() + 8 * 60 * 60 * 1000).toISOString(),
-          sourceName: 'Apple Watch',
-        },
+        createKingstinctSleepSample(
+          'AWAKE',
+          new Date(startTime.getTime() + 7 * 60 * 60 * 1000),
+          1
+        ),
       ];
 
-      mockHealthKit.getSleepSamples.mockImplementation((options, callback) =>
-        callback(null, mockSamples)
-      );
+      mockKingstinctHealthKit.queryCategorySamples.mockResolvedValue(mockSamples);
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -184,24 +180,12 @@ describe('Sleep Sync', () => {
 
       const mockSamples = [
         // 1 hour nap
-        {
-          value: 'ASLEEP',
-          startDate: napTime.toISOString(),
-          endDate: new Date(napTime.getTime() + 1 * 60 * 60 * 1000).toISOString(),
-          sourceName: 'Apple Watch',
-        },
+        createKingstinctSleepSample('ASLEEP', napTime, 1),
         // 7 hours night sleep (9 hours later)
-        {
-          value: 'ASLEEP',
-          startDate: nightTime.toISOString(),
-          endDate: new Date(nightTime.getTime() + 7 * 60 * 60 * 1000).toISOString(),
-          sourceName: 'Apple Watch',
-        },
+        createKingstinctSleepSample('ASLEEP', nightTime, 7),
       ];
 
-      mockHealthKit.getSleepSamples.mockImplementation((options, callback) =>
-        callback(null, mockSamples)
-      );
+      mockKingstinctHealthKit.queryCategorySamples.mockResolvedValue(mockSamples);
 
       const options = {
         startDate: new Date('2024-01-01'),

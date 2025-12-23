@@ -5,6 +5,7 @@
  */
 
 import { Platform } from 'react-native';
+import { queryQuantitySamples } from '@kingstinct/react-native-healthkit';
 import {
   ProcessedHealthMetric,
   HealthKitSyncOptions,
@@ -41,7 +42,6 @@ export async function fetchRestingHeartRate(
   }
 
   try {
-    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
 
     const samples = await queryQuantitySamples('HKQuantityTypeIdentifierRestingHeartRate', {
       limit: -1,
@@ -71,8 +71,6 @@ export async function fetchHeartRateVariability(
   }
 
   try {
-    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
-
     const samples = await queryQuantitySamples('HKQuantityTypeIdentifierHeartRateVariabilitySDNN', {
       limit: -1,
       filter: {
@@ -106,8 +104,6 @@ export async function fetchHeartRateSamples(
   }
 
   try {
-    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
-
     const samples = await queryQuantitySamples('HKQuantityTypeIdentifierHeartRate', {
       limit: 1000, // Limit to avoid memory issues
       filter: {

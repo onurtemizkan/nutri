@@ -260,23 +260,23 @@ AMINO_ACID_PROTEIN_RATIOS: Dict[FoodCategory, Dict[str, float]] = {
 MICRONUTRIENT_CATEGORY_ESTIMATES: Dict[FoodCategory, Dict[str, Optional[float]]] = {
     # Fruits - Rich in vitamin C, potassium, fiber
     FoodCategory.FRUIT: {
-        "potassium": 150,      # mg
-        "calcium": 10,         # mg
-        "iron": 0.2,           # mg
-        "magnesium": 8,        # mg
-        "zinc": 0.1,           # mg
-        "phosphorus": 15,      # mg
-        "vitamin_a": 10,       # mcg RAE (varies widely)
-        "vitamin_c": 15,       # mg (higher for citrus)
-        "vitamin_d": 0,        # mcg
-        "vitamin_e": 0.3,      # mg
-        "vitamin_k": 3,        # mcg
-        "vitamin_b6": 0.05,    # mg
-        "vitamin_b12": 0,      # mcg (plant foods)
-        "folate": 15,          # mcg DFE
-        "thiamin": 0.02,       # mg
-        "riboflavin": 0.03,    # mg
-        "niacin": 0.3,         # mg
+        "potassium": 150,  # mg
+        "calcium": 10,  # mg
+        "iron": 0.2,  # mg
+        "magnesium": 8,  # mg
+        "zinc": 0.1,  # mg
+        "phosphorus": 15,  # mg
+        "vitamin_a": 10,  # mcg RAE (varies widely)
+        "vitamin_c": 15,  # mg (higher for citrus)
+        "vitamin_d": 0,  # mcg
+        "vitamin_e": 0.3,  # mg
+        "vitamin_k": 3,  # mcg
+        "vitamin_b6": 0.05,  # mg
+        "vitamin_b12": 0,  # mcg (plant foods)
+        "folate": 15,  # mcg DFE
+        "thiamin": 0.02,  # mg
+        "riboflavin": 0.03,  # mg
+        "niacin": 0.3,  # mg
     },
     # Vegetables - Rich in fiber, vitamins A, C, K
     FoodCategory.VEGETABLE: {
@@ -286,11 +286,11 @@ MICRONUTRIENT_CATEGORY_ESTIMATES: Dict[FoodCategory, Dict[str, Optional[float]]]
         "magnesium": 20,
         "zinc": 0.3,
         "phosphorus": 40,
-        "vitamin_a": 150,      # High for orange/dark leafy veggies
+        "vitamin_a": 150,  # High for orange/dark leafy veggies
         "vitamin_c": 20,
         "vitamin_d": 0,
         "vitamin_e": 0.8,
-        "vitamin_k": 50,       # Very high for leafy greens
+        "vitamin_k": 50,  # Very high for leafy greens
         "vitamin_b6": 0.1,
         "vitamin_b12": 0,
         "folate": 50,
@@ -302,9 +302,9 @@ MICRONUTRIENT_CATEGORY_ESTIMATES: Dict[FoodCategory, Dict[str, Optional[float]]]
     FoodCategory.PROTEIN: {
         "potassium": 300,
         "calcium": 10,
-        "iron": 2.0,           # Higher for red meat
+        "iron": 2.0,  # Higher for red meat
         "magnesium": 25,
-        "zinc": 4.0,           # Excellent zinc source
+        "zinc": 4.0,  # Excellent zinc source
         "phosphorus": 200,
         "vitamin_a": 10,
         "vitamin_c": 0,
@@ -312,7 +312,7 @@ MICRONUTRIENT_CATEGORY_ESTIMATES: Dict[FoodCategory, Dict[str, Optional[float]]]
         "vitamin_e": 0.3,
         "vitamin_k": 2,
         "vitamin_b6": 0.4,
-        "vitamin_b12": 2.5,    # Excellent B12 source
+        "vitamin_b12": 2.5,  # Excellent B12 source
         "folate": 10,
         "thiamin": 0.1,
         "riboflavin": 0.2,
@@ -328,11 +328,11 @@ MICRONUTRIENT_CATEGORY_ESTIMATES: Dict[FoodCategory, Dict[str, Optional[float]]]
         "phosphorus": 250,
         "vitamin_a": 20,
         "vitamin_c": 0,
-        "vitamin_d": 10,       # Excellent D source
+        "vitamin_d": 10,  # Excellent D source
         "vitamin_e": 1.5,
         "vitamin_k": 0.5,
         "vitamin_b6": 0.3,
-        "vitamin_b12": 5.0,    # Very high B12
+        "vitamin_b12": 5.0,  # Very high B12
         "folate": 15,
         "thiamin": 0.1,
         "riboflavin": 0.1,
@@ -341,28 +341,28 @@ MICRONUTRIENT_CATEGORY_ESTIMATES: Dict[FoodCategory, Dict[str, Optional[float]]]
     # Dairy - Rich in calcium, B12, riboflavin
     FoodCategory.DAIRY: {
         "potassium": 150,
-        "calcium": 120,        # Excellent calcium
+        "calcium": 120,  # Excellent calcium
         "iron": 0.1,
         "magnesium": 12,
         "zinc": 1.0,
         "phosphorus": 100,
         "vitamin_a": 50,
         "vitamin_c": 1,
-        "vitamin_d": 2.5,      # Often fortified
+        "vitamin_d": 2.5,  # Often fortified
         "vitamin_e": 0.1,
         "vitamin_k": 1,
         "vitamin_b6": 0.05,
         "vitamin_b12": 1.0,
         "folate": 10,
         "thiamin": 0.03,
-        "riboflavin": 0.2,     # Good riboflavin
+        "riboflavin": 0.2,  # Good riboflavin
         "niacin": 0.1,
     },
     # Grains - Rich in B vitamins, iron (often fortified)
     FoodCategory.GRAIN: {
         "potassium": 100,
         "calcium": 15,
-        "iron": 1.5,           # Often fortified
+        "iron": 1.5,  # Often fortified
         "magnesium": 30,
         "zinc": 1.0,
         "phosphorus": 100,
@@ -373,8 +373,8 @@ MICRONUTRIENT_CATEGORY_ESTIMATES: Dict[FoodCategory, Dict[str, Optional[float]]]
         "vitamin_k": 1,
         "vitamin_b6": 0.1,
         "vitamin_b12": 0,
-        "folate": 30,          # Often fortified
-        "thiamin": 0.15,       # Often fortified
+        "folate": 30,  # Often fortified
+        "thiamin": 0.15,  # Often fortified
         "riboflavin": 0.1,
         "niacin": 2.0,
     },
@@ -393,7 +393,7 @@ MICRONUTRIENT_CATEGORY_ESTIMATES: Dict[FoodCategory, Dict[str, Optional[float]]]
         "vitamin_k": 5,
         "vitamin_b6": 0.15,
         "vitamin_b12": 0,
-        "folate": 150,         # Excellent folate
+        "folate": 150,  # Excellent folate
         "thiamin": 0.2,
         "riboflavin": 0.1,
         "niacin": 1.0,
@@ -403,13 +403,13 @@ MICRONUTRIENT_CATEGORY_ESTIMATES: Dict[FoodCategory, Dict[str, Optional[float]]]
         "potassium": 600,
         "calcium": 100,
         "iron": 3.0,
-        "magnesium": 150,      # Excellent magnesium
+        "magnesium": 150,  # Excellent magnesium
         "zinc": 3.0,
         "phosphorus": 400,
         "vitamin_a": 0,
         "vitamin_c": 0,
         "vitamin_d": 0,
-        "vitamin_e": 8,        # Excellent vitamin E
+        "vitamin_e": 8,  # Excellent vitamin E
         "vitamin_k": 0,
         "vitamin_b6": 0.3,
         "vitamin_b12": 0,
@@ -1409,7 +1409,12 @@ FOOD_DATABASE: Dict[str, FoodEntry] = {
         vitamin_b12=0.4,
         lysine=2100,  # Estimated from chicken breast content
         arginine=1550,
-        aliases=["chicken kiev", "chicken kyiv", "garlic butter chicken", "stuffed chicken breast"],
+        aliases=[
+            "chicken kiev",
+            "chicken kyiv",
+            "garlic butter chicken",
+            "stuffed chicken breast",
+        ],
         default_cooking_method=CookingMethod.FRIED,
     ),
     "chicken_nuggets": FoodEntry(

@@ -11,34 +11,42 @@ import {
 
 describe('HealthKit Types', () => {
   describe('HEALTHKIT_TO_METRIC_TYPE', () => {
-    it('should map RestingHeartRate to RESTING_HEART_RATE', () => {
-      expect(HEALTHKIT_TO_METRIC_TYPE['RestingHeartRate']).toBe('RESTING_HEART_RATE');
+    it('should map HKQuantityTypeIdentifierRestingHeartRate to RESTING_HEART_RATE', () => {
+      expect(HEALTHKIT_TO_METRIC_TYPE['HKQuantityTypeIdentifierRestingHeartRate']).toBe(
+        'RESTING_HEART_RATE'
+      );
     });
 
-    it('should map HeartRateVariabilitySDNN to HEART_RATE_VARIABILITY_SDNN', () => {
-      expect(HEALTHKIT_TO_METRIC_TYPE['HeartRateVariabilitySDNN']).toBe(
+    it('should map HKQuantityTypeIdentifierHeartRateVariabilitySDNN to HEART_RATE_VARIABILITY_SDNN', () => {
+      expect(HEALTHKIT_TO_METRIC_TYPE['HKQuantityTypeIdentifierHeartRateVariabilitySDNN']).toBe(
         'HEART_RATE_VARIABILITY_SDNN'
       );
     });
 
-    it('should map RespiratoryRate to RESPIRATORY_RATE', () => {
-      expect(HEALTHKIT_TO_METRIC_TYPE['RespiratoryRate']).toBe('RESPIRATORY_RATE');
+    it('should map HKQuantityTypeIdentifierRespiratoryRate to RESPIRATORY_RATE', () => {
+      expect(HEALTHKIT_TO_METRIC_TYPE['HKQuantityTypeIdentifierRespiratoryRate']).toBe(
+        'RESPIRATORY_RATE'
+      );
     });
 
-    it('should map OxygenSaturation to OXYGEN_SATURATION', () => {
-      expect(HEALTHKIT_TO_METRIC_TYPE['OxygenSaturation']).toBe('OXYGEN_SATURATION');
+    it('should map HKQuantityTypeIdentifierOxygenSaturation to OXYGEN_SATURATION', () => {
+      expect(HEALTHKIT_TO_METRIC_TYPE['HKQuantityTypeIdentifierOxygenSaturation']).toBe(
+        'OXYGEN_SATURATION'
+      );
     });
 
-    it('should map Vo2Max to VO2_MAX', () => {
-      expect(HEALTHKIT_TO_METRIC_TYPE['Vo2Max']).toBe('VO2_MAX');
+    it('should map HKQuantityTypeIdentifierVO2Max to VO2_MAX', () => {
+      expect(HEALTHKIT_TO_METRIC_TYPE['HKQuantityTypeIdentifierVO2Max']).toBe('VO2_MAX');
     });
 
-    it('should map StepCount to STEPS', () => {
-      expect(HEALTHKIT_TO_METRIC_TYPE['StepCount']).toBe('STEPS');
+    it('should map HKQuantityTypeIdentifierStepCount to STEPS', () => {
+      expect(HEALTHKIT_TO_METRIC_TYPE['HKQuantityTypeIdentifierStepCount']).toBe('STEPS');
     });
 
-    it('should map ActiveEnergyBurned to ACTIVE_CALORIES', () => {
-      expect(HEALTHKIT_TO_METRIC_TYPE['ActiveEnergyBurned']).toBe('ACTIVE_CALORIES');
+    it('should map HKQuantityTypeIdentifierActiveEnergyBurned to ACTIVE_CALORIES', () => {
+      expect(HEALTHKIT_TO_METRIC_TYPE['HKQuantityTypeIdentifierActiveEnergyBurned']).toBe(
+        'ACTIVE_CALORIES'
+      );
     });
   });
 
@@ -74,35 +82,35 @@ describe('HealthKit Types', () => {
 
   describe('HEALTHKIT_READ_PERMISSIONS', () => {
     it('should include HeartRate', () => {
-      expect(HEALTHKIT_READ_PERMISSIONS).toContain('HeartRate');
+      expect(HEALTHKIT_READ_PERMISSIONS).toContain('HKQuantityTypeIdentifierHeartRate');
     });
 
     it('should include RestingHeartRate', () => {
-      expect(HEALTHKIT_READ_PERMISSIONS).toContain('RestingHeartRate');
+      expect(HEALTHKIT_READ_PERMISSIONS).toContain('HKQuantityTypeIdentifierRestingHeartRate');
     });
 
     it('should include HeartRateVariabilitySDNN', () => {
-      expect(HEALTHKIT_READ_PERMISSIONS).toContain('HeartRateVariabilitySDNN');
+      expect(HEALTHKIT_READ_PERMISSIONS).toContain('HKQuantityTypeIdentifierHeartRateVariabilitySDNN');
     });
 
     it('should include SleepAnalysis', () => {
-      expect(HEALTHKIT_READ_PERMISSIONS).toContain('SleepAnalysis');
+      expect(HEALTHKIT_READ_PERMISSIONS).toContain('HKCategoryTypeIdentifierSleepAnalysis');
     });
 
     it('should include StepCount', () => {
-      expect(HEALTHKIT_READ_PERMISSIONS).toContain('StepCount');
+      expect(HEALTHKIT_READ_PERMISSIONS).toContain('HKQuantityTypeIdentifierStepCount');
     });
 
     it('should include ActiveEnergyBurned', () => {
-      expect(HEALTHKIT_READ_PERMISSIONS).toContain('ActiveEnergyBurned');
+      expect(HEALTHKIT_READ_PERMISSIONS).toContain('HKQuantityTypeIdentifierActiveEnergyBurned');
     });
 
     it('should include OxygenSaturation', () => {
-      expect(HEALTHKIT_READ_PERMISSIONS).toContain('OxygenSaturation');
+      expect(HEALTHKIT_READ_PERMISSIONS).toContain('HKQuantityTypeIdentifierOxygenSaturation');
     });
 
     it('should include Vo2Max', () => {
-      expect(HEALTHKIT_READ_PERMISSIONS).toContain('Vo2Max');
+      expect(HEALTHKIT_READ_PERMISSIONS).toContain('HKQuantityTypeIdentifierVO2Max');
     });
   });
 

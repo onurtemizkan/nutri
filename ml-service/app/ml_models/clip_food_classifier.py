@@ -2313,9 +2313,24 @@ CUISINE_CATEGORIES: Dict[str, Dict[str, List[str]]] = {
             "traditional Japanese meal",
         ],
         "dishes": [
-            "sushi", "sashimi", "ramen", "tempura", "tonkatsu", "gyoza",
-            "udon", "soba", "yakitori", "onigiri", "miso_soup", "okonomiyaki",
-            "takoyaki", "katsu_curry", "donburi", "edamame", "mochi", "matcha",
+            "sushi",
+            "sashimi",
+            "ramen",
+            "tempura",
+            "tonkatsu",
+            "gyoza",
+            "udon",
+            "soba",
+            "yakitori",
+            "onigiri",
+            "miso_soup",
+            "okonomiyaki",
+            "takoyaki",
+            "katsu_curry",
+            "donburi",
+            "edamame",
+            "mochi",
+            "matcha",
             "teriyaki",
         ],
     },
@@ -2326,12 +2341,28 @@ CUISINE_CATEGORIES: Dict[str, Dict[str, List[str]]] = {
             "traditional Chinese meal",
         ],
         "dishes": [
-            "fried_rice", "chow_mein", "kung_pao_chicken", "orange_chicken",
-            "general_tso_chicken", "sweet_and_sour_pork", "beef_and_broccoli",
-            "mongolian_beef", "sesame_chicken", "lo_mein", "egg_foo_young",
-            "mapo_tofu", "peking_duck", "dim_sum", "char_siu", "wonton",
-            "congee", "hot_pot", "scallion_pancakes", "dan_dan_noodles",
-            "dumplings", "spring_rolls",
+            "fried_rice",
+            "chow_mein",
+            "kung_pao_chicken",
+            "orange_chicken",
+            "general_tso_chicken",
+            "sweet_and_sour_pork",
+            "beef_and_broccoli",
+            "mongolian_beef",
+            "sesame_chicken",
+            "lo_mein",
+            "egg_foo_young",
+            "mapo_tofu",
+            "peking_duck",
+            "dim_sum",
+            "char_siu",
+            "wonton",
+            "congee",
+            "hot_pot",
+            "scallion_pancakes",
+            "dan_dan_noodles",
+            "dumplings",
+            "spring_rolls",
         ],
     },
     "korean": {
@@ -2341,9 +2372,19 @@ CUISINE_CATEGORIES: Dict[str, Dict[str, List[str]]] = {
             "traditional Korean meal",
         ],
         "dishes": [
-            "bibimbap", "bulgogi", "korean_fried_chicken", "kimchi", "japchae",
-            "tteokbokki", "kimbap", "samgyeopsal", "sundubu_jjigae",
-            "kimchi_jjigae", "korean_bbq", "army_stew", "pajeon",
+            "bibimbap",
+            "bulgogi",
+            "korean_fried_chicken",
+            "kimchi",
+            "japchae",
+            "tteokbokki",
+            "kimbap",
+            "samgyeopsal",
+            "sundubu_jjigae",
+            "kimchi_jjigae",
+            "korean_bbq",
+            "army_stew",
+            "pajeon",
         ],
     },
     "thai": {
@@ -2353,9 +2394,18 @@ CUISINE_CATEGORIES: Dict[str, Dict[str, List[str]]] = {
             "traditional Thai meal",
         ],
         "dishes": [
-            "pad_thai", "green_curry", "red_curry", "massaman_curry",
-            "tom_yum", "tom_kha", "thai_basil_chicken", "larb", "satay",
-            "mango_sticky_rice", "papaya_salad", "thai_iced_tea",
+            "pad_thai",
+            "green_curry",
+            "red_curry",
+            "massaman_curry",
+            "tom_yum",
+            "tom_kha",
+            "thai_basil_chicken",
+            "larb",
+            "satay",
+            "mango_sticky_rice",
+            "papaya_salad",
+            "thai_iced_tea",
         ],
     },
     "vietnamese": {
@@ -2365,7 +2415,12 @@ CUISINE_CATEGORIES: Dict[str, Dict[str, List[str]]] = {
             "traditional Vietnamese meal",
         ],
         "dishes": [
-            "pho", "banh_mi", "bun_cha", "cao_lau", "com_tam", "goi_cuon",
+            "pho",
+            "banh_mi",
+            "bun_cha",
+            "cao_lau",
+            "com_tam",
+            "goi_cuon",
             "bun_bo_hue",
         ],
     },
@@ -2376,10 +2431,27 @@ CUISINE_CATEGORIES: Dict[str, Dict[str, List[str]]] = {
             "traditional Indian meal",
         ],
         "dishes": [
-            "butter_chicken", "tikka_masala", "biryani", "samosa", "naan",
-            "tandoori_chicken", "dal", "palak_paneer", "paneer_tikka",
-            "chana_masala", "korma", "vindaloo", "rogan_josh", "aloo_gobi",
-            "dosa", "idli", "pakora", "raita", "lassi", "gulab_jamun", "jalebi",
+            "butter_chicken",
+            "tikka_masala",
+            "biryani",
+            "samosa",
+            "naan",
+            "tandoori_chicken",
+            "dal",
+            "palak_paneer",
+            "paneer_tikka",
+            "chana_masala",
+            "korma",
+            "vindaloo",
+            "rogan_josh",
+            "aloo_gobi",
+            "dosa",
+            "idli",
+            "pakora",
+            "raita",
+            "lassi",
+            "gulab_jamun",
+            "jalebi",
         ],
     },
     "mexican": {
@@ -2389,8 +2461,17 @@ CUISINE_CATEGORIES: Dict[str, Dict[str, List[str]]] = {
             "traditional Mexican meal",
         ],
         "dishes": [
-            "taco", "burrito", "quesadilla", "enchiladas", "nachos", "tamales",
-            "carnitas", "carne_asada", "chile_relleno", "churros", "fajita",
+            "taco",
+            "burrito",
+            "quesadilla",
+            "enchiladas",
+            "nachos",
+            "tamales",
+            "carnitas",
+            "carne_asada",
+            "chile_relleno",
+            "churros",
+            "fajita",
             "guacamole",
         ],
     },
@@ -2401,8 +2482,18 @@ CUISINE_CATEGORIES: Dict[str, Dict[str, List[str]]] = {
             "traditional Middle Eastern meal",
         ],
         "dishes": [
-            "falafel", "shawarma", "hummus", "kebab", "kofta", "baba_ganoush",
-            "tabbouleh", "fattoush", "shakshuka", "baklava", "dolma", "gyros",
+            "falafel",
+            "shawarma",
+            "hummus",
+            "kebab",
+            "kofta",
+            "baba_ganoush",
+            "tabbouleh",
+            "fattoush",
+            "shakshuka",
+            "baklava",
+            "dolma",
+            "gyros",
         ],
     },
     "italian": {
@@ -2412,9 +2503,20 @@ CUISINE_CATEGORIES: Dict[str, Dict[str, List[str]]] = {
             "traditional Italian meal",
         ],
         "dishes": [
-            "pizza", "pasta", "lasagna", "carbonara", "risotto", "gnocchi",
-            "spaghetti_bolognese", "alfredo", "ravioli", "minestrone",
-            "tiramisu", "gelato", "bruschetta", "caprese",
+            "pizza",
+            "pasta",
+            "lasagna",
+            "carbonara",
+            "risotto",
+            "gnocchi",
+            "spaghetti_bolognese",
+            "alfredo",
+            "ravioli",
+            "minestrone",
+            "tiramisu",
+            "gelato",
+            "bruschetta",
+            "caprese",
         ],
     },
     "american": {
@@ -2424,11 +2526,28 @@ CUISINE_CATEGORIES: Dict[str, Dict[str, List[str]]] = {
             "comfort food",
         ],
         "dishes": [
-            "burger", "hot_dog", "pizza", "mac_and_cheese", "grilled_cheese",
-            "bbq_ribs", "pulled_pork", "cheeseburger", "chicken_sandwich",
-            "chicken_tenders", "buffalo_wings", "onion_rings", "mozzarella_sticks",
-            "clam_chowder", "chili", "chicken_pot_pie", "shepherd_pie",
-            "pot_roast", "brisket", "jambalaya", "gumbo", "corn_dog",
+            "burger",
+            "hot_dog",
+            "pizza",
+            "mac_and_cheese",
+            "grilled_cheese",
+            "bbq_ribs",
+            "pulled_pork",
+            "cheeseburger",
+            "chicken_sandwich",
+            "chicken_tenders",
+            "buffalo_wings",
+            "onion_rings",
+            "mozzarella_sticks",
+            "clam_chowder",
+            "chili",
+            "chicken_pot_pie",
+            "shepherd_pie",
+            "pot_roast",
+            "brisket",
+            "jambalaya",
+            "gumbo",
+            "corn_dog",
         ],
     },
     "breakfast": {
@@ -2438,10 +2557,23 @@ CUISINE_CATEGORIES: Dict[str, Dict[str, List[str]]] = {
             "breakfast dish",
         ],
         "dishes": [
-            "pancake", "waffle", "eggs", "omelette", "scrambled_eggs",
-            "eggs_benedict", "french_toast", "bacon", "sausage_links",
-            "avocado_toast", "acai_bowl", "smoothie_bowl", "fruit_salad",
-            "biscuits_and_gravy", "chicken_and_waffles", "granola", "oats",
+            "pancake",
+            "waffle",
+            "eggs",
+            "omelette",
+            "scrambled_eggs",
+            "eggs_benedict",
+            "french_toast",
+            "bacon",
+            "sausage_links",
+            "avocado_toast",
+            "acai_bowl",
+            "smoothie_bowl",
+            "fruit_salad",
+            "biscuits_and_gravy",
+            "chicken_and_waffles",
+            "granola",
+            "oats",
             "toast",
         ],
     },
@@ -2452,10 +2584,25 @@ CUISINE_CATEGORIES: Dict[str, Dict[str, List[str]]] = {
             "cake or pastry",
         ],
         "dishes": [
-            "cake", "ice_cream", "cheesecake", "brownies", "cookies",
-            "chocolate_cake", "apple_pie", "cinnamon_roll", "crepes",
-            "milkshake", "pumpkin_pie", "chocolate", "tiramisu", "gelato",
-            "baklava", "mochi", "churros", "gulab_jamun", "jalebi",
+            "cake",
+            "ice_cream",
+            "cheesecake",
+            "brownies",
+            "cookies",
+            "chocolate_cake",
+            "apple_pie",
+            "cinnamon_roll",
+            "crepes",
+            "milkshake",
+            "pumpkin_pie",
+            "chocolate",
+            "tiramisu",
+            "gelato",
+            "baklava",
+            "mochi",
+            "churros",
+            "gulab_jamun",
+            "jalebi",
         ],
     },
     "sandwich": {
@@ -2465,9 +2612,18 @@ CUISINE_CATEGORIES: Dict[str, Dict[str, List[str]]] = {
             "deli sandwich",
         ],
         "dishes": [
-            "blt_sandwich", "club_sandwich", "cuban_sandwich", "reuben_sandwich",
-            "philly_cheesesteak", "meatball_sub", "wrap", "panini", "grilled_cheese",
-            "chicken_sandwich", "burger", "cheeseburger",
+            "blt_sandwich",
+            "club_sandwich",
+            "cuban_sandwich",
+            "reuben_sandwich",
+            "philly_cheesesteak",
+            "meatball_sub",
+            "wrap",
+            "panini",
+            "grilled_cheese",
+            "chicken_sandwich",
+            "burger",
+            "cheeseburger",
         ],
     },
     "seafood": {
@@ -2477,10 +2633,23 @@ CUISINE_CATEGORIES: Dict[str, Dict[str, List[str]]] = {
             "shellfish plate",
         ],
         "dishes": [
-            "salmon", "tuna", "shrimp", "fish", "sushi", "sashimi",
-            "grilled_salmon", "fish_tacos", "fried_shrimp", "shrimp_scampi",
-            "lobster_roll", "crab_cakes", "calamari", "mussels", "oysters",
-            "clams", "ceviche",
+            "salmon",
+            "tuna",
+            "shrimp",
+            "fish",
+            "sushi",
+            "sashimi",
+            "grilled_salmon",
+            "fish_tacos",
+            "fried_shrimp",
+            "shrimp_scampi",
+            "lobster_roll",
+            "crab_cakes",
+            "calamari",
+            "mussels",
+            "oysters",
+            "clams",
+            "ceviche",
         ],
     },
     "soup": {
@@ -2490,9 +2659,19 @@ CUISINE_CATEGORIES: Dict[str, Dict[str, List[str]]] = {
             "warm soup dish",
         ],
         "dishes": [
-            "chicken_noodle_soup", "tomato_soup", "lentil_soup", "wonton_soup",
-            "egg_drop_soup", "hot_and_sour_soup", "miso_soup", "ramen", "pho",
-            "tom_yum", "minestrone", "clam_chowder", "gumbo",
+            "chicken_noodle_soup",
+            "tomato_soup",
+            "lentil_soup",
+            "wonton_soup",
+            "egg_drop_soup",
+            "hot_and_sour_soup",
+            "miso_soup",
+            "ramen",
+            "pho",
+            "tom_yum",
+            "minestrone",
+            "clam_chowder",
+            "gumbo",
         ],
     },
 }
@@ -2892,7 +3071,9 @@ class CLIPFoodClassifier:
 
         # Classify against candidate dishes
         if unique_dishes:
-            dish_results = self.classify(image, candidate_foods=unique_dishes, top_k=top_k)
+            dish_results = self.classify(
+                image, candidate_foods=unique_dishes, top_k=top_k
+            )
         else:
             # Fallback to full classification
             dish_results = self.classify(image, top_k=top_k)
@@ -2904,13 +3085,15 @@ class CLIPFoodClassifier:
             cuisine_boost = cuisine_avg_scores.get(cuisine, 0.0)
             # Combine dish confidence with cuisine confidence (weighted)
             combined_score = confidence * 0.7 + cuisine_boost * 0.3
-            enhanced_predictions.append({
-                "food_key": food_key,
-                "confidence": confidence,
-                "cuisine": cuisine,
-                "cuisine_confidence": cuisine_boost,
-                "combined_score": combined_score,
-            })
+            enhanced_predictions.append(
+                {
+                    "food_key": food_key,
+                    "confidence": confidence,
+                    "cuisine": cuisine,
+                    "cuisine_confidence": cuisine_boost,
+                    "combined_score": combined_score,
+                }
+            )
 
         # Sort by combined score
         enhanced_predictions.sort(key=lambda x: x["combined_score"], reverse=True)
@@ -2919,7 +3102,9 @@ class CLIPFoodClassifier:
             "predictions": enhanced_predictions[:top_k],
             "cuisine_scores": dict(sorted_cuisines[:5]),
             "method": "hierarchical",
-            "candidate_cuisines": [c for c, s in sorted_cuisines if s >= cuisine_threshold],
+            "candidate_cuisines": [
+                c for c, s in sorted_cuisines if s >= cuisine_threshold
+            ],
         }
 
     def _get_multi_crop_images(self, image: Image.Image) -> List[Image.Image]:
@@ -2942,12 +3127,14 @@ class CLIPFoodClassifier:
         half_crop = crop_size // 2
 
         # Center crop
-        center_crop = image.crop((
-            center_x - half_crop,
-            center_y - half_crop,
-            center_x + half_crop,
-            center_y + half_crop
-        ))
+        center_crop = image.crop(
+            (
+                center_x - half_crop,
+                center_y - half_crop,
+                center_x + half_crop,
+                center_y + half_crop,
+            )
+        )
         crops.append(center_crop)
 
         # Corner crops (slightly smaller to capture different regions)
@@ -3008,7 +3195,9 @@ class CLIPFoodClassifier:
 
         # Determine foods to check
         if candidate_foods:
-            foods_to_check = [f for f in candidate_foods if f in self._text_features_cache]
+            foods_to_check = [
+                f for f in candidate_foods if f in self._text_features_cache
+            ]
         else:
             foods_to_check = list(self._text_features_cache.keys())
 
@@ -3046,7 +3235,9 @@ class CLIPFoodClassifier:
                 similarity = (image_features @ text_features.T).squeeze().item()
                 all_similarities[food_key].append(similarity)
 
-        return self._compute_tta_results(all_similarities, foods_to_check, len(crops), top_k)
+        return self._compute_tta_results(
+            all_similarities, foods_to_check, len(crops), top_k
+        )
 
     @torch.no_grad()
     def _classify_with_tta_batched(
@@ -3064,16 +3255,22 @@ class CLIPFoodClassifier:
         resized_crops = [crop.resize((224, 224), Image.LANCZOS) for crop in crops]
 
         # Batch process all crops at once
-        inputs = self._processor(images=resized_crops, return_tensors="pt", padding=True)
+        inputs = self._processor(
+            images=resized_crops, return_tensors="pt", padding=True
+        )
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         # Single forward pass for all crops
         batch_image_features = self._model.get_image_features(**inputs)
-        batch_image_features = batch_image_features / batch_image_features.norm(dim=-1, keepdim=True)
+        batch_image_features = batch_image_features / batch_image_features.norm(
+            dim=-1, keepdim=True
+        )
 
         # Stack text features for efficient batch similarity computation
         text_feature_list = [self._text_features_cache[food] for food in foods_to_check]
-        stacked_text_features = torch.stack(text_feature_list).squeeze(1)  # [num_foods, embed_dim]
+        stacked_text_features = torch.stack(text_feature_list).squeeze(
+            1
+        )  # [num_foods, embed_dim]
 
         # Compute all similarities at once: [num_crops, num_foods]
         all_sims = batch_image_features @ stacked_text_features.T
@@ -3086,11 +3283,12 @@ class CLIPFoodClassifier:
 
         # Convert to similarities dict format for compatibility
         all_similarities = {
-            food: all_sims[:, i].cpu().tolist()
-            for i, food in enumerate(foods_to_check)
+            food: all_sims[:, i].cpu().tolist() for i, food in enumerate(foods_to_check)
         }
 
-        return self._compute_tta_results(all_similarities, foods_to_check, len(crops), top_k)
+        return self._compute_tta_results(
+            all_similarities, foods_to_check, len(crops), top_k
+        )
 
     def _compute_tta_results(
         self,
@@ -3102,8 +3300,7 @@ class CLIPFoodClassifier:
         """Compute final TTA results from similarity scores."""
         # Average similarities across crops
         avg_similarities = {
-            food: sum(sims) / len(sims)
-            for food, sims in all_similarities.items()
+            food: sum(sims) / len(sims) for food, sims in all_similarities.items()
         }
 
         # Convert to probabilities with temperature scaling
@@ -3124,14 +3321,20 @@ class CLIPFoodClassifier:
         results = []
         for i, (food_key, avg_sim) in enumerate(avg_similarities.items()):
             sims = all_similarities[food_key]
-            variance = sum((s - avg_sim) ** 2 for s in sims) / len(sims) if len(sims) > 1 else 0
+            variance = (
+                sum((s - avg_sim) ** 2 for s in sims) / len(sims)
+                if len(sims) > 1
+                else 0
+            )
 
-            results.append({
-                "food_key": food_key,
-                "confidence": probs[i].item(),
-                "avg_similarity": avg_sim,
-                "consistency": 1.0 - min(variance * 10, 1.0),
-            })
+            results.append(
+                {
+                    "food_key": food_key,
+                    "confidence": probs[i].item(),
+                    "avg_similarity": avg_sim,
+                    "consistency": 1.0 - min(variance * 10, 1.0),
+                }
+            )
 
         results.sort(key=lambda x: x["confidence"], reverse=True)
 
@@ -3196,7 +3399,9 @@ class CLIPFoodClassifier:
             for pred in hierarchical_result["predictions"]:
                 food = pred["food_key"]
                 score = pred["combined_score"]
-                vote_scores[food] = vote_scores.get(food, 0) + score * 1.2  # Boost hierarchical
+                vote_scores[food] = (
+                    vote_scores.get(food, 0) + score * 1.2
+                )  # Boost hierarchical
 
         # Add TTA votes (weight by confidence and consistency)
         if use_tta and tta_result.get("predictions"):
@@ -3427,14 +3632,15 @@ class CLIPEnsembleClassifier:
 
             # Add accurate model scores
             for food, conf in accurate_predictions:
-                weighted_scores[food] = weighted_scores.get(food, 0) + conf * self.accurate_weight
+                weighted_scores[food] = (
+                    weighted_scores.get(food, 0) + conf * self.accurate_weight
+                )
 
         # Normalize scores
         if weighted_scores:
             max_score = max(weighted_scores.values())
             normalized = {
-                food: score / max_score
-                for food, score in weighted_scores.items()
+                food: score / max_score for food, score in weighted_scores.items()
             }
 
             # Sort by score
@@ -3510,7 +3716,11 @@ class CLIPEnsembleClassifier:
         if fast_result.get("predictions"):
             for pred in fast_result["predictions"]:
                 food = pred.get("food_key") or pred.get("food")
-                score = pred.get("score") or pred.get("combined_score") or pred.get("confidence", 0)
+                score = (
+                    pred.get("score")
+                    or pred.get("combined_score")
+                    or pred.get("confidence", 0)
+                )
                 if food:
                     weighted_scores[food] = score * self.fast_weight
 
@@ -3522,7 +3732,9 @@ class CLIPEnsembleClassifier:
         if use_tta:
             accurate_result = accurate_model.classify_enhanced(image, top_k=top_k * 2)
         else:
-            accurate_result = accurate_model.classify_hierarchical(image, top_k=top_k * 2)
+            accurate_result = accurate_model.classify_hierarchical(
+                image, top_k=top_k * 2
+            )
 
         results["accurate_model"] = accurate_result
         results["strategies"].append("accurate_model_enhanced")
@@ -3531,16 +3743,21 @@ class CLIPEnsembleClassifier:
         if accurate_result.get("predictions"):
             for pred in accurate_result["predictions"]:
                 food = pred.get("food_key") or pred.get("food")
-                score = pred.get("score") or pred.get("combined_score") or pred.get("confidence", 0)
+                score = (
+                    pred.get("score")
+                    or pred.get("combined_score")
+                    or pred.get("confidence", 0)
+                )
                 if food:
-                    weighted_scores[food] = weighted_scores.get(food, 0) + score * self.accurate_weight
+                    weighted_scores[food] = (
+                        weighted_scores.get(food, 0) + score * self.accurate_weight
+                    )
 
         # Combine and normalize
         if weighted_scores:
             max_score = max(weighted_scores.values())
             normalized = {
-                food: score / max_score
-                for food, score in weighted_scores.items()
+                food: score / max_score for food, score in weighted_scores.items()
             }
 
             sorted_predictions = sorted(
@@ -3562,7 +3779,9 @@ class CLIPEnsembleClassifier:
             # Combine uncertainties
             fast_unc = fast_result.get("uncertainty", 0.5)
             accurate_unc = accurate_result.get("uncertainty", 0.5)
-            results["uncertainty"] = (fast_unc * self.fast_weight + accurate_unc * self.accurate_weight)
+            results["uncertainty"] = (
+                fast_unc * self.fast_weight + accurate_unc * self.accurate_weight
+            )
         else:
             results["predictions"] = []
             results["top_prediction"] = "unknown"

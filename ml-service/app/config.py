@@ -41,6 +41,23 @@ class Settings(BaseSettings):
     # ML Models
     model_storage_path: str = "./app/ml_models"
     model_version: str = "v1.0.0"
+    skip_model_warmup: bool = (
+        False  # Set to True for faster dev startup (first request will be slow)
+    )
+
+    # Performance Settings
+    # FAST_MODE: Disables OWL-ViT multi-food detection for ~5x faster inference
+    # Set to True for development/testing when speed > accuracy
+    fast_mode: bool = False
+    # ENABLE_MULTI_FOOD: Enable OWL-ViT multi-food detection (slow but accurate)
+    # Ignored if fast_mode is True
+    enable_multi_food: bool = True
+    # USE_ONNX: Use ONNX Runtime for 2-3x faster CPU inference
+    # Recommended for CPU deployments, ignored when CUDA is available
+    use_onnx: bool = False
+    # DEVICE: Force specific compute device (auto, cpu, cuda, mps)
+    # "auto" will detect available hardware in order: cuda > mps > cpu
+    compute_device: str = "auto"
 
     # Feature Engineering
     feature_version: str = "v1.2.3"

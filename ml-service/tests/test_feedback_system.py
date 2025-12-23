@@ -254,7 +254,10 @@ class TestFoodFeedbackRequestSchema:
     def test_create_valid_feedback_request(self, sample_feedback_request):
         """Test creating valid feedback request."""
         req = sample_feedback_request
-        assert req.image_hash == "abc123def456789012345678901234567890123456789012345678901234"
+        assert (
+            req.image_hash
+            == "abc123def456789012345678901234567890123456789012345678901234"
+        )
         assert req.original_prediction == "orange"
         assert req.original_confidence == 0.65
         assert req.user_selected_food == "tangerine"
@@ -343,7 +346,10 @@ class TestFoodFeedbackResponseSchema:
             feedback_id=123,
             was_correction=True,
             message="Thanks for the correction!",
-            suggested_prompts=["a photo of tangerine", "citrus fruit smaller than orange"],
+            suggested_prompts=[
+                "a photo of tangerine",
+                "citrus fruit smaller than orange",
+            ],
         )
         assert resp.success is True
         assert resp.feedback_id == 123
@@ -416,7 +422,9 @@ class TestApplyFeedbackBoost:
         assert result == sample_alternatives
         assert not any(alt.boosted for alt in result)
 
-    def test_boost_applied_low_confidence(self, sample_alternatives, mock_correction_cache):
+    def test_boost_applied_low_confidence(
+        self, sample_alternatives, mock_correction_cache
+    ):
         """Test boost applied when confidence < threshold."""
         result = _apply_feedback_boost(
             primary_class="orange",
@@ -430,7 +438,9 @@ class TestApplyFeedbackBoost:
         boosted_names = [alt.name for alt in result if alt.boosted]
         assert "tangerine" in boosted_names
 
-    def test_boost_marks_from_feedback(self, sample_alternatives, mock_correction_cache):
+    def test_boost_marks_from_feedback(
+        self, sample_alternatives, mock_correction_cache
+    ):
         """Test boosted alternatives marked with from_feedback=True."""
         result = _apply_feedback_boost(
             primary_class="orange",
@@ -490,7 +500,9 @@ class TestApplyFeedbackBoost:
         assert tangerine.confidence > 0.40  # Should be boosted
         assert tangerine.boosted is True
 
-    def test_boost_sorts_by_confidence(self, sample_alternatives, mock_correction_cache):
+    def test_boost_sorts_by_confidence(
+        self, sample_alternatives, mock_correction_cache
+    ):
         """Test boosted alternatives are sorted by confidence descending."""
         result = _apply_feedback_boost(
             primary_class="orange",
@@ -572,7 +584,7 @@ class TestFoodAnalysisServiceConfirmation:
         service = FoodAnalysisService()
 
         # Mock the classifier to return low confidence
-        with patch.object(service, '_get_ensemble_classifier') as mock_classifier:
+        with patch.object(service, "_get_ensemble_classifier") as mock_classifier:
             mock_result = MagicMock()
             mock_result.primary_class = "apple"
             mock_result.confidence = 0.65  # Below threshold
@@ -741,7 +753,7 @@ class TestFeedbackServicePromptGeneration:
 
         prompts = service._generate_prompts_from_description(
             food_key="tangerine",
-            description="small citrus fruit with easy to peel skin"
+            description="small citrus fruit with easy to peel skin",
         )
 
         assert len(prompts) > 0
@@ -755,8 +767,7 @@ class TestFeedbackServicePromptGeneration:
         service = FeedbackService()
 
         prompts = service._generate_prompts_from_description(
-            food_key="apple",
-            description="red"  # Too short
+            food_key="apple", description="red"  # Too short
         )
 
         # Should still generate some prompts based on food name

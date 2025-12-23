@@ -135,7 +135,8 @@ module.exports = {
       // Production API URL (only used in production builds when apiUrl is not set)
       productionApiUrl: PRODUCTION_API_URL || undefined,
       // ML Service URL (for food analysis)
-      mlServiceUrl: ML_SERVICE_URL || undefined,
+      // Must match the IP used for apiUrl - ML service runs on port 8000
+      mlServiceUrl: ML_SERVICE_URL || 'http://192.168.1.68:8000',
       // EAS configuration
       eas: {
         projectId: '543d7d98-c664-4db6-bffe-fceabff545d0',

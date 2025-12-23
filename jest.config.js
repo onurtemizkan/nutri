@@ -11,6 +11,12 @@ module.exports = {
     '/dist/',
     'test-utils\\.ts$',
   ],
+  moduleNameMapper: {
+    // Mock native HealthKit modules that aren't installed in test environment
+    '^react-native-health$': '<rootDir>/__mocks__/react-native-health.ts',
+    '^@kingstinct/react-native-healthkit$':
+      '<rootDir>/__mocks__/@kingstinct/react-native-healthkit.ts',
+  },
   collectCoverageFrom: [
     'app/**/*.{ts,tsx}',
     'lib/**/*.{ts,tsx}',

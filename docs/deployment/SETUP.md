@@ -235,7 +235,7 @@ DATABASE_URL=<your-supabase-url>
 REDIS_URL=<your-upstash-url>
 JWT_SECRET=<your-jwt-secret>
 JWT_EXPIRES_IN=7d
-ML_SERVICE_URL=http://nutri-ml-service:8080
+ML_SERVICE_URL=http://nutri-ml-service:8000
 LOG_LEVEL=info
 CORS_ORIGIN=https://your-app-domain.com
 ```

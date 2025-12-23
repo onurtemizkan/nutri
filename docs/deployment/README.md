@@ -33,7 +33,7 @@ This directory contains comprehensive deployment documentation for the Nutri nut
     |  |  +------------------+  +-------------+  +----------------+  |  |
     |  |  |     Traefik      |  |   Backend   |  |   ML Service   |  |  |
     |  |  |   (SSL/Proxy)    |  |  (Express)  |  |   (FastAPI)    |  |  |
-    |  |  |   Port 80/443    |  |  Port 3000  |  |   Port 8080    |  |  |
+    |  |  |   Port 80/443    |  |  Port 3000  |  |   Port 8000    |  |  |
     |  |  +------------------+  +-------------+  +----------------+  |  |
     |  +------------------------------------------------------------+  |
     +------------------------------------------------------------------+
@@ -51,7 +51,7 @@ This directory contains comprehensive deployment documentation for the Nutri nut
 | Service | Technology | Port | Purpose |
 |---------|------------|------|---------|
 | Backend API | Node.js/Express | 3000 | REST API for mobile app |
-| ML Service | Python/FastAPI | 8080 | ML predictions and analysis |
+| ML Service | Python/FastAPI | 8000 | ML predictions and analysis |
 | Traefik | Reverse Proxy | 80, 443 | SSL termination, routing |
 | PostgreSQL | Supabase | 5432 | Primary database |
 | Redis | Upstash | 6379 | Caching, rate limiting |

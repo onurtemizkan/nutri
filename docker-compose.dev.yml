@@ -119,14 +119,23 @@ services:
       DEBUG: "true"
       PORT: 8000
       HOST: 0.0.0.0
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/nutri_db
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/nutri_db
       REDIS_URL: redis://redis:6379
       LOG_LEVEL: DEBUG
+      # Performance: Set FAST_MODE=true to disable OWL-ViT for ~5x faster inference
+      # Trade-off: Loses multi-food detection capability
+      FAST_MODE: "true"
+      # Skip model warmup for faster container startup (first request will be slow)
+      # SKIP_MODEL_WARMUP: "true"
     volumes:
       # Mount source code for hot reload
       - ./ml-service/app:/app/app:delegated
       # Mount models directory
       - ./ml-service/models:/app/models:delegated
+      # Cache HuggingFace models to avoid re-downloading on each restart
+      - ml_huggingface_cache:/root/.cache/huggingface
+      # Cache torch hub models
+      - ml_torch_cache:/root/.cache/torch
     depends_on:
       postgres:
         condition: service_healthy
@@ -211,6 +220,10 @@ volumes:
     name: nutri_dev_backend_node_modules
   backend_prisma_client:
     name: nutri_dev_backend_prisma_client
+  ml_huggingface_cache:
+    name: nutri_dev_ml_huggingface_cache
+  ml_torch_cache:
+    name: nutri_dev_ml_torch_cache
 
 # =============================================================================
 # Networks

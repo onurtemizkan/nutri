@@ -32,6 +32,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 @dataclass
 class LatencyStats:
     """Statistics for latency measurements."""
+
     method: str
     n_runs: int
     mean_ms: float
@@ -47,6 +48,7 @@ class LatencyStats:
 @dataclass
 class MemoryStats:
     """Memory usage statistics."""
+
     method: str
     peak_mb: float
     current_mb: float
@@ -80,7 +82,7 @@ def measure_cold_start() -> Dict[str, float]:
     gc.collect()
 
     # Remove cached modules
-    modules_to_remove = [k for k in sys.modules.keys() if 'clip' in k.lower()]
+    modules_to_remove = [k for k in sys.modules.keys() if "clip" in k.lower()]
     for mod in modules_to_remove:
         del sys.modules[mod]
 
@@ -89,6 +91,7 @@ def measure_cold_start() -> Dict[str, float]:
     # Measure import time
     start = time.perf_counter()
     from app.ml_models.clip_food_classifier import CLIPFoodClassifier
+
     import_time = time.perf_counter() - start
 
     # Measure instantiation time
@@ -106,7 +109,8 @@ def measure_cold_start() -> Dict[str, float]:
         "import_time_ms": import_time * 1000,
         "instantiation_time_ms": instantiation_time * 1000,
         "first_inference_time_ms": first_inference_time * 1000,
-        "total_cold_start_ms": (import_time + instantiation_time + first_inference_time) * 1000,
+        "total_cold_start_ms": (import_time + instantiation_time + first_inference_time)
+        * 1000,
     }
 
 
@@ -115,7 +119,7 @@ def benchmark_method(
     image: Image.Image,
     n_warmup: int = 3,
     n_runs: int = 20,
-    method_name: str = "unknown"
+    method_name: str = "unknown",
 ) -> LatencyStats:
     """Benchmark a classification method."""
 
@@ -148,7 +152,7 @@ def benchmark_method(
 def measure_memory(
     method_fn: Callable[[Image.Image], Any],
     image: Image.Image,
-    method_name: str = "unknown"
+    method_name: str = "unknown",
 ) -> MemoryStats:
     """Measure memory usage of a method."""
     gc.collect()
@@ -169,9 +173,7 @@ def measure_memory(
 
 
 def benchmark_batch_throughput(
-    classifier,
-    images: List[Image.Image],
-    method_name: str = "basic"
+    classifier, images: List[Image.Image], method_name: str = "basic"
 ) -> Dict[str, float]:
     """Measure throughput for batch processing."""
 
@@ -249,6 +251,7 @@ def run_performance_benchmark():
     print("-" * 80)
 
     from app.ml_models.clip_food_classifier import get_clip_classifier
+
     classifier = get_clip_classifier()
 
     # Fetch a test image
@@ -275,21 +278,29 @@ def run_performance_benchmark():
     latency_results = []
     for name, method_fn in methods.items():
         print(f"\n  Benchmarking: {name}")
-        stats = benchmark_method(method_fn, test_image, n_warmup=3, n_runs=20, method_name=name)
+        stats = benchmark_method(
+            method_fn, test_image, n_warmup=3, n_runs=20, method_name=name
+        )
         latency_results.append(stats)
         print(f"    Mean: {stats.mean_ms:>7.1f} ms (std: {stats.std_ms:.1f})")
         print(f"    Min:  {stats.min_ms:>7.1f} ms | Max: {stats.max_ms:>7.1f} ms")
-        print(f"    P50:  {stats.p50_ms:>7.1f} ms | P95: {stats.p95_ms:>7.1f} ms | P99: {stats.p99_ms:>7.1f} ms")
+        print(
+            f"    P50:  {stats.p50_ms:>7.1f} ms | P95: {stats.p95_ms:>7.1f} ms | P99: {stats.p99_ms:>7.1f} ms"
+        )
         print(f"    Throughput: {stats.throughput_per_sec:.2f} img/sec")
 
     # 4. Latency Summary Table
     print("\n" + "-" * 80)
     print("4. LATENCY SUMMARY")
     print("-" * 80)
-    print(f"{'Method':<15} {'Mean':>8} {'Std':>8} {'P50':>8} {'P95':>8} {'P99':>8} {'Throughput':>12}")
+    print(
+        f"{'Method':<15} {'Mean':>8} {'Std':>8} {'P50':>8} {'P95':>8} {'P99':>8} {'Throughput':>12}"
+    )
     print("-" * 80)
     for stats in latency_results:
-        print(f"{stats.method:<15} {stats.mean_ms:>7.1f}ms {stats.std_ms:>7.1f}ms {stats.p50_ms:>7.1f}ms {stats.p95_ms:>7.1f}ms {stats.p99_ms:>7.1f}ms {stats.throughput_per_sec:>10.2f}/s")
+        print(
+            f"{stats.method:<15} {stats.mean_ms:>7.1f}ms {stats.std_ms:>7.1f}ms {stats.p50_ms:>7.1f}ms {stats.p95_ms:>7.1f}ms {stats.p99_ms:>7.1f}ms {stats.throughput_per_sec:>10.2f}/s"
+        )
 
     # 5. Memory Benchmark
     print("\n" + "-" * 80)
@@ -300,7 +311,9 @@ def run_performance_benchmark():
     for name, method_fn in methods.items():
         mem_stats = measure_memory(method_fn, test_image, method_name=name)
         memory_results.append(mem_stats)
-        print(f"  {name:<15}: Peak: {mem_stats.peak_mb:>6.1f} MB, Current: {mem_stats.current_mb:>6.1f} MB")
+        print(
+            f"  {name:<15}: Peak: {mem_stats.peak_mb:>6.1f} MB, Current: {mem_stats.current_mb:>6.1f} MB"
+        )
 
     # GPU memory if available
     gpu_mem = get_gpu_memory_usage()
@@ -321,7 +334,9 @@ def run_performance_benchmark():
     for name in ["basic", "with_tta", "hierarchical", "enhanced"]:
         result = benchmark_batch_throughput(classifier, test_images, method_name=name)
         batch_results.append(result)
-        print(f"  {name:<15}: {result['throughput_per_sec']:>6.2f} img/sec (avg: {result['avg_latency_ms']:.1f}ms)")
+        print(
+            f"  {name:<15}: {result['throughput_per_sec']:>6.2f} img/sec (avg: {result['avg_latency_ms']:.1f}ms)"
+        )
 
     # 7. Image Size Impact
     print("\n" + "-" * 80)
@@ -338,10 +353,12 @@ def run_performance_benchmark():
             resized,
             n_warmup=2,
             n_runs=10,
-            method_name=f"{size[0]}x{size[1]}"
+            method_name=f"{size[0]}x{size[1]}",
         )
         size_results.append(stats)
-        print(f"  {size[0]:>4}x{size[1]:<4}: {stats.mean_ms:>7.1f} ms (throughput: {stats.throughput_per_sec:.2f}/s)")
+        print(
+            f"  {size[0]:>4}x{size[1]:<4}: {stats.mean_ms:>7.1f} ms (throughput: {stats.throughput_per_sec:.2f}/s)"
+        )
 
     # 8. Summary & Recommendations
     print("\n" + "=" * 80)
@@ -363,7 +380,9 @@ def run_performance_benchmark():
     # Check if any method is too slow for real-time
     for stats in latency_results:
         if stats.mean_ms > 500:
-            print(f"  - WARNING: '{stats.method}' exceeds 500ms, may not be suitable for real-time")
+            print(
+                f"  - WARNING: '{stats.method}' exceeds 500ms, may not be suitable for real-time"
+            )
 
     return {
         "cold_start": cold_start,

@@ -3,6 +3,7 @@ Food Analysis API endpoints.
 Handles food scanning, classification, and nutrition estimation.
 """
 
+import asyncio
 import logging
 import hashlib
 from typing import Optional
@@ -26,11 +27,9 @@ from app.schemas.food_analysis import (
 )
 from app.services.food_analysis_service import food_analysis_service
 from app.services.feedback_service import feedback_service
-from app.data.food_database import (
-    FoodCategory,
-    get_micronutrient_estimates,
-    get_food_entry,
-)
+from app.core.queue import inference_queue
+from app.core.queue.manager import QueueFullError, CircuitOpenError
+from app.data.food_database import FoodCategory
 from app.database import get_db
 
 logger = logging.getLogger(__name__)
@@ -131,15 +130,43 @@ async def analyze_food(
                     status_code=422, detail=f"Invalid dimensions values: {str(e)}"
                 )
 
-        # Analyze food with cooking method support
-        (
-            food_items,
-            measurement_quality,
-            processing_time,
-            service_suggestions,
-        ) = await food_analysis_service.analyze_food(
-            pil_image, dimensions_obj, cooking_method
-        )
+        # Route through inference queue for concurrency control
+        try:
+            (
+                food_items,
+                measurement_quality,
+                processing_time,
+                service_suggestions,
+            ) = await inference_queue.submit(pil_image, dimensions_obj, cooking_method)
+
+        except QueueFullError as e:
+            # 503 Service Unavailable - queue is at capacity
+            logger.warning(
+                f"Queue full, rejecting request: {str(e)}",
+                extra={"queue_size": inference_queue.queue_size},
+            )
+            raise HTTPException(
+                status_code=503,
+                detail="Service temporarily overloaded. Please try again shortly.",
+                headers={"Retry-After": "5"},
+            )
+
+        except CircuitOpenError as e:
+            # 503 Service Unavailable - circuit breaker is open
+            logger.warning(f"Circuit breaker open: {str(e)}")
+            raise HTTPException(
+                status_code=503,
+                detail="Service temporarily unavailable due to high error rate.",
+                headers={"Retry-After": "30"},
+            )
+
+        except asyncio.TimeoutError:
+            # 504 Gateway Timeout - request took too long
+            logger.error("Request timed out waiting for inference")
+            raise HTTPException(
+                status_code=504,
+                detail="Request timed out. The service is under heavy load.",
+            )
 
         # Generate API-level suggestions and merge with service suggestions
         suggestions = list(service_suggestions) if service_suggestions else []
@@ -508,11 +535,16 @@ async def estimate_micronutrients(request: MicronutrientEstimationRequest):
     """
     try:
         from app.services.ingredient_micronutrient_service import (
-            estimate_micronutrients_sophisticated
+            estimate_micronutrients_sophisticated,
         )
 
         # Use sophisticated multi-signal estimation
-        estimated, category_used, confidence, source = estimate_micronutrients_sophisticated(
+        (
+            estimated,
+            category_used,
+            confidence,
+            source,
+        ) = estimate_micronutrients_sophisticated(
             food_name=request.food_name,
             categories=request.categories,
             portion_weight=request.portion_weight,

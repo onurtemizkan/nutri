@@ -39,32 +39,41 @@ A full-stack nutrition tracking mobile application built with React Native (Expo
 ## Features
 
 ### Mobile App (React Native)
-- **Authentication**: Secure sign up/sign in with JWT tokens
+- **Authentication**: Secure sign up/sign in with JWT tokens, Apple Sign-In, password reset
 - **Daily Dashboard**: View calorie and macronutrient progress at a glance
 - **Meal Tracking**: Log breakfast, lunch, dinner, and snacks
-- **Nutrition Breakdown**: Track calories, protein, carbs, fat, and fiber
+- **Food Scanning**: Camera-based food recognition with ML analysis
+- **Barcode Scanning**: Look up packaged foods via OpenFoodFacts
+- **AR Portion Measurement**: Use LiDAR for accurate portion sizing
+- **Nutrition Breakdown**: Track calories, protein, carbs, fat, fiber, and micronutrients
+- **Supplement Tracking**: Log vitamins and supplements with micronutrient details
+- **Health Metrics Dashboard**: View 30+ metric types synced from HealthKit
+- **Activity Tracking**: Log 17+ activity types with intensity levels
 - **User Goals**: Set and manage your daily nutrition goals
 - **Profile Management**: Update your goals and account settings
-- **Health Metrics**: Sync data from smartwatches (Apple Health, Fitbit, Garmin, Oura, Whoop)
+- **HealthKit Integration**: Sync data from Apple Health (heart rate, HRV, sleep, etc.)
 - **ML Insights** (Coming Soon): View how your nutrition affects your health metrics
-- **Predictions** (Coming Soon): See forecasts for tomorrow's RHR, HRV based on today's nutrition
 
 ### Backend API (Node.js)
 - **RESTful API**: Built with Express.js and TypeScript
 - **PostgreSQL Database**: Robust data storage with Prisma ORM
-- **JWT Authentication**: Secure token-based authentication
-- **Meal Management**: Full CRUD operations for meals
+- **JWT Authentication**: Secure token-based authentication with Apple Sign-In support
+- **Meal Management**: Full CRUD operations for meals with food analysis integration
 - **Health Metrics API**: Track RHR, HRV, sleep, recovery, steps (30+ metric types)
 - **Activity Tracking**: Log workouts and exercise (17+ activity types)
+- **Supplement Tracking**: Log vitamins and supplements
+- **Food Analysis Proxy**: Routes image analysis to ML service
 - **Daily/Weekly Summaries**: Get nutrition insights over time
 
-### ML Service (Python) - IN-HOUSE MODELS
+### ML Service (Python) - FULLY OPERATIONAL
+- **Food Image Analysis**: CLIP + Food-101 ensemble classifier for food recognition
+- **Multi-Food Detection**: OWL-ViT for detecting multiple foods in one image
+- **Barcode Integration**: OpenFoodFacts lookup for packaged foods
+- **Inference Queue**: Request queuing with circuit breaker pattern
+- **Prometheus Metrics**: Real-time monitoring of ML inference
 - **Feature Engineering**: Transforms raw data into 50+ ML features
 - **Correlation Analysis**: Finds patterns (e.g., "high protein → better HRV")
-- **Predictions**: LSTM neural networks (PyTorch) for RHR/HRV forecasting
-- **Recommendations**: Personalized nutrition plans based on your data
-- **Anomaly Detection**: Alerts for unusual health patterns
-- **All models trained in-house** using PyTorch, scikit-learn, XGBoost
+- **All models run in-house** using PyTorch, scikit-learn, Hugging Face Transformers
 
 ## Tech Stack
 
@@ -141,67 +150,89 @@ The codebase has undergone comprehensive refactoring with focus on type safety, 
 
 ```
 nutri/
-├── app/                    # Mobile app screens (Expo Router)
-│   ├── (tabs)/            # Tab navigation screens
-│   │   ├── index.tsx      # Dashboard/Home screen
-│   │   └── profile.tsx    # Profile screen
-│   ├── auth/              # Authentication screens
-│   │   ├── welcome.tsx    # Welcome screen
-│   │   ├── signin.tsx     # Sign in screen
-│   │   └── signup.tsx     # Sign up screen
-│   ├── add-meal.tsx       # Add meal modal
-│   └── _layout.tsx        # Root layout with auth routing
-├── lib/                   # Shared libraries
-│   ├── api/               # API client
-│   ├── context/           # React contexts (Auth)
-│   ├── types/             # TypeScript types
-│   └── utils/             # Utility functions
-│       └── errorHandling.ts # Type-safe error handling (isAxiosError, getErrorMessage)
-├── server/                # Node.js Backend API
+├── app/                       # Mobile app screens (Expo Router)
+│   ├── (tabs)/               # Tab navigation
+│   │   ├── index.tsx         # Dashboard/Home
+│   │   ├── health.tsx        # Health metrics tab
+│   │   └── profile.tsx       # Profile tab
+│   ├── auth/                 # Auth screens
+│   │   ├── welcome.tsx, signin.tsx, signup.tsx
+│   │   ├── forgot-password.tsx, reset-password.tsx
+│   ├── activity/             # Activity tracking
+│   │   ├── index.tsx, [id].tsx, add.tsx
+│   ├── health/               # Health metric details
+│   │   ├── [metricType].tsx, add.tsx
+│   ├── edit-meal/[id].tsx    # Edit meal
+│   ├── add-meal.tsx          # Add meal modal
+│   ├── scan-food.tsx         # Camera food scanning
+│   ├── scan-barcode.tsx      # Barcode scanner
+│   ├── ar-measure.tsx        # AR portion measurement
+│   ├── supplements.tsx       # Supplement tracking
+│   ├── health-settings.tsx   # HealthKit settings
+│   └── _layout.tsx           # Root layout
+│
+├── lib/                       # Shared mobile libraries
+│   ├── api/                  # API clients
+│   │   ├── client.ts         # Axios with JWT interceptors
+│   │   ├── auth.ts, meals.ts, activities.ts
+│   │   ├── health-metrics.ts, supplements.ts
+│   │   ├── food-analysis.ts, food-feedback.ts
+│   │   └── openfoodfacts.ts  # Barcode lookup
+│   ├── components/           # Reusable components
+│   │   ├── SwipeableMealCard.tsx, SwipeableHealthMetricCard.tsx
+│   │   ├── ARMeasurementOverlay.tsx, MicronutrientDisplay.tsx
+│   │   └── responsive/       # Responsive design components
+│   ├── context/              # React contexts
+│   │   └── AuthContext.tsx
+│   ├── services/
+│   │   └── healthkit/        # HealthKit integration
+│   ├── types/                # TypeScript interfaces
+│   └── utils/                # Utility functions
+│
+├── server/                    # Node.js Backend API
 │   ├── src/
-│   │   ├── controllers/   # Request handlers (auth, meals, health-metrics, activities)
-│   │   ├── services/      # Business logic (healthMetricService, activityService)
-│   │   ├── routes/        # API routes
-│   │   ├── middleware/    # Middleware functions
-│   │   │   ├── auth.ts           # JWT authentication
-│   │   │   ├── errorHandler.ts   # Error handling middleware
-│   │   │   ├── rateLimiter.ts    # Rate limiting (in-memory store)
-│   │   │   └── sanitize.ts       # Input sanitization (XSS prevention)
-│   │   ├── validation/    # Validation schemas
-│   │   │   └── schemas.ts        # Centralized Zod schemas (meals, health metrics, activities)
-│   │   ├── config/        # Configuration files
-│   │   │   └── constants.ts      # Constants (limits, HTTP status codes, error messages)
-│   │   ├── utils/         # Utility functions
-│   │   │   └── enumValidation.ts # Type-safe enum parsing (HealthMetricType, ActivityType, etc.)
-│   │   ├── types/         # TypeScript types
-│   │   │   └── pagination.ts     # Pagination utilities (PaginatedResponse, createPaginatedResponse)
-│   │   └── __tests__/     # Test files
-│   │       ├── setup.ts          # Test utilities and fixtures
-│   │       ├── auth.test.ts      # Authentication tests
-│   │       ├── meal.test.ts      # Meal CRUD tests
-│   │       ├── healthMetric.test.ts # Health metric tests
-│   │       └── activity.test.ts  # Activity tests
-│   └── prisma/            # Database schema
-│       ├── schema.prisma         # Prisma schema (User, Meal, HealthMetric, Activity, MLFeature, etc.)
-│       └── migrations/           # Database migrations and indexes
-├── ml-service/            # Python ML Service (IN-HOUSE MODELS)
+│   │   ├── controllers/      # auth, meal, healthMetric, activity, supplement
+│   │   ├── services/         # Business logic
+│   │   ├── routes/           # API routes
+│   │   ├── middleware/       # auth, errorHandler, rateLimiter, sanitize, requestLogger
+│   │   ├── validation/       # Centralized Zod schemas
+│   │   ├── config/           # database, constants, env, logger
+│   │   ├── utils/            # enumValidation, helpers
+│   │   ├── types/            # TypeScript types
+│   │   └── __tests__/        # Test files
+│   └── prisma/
+│       └── schema.prisma     # Database schema
+│
+├── ml-service/                # Python ML Service
 │   ├── app/
-│   │   ├── main.py        # FastAPI app entry point
-│   │   ├── config.py      # Environment configuration
-│   │   ├── database.py    # Async SQLAlchemy connection
-│   │   ├── redis_client.py # ML-specific caching
-│   │   ├── models/        # SQLAlchemy models (matching Prisma)
-│   │   ├── schemas/       # Pydantic schemas (TODO - Phase 1)
-│   │   ├── services/      # ML business logic (TODO - Phase 1)
-│   │   │   ├── feature_engineering.py (50+ features)
-│   │   │   ├── correlation_engine.py (Pearson, Spearman, Granger)
-│   │   │   └── prediction_service.py (LSTM, XGBoost)
-│   │   └── api/           # ML API routes (TODO - Phase 1)
-│   ├── requirements.txt   # Python dependencies (PyTorch, scikit-learn, XGBoost, etc.)
-│   ├── Dockerfile         # Multi-stage Docker build
-│   ├── docker-compose.yml # Full stack (PostgreSQL + Redis + ML service)
-│   └── README.md          # ML service documentation
-└── components/            # Reusable UI components
+│   │   ├── main.py           # FastAPI entry point
+│   │   ├── config.py, database.py, redis_client.py
+│   │   ├── api/              # API routes (food_analysis)
+│   │   ├── core/             # Core utilities
+│   │   │   ├── logging.py, device.py
+│   │   │   └── queue/        # Inference queue with circuit breaker
+│   │   ├── middleware/       # Request logging
+│   │   ├── ml_models/        # CLIP, Food-101, OWL-ViT classifiers
+│   │   ├── models/           # SQLAlchemy models
+│   │   ├── schemas/          # Pydantic schemas
+│   │   ├── services/         # ML business logic
+│   │   └── data/             # Food database
+│   ├── tests/                # Test files
+│   ├── Makefile              # Development commands
+│   └── requirements.txt
+│
+├── scripts/                   # Development scripts
+│   ├── start-all.sh          # Start everything
+│   ├── start-dev.sh          # Start Docker + ML
+│   ├── docker-dev.sh         # Docker helper
+│   └── deploy-device.sh      # Device deployment
+│
+├── e2e/                       # E2E tests (Maestro)
+│   ├── tests/                # Test flows
+│   └── scripts/              # Test runners
+│
+└── .claude/
+    └── settings.local.json   # Claude Code settings
 ```
 
 ## Getting Started
@@ -299,6 +330,128 @@ nutri/
    npm run web
    ```
 
+## Docker Development Environment
+
+### Quick Start - Full Docker Setup (Recommended)
+
+Start all services in Docker containers:
+
+```bash
+docker compose -f docker-compose.dev.yml up -d
+```
+
+This starts:
+| Service | Port | URL |
+|---------|------|-----|
+| PostgreSQL | 5432 | `postgresql://postgres:postgres@localhost:5432/nutri_db` |
+| Redis | 6379 | `redis://localhost:6379` |
+| Backend API | 3000 | http://localhost:3000 |
+| ML Service | 8000 | http://localhost:8000 |
+| Adminer (DB UI) | 8080 | http://localhost:8080 |
+| Redis Commander | 8081 | http://localhost:8081 |
+| Prisma Studio | 5555 | http://localhost:5555 |
+
+Stop all services:
+```bash
+docker compose -f docker-compose.dev.yml down
+```
+
+View logs:
+```bash
+# All services
+docker compose -f docker-compose.dev.yml logs -f
+
+# Specific service
+docker compose -f docker-compose.dev.yml logs -f backend
+docker compose -f docker-compose.dev.yml logs -f ml-service
+```
+
+### Alternative - Hybrid Setup (Docker + Local)
+
+Start infrastructure in Docker, run services locally:
+
+```bash
+# Start PostgreSQL, Redis, and ML Service
+./scripts/start-dev.sh
+
+# Start Backend API (in a separate terminal)
+cd server && npm run dev
+```
+
+Or use the all-in-one script:
+```bash
+./scripts/start-all.sh
+```
+
+Stop all services:
+```bash
+./scripts/stop-all.sh
+```
+
+### Shell Scripts Reference
+
+| Script | Description |
+|--------|-------------|
+| `./scripts/start-dev.sh` | Start Docker services + ML Service |
+| `./scripts/start-all.sh` | Start everything (Docker + Backend + ML) |
+| `./scripts/start-backend.sh` | Start Backend + ML (when Docker running) |
+| `./scripts/stop-dev.sh` | Stop Docker and local services |
+| `./scripts/stop-all.sh` | Stop all services |
+| `./scripts/docker-dev.sh` | Docker helper (start/stop/logs/build) |
+
+### Health Checks
+
+```bash
+# Backend API
+curl http://localhost:3000/health
+
+# ML Service
+curl http://localhost:8000/health
+```
+
+### Debug Ports
+
+- **Backend (Node.js):** 9229 (attach VS Code debugger)
+- **ML Service (Python):** 5678 (debugpy)
+
+### Docker Volumes
+
+- `nutri_dev_postgres_data` - PostgreSQL data
+- `nutri_dev_redis_data` - Redis data
+- `nutri_dev_backend_node_modules` - Backend dependencies
+- `nutri_dev_backend_prisma_client` - Prisma client
+
+### Common Docker Issues
+
+**Port Already in Use:**
+```bash
+# Find process using port
+lsof -ti:3000
+
+# Kill process
+kill -9 $(lsof -ti:3000)
+```
+
+**ML Service Database Error:**
+If you see "psycopg2 is not async", ensure DATABASE_URL uses:
+```
+postgresql+asyncpg://...
+```
+NOT:
+```
+postgresql://...
+```
+
+**Network Issues (containers can't communicate):**
+```bash
+# Clean up and restart
+docker compose -f docker-compose.dev.yml down
+docker network prune -f
+docker compose -f docker-compose.dev.yml up -d
+```
+
+---
+
 ## API Documentation
 
 ### Base URL
@@ -331,6 +484,50 @@ Content-Type: application/json
 }
 ```
 
+#### Apple Sign-In
+```http
+POST /api/auth/apple-signin
+Content-Type: application/json
+
+{
+  "identityToken": "eyJ...",
+  "user": "apple-user-id",
+  "email": "user@privaterelay.appleid.com",
+  "fullName": { "givenName": "John", "familyName": "Doe" }
+}
+```
+
+#### Forgot Password
+```http
+POST /api/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "user@example.com"
+}
+```
+
+#### Verify Reset Token
+```http
+POST /api/auth/verify-reset-token
+Content-Type: application/json
+
+{
+  "token": "reset-token-from-email"
+}
+```
+
+#### Reset Password
+```http
+POST /api/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "reset-token-from-email",
+  "password": "newPassword123"
+}
+```
+
 #### Get Profile (Protected)
 ```http
 GET /api/auth/profile
@@ -349,6 +546,12 @@ Content-Type: application/json
   "goalCarbs": 220,
   "goalFat": 70
 }
+```
+
+#### Delete Account (Protected)
+```http
+DELETE /api/auth/account
+Authorization: Bearer {token}
 ```
 
 ### Meal Endpoints (All Protected)
@@ -655,20 +858,28 @@ The app follows modern iOS/Android design patterns with:
 - **Pull-to-Refresh**: Quick data updates
 - **Modal Navigation**: Add meal screen as modal overlay
 
-## Future Enhancements
+## Feature Status
 
-- [ ] Barcode scanning for packaged foods
-- [ ] Food database integration (USDA, etc.)
-- [ ] Meal history and search
-- [ ] Weekly/monthly charts and analytics
-- [ ] Water intake tracking
-- [ ] Weight tracking with progress charts
-- [ ] Photo uploads for meals
+### Implemented
+- [x] Barcode scanning (OpenFoodFacts integration)
+- [x] Food photo analysis (ML-powered with CLIP + Food-101)
+- [x] AR portion measurement with LiDAR
+- [x] HealthKit integration (Apple Health sync)
+- [x] Supplement tracking with micronutrients
+- [x] Health metrics dashboard (30+ metric types)
+- [x] Activity tracking (17+ activity types)
+- [x] Daily/weekly nutrition summaries
+
+### In Progress
+- [ ] ML insights on nutrition-health correlations
+- [ ] Predictive analytics for health metrics
+
+### Planned
 - [ ] Recipe creation and sharing
 - [ ] Meal plans and suggestions
 - [ ] Dark mode support
 - [ ] Export data (CSV, PDF)
-- [ ] Integration with fitness trackers
+- [ ] Android Wear / Apple Watch companion app
 
 ## License
 

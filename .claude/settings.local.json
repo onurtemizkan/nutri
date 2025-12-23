@@ -36,7 +36,8 @@
       "mcp__task-master-ai__analyze_project_complexity",
       "mcp__task-master-ai__expand_task",
       "mcp__task-master-ai__get_task",
-      "mcp__task-master-ai__set_task_status"
+      "mcp__task-master-ai__set_task_status",
+      "mcp__task-master-ai__add_task"
     ],
     "deny": [],
     "ask": []

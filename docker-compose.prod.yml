@@ -1,14 +1,21 @@
 # =============================================================================
 # Nutri Production Docker Compose
-# Mirrors production environment for local testing and deployment
+# Optimized for Hetzner Cloud/Dedicated Servers (AMD EPYC CPUs)
 # =============================================================================
 #
+# Recommended Hetzner Instances:
+#   - CPX31 (4 vCPU, 8GB RAM) - €9/mo - Good for MVP
+#   - CCX23 (4 dedicated, 16GB RAM) - €25/mo - Better for growth
+#
 # Usage:
-#   1. Copy .env.example to .env.prod and fill in values
-#   2. docker-compose -f docker-compose.prod.yml --env-file .env.prod up --build
+#   1. Copy .env.prod.example to .env.prod and fill in values
+#   2. docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 #   3. Access backend at http://localhost:3000
 #
-# For Coolify deployment, this file serves as a reference for service configuration.
+# First deployment (download models):
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+#   docker compose logs -f ml-service  # Wait for "ml_service_ready"
+#
 # =============================================================================
 
 services:
@@ -36,14 +43,25 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      ml-service:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health/live"]
       interval: 30s
       timeout: 10s
-      start_period: 10s
+      start_period: 15s
       retries: 3
     networks:
       - nutri-network
+    # Resource limits for Hetzner CPX31/CCX23
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
     logging:
       driver: json-file
       options:
@@ -51,7 +69,7 @@ services:
         max-file: "3"
 
   # ---------------------------------------------------------------------------
-  # ML Service (Python/FastAPI)
+  # ML Service (Python/FastAPI) - Optimized for AMD EPYC
   # Internal only - not exposed to host, only accessible by backend
   # ---------------------------------------------------------------------------
   ml-service:
@@ -61,12 +79,36 @@ services:
     container_name: nutri-ml-service
     restart: unless-stopped
     environment:
+      # Database & Cache
       - DATABASE_URL=${ML_DATABASE_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/nutri_db}
       - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      # Application
       - ENVIRONMENT=production
       - DEBUG=false
       - LOG_LEVEL=INFO
-    # expose makes port available to other containers but not host
+      # -----------------------------------------------------------------------
+      # ML Performance Settings
+      # -----------------------------------------------------------------------
+      - FAST_MODE=${FAST_MODE:-true}
+      - COMPUTE_DEVICE=cpu
+      - SKIP_MODEL_WARMUP=false
+      # -----------------------------------------------------------------------
+      # AMD EPYC Thread Optimization
+      # Adjust based on instance: CPX31=4, CCX23=4, CPX21=3
+      # -----------------------------------------------------------------------
+      - OMP_NUM_THREADS=${OMP_NUM_THREADS:-4}
+      - MKL_NUM_THREADS=${MKL_NUM_THREADS:-4}
+      - OPENBLAS_NUM_THREADS=${OPENBLAS_NUM_THREADS:-4}
+      - TORCH_NUM_THREADS=${TORCH_NUM_THREADS:-4}
+      - NUMEXPR_NUM_THREADS=${NUMEXPR_NUM_THREADS:-4}
+      # Disable CUDA search (CPU-only)
+      - CUDA_VISIBLE_DEVICES=
+      # ONNX Runtime
+      - ORT_DISABLE_ALL_TELEMETRY=1
+    volumes:
+      # Persist HuggingFace models across restarts (saves ~2 min on startup)
+      - ml_huggingface_cache:/home/mlservice/.cache/huggingface
+    # Expose to internal network only (backend can reach it)
     expose:
       - "8000"
     depends_on:
@@ -75,13 +117,24 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/live"]
       interval: 30s
       timeout: 10s
-      start_period: 40s
-      retries: 3
+      # Model loading takes ~2 minutes on first start
+      start_period: 180s
+      retries: 5
     networks:
       - nutri-network
+    # Resource limits for Hetzner CPX31/CCX23
+    # ML service needs more resources than backend
+    deploy:
+      resources:
+        limits:
+          cpus: '3.0'
+          memory: 6G
+        reservations:
+          cpus: '2.0'
+          memory: 4G
     logging:
       driver: json-file
       options:
@@ -93,16 +146,28 @@ services:
   # ---------------------------------------------------------------------------
   postgres:
     image: postgres:16-alpine
-    container_name: nutri-postgres-prod
+    container_name: nutri-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-nutri_db}
+      # Performance tuning for Hetzner instances
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "effective_cache_size=512MB"
+      - "-c"
+      - "work_mem=16MB"
+      - "-c"
+      - "maintenance_work_mem=64MB"
     volumes:
       - postgres_prod_data:/var/lib/postgresql/data
     # Not exposed to host in production - use DATABASE_URL from same network
-    # Uncomment for local testing if needed:
+    # Uncomment for debugging if needed:
     # ports:
     #   - "5432:5432"
     healthcheck:
@@ -112,6 +177,14 @@ services:
       retries: 5
     networks:
       - nutri-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     logging:
       driver: json-file
       options:
@@ -123,18 +196,21 @@ services:
   # ---------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
-    container_name: nutri-redis-prod
+    container_name: nutri-redis
     restart: unless-stopped
-    # Production-optimized settings:
-    # - 256MB max memory (suitable for ~200 daily users)
-    # - LRU eviction when memory full
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    # Production settings for Hetzner:
+    # - 256MB max memory (sufficient for ML model caching)
+    # - LRU eviction policy
+    # - AOF persistence disabled for performance
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --appendonly no
+      --save ""
     volumes:
       - redis_prod_data:/data
     # Not exposed to host in production
-    # Uncomment for local testing if needed:
-    # ports:
-    #   - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -142,6 +218,14 @@ services:
       retries: 5
     networks:
       - nutri-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 300M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
     logging:
       driver: json-file
       options:
@@ -156,6 +240,8 @@ volumes:
     name: nutri_postgres_prod_data
   redis_prod_data:
     name: nutri_redis_prod_data
+  ml_huggingface_cache:
+    name: nutri_ml_huggingface_cache
 
 # -----------------------------------------------------------------------------
 # Networks
