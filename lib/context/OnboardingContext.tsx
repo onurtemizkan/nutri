@@ -3,11 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   OnboardingStatus,
   OnboardingData,
-  OnboardingStep1Data,
-  OnboardingStep2Data,
-  OnboardingStep3Data,
-  OnboardingStep4Data,
-  OnboardingStep5Data,
   OnboardingStepData,
 } from '../onboarding/types';
 import { onboardingApi, OnboardingDataResponse } from '../onboarding/api';

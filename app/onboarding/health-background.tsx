@@ -12,9 +12,7 @@ import {
 } from '@/lib/onboarding/config';
 import {
   OnboardingStep4Data,
-  ChronicCondition,
   ChronicConditionType,
-  Supplement,
   SupplementName,
   Allergy,
 } from '@/lib/onboarding/types';

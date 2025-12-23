@@ -17,7 +17,6 @@ import {
   BIOLOGICAL_SEX_OPTIONS,
   ACTIVITY_LEVEL_OPTIONS,
   TOTAL_ONBOARDING_STEPS,
-  DEFAULT_STEP1_DATA,
 } from '@/lib/onboarding/config';
 import { OnboardingStep1Data, BiologicalSex, ActivityLevel } from '@/lib/onboarding/types';
 import { colors, typography, spacing, borderRadius } from '@/lib/theme/colors';

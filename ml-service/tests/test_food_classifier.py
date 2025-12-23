@@ -12,11 +12,9 @@ Tests cover:
 """
 
 import pytest
-import pytest_asyncio
 import numpy as np
 from PIL import Image
 import time
-from unittest.mock import patch, MagicMock
 
 from app.ml_models.food_classifier import (
     FoodClassifier,
@@ -510,9 +508,9 @@ class TestIntegrationWithFoodAnalysisService:
         """Test FoodAnalysisService with real ML model."""
         from app.services.food_analysis_service import FoodAnalysisService
 
-        service = FoodAnalysisService(use_ml_model=True)
+        service = FoodAnalysisService(use_ensemble=True)
 
-        assert service._use_ml_model is True
+        assert service._use_ensemble is True
         assert service._classifier is not None
         assert "efficientnet" in service.model_name.lower()
 
@@ -520,9 +518,9 @@ class TestIntegrationWithFoodAnalysisService:
         """Test FoodAnalysisService with mock model."""
         from app.services.food_analysis_service import FoodAnalysisService
 
-        service = FoodAnalysisService(use_ml_model=False)
+        service = FoodAnalysisService(use_ensemble=False)
 
-        assert service._use_ml_model is False
+        assert service._use_ensemble is False
         assert service._classifier is None
         assert "mock" in service.model_name.lower()
 
@@ -531,7 +529,7 @@ class TestIntegrationWithFoodAnalysisService:
         """Test full food analysis with ML model."""
         from app.services.food_analysis_service import FoodAnalysisService
 
-        service = FoodAnalysisService(use_ml_model=True)
+        service = FoodAnalysisService(use_ensemble=True)
 
         (
             food_items,

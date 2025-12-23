@@ -40,8 +40,6 @@ export default function OnboardingComplete() {
     }
   };
 
-  const completedSteps = status ? status.currentStep - status.skippedSteps.length : 0;
-
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient colors={gradients.dark} style={styles.gradient}>
