@@ -761,7 +761,7 @@ async def get_food_suggestions(
 @router.post("/coarse-classify")
 async def coarse_classify(
     image: UploadFile = File(..., description="Food image (JPEG/PNG, max 10MB)"),
-    query: Optional[str] = Form(None, description="Optional user-provided search query"),
+    query: Optional[str] = Form(None, description="Optional user-provided text to enhance classification context and search query"),
 ):
     """
     Coarse-grained food classification for USDA search integration.

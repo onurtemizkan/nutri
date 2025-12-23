@@ -104,14 +104,10 @@ export const foodsApi = {
   ): Promise<ClassifyAndSearchResult> {
     const formData = new FormData();
 
-    // Convert base64 to blob for file upload
+    // Convert base64 to blob for file upload (using Uint8Array.from for efficiency)
     const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
     const byteCharacters = atob(base64Data);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
+    const byteArray = Uint8Array.from(byteCharacters, (char) => char.charCodeAt(0));
     const blob = new Blob([byteArray], { type: 'image/jpeg' });
 
     formData.append('image', blob, 'food.jpg');

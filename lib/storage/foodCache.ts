@@ -86,7 +86,11 @@ export interface OfflineSearchResult {
 
 // Constants
 const DB_NAME = 'food_cache.db';
+// Weekly refresh balances data freshness with reduced background sync/network usage
+// for largely stable food metadata.
 const SYNC_INTERVAL_DAYS = 7;
+// Limit popular foods cache to ~10K entries to keep SQLite database small enough
+// for mobile storage constraints while covering the vast majority of searches.
 const POPULAR_FOODS_LIMIT = 10000;
 const SYNC_BATCH_SIZE = 1000;
 const RECENT_FOODS_LIMIT = 100;
@@ -407,13 +411,17 @@ export async function searchOffline(
     const database = await getDatabase();
 
     // Clean and prepare query for FTS5
+    // Security: Removes FTS5 special chars (*, ", -, ^, etc.) via regex.
+    // Word-based operators (OR, AND, NOT, NEAR) are neutralized by appending *
+    // which makes them prefix searches (e.g., "OR" -> "OR*") rather than operators.
+    // The parameterized query with ? prevents SQL injection.
     const cleanQuery = query
       .trim()
       .toLowerCase()
-      .replace(/[^\w\s]/g, '') // Remove special characters
+      .replace(/[^\w\s]/g, '') // Remove FTS5 special characters
       .split(/\s+/)
       .filter((word) => word.length >= 2)
-      .map((word) => `${word}*`) // Add prefix matching
+      .map((word) => `${word}*`) // Add prefix matching (also neutralizes operators)
       .join(' ');
 
     if (!cleanQuery) {

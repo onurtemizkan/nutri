@@ -110,6 +110,7 @@ export function useFoodSearch(
   const lastQueryRef = useRef<string>('');
   const lastFilterRef = useRef<FoodFilterTab>('all');
   const searchIdRef = useRef(0);
+  const resultsRef = useRef<FoodSearchResult[]>([]);
 
   // Initialize cache on mount
   useEffect(() => {
@@ -148,6 +149,11 @@ export function useFoodSearch(
 
     init();
   }, [enableOffline]);
+
+  // Keep resultsRef synchronized with results state
+  useEffect(() => {
+    resultsRef.current = results;
+  }, [results]);
 
   // Convert cached food to search result
   const cachedToResult = useCallback((food: CachedFood): FoodSearchResult => ({
@@ -234,14 +240,16 @@ export function useFoodSearch(
       if (searchId !== searchIdRef.current) return;
 
       // Merge results: keep cached results, add online results that aren't duplicates
-      const cachedIds = new Set(results.map((r) => r.fdcId));
+      // Use ref to avoid stale closure and unnecessary re-renders
+      const currentResults = resultsRef.current;
+      const cachedIds = new Set(currentResults.map((r) => r.fdcId));
       const onlineFoods = onlineResults.foods.map(usdaToResult);
       const newOnlineFoods = onlineFoods.filter((f) => !cachedIds.has(f.fdcId));
 
       // Replace cached with online versions (more complete data)
       const mergedResults = [
         ...onlineFoods.slice(0, defaultLimit), // Prefer online versions
-        ...results.filter((r) => r.source === 'cache' && !onlineFoods.find((o) => o.fdcId === r.fdcId)),
+        ...currentResults.filter((r) => r.source === 'cache' && !onlineFoods.find((o) => o.fdcId === r.fdcId)),
       ].slice(0, defaultLimit);
 
       setResults(mergedResults);
@@ -251,7 +259,7 @@ export function useFoodSearch(
     } catch (err) {
       console.error('[useFoodSearch] Online search failed:', err);
       // Keep cached results if online fails
-      if (results.length === 0) {
+      if (resultsRef.current.length === 0) {
         setError('Search failed. Please check your connection.');
       }
     } finally {
@@ -260,7 +268,7 @@ export function useFoodSearch(
         setIsSearchingOnline(false);
       }
     }
-  }, [enableOffline, isCacheReady, filter, defaultLimit, results, cachedToResult, usdaToResult]);
+  }, [enableOffline, isCacheReady, filter, defaultLimit, cachedToResult, usdaToResult]);
 
   // Debounced search
   const debouncedSearch = useCallback(

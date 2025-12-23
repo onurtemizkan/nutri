@@ -30,6 +30,9 @@ interface ClassificationResultProps {
   onReportIncorrect: () => void;
 }
 
+// Constants
+const MAX_CONFIRM_BUTTON_TEXT_LENGTH = 30;
+
 // Format confidence as percentage
 const formatConfidence = (confidence: number): string => {
   return `${Math.round(confidence * 100)}%`;
@@ -266,8 +269,8 @@ export function ClassificationResult({
           >
             <Ionicons name="checkmark-circle" size={20} color={colors.text.primary} />
             <Text style={styles.confirmButtonText}>
-              Confirm: {usdaMatches[0].description.slice(0, 30)}
-              {usdaMatches[0].description.length > 30 ? '...' : ''}
+              Confirm: {usdaMatches[0].description.slice(0, MAX_CONFIRM_BUTTON_TEXT_LENGTH)}
+              {usdaMatches[0].description.length > MAX_CONFIRM_BUTTON_TEXT_LENGTH ? '...' : ''}
             </Text>
           </LinearGradient>
         </TouchableOpacity>
