@@ -81,8 +81,10 @@ interface MeasurementState {
 }
 
 export interface ARMeasurementOverlayProps {
-  /** Whether LiDAR/depth is available */
+  /** Whether LiDAR hardware is available */
   hasLiDAR: boolean;
+  /** Whether ARKit Scene Depth (ML-based, non-LiDAR) is available */
+  hasSceneDepth?: boolean;
   /** Called when measurement is complete */
   onMeasurementComplete: (measurement: ARMeasurement) => void;
   /** Called when measurement is cancelled */
@@ -91,7 +93,7 @@ export interface ARMeasurementOverlayProps {
   getDepthAtPoint?: (x: number, y: number) => Promise<number>;
   /** Whether the view is active */
   isActive: boolean;
-  /** Optional: current LiDAR capture for depth lookup and intrinsics */
+  /** Optional: current LiDAR/depth capture for depth lookup and intrinsics */
   lidarCapture?: LiDARCapture | null;
   /** Optional: food name for weight estimation */
   foodName?: string;
@@ -102,6 +104,7 @@ export interface ARMeasurementOverlayProps {
  */
 export function ARMeasurementOverlay({
   hasLiDAR,
+  hasSceneDepth = false,
   onMeasurementComplete,
   onCancel,
   getDepthAtPoint,
@@ -109,6 +112,8 @@ export function ARMeasurementOverlay({
   lidarCapture,
   foodName,
 }: ARMeasurementOverlayProps): React.ReactElement {
+  // Has any form of depth sensing available
+  const hasDepthSensing = hasLiDAR || hasSceneDepth;
   const [measurementState, setMeasurementState] = useState<MeasurementState>({
     point1: null,
     point2: null,
@@ -148,18 +153,20 @@ export function ARMeasurementOverlay({
 
   // Check for plane detection (simulated for now)
   useEffect(() => {
-    if (hasLiDAR && isActive) {
+    if (hasDepthSensing && isActive) {
       // In a real implementation, this would come from ARKit plane detection
       // For now, we simulate plane detection after a short delay
+      // Scene Depth takes slightly longer to stabilize than LiDAR
+      const detectionDelay = hasLiDAR ? 1500 : 2500;
       const timer = setTimeout(() => {
         setMeasurementState(prev => ({
           ...prev,
           planeDetected: true,
         }));
-      }, 1500);
+      }, detectionDelay);
       return () => clearTimeout(timer);
     }
-  }, [hasLiDAR, isActive]);
+  }, [hasDepthSensing, hasLiDAR, isActive]);
 
   /**
    * Get depth at a screen point
@@ -317,15 +324,27 @@ export function ARMeasurementOverlay({
       depth = Math.max(0.5, Math.min(50, depth));
     }
 
-    // Calculate confidence using LiDAR data quality
+    // Calculate confidence using depth data quality
+    // LiDAR provides highest confidence, Scene Depth provides medium confidence
     let confidence: 'high' | 'medium' | 'low';
     if (hasLiDAR && lidarCapture) {
+      // LiDAR has hardware-based depth with high accuracy
       confidence = calculateMeasurementConfidence(
         lidarCapture,
         screenPoint1,
         screenPoint2,
         screenPoint3
       );
+    } else if (hasSceneDepth && lidarCapture) {
+      // Scene Depth uses ML-based depth - cap at medium confidence
+      const rawConfidence = calculateMeasurementConfidence(
+        lidarCapture,
+        screenPoint1,
+        screenPoint2,
+        screenPoint3
+      );
+      // Scene Depth never gets 'high' confidence due to ML estimation uncertainty
+      confidence = rawConfidence === 'high' ? 'medium' : rawConfidence;
     } else if (planeDetected && point3) {
       confidence = 'medium';
     } else {
@@ -373,7 +392,7 @@ export function ARMeasurementOverlay({
       estimatedWeight,
       weightConfidence,
     };
-  }, [measurementState, hasLiDAR, lidarCapture, foodName]);
+  }, [measurementState, hasLiDAR, hasSceneDepth, lidarCapture, foodName]);
 
   /**
    * Handle confirm measurement
@@ -549,20 +568,20 @@ export function ARMeasurementOverlay({
         </TouchableOpacity>
 
         <View style={styles.statusContainer}>
-          {/* LiDAR indicator */}
+          {/* Depth sensor indicator */}
           <View style={styles.statusItem}>
             <Ionicons
-              name={hasLiDAR ? 'hardware-chip' : 'hardware-chip-outline'}
+              name={hasDepthSensing ? 'hardware-chip' : 'hardware-chip-outline'}
               size={16}
-              color={hasLiDAR ? colors.status.success : colors.text.tertiary}
+              color={hasDepthSensing ? colors.status.success : colors.text.tertiary}
             />
             <Text
               style={[
                 styles.statusText,
-                { color: hasLiDAR ? colors.status.success : colors.text.tertiary },
+                { color: hasDepthSensing ? colors.status.success : colors.text.tertiary },
               ]}
             >
-              {hasLiDAR ? 'LiDAR' : 'No LiDAR'}
+              {hasLiDAR ? 'LiDAR' : hasSceneDepth ? 'Scene Depth' : 'No Depth'}
             </Text>
           </View>
 

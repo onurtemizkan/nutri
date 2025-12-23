@@ -74,40 +74,109 @@
 ### Folder Structure
 ```
 nutri/
-├── app/                    # Mobile app screens (Expo Router)
-│   ├── (tabs)/            # Tab navigation (index.tsx, profile.tsx)
-│   ├── auth/              # Auth screens (welcome, signin, signup, forgot-password, reset-password)
-│   ├── add-meal.tsx       # Add meal modal
-│   └── _layout.tsx        # Root layout with auth routing
+├── app/                       # Mobile app screens (Expo Router)
+│   ├── (tabs)/               # Tab navigation
+│   │   ├── index.tsx         # Dashboard/Home
+│   │   ├── health.tsx        # Health metrics tab
+│   │   └── profile.tsx       # Profile tab
+│   ├── auth/                 # Auth screens
+│   │   ├── welcome.tsx, signin.tsx, signup.tsx
+│   │   ├── forgot-password.tsx, reset-password.tsx
+│   ├── activity/             # Activity tracking
+│   │   ├── index.tsx, [id].tsx, add.tsx
+│   ├── health/               # Health metric details
+│   │   ├── [metricType].tsx, add.tsx
+│   ├── edit-meal/[id].tsx    # Edit meal
+│   ├── edit-health-metric/[id].tsx
+│   ├── add-meal.tsx          # Add meal modal
+│   ├── scan-food.tsx         # Camera food scanning
+│   ├── scan-barcode.tsx      # Barcode scanner
+│   ├── scan-supplement-barcode.tsx
+│   ├── ar-measure.tsx        # AR measurement
+│   ├── ar-scan-food.tsx      # AR food scanning
+│   ├── supplements.tsx       # Supplement tracking
+│   ├── health-settings.tsx   # HealthKit settings
+│   ├── privacy.tsx, terms.tsx
+│   └── _layout.tsx           # Root layout
 │
-├── lib/                   # Shared mobile libraries
-│   ├── api/
-│   │   └── client.ts      # Axios client with JWT interceptors
+├── lib/                       # Shared mobile libraries
+│   ├── api/                  # API clients
+│   │   ├── client.ts         # Axios with JWT interceptors
+│   │   ├── auth.ts, meals.ts, activities.ts
+│   │   ├── health-metrics.ts, supplements.ts
+│   │   ├── food-analysis.ts, food-feedback.ts
+│   │   └── openfoodfacts.ts  # Barcode lookup
+│   ├── components/           # Reusable components
+│   │   ├── SwipeableMealCard.tsx, SwipeableHealthMetricCard.tsx
+│   │   ├── ARMeasurementOverlay.tsx, ManualSizePicker.tsx
+│   │   ├── MicronutrientDisplay.tsx, SupplementTracker.tsx
+│   │   └── responsive/       # Responsive design components
 │   ├── context/
-│   │   └── AuthContext.tsx # Authentication state management
-│   ├── types/             # TypeScript interfaces
+│   │   └── AuthContext.tsx
+│   ├── modules/
+│   │   └── LiDARModule.ts    # LiDAR depth sensing
+│   ├── services/
+│   │   └── healthkit/        # HealthKit integration
+│   │       ├── index.ts, permissions.ts, sync.ts
+│   │       ├── cardiovascular.ts, respiratory.ts
+│   │       ├── sleep.ts, activity.ts
+│   ├── theme/
+│   │   └── colors.ts         # Design tokens
+│   ├── responsive/           # Responsive utilities
+│   ├── types/                # TypeScript interfaces
 │   └── utils/
-│       └── errorHandling.ts # Type-safe error handling (isAxiosError, getErrorMessage)
+│       ├── errorHandling.ts, formatters.ts
+│       ├── depth-projection.ts, portion-estimation.ts
+│       └── nutritionSanitizer.ts
 │
-├── server/                # Backend API
+├── server/                    # Backend API
 │   ├── src/
-│   │   ├── controllers/   # Request handlers
-│   │   ├── services/      # Business logic
-│   │   ├── routes/        # API routes
-│   │   ├── middleware/    # Middleware (auth, errorHandler, rateLimiter, sanitize)
-│   │   ├── validation/    # Zod schemas
-│   │   ├── config/        # Configuration (database, constants)
-│   │   ├── utils/         # Utilities (enumValidation)
-│   │   ├── types/         # TypeScript types
-│   │   ├── __tests__/     # Test files
-│   │   └── index.ts       # Express app entry point
+│   │   ├── controllers/      # auth, meal, healthMetric, activity, supplement
+│   │   ├── services/         # Business logic (auth, meal, healthMetric, activity, supplement)
+│   │   ├── routes/           # auth, meal, healthMetric, activity, supplement, foodAnalysis
+│   │   ├── middleware/       # auth, errorHandler, rateLimiter, sanitize, requestLogger
+│   │   ├── validation/       # Zod schemas
+│   │   ├── config/           # database, constants, env, logger
+│   │   ├── utils/            # enumValidation, authHelpers, controllerHelpers, dateHelpers
+│   │   ├── types/            # TypeScript types (index, pagination)
+│   │   ├── __tests__/        # Test files
+│   │   └── index.ts          # Express app entry point
 │   ├── prisma/
-│   │   ├── schema.prisma  # Database schema
-│   │   └── migrations/    # Migrations
+│   │   └── schema.prisma     # Database schema
 │   └── package.json
 │
-└── ml-service/            # Python ML service (in progress)
-    └── ...
+├── ml-service/                # Python ML service
+│   ├── app/
+│   │   ├── main.py           # FastAPI entry point
+│   │   ├── config.py, database.py, redis_client.py
+│   │   ├── api/              # API routes (food_analysis)
+│   │   ├── core/             # Core utilities
+│   │   │   ├── logging.py, device.py
+│   │   │   └── queue/        # Inference queue system
+│   │   ├── middleware/       # Request logging
+│   │   ├── ml_models/        # CLIP, Food-101, ensemble classifiers
+│   │   ├── models/           # SQLAlchemy models
+│   │   ├── schemas/          # Pydantic schemas
+│   │   ├── services/         # ML business logic
+│   │   └── data/             # Food database
+│   ├── tests/                # Test files
+│   ├── Makefile              # Development commands
+│   └── requirements.txt
+│
+├── scripts/                   # Development scripts
+│   ├── start-all.sh          # Start everything
+│   ├── start-dev.sh          # Start Docker + ML
+│   ├── start-backend.sh      # Start Backend + ML
+│   ├── stop-all.sh, stop-dev.sh
+│   ├── docker-dev.sh         # Docker helper
+│   └── deploy-device.sh      # Device deployment
+│
+├── e2e/                       # E2E tests (Maestro)
+│   ├── tests/                # Test flows
+│   └── scripts/              # Test runners
+│
+└── .claude/
+    └── settings.local.json   # Claude Code local settings
 ```
 
 ### Design Patterns
@@ -201,7 +270,7 @@ catch (error) {
 
 ### Database Indexes
 - Composite indexes on (userId, date) for efficient queries
-- See `prisma/migrations/add_performance_indexes.sql` for documentation
+- Defined in `prisma/schema.prisma` using `@@index` directives
 
 ---
 
@@ -209,43 +278,100 @@ catch (error) {
 
 ### Mobile App (from project root)
 ```bash
-npm start              # Start development server
+# Development
+npm start              # Start Expo development server
 npm run ios            # iOS simulator (Mac only)
 npm run android        # Android emulator
 npm run web            # Web browser
+
+# Testing
+npm test               # Run Jest tests
 npm run lint           # ESLint
-npm test               # Run tests
+
+# E2E Testing (Maestro)
+npm run test:e2e       # Run all E2E tests
+npm run test:e2e:auth  # Auth flows only
+npm run test:e2e:meals # Meal flows only
+
+# Docker Development
+npm run docker:dev:start   # Start Docker dev environment
+npm run docker:dev:stop    # Stop Docker dev environment
+npm run docker:dev:logs    # View Docker logs
+
+# Device Deployment
+npm run deploy:device      # Deploy to connected device
+npm run build:ios:local    # Local iOS build
+
+# Service Management
+npm run dev:full           # Start all services
+npm run dev:stop           # Stop all services
 ```
 
 ### Backend (from /server directory)
 ```bash
 # Development & Build
-npm run dev            # Start dev server with hot reload
+npm run dev            # Start dev server with hot reload (tsx watch)
+npm run dev:debug      # Start with Node.js debugger (port 9229)
+npm run dev:with-ml    # Start with ML service
 npm run build          # Compile TypeScript
 npm start              # Run production server
 
 # Database Management
 npm run db:generate    # Generate Prisma client from schema
 npm run db:push        # Push schema to database (dev only)
-npm run db:migrate     # Create and run migrations (production)
+npm run db:migrate     # Create and run migrations (dev)
+npm run db:migrate:deploy # Run migrations (production)
 npm run db:studio      # Open Prisma Studio GUI
+npm run db:seed        # Seed database with test data
+npm run db:reset       # Reset database (destructive!)
 
 # Testing
 npm test               # Run all tests once
 npm run test:watch     # Watch mode
 npm run test:coverage  # Coverage report
+npm run test:verbose   # Verbose output
 
 # Code Quality
 npm run lint           # ESLint
+npm run lint:fix       # ESLint with auto-fix
 ```
 
 **Important:** Always run `db:generate` after modifying `prisma/schema.prisma`.
 
 ### ML Service (from /ml-service directory)
 ```bash
-make test              # Run tests
-make typecheck         # Type checking
+# Setup
+make setup             # Complete setup (env + venv + deps)
+make setup-redis       # Install and configure Redis
+
+# Development
 make dev               # Start development server
+make dev-with-redis    # Start dev server with Redis
+
+# Testing
+make test              # Run all tests
+make test-watch        # Watch mode
+make test-coverage     # Coverage report
+make test-fast         # Stop on first failure
+
+# Code Quality
+make lint              # Run flake8
+make format            # Format with black
+make typecheck         # Run mypy type checker
+
+# Redis
+make redis-start       # Start Redis
+make redis-stop        # Stop Redis
+make redis-status      # Check Redis status
+
+# Docker
+make docker-up         # Start Docker services
+make docker-down       # Stop Docker services
+
+# Utilities
+make clean             # Clean cache files
+make health            # Check service health
+make help              # Show all commands
 ```
 
 ---
@@ -308,13 +434,47 @@ assertUserStructure(), assertMealStructure(), etc.
 
 ## Environment Variables
 
-### Backend (.env)
+### Backend (server/.env)
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/nutri_db"
+DATABASE_URL="postgresql://postgres:password@localhost:5432/nutri"
 PORT=3000
 NODE_ENV=development
 JWT_SECRET=your-secret-key-change-in-production
 JWT_EXPIRES_IN=7d
+# CORS_ORIGIN=http://localhost:19006  # Optional
+```
+
+### ML Service (ml-service/.env)
+```env
+# Application
+APP_NAME=Nutri ML Service
+ENVIRONMENT=development
+DEBUG=true
+
+# Server
+HOST=0.0.0.0
+PORT=8000
+WORKERS=4
+
+# Database (PostgreSQL with async driver)
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/nutri_db
+DATABASE_POOL_SIZE=10
+
+# Redis
+REDIS_URL=redis://localhost:6379/0
+
+# Cache TTL (seconds)
+CACHE_TTL_FEATURES=3600        # 1 hour
+CACHE_TTL_PREDICTIONS=86400    # 24 hours
+
+# ML Configuration
+MODEL_STORAGE_PATH=./app/ml_models
+SKIP_MODEL_WARMUP=false        # Set true for faster dev startup
+FAST_MODE=false                # Skip OWL-ViT for faster inference
+
+# Logging
+LOG_LEVEL=INFO
+LOG_FORMAT=json
 ```
 
 ### Mobile (lib/api/client.ts)
@@ -412,22 +572,7 @@ Before committing code, verify:
 
 ## Claude Code Workflow Configuration
 
-### Quick Reference: Slash Commands
-
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/dev` | Start all development services | `/dev`, `/dev stop`, `/dev status` |
-| `/test` | Smart test runner (auto-detects) | `/test`, `/test server`, `/test:watch` |
-| `/check` | Code quality checks | `/check`, `/check server`, `/check fix` |
-| `/db` | Database operations | `/db status`, `/db studio`, `/db generate` |
-| `/build` | Build services | `/build`, `/build server` |
-| `/status` | Check all service health | `/status` |
-| `/fix` | Auto-fix common issues | `/fix`, `/fix lint`, `/fix deps` |
-| `/impl` | Implementation helper | `/impl add user profile endpoint` |
-| `/log` | View service logs | `/log`, `/log server -f` |
-| `/api` | Test API endpoints | `/api health`, `/api GET /api/meals` |
-
-### Service-Aware Routing
+### Service-Aware Development
 
 | Path Pattern | Service | Test Command | Check Command |
 |--------------|---------|--------------|---------------|
@@ -440,57 +585,64 @@ Before committing code, verify:
 
 #### Starting Development
 ```bash
-/dev                       # Use slash command
-./scripts/start-all.sh     # Manual option
+./scripts/start-all.sh     # Start everything (PostgreSQL, Redis, Backend, ML)
+./scripts/start-dev.sh     # Docker + ML Service only
+./scripts/start-backend.sh # Backend + ML (when Docker already running)
+npm run dev:full           # Same as start-all.sh
+npm run dev:backend        # Same as start-backend.sh
 ```
 
-This starts: PostgreSQL (5432), Redis (6379), Backend API (3000)
+**Services Started:**
+- PostgreSQL: 5432
+- Redis: 6379
+- Backend API: 3000
+- ML Service: 8000
 
-#### Testing Flow
+**Note:** ML Service (port 8000) always runs alongside the Backend API.
+
+#### Testing
 ```bash
-/test                      # Auto-detect what to test
-/test server               # Test specific service
-/test server:watch         # Watch mode
-/test server:coverage      # Coverage
+# Backend
+cd server && npm test           # Run all tests
+cd server && npm run test:watch # Watch mode
+cd server && npm run test:coverage
+
+# ML Service
+cd ml-service && make test      # Run all tests
+cd ml-service && make test-watch
+
+# Mobile
+npm test                        # Run Jest tests
 ```
 
 #### Code Quality
 ```bash
-/check                     # Check everything
-/check fix                 # Auto-fix issues
-/check server              # Service-specific
+# Backend
+cd server && npm run lint       # ESLint
+cd server && npm run build      # TypeScript check
+
+# ML Service
+cd ml-service && make lint      # Flake8
+cd ml-service && make typecheck # Mypy
+cd ml-service && make format    # Black formatter
 ```
 
 ### Implementation Workflow
 
-1. **Use `/impl` command** for guided implementation
-2. **Follow the stack order:**
+1. **Follow the stack order:**
    - Database schema (Prisma) → `db:generate` → `db:push`
    - Backend validation (Zod schemas)
    - Backend service/controller
    - Backend routes + tests
    - Mobile API client updates
    - Mobile UI components + tests
-3. **Verify with:** `/check` and `/test`
-
-### Hooks
-
-**Post-Edit Hook:** Provides hints after editing files
-- `*.ts` in server → "Run `/check server`"
-- `schema.prisma` → "Run `/db generate`"
-- Test files → "Run `/test`"
-
-**Pre-Bash Hook:** Validates commands before execution
-- Blocks dangerous patterns
-- Warns about production database access
+2. **Verify with tests and type checks**
 
 ### Configuration Files
 
 ```
 .claude/
-├── commands/          # Slash commands (dev, test, check, db, build, status, fix, impl, log, api)
-├── hooks/             # Automation hooks (nutri-post-edit.sh, nutri-pre-bash.sh)
-└── settings.json      # Claude Code settings
+└── settings.local.json   # Claude Code local settings (git-ignored)
 ```
 
 ### MCP Configuration
@@ -505,12 +657,15 @@ This starts: PostgreSQL (5432), Redis (6379), Backend API (3000)
 
 ### Best Practices
 
-1. **Start sessions with `/status`** to verify services are running
-2. **Use `/impl` for new features** for guided implementation
-3. **Run `/check` before committing** to catch issues early
-4. **Use `/test` liberally** - it's smart about what to test
-5. **Trust the hooks** - they provide helpful reminders
-6. **Ask for `/db` help** when working with schema changes
+1. **Start sessions by checking service health:**
+   ```bash
+   curl http://localhost:3000/health  # Backend
+   curl http://localhost:8000/health  # ML Service
+   ```
+2. **Run tests and type checks before committing**
+3. **Follow the implementation workflow** (database → backend → mobile)
+4. **Always regenerate Prisma client** after schema changes: `npm run db:generate`
+5. **Use Docker for consistent development** environment
 
 ---
 
@@ -521,7 +676,11 @@ This starts: PostgreSQL (5432), Redis (6379), Backend API (3000)
 - Security middleware is production-ready (rate limiting, sanitization)
 - Test infrastructure is comprehensive with fixtures and assertion helpers
 - Database schema supports 30+ health metric types and 17+ activity types
-- ML service implementation is in progress (Python FastAPI)
+- ML service is fully operational with:
+  - Food image analysis (CLIP + Food-101 ensemble)
+  - Barcode scanning (OpenFoodFacts integration)
+  - Inference queue with circuit breaker pattern
+  - Prometheus metrics for monitoring
 
 ---
 

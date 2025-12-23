@@ -43,6 +43,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class TestImage:
     """A test image with ground truth label."""
+
     url: str
     expected_food: str
     category: str  # e.g., "western", "asian", "ingredient", etc.
@@ -54,6 +55,7 @@ class TestImage:
 @dataclass
 class ClassificationResult:
     """Result from a classification attempt."""
+
     method: str
     top_prediction: str
     confidence: float
@@ -77,153 +79,150 @@ UNSPLASH_IMAGES = [
         expected_food="burger",
         category="western",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=640",
         expected_food="pizza",
         category="western",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1550547660-d9450f859349?w=640",
         expected_food="burger",
         category="western",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=640",
         expected_food="pancake",
         category="western",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1506084868230-bb9d95c24759?w=640",
         expected_food="pancake",
         category="western",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
-
     # Asian Foods
     TestImage(
         url="https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=640",
         expected_food="sushi",
         category="asian",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=640",
         expected_food="ramen",
         category="asian",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=640",
         expected_food="fried_rice",
         category="asian",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1559314809-0d155014e29e?w=640",
         expected_food="pad_thai",
         category="asian",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=640",
         expected_food="dumpling",
         category="asian",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
-
     # Raw Ingredients - verified URLs
     TestImage(
         url="https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=640",
         expected_food="apple",
         category="ingredient",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=640",
         expected_food="avocado",
         category="ingredient",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=640",
         expected_food="strawberry",
         category="ingredient",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1584270354949-c26b0d5b4a0c?w=640",
         expected_food="broccoli",
         category="ingredient",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1447175008436-054170c2e979?w=640",
         expected_food="carrot",
         category="ingredient",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=640",
         expected_food="banana",
         category="ingredient",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1546470427-e26264be0b0c?w=640",
         expected_food="tomato",
         category="ingredient",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
-
     # Desserts
     TestImage(
         url="https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=640",
         expected_food="cake",
         category="dessert",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1551024601-bec78aea704b?w=640",
         expected_food="donut",
         category="dessert",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=640",
         expected_food="cookies",
         category="dessert",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?w=640",
         expected_food="ice_cream",
         category="dessert",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
 ]
 
@@ -235,134 +234,130 @@ DIVERSE_IMAGES = [
         expected_food="falafel",
         category="middle_eastern",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1577805947697-89e18249d767?w=640",
         expected_food="hummus",
         category="middle_eastern",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1529006557810-274b9b2fc783?w=640",
         expected_food="kebab",
         category="middle_eastern",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
-
     # Indian
     TestImage(
         url="https://images.unsplash.com/photo-1601050690597-df0568f70950?w=640",
         expected_food="samosa",
         category="indian",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=640",
         expected_food="curry",
         category="indian",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1610057099443-fde8c8a02a8a?w=640",
         expected_food="naan",
         category="indian",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=640",
         expected_food="biryani",
         category="indian",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
-
     # Latin American
     TestImage(
         url="https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=640",
         expected_food="taco",
         category="latin",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=640",
         expected_food="burrito",
         category="latin",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1615870216519-2f9fa575fa5c?w=640",
         expected_food="guacamole",
         category="latin",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1582234372722-50d7ccc30ebd?w=640",
         expected_food="nachos",
         category="latin",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
-
     # European / Italian
     TestImage(
         url="https://images.unsplash.com/photo-1546549032-9571cd6b27df?w=640",
         expected_food="lasagna",
         category="european",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=640",
         expected_food="pasta",
         category="european",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=640",
         expected_food="salad",
         category="european",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=640",
         expected_food="pasta",
         category="european",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
-
     # Asian (additional)
     TestImage(
         url="https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=640",
         expected_food="pho",
         category="asian",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=640",
         expected_food="curry",
         category="asian",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=640",
         expected_food="salad",
         category="asian",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
 ]
 
@@ -373,35 +368,35 @@ PEXELS_STYLE_IMAGES = [
         expected_food="salad",
         category="western",
         difficulty="easy",
-        source="pexels"
+        source="pexels",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1544025162-d76694265947?w=640",
         expected_food="steak",
         category="western",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?w=640",
         expected_food="pasta",
         category="western",
         difficulty="easy",
-        source="pexels"
+        source="pexels",
     ),
     TestImage(
         url="https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg?w=640",
         expected_food="pancake",
         category="western",
         difficulty="easy",
-        source="pexels"
+        source="pexels",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=640",
         expected_food="french_fries",
         category="western",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
 ]
 
@@ -412,21 +407,21 @@ CHALLENGING_IMAGES = [
         expected_food="salad",
         category="challenging",
         difficulty="hard",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=640",
         expected_food="salad",
         category="challenging",
         difficulty="hard",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1547592180-85f173990554?w=640",
         expected_food="stir_fry",
         category="challenging",
         difficulty="hard",
-        source="unsplash"
+        source="unsplash",
     ),
 ]
 
@@ -441,56 +436,56 @@ BREAKFAST_IMAGES = [
         expected_food="eggs",
         category="breakfast",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1528207776546-365bb710ee93?w=640",
         expected_food="bacon",
         category="breakfast",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=640",
         expected_food="french_toast",
         category="breakfast",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1517093602195-b40af9688547?w=640",
         expected_food="waffles",
         category="breakfast",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1495147466023-ac5c588e2e94?w=640",
         expected_food="granola",
         category="breakfast",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1494597564530-871f2b93ac55?w=640",
         expected_food="oatmeal",
         category="breakfast",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=640",
         expected_food="croissant",
         category="breakfast",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1509722747041-616f39b57569?w=640",
         expected_food="bagel",
         category="breakfast",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
 ]
 
@@ -501,35 +496,35 @@ SEAFOOD_IMAGES = [
         expected_food="salmon",
         category="seafood",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1565680018093-ebb6e57ad06f?w=640",
         expected_food="shrimp",
         category="seafood",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1553247407-23251ce81f59?w=640",
         expected_food="lobster",
         category="seafood",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1559737558-2f5a35f4523b?w=640",
         expected_food="fish_and_chips",
         category="seafood",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=640",
         expected_food="salmon",
         category="seafood",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
 ]
 
@@ -540,21 +535,21 @@ SOUP_IMAGES = [
         expected_food="tomato_soup",
         category="soup",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1603105037880-880cd4edfb0d?w=640",
         expected_food="pumpkin_soup",
         category="soup",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1604152135912-04a022e23696?w=640",
         expected_food="miso_soup",
         category="soup",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
 ]
 
@@ -565,28 +560,28 @@ SANDWICH_IMAGES = [
         expected_food="sandwich",
         category="sandwich",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1553909489-cd47e0907980?w=640",
         expected_food="grilled_cheese",
         category="sandwich",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1481070555726-e2fe8357571d?w=640",
         expected_food="club_sandwich",
         category="sandwich",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1539252554453-80ab65ce3586?w=640",
         expected_food="blt",
         category="sandwich",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
 ]
 
@@ -597,70 +592,70 @@ MORE_ASIAN_IMAGES = [
         expected_food="bibimbap",
         category="korean",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1534256958597-7fe685cbd745?w=640",
         expected_food="spring_rolls",
         category="asian",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1563245372-f21724e3856d?w=640",
         expected_food="dim_sum",
         category="chinese",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=640",
         expected_food="thai_curry",
         category="thai",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1562967916-eb82221dfb92?w=640",
         expected_food="tempura",
         category="japanese",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1618841557871-b4664fbf0cb3?w=640",
         expected_food="udon",
         category="japanese",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1585032226651-759b368d7246?w=640",
         expected_food="kung_pao_chicken",
         category="chinese",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1548943487-a2e4e43b4853?w=640",
         expected_food="korean_bbq",
         category="korean",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1609501676725-7186f017a4b7?w=640",
         expected_food="tom_yum",
         category="thai",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1623689046286-01bacc6de7f0?w=640",
         expected_food="poke_bowl",
         category="hawaiian",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
 ]
 
@@ -671,42 +666,42 @@ MORE_EUROPEAN_IMAGES = [
         expected_food="risotto",
         category="italian",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1512058564366-18510be2db19?w=640",
         expected_food="paella",
         category="spanish",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1606787503066-794bb59c64bc?w=640",
         expected_food="schnitzel",
         category="german",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1600891964092-4316c288032e?w=640",
         expected_food="steak",
         category="western",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=640",
         expected_food="quiche",
         category="french",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?w=640",
         expected_food="bruschetta",
         category="italian",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
 ]
 
@@ -717,49 +712,49 @@ MORE_DESSERT_IMAGES = [
         expected_food="tiramisu",
         category="dessert",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1564355808539-22fda35bed7e?w=640",
         expected_food="brownie",
         category="dessert",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1558303426-faafc5450be4?w=640",
         expected_food="muffin",
         category="dessert",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1568571780765-9276ac8b75a2?w=640",
         expected_food="pie",
         category="dessert",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=640",
         expected_food="cheesecake",
         category="dessert",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1488477181946-6428a0291777?w=640",
         expected_food="macaron",
         category="dessert",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=640",
         expected_food="churros",
         category="dessert",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
 ]
 
@@ -770,28 +765,28 @@ BEVERAGE_IMAGES = [
         expected_food="coffee",
         category="beverage",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=640",
         expected_food="smoothie",
         category="beverage",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1546173159-315724a31696?w=640",
         expected_food="boba",
         category="beverage",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=640",
         expected_food="orange_juice",
         category="beverage",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
 ]
 
@@ -802,42 +797,42 @@ MORE_FRUIT_IMAGES = [
         expected_food="orange",
         category="fruit",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1519996529931-28324d5a630e?w=640",
         expected_food="watermelon",
         category="fruit",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1546548970-71785318a17b?w=640",
         expected_food="grapes",
         category="fruit",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1563114773-84221bd62daa?w=640",
         expected_food="mango",
         category="fruit",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=640",
         expected_food="pineapple",
         category="fruit",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1601004890684-d8cbf643f5f2?w=640",
         expected_food="blueberry",
         category="fruit",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
 ]
 
@@ -848,42 +843,42 @@ MORE_VEGETABLE_IMAGES = [
         expected_food="spinach",
         category="vegetable",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1504545102780-26774c1bb073?w=640",
         expected_food="mushroom",
         category="vegetable",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=640",
         expected_food="bell_pepper",
         category="vegetable",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1518977956812-cd3dbadaaf31?w=640",
         expected_food="corn",
         category="vegetable",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1590165482129-1b8b27698780?w=640",
         expected_food="onion",
         category="vegetable",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1508747703725-719571f7bf10?w=640",
         expected_food="potato",
         category="vegetable",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
 ]
 
@@ -894,21 +889,21 @@ SNACK_IMAGES = [
         expected_food="popcorn",
         category="snack",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1621447504864-d8686e12698c?w=640",
         expected_food="chips",
         category="snack",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1599490659213-e2b9527bd087?w=640",
         expected_food="nuts",
         category="snack",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
 ]
 
@@ -919,21 +914,21 @@ MORE_MIDDLE_EASTERN_IMAGES = [
         expected_food="shawarma",
         category="middle_eastern",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=640",
         expected_food="baklava",
         category="middle_eastern",
         difficulty="easy",
-        source="unsplash"
+        source="unsplash",
     ),
     TestImage(
         url="https://images.unsplash.com/photo-1623428187969-5da2dcea5ebf?w=640",
         expected_food="shakshuka",
         category="middle_eastern",
         difficulty="medium",
-        source="unsplash"
+        source="unsplash",
     ),
 ]
 
@@ -944,71 +939,71 @@ MORE_PEXELS_IMAGES = [
         expected_food="fried_chicken",
         category="western",
         difficulty="easy",
-        source="pexels"
+        source="pexels",
     ),
     TestImage(
         url="https://images.pexels.com/photos/2097090/pexels-photo-2097090.jpeg?w=640",
         expected_food="hot_dog",
         category="western",
         difficulty="easy",
-        source="pexels"
+        source="pexels",
     ),
     TestImage(
         url="https://images.pexels.com/photos/3535383/pexels-photo-3535383.jpeg?w=640",
         expected_food="curry",
         category="indian",
         difficulty="medium",
-        source="pexels"
+        source="pexels",
     ),
     TestImage(
         url="https://images.pexels.com/photos/699953/pexels-photo-699953.jpeg?w=640",
         expected_food="sushi",
         category="japanese",
         difficulty="easy",
-        source="pexels"
+        source="pexels",
     ),
     TestImage(
         url="https://images.pexels.com/photos/1437267/pexels-photo-1437267.jpeg?w=640",
         expected_food="pizza",
         category="italian",
         difficulty="easy",
-        source="pexels"
+        source="pexels",
     ),
     TestImage(
         url="https://images.pexels.com/photos/8963961/pexels-photo-8963961.jpeg?w=640",
         expected_food="ramen",
         category="japanese",
         difficulty="easy",
-        source="pexels"
+        source="pexels",
     ),
     TestImage(
         url="https://images.pexels.com/photos/262959/pexels-photo-262959.jpeg?w=640",
         expected_food="lamb_chops",
         category="western",
         difficulty="medium",
-        source="pexels"
+        source="pexels",
     ),
 ]
 
 # Combine all test images
 ALL_TEST_IMAGES = (
-    UNSPLASH_IMAGES +
-    DIVERSE_IMAGES +
-    PEXELS_STYLE_IMAGES +
-    CHALLENGING_IMAGES +
-    BREAKFAST_IMAGES +
-    SEAFOOD_IMAGES +
-    SOUP_IMAGES +
-    SANDWICH_IMAGES +
-    MORE_ASIAN_IMAGES +
-    MORE_EUROPEAN_IMAGES +
-    MORE_DESSERT_IMAGES +
-    BEVERAGE_IMAGES +
-    MORE_FRUIT_IMAGES +
-    MORE_VEGETABLE_IMAGES +
-    SNACK_IMAGES +
-    MORE_MIDDLE_EASTERN_IMAGES +
-    MORE_PEXELS_IMAGES
+    UNSPLASH_IMAGES
+    + DIVERSE_IMAGES
+    + PEXELS_STYLE_IMAGES
+    + CHALLENGING_IMAGES
+    + BREAKFAST_IMAGES
+    + SEAFOOD_IMAGES
+    + SOUP_IMAGES
+    + SANDWICH_IMAGES
+    + MORE_ASIAN_IMAGES
+    + MORE_EUROPEAN_IMAGES
+    + MORE_DESSERT_IMAGES
+    + BEVERAGE_IMAGES
+    + MORE_FRUIT_IMAGES
+    + MORE_VEGETABLE_IMAGES
+    + SNACK_IMAGES
+    + MORE_MIDDLE_EASTERN_IMAGES
+    + MORE_PEXELS_IMAGES
 )
 
 
@@ -1023,7 +1018,7 @@ class ImageFetcher:
             follow_redirects=True,
             headers={
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) FoodClassifierTest/1.0"
-            }
+            },
         )
 
     def fetch_image(self, test_image: TestImage) -> Optional[Image.Image]:
@@ -1116,7 +1111,16 @@ class ClassifierBenchmark:
             "macaron": ["macaroon"],
             # Pasta/noodles
             "spaghetti": ["pasta", "spaghetti_bolognese"],
-            "pasta": ["spaghetti", "penne", "macaroni", "pesto_pasta", "alfredo", "spaghetti_bolognese", "carbonara", "fettuccine"],
+            "pasta": [
+                "spaghetti",
+                "penne",
+                "macaroni",
+                "pesto_pasta",
+                "alfredo",
+                "spaghetti_bolognese",
+                "carbonara",
+                "fettuccine",
+            ],
             "noodles": ["noodle", "ramen", "pho", "pad_thai", "udon", "soba"],
             "ramen": ["noodles", "noodle", "pho", "udon"],
             "udon": ["noodles", "ramen", "soba"],
@@ -1128,13 +1132,31 @@ class ClassifierBenchmark:
             "shawarma": ["kebab", "gyros", "doner"],
             "baklava": ["pastry"],
             # Indian curries
-            "curry": ["butter_chicken", "tikka_masala", "red_curry", "green_curry", "vindaloo", "korma", "rogan_josh", "massaman_curry", "thai_curry"],
+            "curry": [
+                "butter_chicken",
+                "tikka_masala",
+                "red_curry",
+                "green_curry",
+                "vindaloo",
+                "korma",
+                "rogan_josh",
+                "massaman_curry",
+                "thai_curry",
+            ],
             "butter_chicken": ["curry", "tikka_masala"],
             "tikka_masala": ["curry", "butter_chicken"],
             "red_curry": ["curry", "green_curry", "massaman_curry", "thai_curry"],
             "thai_curry": ["curry", "red_curry", "green_curry"],
             # Salads
-            "salad": ["greek_salad", "caesar_salad", "fattoush", "tabbouleh", "coleslaw", "mixed_salad", "garden_salad"],
+            "salad": [
+                "greek_salad",
+                "caesar_salad",
+                "fattoush",
+                "tabbouleh",
+                "coleslaw",
+                "mixed_salad",
+                "garden_salad",
+            ],
             "greek_salad": ["salad", "fattoush"],
             "fattoush": ["salad", "tabbouleh"],
             "tabbouleh": ["salad", "fattoush"],
@@ -1154,7 +1176,14 @@ class ClassifierBenchmark:
             "pizza": ["lahmacun", "flatbread"],
             "lahmacun": ["pizza"],
             # Breakfast
-            "eggs": ["fried_egg", "scrambled_eggs", "omelette", "egg", "avocado_toast", "eggs_benedict"],
+            "eggs": [
+                "fried_egg",
+                "scrambled_eggs",
+                "omelette",
+                "egg",
+                "avocado_toast",
+                "eggs_benedict",
+            ],
             "bacon": ["bacon_strips"],
             "pancake": ["pancakes", "hotcakes"],
             "waffles": ["waffle", "belgian_waffle"],
@@ -1167,12 +1196,35 @@ class ClassifierBenchmark:
             "salmon": ["grilled_salmon", "baked_salmon", "fish"],
             "shrimp": ["prawns", "grilled_shrimp"],
             "lobster": ["seafood"],
-            "fish_and_chips": ["fried_fish", "fish", "shrimp", "fried_shrimp", "seafood"],
+            "fish_and_chips": [
+                "fried_fish",
+                "fish",
+                "shrimp",
+                "fried_shrimp",
+                "seafood",
+            ],
             # Soups
             "tomato_soup": ["soup", "gazpacho", "lentil_soup", "butternut_squash_soup"],
-            "pumpkin_soup": ["soup", "squash_soup", "butternut_squash_soup", "minestrone"],
-            "miso_soup": ["soup", "japanese_soup", "butternut_squash_soup", "lentil_soup"],
-            "soup": ["tomato_soup", "pumpkin_soup", "miso_soup", "minestrone", "lentil_soup", "butternut_squash_soup"],
+            "pumpkin_soup": [
+                "soup",
+                "squash_soup",
+                "butternut_squash_soup",
+                "minestrone",
+            ],
+            "miso_soup": [
+                "soup",
+                "japanese_soup",
+                "butternut_squash_soup",
+                "lentil_soup",
+            ],
+            "soup": [
+                "tomato_soup",
+                "pumpkin_soup",
+                "miso_soup",
+                "minestrone",
+                "lentil_soup",
+                "butternut_squash_soup",
+            ],
             # Sandwiches
             "sandwich": ["club_sandwich", "sub", "panini", "blt", "grilled_cheese"],
             "grilled_cheese": ["sandwich", "cheese_sandwich", "blt_sandwich"],
@@ -1191,7 +1243,15 @@ class ClassifierBenchmark:
             # European
             "paella": ["spanish_rice", "rice"],
             "schnitzel": ["fried_cutlet", "wiener_schnitzel", "katsu"],
-            "steak": ["beef_steak", "ribeye", "sirloin", "filet", "kebab", "bbq_ribs", "grilled_meat"],
+            "steak": [
+                "beef_steak",
+                "ribeye",
+                "sirloin",
+                "filet",
+                "kebab",
+                "bbq_ribs",
+                "grilled_meat",
+            ],
             "quiche": ["egg_pie", "savory_pie"],
             "bruschetta": ["toast", "appetizer"],
             # Beverages
@@ -1222,13 +1282,20 @@ class ClassifierBenchmark:
             "hot_dog": ["hotdog", "frankfurter"],
             "lamb_chops": ["lamb", "grilled_lamb"],
             # Stir fry
-            "stir_fry": ["stir fry", "stirfry", "fried_vegetables", "vegetable_stir_fry"],
+            "stir_fry": [
+                "stir fry",
+                "stirfry",
+                "fried_vegetables",
+                "vegetable_stir_fry",
+            ],
             "stir fry": ["stir_fry", "stirfry"],
         }
 
         # Normalize alias values when checking
         exp_aliases = [self._normalize_food_name(a) for a in aliases.get(exp_norm, [])]
-        pred_aliases = [self._normalize_food_name(a) for a in aliases.get(pred_norm, [])]
+        pred_aliases = [
+            self._normalize_food_name(a) for a in aliases.get(pred_norm, [])
+        ]
 
         if pred_norm in exp_aliases:
             return True
@@ -1271,7 +1338,9 @@ class ClassifierBenchmark:
             expected=expected,
         )
 
-    def classify_with_tta(self, image: Image.Image, expected: str) -> ClassificationResult:
+    def classify_with_tta(
+        self, image: Image.Image, expected: str
+    ) -> ClassificationResult:
         """Test classification with test-time augmentation."""
         start = time.perf_counter()
         result = self.classifier.classify_with_tta(image, top_k=5)
@@ -1296,10 +1365,12 @@ class ClassifierBenchmark:
             extra={
                 "uncertainty": result.get("uncertainty", 0),
                 "consistency": top_pred.get("consistency", 0),
-            }
+            },
         )
 
-    def classify_hierarchical(self, image: Image.Image, expected: str) -> ClassificationResult:
+    def classify_hierarchical(
+        self, image: Image.Image, expected: str
+    ) -> ClassificationResult:
         """Test hierarchical (cuisine-first) classification."""
         start = time.perf_counter()
         result = self.classifier.classify_hierarchical(image, top_k=5)
@@ -1323,10 +1394,12 @@ class ClassifierBenchmark:
             expected=expected,
             extra={
                 "detected_cuisine": top_pred.get("cuisine", "unknown"),
-            }
+            },
         )
 
-    def classify_enhanced(self, image: Image.Image, expected: str) -> ClassificationResult:
+    def classify_enhanced(
+        self, image: Image.Image, expected: str
+    ) -> ClassificationResult:
         """Test enhanced classification (TTA + hierarchical)."""
         start = time.perf_counter()
         result = self.classifier.classify_enhanced(image, top_k=5)
@@ -1350,14 +1423,14 @@ class ClassifierBenchmark:
             expected=expected,
             extra={
                 "uncertainty": result.get("uncertainty", 0),
-            }
+            },
         )
 
     def run_benchmark(
         self,
         test_images: List[TestImage],
         methods: Optional[List[str]] = None,
-        fetcher: Optional[ImageFetcher] = None
+        fetcher: Optional[ImageFetcher] = None,
     ) -> Dict[str, Any]:
         """Run benchmark on test images."""
 
@@ -1372,12 +1445,16 @@ class ClassifierBenchmark:
         if self.classifier is None:
             self.initialize()
 
-        results_by_method: Dict[str, List[ClassificationResult]] = {m: [] for m in methods}
+        results_by_method: Dict[str, List[ClassificationResult]] = {
+            m: [] for m in methods
+        }
         failed_fetches = []
 
         total = len(test_images)
         for i, test_img in enumerate(test_images):
-            logger.info(f"[{i+1}/{total}] Testing: {test_img.expected_food} ({test_img.source})")
+            logger.info(
+                f"[{i+1}/{total}] Testing: {test_img.expected_food} ({test_img.source})"
+            )
 
             # Fetch image
             image = fetcher.fetch_image(test_img)
@@ -1391,11 +1468,15 @@ class ClassifierBenchmark:
                     if method == "basic":
                         result = self.classify_basic(image, test_img.expected_food)
                     elif method == "with_prompts":
-                        result = self.classify_with_prompts(image, test_img.expected_food)
+                        result = self.classify_with_prompts(
+                            image, test_img.expected_food
+                        )
                     elif method == "with_tta":
                         result = self.classify_with_tta(image, test_img.expected_food)
                     elif method == "hierarchical":
-                        result = self.classify_hierarchical(image, test_img.expected_food)
+                        result = self.classify_hierarchical(
+                            image, test_img.expected_food
+                        )
                     elif method == "enhanced":
                         result = self.classify_enhanced(image, test_img.expected_food)
                     else:
@@ -1404,7 +1485,11 @@ class ClassifierBenchmark:
                     results_by_method[method].append(result)
 
                     # Log result
-                    status = "✓" if result.correct else ("~" if result.correct_in_top5 else "✗")
+                    status = (
+                        "✓"
+                        if result.correct
+                        else ("~" if result.correct_in_top5 else "✗")
+                    )
                     logger.info(
                         f"  {method}: {status} {result.top_prediction} "
                         f"({result.confidence:.1%}) [{result.latency_ms:.0f}ms]"
@@ -1431,11 +1516,13 @@ class ClassifierBenchmark:
 
             avg_conf_correct = (
                 sum(r.confidence for r in correct_results) / len(correct_results)
-                if correct_results else 0
+                if correct_results
+                else 0
             )
             avg_conf_incorrect = (
                 sum(r.confidence for r in incorrect_results) / len(incorrect_results)
-                if incorrect_results else 0
+                if incorrect_results
+                else 0
             )
 
             stats[method] = {
@@ -1463,15 +1550,19 @@ def print_benchmark_report(benchmark_results: Dict[str, Any]):
     print("FOOD CLASSIFIER BENCHMARK REPORT")
     print("=" * 80)
 
-    print(f"\nImages tested: {benchmark_results['successfully_tested']}/{benchmark_results['total_images']}")
-    if benchmark_results['failed_fetches']:
+    print(
+        f"\nImages tested: {benchmark_results['successfully_tested']}/{benchmark_results['total_images']}"
+    )
+    if benchmark_results["failed_fetches"]:
         print(f"Failed to fetch: {len(benchmark_results['failed_fetches'])} images")
 
     print("\n" + "-" * 80)
-    print(f"{'Method':<20} {'Top-1 Acc':>10} {'Top-5 Acc':>10} {'Avg Conf':>10} {'Latency':>10}")
+    print(
+        f"{'Method':<20} {'Top-1 Acc':>10} {'Top-5 Acc':>10} {'Avg Conf':>10} {'Latency':>10}"
+    )
     print("-" * 80)
 
-    for method, stats in benchmark_results['stats'].items():
+    for method, stats in benchmark_results["stats"].items():
         print(
             f"{method:<20} "
             f"{stats['top1_accuracy']:>9.1%} "
@@ -1483,12 +1574,13 @@ def print_benchmark_report(benchmark_results: Dict[str, Any]):
     print("-" * 80)
 
     # Find best method
-    if benchmark_results['stats']:
+    if benchmark_results["stats"]:
         best_method = max(
-            benchmark_results['stats'].items(),
-            key=lambda x: x[1]['top1_accuracy']
+            benchmark_results["stats"].items(), key=lambda x: x[1]["top1_accuracy"]
         )
-        print(f"\nBest method: {best_method[0]} ({best_method[1]['top1_accuracy']:.1%} Top-1)")
+        print(
+            f"\nBest method: {best_method[0]} ({best_method[1]['top1_accuracy']:.1%} Top-1)"
+        )
     else:
         print("\nNo results collected - all methods failed")
 
@@ -1496,8 +1588,11 @@ def print_benchmark_report(benchmark_results: Dict[str, Any]):
     print("\n" + "-" * 80)
     print("Confidence Calibration (higher difference = better calibration)")
     print("-" * 80)
-    for method, stats in benchmark_results['stats'].items():
-        diff = stats['avg_confidence_when_correct'] - stats['avg_confidence_when_incorrect']
+    for method, stats in benchmark_results["stats"].items():
+        diff = (
+            stats["avg_confidence_when_correct"]
+            - stats["avg_confidence_when_incorrect"]
+        )
         print(
             f"{method:<20} "
             f"Correct: {stats['avg_confidence_when_correct']:.1%}  "
@@ -1512,19 +1607,22 @@ def print_benchmark_report(benchmark_results: Dict[str, Any]):
 
     # Use enhanced method for failure analysis, fall back to basic
     method_for_analysis = None
-    for m in ['enhanced', 'with_tta', 'basic']:
-        if m in benchmark_results['stats']:
+    for m in ["enhanced", "with_tta", "basic"]:
+        if m in benchmark_results["stats"]:
             method_for_analysis = m
             break
 
     if method_for_analysis:
         failures = [
-            r for r in benchmark_results['stats'][method_for_analysis]['results']
+            r
+            for r in benchmark_results["stats"][method_for_analysis]["results"]
             if not r.correct
         ]
         if failures:
             for r in failures[:10]:  # Show first 10
-                print(f"  Expected: {r.expected} -> Got: {r.top_prediction} ({r.confidence:.1%})")
+                print(
+                    f"  Expected: {r.expected} -> Got: {r.top_prediction} ({r.confidence:.1%})"
+                )
                 print(f"    Top-5: {[f'{f}:{c:.0%}' for f,c in r.top_5]}")
         else:
             print("  No misclassifications!")
@@ -1551,7 +1649,7 @@ def run_field_test():
         results = benchmark.run_benchmark(
             ALL_TEST_IMAGES,
             methods=["basic", "with_tta", "hierarchical", "enhanced"],
-            fetcher=fetcher
+            fetcher=fetcher,
         )
 
         # Print report
@@ -1565,11 +1663,12 @@ def run_field_test():
             "successfully_tested": results["successfully_tested"],
             "stats": {
                 method: {
-                    k: v for k, v in stats.items()
+                    k: v
+                    for k, v in stats.items()
                     if k != "results"  # Exclude non-serializable results
                 }
                 for method, stats in results["stats"].items()
-            }
+            },
         }
         with open(results_file, "w") as f:
             json.dump(serializable, f, indent=2)

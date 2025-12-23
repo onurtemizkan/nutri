@@ -29,6 +29,7 @@
     "dev:start": "./scripts/start-all.sh",
     "dev:stop": "./scripts/stop-all.sh",
     "dev:full": "./scripts/start-full.sh",
+    "dev:backend": "./scripts/start-backend.sh",
 
     "test:e2e": "./e2e/scripts/run-e2e-tests.sh",
     "test:e2e:seed": "./e2e/scripts/run-e2e-tests.sh --seed",

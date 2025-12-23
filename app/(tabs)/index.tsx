@@ -12,9 +12,18 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { mealsApi } from '@/lib/api/meals';
 import { supplementsApi } from '@/lib/api/supplements';
+import { healthMetricsApi } from '@/lib/api/health-metrics';
 import { DailySummary, Meal, TodaySupplementStatus } from '@/lib/types';
+import {
+  HealthMetricType,
+  HealthMetric,
+  HealthMetricStats,
+  DASHBOARD_METRICS,
+  METRIC_CONFIG,
+} from '@/lib/types/health-metrics';
 import { useAuth } from '@/lib/context/AuthContext';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import { useResponsive } from '@/hooks/useResponsive';
@@ -24,9 +33,15 @@ import { DailyMicronutrientSummary } from '@/lib/components/DailyMicronutrientSu
 import { showAlert } from '@/lib/utils/alert';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 
+type HealthTrendsData = Record<
+  HealthMetricType,
+  { latest: HealthMetric | null; stats: HealthMetricStats | null }
+>;
+
 export default function HomeScreen() {
   const [summary, setSummary] = useState<DailySummary | null>(null);
   const [supplementStatus, setSupplementStatus] = useState<TodaySupplementStatus | null>(null);
+  const [healthTrends, setHealthTrends] = useState<HealthTrendsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [supplementKey, setSupplementKey] = useState(0);
@@ -65,13 +80,15 @@ export default function HomeScreen() {
     }
 
     try {
-      // Load meals and supplements in parallel
-      const [mealsData, supplementsData] = await Promise.all([
+      // Load meals, supplements, and health trends in parallel
+      const [mealsData, supplementsData, trendsData] = await Promise.all([
         mealsApi.getDailySummary(),
         supplementsApi.getTodayStatus().catch(() => null), // Don't fail if supplements fail
+        healthMetricsApi.getDashboardData(DASHBOARD_METRICS, 7).catch(() => null), // 7-day trends
       ]);
       setSummary(mealsData);
       setSupplementStatus(supplementsData);
+      setHealthTrends(trendsData);
     } catch (error) {
       console.error('Failed to load summary:', error);
     } finally {
@@ -262,6 +279,74 @@ export default function HomeScreen() {
               </View>
             </View>
           </View>
+
+          {/* 7-Day Health Trends */}
+          {healthTrends && Object.keys(healthTrends).length > 0 && (
+            <View style={styles.trendsSection} testID="home-health-trends">
+              <View style={styles.trendsSectionHeader}>
+                <Text style={styles.sectionTitle}>7-Day Trends</Text>
+                <TouchableOpacity
+                  onPress={() => router.push('/(tabs)/health')}
+                  style={styles.viewAllButton}
+                >
+                  <Text style={styles.viewAllText}>View All</Text>
+                  <Ionicons name="chevron-forward" size={16} color={colors.primary.main} />
+                </TouchableOpacity>
+              </View>
+              <View style={[styles.trendsContainer, isTablet && styles.trendsContainerTablet]}>
+                {DASHBOARD_METRICS.map((metricType) => {
+                  const data = healthTrends[metricType];
+                  if (!data?.latest) return null;
+
+                  const config = METRIC_CONFIG[metricType];
+                  const trendIcon = data.stats?.trend === 'up'
+                    ? 'trending-up'
+                    : data.stats?.trend === 'down'
+                      ? 'trending-down'
+                      : 'remove';
+                  const trendColor = data.stats?.trend === 'up'
+                    ? (metricType === 'RESTING_HEART_RATE' ? colors.status.warning : colors.status.success)
+                    : data.stats?.trend === 'down'
+                      ? (metricType === 'RESTING_HEART_RATE' ? colors.status.success : colors.status.warning)
+                      : colors.text.tertiary;
+
+                  return (
+                    <TouchableOpacity
+                      key={metricType}
+                      style={styles.trendCard}
+                      onPress={() => router.push(`/health/${metricType}`)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.trendCardHeader}>
+                        <Ionicons
+                          name={config.icon as keyof typeof Ionicons.glyphMap}
+                          size={18}
+                          color={colors.primary.main}
+                        />
+                        <Text style={styles.trendCardLabel}>{config.shortName}</Text>
+                      </View>
+                      <View style={styles.trendCardValue}>
+                        <Text style={styles.trendValueText}>
+                          {metricType === 'SLEEP_DURATION'
+                            ? `${data.latest.value.toFixed(1)}h`
+                            : Math.round(data.latest.value)}
+                        </Text>
+                        <Text style={styles.trendUnitText}>{config.unit}</Text>
+                      </View>
+                      {data.stats && (
+                        <View style={styles.trendIndicator}>
+                          <Ionicons name={trendIcon} size={14} color={trendColor} />
+                          <Text style={[styles.trendChangeText, { color: trendColor }]}>
+                            {Math.abs(data.stats.percentChange).toFixed(0)}%
+                          </Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          )}
 
           {/* Daily Micronutrient Summary (Food + Supplements) */}
           <DailyMicronutrientSummary
@@ -468,6 +553,83 @@ const styles = StyleSheet.create({
   macroProgressFill: {
     height: '100%',
     borderRadius: borderRadius.xs,
+  },
+
+  // Health Trends
+  trendsSection: {
+    marginBottom: spacing.xl,
+  },
+  trendsSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewAllText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.primary.main,
+    fontWeight: typography.fontWeight.medium,
+  },
+  trendsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  trendsContainerTablet: {
+    maxWidth: 600,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  trendCard: {
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+    width: '48%',
+    minWidth: 140,
+    ...shadows.sm,
+  },
+  trendCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  trendCardLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+    fontWeight: typography.fontWeight.semibold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  trendCardValue: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: spacing.xs,
+  },
+  trendValueText: {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+  },
+  trendUnitText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.tertiary,
+    marginLeft: spacing.xs,
+  },
+  trendIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  trendChangeText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
   },
 
   // Meals Section

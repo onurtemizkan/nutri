@@ -5,6 +5,7 @@
  */
 
 import { Platform } from 'react-native';
+import { queryCategorySamples } from '@kingstinct/react-native-healthkit';
 import {
   SleepSample,
   ProcessedHealthMetric,
@@ -60,8 +61,6 @@ export async function fetchSleepSamples(
   }
 
   try {
-    const { queryCategorySamples } = await import('@kingstinct/react-native-healthkit');
-
     const samples = await queryCategorySamples('HKCategoryTypeIdentifierSleepAnalysis', {
       limit: -1,
       filter: {

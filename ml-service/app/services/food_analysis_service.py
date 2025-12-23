@@ -643,7 +643,11 @@ class FoodAnalysisService:
                         f"{sum(1 for a in boosted_alternatives if a.boosted)} alternatives boosted"
                     )
 
-                return result.primary_class, round(result.confidence, 2), boosted_alternatives
+                return (
+                    result.primary_class,
+                    round(result.confidence, 2),
+                    boosted_alternatives,
+                )
 
             else:
                 # Single model classification (Food-101 only)
@@ -871,9 +875,7 @@ class FoodAnalysisService:
             food_entry.saturated_fat * scale if food_entry.saturated_fat else None
         )
         trans_fat = food_entry.trans_fat * scale if food_entry.trans_fat else None
-        cholesterol = (
-            food_entry.cholesterol * scale if food_entry.cholesterol else None
-        )
+        cholesterol = food_entry.cholesterol * scale if food_entry.cholesterol else None
 
         # Get micronutrient estimates based on food category
         # Use explicit values from food_entry if available, otherwise estimate
@@ -888,21 +890,15 @@ class FoodAnalysisService:
             else micros.get("potassium")
         )
         calcium = (
-            food_entry.calcium * scale
-            if food_entry.calcium
-            else micros.get("calcium")
+            food_entry.calcium * scale if food_entry.calcium else micros.get("calcium")
         )
-        iron = (
-            food_entry.iron * scale if food_entry.iron else micros.get("iron")
-        )
+        iron = food_entry.iron * scale if food_entry.iron else micros.get("iron")
         magnesium = (
             food_entry.magnesium * scale
             if food_entry.magnesium
             else micros.get("magnesium")
         )
-        zinc = (
-            food_entry.zinc * scale if food_entry.zinc else micros.get("zinc")
-        )
+        zinc = food_entry.zinc * scale if food_entry.zinc else micros.get("zinc")
         phosphorus = (
             food_entry.phosphorus * scale
             if food_entry.phosphorus
@@ -944,14 +940,10 @@ class FoodAnalysisService:
             else micros.get("vitamin_b12")
         )
         folate = (
-            food_entry.folate * scale
-            if food_entry.folate
-            else micros.get("folate")
+            food_entry.folate * scale if food_entry.folate else micros.get("folate")
         )
         thiamin = (
-            food_entry.thiamin * scale
-            if food_entry.thiamin
-            else micros.get("thiamin")
+            food_entry.thiamin * scale if food_entry.thiamin else micros.get("thiamin")
         )
         riboflavin = (
             food_entry.riboflavin * scale
@@ -959,9 +951,7 @@ class FoodAnalysisService:
             else micros.get("riboflavin")
         )
         niacin = (
-            food_entry.niacin * scale
-            if food_entry.niacin
-            else micros.get("niacin")
+            food_entry.niacin * scale if food_entry.niacin else micros.get("niacin")
         )
 
         # Amino acids - use explicit values if available, otherwise estimate
@@ -1227,4 +1217,10 @@ class FoodAnalysisService:
 
 
 # Singleton instance
-food_analysis_service = FoodAnalysisService()
+# Uses settings for performance configuration:
+# - fast_mode=True disables multi-food detection for ~5x faster inference
+# - enable_multi_food controls OWL-ViT detector (ignored if fast_mode=True)
+from app.config import settings
+
+_enable_multi_food = settings.enable_multi_food and not settings.fast_mode
+food_analysis_service = FoodAnalysisService(enable_multi_food=_enable_multi_food)

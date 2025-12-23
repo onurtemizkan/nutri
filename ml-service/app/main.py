@@ -16,8 +16,82 @@ from app.redis_client import redis_client
 from app.core.logging import configure_logging, get_logger
 from app.middleware.logging import LoggingMiddleware
 
+# Import inference queue
+from app.core.queue import inference_queue
+
 configure_logging(environment=settings.environment, log_level=settings.log_level)
 logger = get_logger(__name__)
+
+
+def warmup_ml_models():
+    """
+    Pre-load ML models during startup to avoid timeout on first request.
+
+    Models loaded:
+    - CLIP classifier (primary) - ~600MB
+    - OWL-ViT detector (multi-food) - ~1.5GB
+    - Food-101 ViT (fallback) - ~350MB
+
+    This prevents the first food analysis request from timing out
+    while models are being downloaded/loaded.
+    """
+    import time
+
+    start_time = time.time()
+    logger.info("ml_models_warmup_starting")
+
+    try:
+        # Import here to avoid circular imports
+        from app.services.food_analysis_service import food_analysis_service
+
+        # 1. Pre-load CLIP classifier (primary)
+        logger.info("loading_clip_classifier")
+        clip_start = time.time()
+        ensemble = food_analysis_service._get_ensemble_classifier()
+        # Force CLIP to load by calling _get_clip()
+        ensemble._get_clip()
+        logger.info(
+            "clip_classifier_loaded",
+            duration_ms=int((time.time() - clip_start) * 1000),
+        )
+
+        # 2. Pre-load OWL-ViT detector (if multi-food is enabled and not in fast mode)
+        if food_analysis_service._enable_multi_food and not settings.fast_mode:
+            logger.info("loading_owlvit_detector")
+            detector_start = time.time()
+            detector = food_analysis_service._get_food_detector()
+            detector.load_model()
+            logger.info(
+                "owlvit_detector_loaded",
+                duration_ms=int((time.time() - detector_start) * 1000),
+            )
+        elif settings.fast_mode:
+            logger.info(
+                "owlvit_detector_skipped",
+                reason="FAST_MODE=true - OWL-ViT disabled for faster inference",
+            )
+
+        # 3. Optionally pre-load Food-101 (fallback) - lighter weight
+        logger.info("loading_food101_fallback")
+        f101_start = time.time()
+        ensemble._get_food_101()
+        logger.info(
+            "food101_fallback_loaded",
+            duration_ms=int((time.time() - f101_start) * 1000),
+        )
+
+        total_time = time.time() - start_time
+        logger.info(
+            "ml_models_warmup_complete",
+            total_duration_ms=int(total_time * 1000),
+        )
+
+    except Exception as e:
+        logger.warning(
+            "ml_models_warmup_failed",
+            error=str(e),
+            message="Models will load lazily on first request (may cause timeout)",
+        )
 
 
 @asynccontextmanager
@@ -47,12 +121,51 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error("redis_connection_failed", error=str(e))
 
+    # Warm up ML models (pre-load to avoid first-request timeout)
+    # Can be skipped with SKIP_MODEL_WARMUP=true for faster dev startup
+    if settings.skip_model_warmup:
+        logger.info(
+            "ml_models_warmup_skipped",
+            reason="SKIP_MODEL_WARMUP=true",
+            warning="First food analysis request will be slow",
+        )
+    else:
+        # Run in thread pool to not block the event loop
+        import asyncio
+        import concurrent.futures
+
+        logger.info("ml_models_warmup_queued")
+        loop = asyncio.get_event_loop()
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            await loop.run_in_executor(executor, warmup_ml_models)
+
+    # Start inference queue with the analyze_food function
+    from app.services.food_analysis_service import food_analysis_service
+
+    async def inference_wrapper(pil_image, dimensions_obj, cooking_method):
+        """Wrapper for the food analysis service inference."""
+        return await food_analysis_service.analyze_food(
+            pil_image, dimensions_obj, cooking_method
+        )
+
+    await inference_queue.start(inference_wrapper)
+    logger.info(
+        "inference_queue_started",
+        max_concurrent=inference_queue.max_concurrent,
+        max_queue_size=inference_queue.max_queue_size,
+        num_workers=inference_queue.num_workers,
+    )
+
     logger.info("ml_service_ready")
 
     yield
 
     # Shutdown
     logger.info("ml_service_shutting_down")
+
+    # Stop inference queue (wait for pending requests)
+    await inference_queue.stop(timeout=10.0)
+    logger.info("inference_queue_stopped")
 
     # Close database connections
     await close_db()
@@ -208,12 +321,65 @@ async def readiness_check():
 
     # Both database and redis should be ready for full readiness
     if db_ready:
-        return {"status": "ready", "database": "ok", "redis": "ok" if redis_ready else "degraded"}
+        return {
+            "status": "ready",
+            "database": "ok",
+            "redis": "ok" if redis_ready else "degraded",
+        }
     else:
         return JSONResponse(
             status_code=503,
             content={"status": "not ready", "reason": "database not available"},
         )
+
+
+@app.get("/queue/status", tags=["Health"])
+async def queue_status():
+    """
+    Get ML inference queue status.
+
+    Returns detailed information about:
+    - Queue size and capacity
+    - Active workers and inferences
+    - Circuit breaker state
+    - Processing statistics
+
+    Use this endpoint to monitor queue health and identify bottlenecks.
+    """
+    status = inference_queue.get_status()
+
+    # Determine overall health
+    health = "healthy"
+    if status["circuit_breaker"]["state"] == "open":
+        health = "degraded"
+    elif status["queue_utilization_percent"] > 80:
+        health = "warning"
+    elif status["should_reject"]:
+        health = "critical"
+
+    return {
+        "health": health,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        **status,
+    }
+
+
+@app.post("/queue/reset-circuit-breaker", tags=["Health"])
+async def reset_circuit_breaker():
+    """
+    Reset the circuit breaker to closed state.
+
+    **Use with caution** - only reset if you're confident the underlying
+    issue has been resolved. The circuit breaker is there to protect
+    the service from cascading failures.
+    """
+    inference_queue._circuit_breaker.reset()
+    logger.info("circuit_breaker_manually_reset")
+
+    return {
+        "status": "reset",
+        "circuit_breaker": inference_queue._circuit_breaker.get_status(),
+    }
 
 
 # ============================================================================

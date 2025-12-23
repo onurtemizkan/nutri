@@ -7,6 +7,10 @@
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import {
+  isHealthDataAvailable as checkHealthDataAvailable,
+  requestAuthorization as requestHealthKitAuth,
+} from '@kingstinct/react-native-healthkit';
+import {
   HEALTHKIT_READ_PERMISSIONS,
   PermissionRequestResult,
   SYNC_TIMESTAMP_KEYS,
@@ -26,8 +30,7 @@ export async function isHealthKitAvailable(): Promise<boolean> {
   }
 
   try {
-    const { isHealthDataAvailable } = await import('@kingstinct/react-native-healthkit');
-    return isHealthDataAvailable();
+    return checkHealthDataAvailable();
   } catch (error) {
     console.warn('HealthKit availability check error:', error);
     return false;
@@ -74,11 +77,7 @@ export async function requestHealthKitPermissions(): Promise<PermissionRequestRe
   }
 
   try {
-    const { isHealthDataAvailable, requestAuthorization } = await import(
-      '@kingstinct/react-native-healthkit'
-    );
-
-    const isAvailable = isHealthDataAvailable();
+    const isAvailable = checkHealthDataAvailable();
     if (!isAvailable) {
       return {
         success: false,
@@ -90,7 +89,7 @@ export async function requestHealthKitPermissions(): Promise<PermissionRequestRe
 
     // Request authorization for all read permissions
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const authorized = await requestAuthorization({
+    const authorized = await requestHealthKitAuth({
       toRead: HEALTHKIT_READ_PERMISSIONS as any,
     });
 

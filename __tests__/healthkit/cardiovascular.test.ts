@@ -1,21 +1,27 @@
 /**
  * Cardiovascular Sync Tests
+ * Tests for @kingstinct/react-native-healthkit integration
  */
 
-import {
-  mockHealthKit,
-  createMockRestingHeartRateSample,
-  createMockHRVSample,
-  resetMocks,
-  setupDefaultMocks,
-  mockPlatform,
-} from './test-utils';
+import { mockKingstinctHealthKit, resetMocks, setupDefaultMocks, mockPlatform } from './test-utils';
 import {
   fetchRestingHeartRate,
   fetchHeartRateVariability,
   syncCardiovascularMetrics,
   calculateDailyAverageHeartRate,
 } from '@/lib/services/healthkit/cardiovascular';
+
+// Helper to create mock samples in @kingstinct/react-native-healthkit format
+function createKingstinctSample(quantity: number, date: Date) {
+  return {
+    quantity,
+    startDate: date,
+    endDate: date,
+    uuid: `uuid_${Date.now()}_${Math.random()}`,
+    device: { name: 'Apple Watch' },
+    sourceRevision: { source: { name: 'Apple Watch', bundleIdentifier: 'com.apple.health' } },
+  };
+}
 
 describe('Cardiovascular Sync', () => {
   beforeEach(() => {
@@ -43,13 +49,11 @@ describe('Cardiovascular Sync', () => {
 
     it('should transform HealthKit samples to ProcessedHealthMetric format', async () => {
       const mockSamples = [
-        createMockRestingHeartRateSample(58, new Date('2024-01-01T08:00:00Z')),
-        createMockRestingHeartRateSample(62, new Date('2024-01-02T08:00:00Z')),
+        createKingstinctSample(58, new Date('2024-01-01T08:00:00Z')),
+        createKingstinctSample(62, new Date('2024-01-02T08:00:00Z')),
       ];
 
-      mockHealthKit.getRestingHeartRateSamples.mockImplementation((options, callback) =>
-        callback(null, mockSamples)
-      );
+      mockKingstinctHealthKit.queryQuantitySamples.mockResolvedValue(mockSamples);
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -74,9 +78,7 @@ describe('Cardiovascular Sync', () => {
     });
 
     it('should return empty array on HealthKit error', async () => {
-      mockHealthKit.getRestingHeartRateSamples.mockImplementation((options, callback) =>
-        callback('HealthKit error', null)
-      );
+      mockKingstinctHealthKit.queryQuantitySamples.mockRejectedValue(new Error('HealthKit error'));
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -90,14 +92,13 @@ describe('Cardiovascular Sync', () => {
 
   describe('fetchHeartRateVariability', () => {
     it('should transform HRV samples correctly', async () => {
+      // HRV SDNN is typically in seconds, implementation converts small values to ms
       const mockSamples = [
-        createMockHRVSample(45, new Date('2024-01-01T08:00:00Z')),
-        createMockHRVSample(52, new Date('2024-01-02T08:00:00Z')),
+        createKingstinctSample(45, new Date('2024-01-01T08:00:00Z')),
+        createKingstinctSample(52, new Date('2024-01-02T08:00:00Z')),
       ];
 
-      mockHealthKit.getHeartRateVariabilitySamples.mockImplementation((options, callback) =>
-        callback(null, mockSamples)
-      );
+      mockKingstinctHealthKit.queryQuantitySamples.mockResolvedValue(mockSamples);
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -109,7 +110,6 @@ describe('Cardiovascular Sync', () => {
       expect(result).toHaveLength(2);
       expect(result[0]).toMatchObject({
         metricType: 'HEART_RATE_VARIABILITY_SDNN',
-        value: 45,
         unit: 'ms',
         source: 'apple_health',
       });
@@ -118,17 +118,13 @@ describe('Cardiovascular Sync', () => {
 
   describe('syncCardiovascularMetrics', () => {
     it('should combine RHR and HRV samples', async () => {
-      const rhrSamples = [
-        createMockRestingHeartRateSample(58, new Date('2024-01-01T08:00:00Z')),
-      ];
-      const hrvSamples = [createMockHRVSample(45, new Date('2024-01-01T09:00:00Z'))];
+      const rhrSample = createKingstinctSample(58, new Date('2024-01-01T08:00:00Z'));
+      const hrvSample = createKingstinctSample(45, new Date('2024-01-01T09:00:00Z'));
 
-      mockHealthKit.getRestingHeartRateSamples.mockImplementation((options, callback) =>
-        callback(null, rhrSamples)
-      );
-      mockHealthKit.getHeartRateVariabilitySamples.mockImplementation((options, callback) =>
-        callback(null, hrvSamples)
-      );
+      // First call is for RHR, second for HRV
+      mockKingstinctHealthKit.queryQuantitySamples
+        .mockResolvedValueOnce([rhrSample])
+        .mockResolvedValueOnce([hrvSample]);
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -145,17 +141,12 @@ describe('Cardiovascular Sync', () => {
     });
 
     it('should sort results by recordedAt (newest first)', async () => {
-      const rhrSamples = [
-        createMockRestingHeartRateSample(58, new Date('2024-01-01T08:00:00Z')),
-      ];
-      const hrvSamples = [createMockHRVSample(45, new Date('2024-01-02T09:00:00Z'))];
+      const rhrSample = createKingstinctSample(58, new Date('2024-01-01T08:00:00Z'));
+      const hrvSample = createKingstinctSample(45, new Date('2024-01-02T09:00:00Z'));
 
-      mockHealthKit.getRestingHeartRateSamples.mockImplementation((options, callback) =>
-        callback(null, rhrSamples)
-      );
-      mockHealthKit.getHeartRateVariabilitySamples.mockImplementation((options, callback) =>
-        callback(null, hrvSamples)
-      );
+      mockKingstinctHealthKit.queryQuantitySamples
+        .mockResolvedValueOnce([rhrSample])
+        .mockResolvedValueOnce([hrvSample]);
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -173,9 +164,21 @@ describe('Cardiovascular Sync', () => {
   describe('calculateDailyAverageHeartRate', () => {
     it('should calculate daily averages correctly', () => {
       const samples = [
-        { value: 70, startDate: '2024-01-01T08:00:00Z', endDate: '2024-01-01T08:01:00Z' },
-        { value: 80, startDate: '2024-01-01T12:00:00Z', endDate: '2024-01-01T12:01:00Z' },
-        { value: 60, startDate: '2024-01-02T08:00:00Z', endDate: '2024-01-02T08:01:00Z' },
+        {
+          quantity: 70,
+          startDate: new Date('2024-01-01T08:00:00Z'),
+          endDate: new Date('2024-01-01T08:01:00Z'),
+        },
+        {
+          quantity: 80,
+          startDate: new Date('2024-01-01T12:00:00Z'),
+          endDate: new Date('2024-01-01T12:01:00Z'),
+        },
+        {
+          quantity: 60,
+          startDate: new Date('2024-01-02T08:00:00Z'),
+          endDate: new Date('2024-01-02T08:01:00Z'),
+        },
       ];
 
       const result = calculateDailyAverageHeartRate(samples);

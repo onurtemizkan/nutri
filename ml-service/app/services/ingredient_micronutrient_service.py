@@ -51,14 +51,19 @@ INGREDIENT_MICRONUTRIENT_PROFILES: Dict[str, Dict[str, float]] = {
     "papaya": {"vitamin_c": 90, "vitamin_a": 70, "folate": 40},
     "guava": {"vitamin_c": 125, "folate": 50, "potassium": 400},
     "acerola": {"vitamin_c": 800},  # Extremely high vitamin C
-
     # -------------------------------------------------------------------------
     # VITAMIN A RICH INGREDIENTS
     # -------------------------------------------------------------------------
     "carrot": {"vitamin_a": 500, "vitamin_k": 10, "potassium": 200},
     "carrots": {"vitamin_a": 500, "vitamin_k": 10, "potassium": 200},
     "sweet potato": {"vitamin_a": 700, "vitamin_c": 20, "potassium": 400, "fiber": 3},
-    "spinach": {"vitamin_a": 400, "vitamin_k": 300, "iron": 2.0, "folate": 100, "magnesium": 60},
+    "spinach": {
+        "vitamin_a": 400,
+        "vitamin_k": 300,
+        "iron": 2.0,
+        "folate": 100,
+        "magnesium": 60,
+    },
     "kale": {"vitamin_a": 300, "vitamin_k": 400, "vitamin_c": 50, "calcium": 100},
     "collard": {"vitamin_a": 250, "vitamin_k": 350, "calcium": 150},
     "swiss chard": {"vitamin_a": 200, "vitamin_k": 300, "magnesium": 80},
@@ -67,16 +72,27 @@ INGREDIENT_MICRONUTRIENT_PROFILES: Dict[str, Dict[str, float]] = {
     "cantaloupe": {"vitamin_a": 200, "vitamin_c": 40, "potassium": 250},
     "apricot": {"vitamin_a": 100, "vitamin_c": 10, "potassium": 250},
     "mango": {"vitamin_a": 60, "vitamin_c": 45, "folate": 40},
-
     # -------------------------------------------------------------------------
     # B12 RICH INGREDIENTS (animal products)
     # -------------------------------------------------------------------------
-    "beef": {"vitamin_b12": 2.5, "zinc": 4.5, "iron": 2.5, "niacin": 5, "vitamin_b6": 0.4},
+    "beef": {
+        "vitamin_b12": 2.5,
+        "zinc": 4.5,
+        "iron": 2.5,
+        "niacin": 5,
+        "vitamin_b6": 0.4,
+    },
     "chicken": {"vitamin_b12": 0.3, "vitamin_b6": 0.5, "niacin": 10, "zinc": 1.5},
     "turkey": {"vitamin_b12": 0.4, "vitamin_b6": 0.5, "niacin": 8, "zinc": 2.0},
     "pork": {"vitamin_b12": 0.6, "thiamin": 0.8, "niacin": 5, "zinc": 2.5},
     "lamb": {"vitamin_b12": 2.5, "zinc": 4.0, "iron": 1.8, "niacin": 6},
-    "liver": {"vitamin_b12": 60, "vitamin_a": 6000, "iron": 6, "folate": 200, "riboflavin": 2.5},
+    "liver": {
+        "vitamin_b12": 60,
+        "vitamin_a": 6000,
+        "iron": 6,
+        "folate": 200,
+        "riboflavin": 2.5,
+    },
     "salmon": {"vitamin_b12": 4.0, "vitamin_d": 15, "niacin": 8, "omega3": 2000},
     "tuna": {"vitamin_b12": 3.0, "vitamin_d": 2, "niacin": 10, "vitamin_b6": 0.5},
     "sardine": {"vitamin_b12": 8.0, "vitamin_d": 5, "calcium": 350, "omega3": 1500},
@@ -87,9 +103,14 @@ INGREDIENT_MICRONUTRIENT_PROFILES: Dict[str, Dict[str, float]] = {
     "crab": {"vitamin_b12": 6.0, "zinc": 6.0, "copper": 0.6},
     "oyster": {"vitamin_b12": 16, "zinc": 75, "iron": 5, "copper": 4},
     "clam": {"vitamin_b12": 84, "iron": 24, "zinc": 2.5},  # Clams are B12 powerhouses
-    "egg": {"vitamin_b12": 0.6, "vitamin_d": 1, "riboflavin": 0.25, "selenium": 15, "choline": 150},
+    "egg": {
+        "vitamin_b12": 0.6,
+        "vitamin_d": 1,
+        "riboflavin": 0.25,
+        "selenium": 15,
+        "choline": 150,
+    },
     "eggs": {"vitamin_b12": 0.6, "vitamin_d": 1, "riboflavin": 0.25, "selenium": 15},
-
     # -------------------------------------------------------------------------
     # IRON RICH INGREDIENTS
     # -------------------------------------------------------------------------
@@ -104,14 +125,25 @@ INGREDIENT_MICRONUTRIENT_PROFILES: Dict[str, Dict[str, float]] = {
     "pinto bean": {"iron": 2.0, "folate": 150, "potassium": 400},
     "soybean": {"iron": 5.0, "calcium": 100, "magnesium": 90, "potassium": 500},
     "tofu": {"iron": 2.5, "calcium": 200, "magnesium": 35, "zinc": 1.0},
-    "tempeh": {"iron": 2.5, "calcium": 90, "magnesium": 80, "zinc": 1.5, "vitamin_b12": 0.1},
+    "tempeh": {
+        "iron": 2.5,
+        "calcium": 90,
+        "magnesium": 80,
+        "zinc": 1.5,
+        "vitamin_b12": 0.1,
+    },
     "edamame": {"iron": 2.0, "folate": 120, "vitamin_k": 25, "magnesium": 50},
     "quinoa": {"iron": 2.8, "magnesium": 65, "folate": 40, "zinc": 1.5, "fiber": 3},
-
     # -------------------------------------------------------------------------
     # CALCIUM RICH INGREDIENTS
     # -------------------------------------------------------------------------
-    "milk": {"calcium": 300, "vitamin_d": 2.5, "riboflavin": 0.4, "vitamin_b12": 1.0, "phosphorus": 200},
+    "milk": {
+        "calcium": 300,
+        "vitamin_d": 2.5,
+        "riboflavin": 0.4,
+        "vitamin_b12": 1.0,
+        "phosphorus": 200,
+    },
     "cheese": {"calcium": 200, "vitamin_b12": 0.8, "phosphorus": 150, "zinc": 1.5},
     "cheddar": {"calcium": 300, "vitamin_b12": 0.9, "phosphorus": 200, "zinc": 2.0},
     "mozzarella": {"calcium": 220, "vitamin_b12": 0.7, "phosphorus": 150},
@@ -121,17 +153,27 @@ INGREDIENT_MICRONUTRIENT_PROFILES: Dict[str, Dict[str, float]] = {
     "cottage cheese": {"calcium": 80, "vitamin_b12": 0.6, "riboflavin": 0.2},
     "kefir": {"calcium": 250, "vitamin_b12": 0.8, "vitamin_k": 30, "riboflavin": 0.3},
     "fortified plant milk": {"calcium": 300, "vitamin_d": 2.5, "vitamin_b12": 1.0},
-    "almond milk": {"calcium": 300, "vitamin_d": 2.5, "vitamin_e": 7},  # Usually fortified
-    "soy milk": {"calcium": 300, "vitamin_d": 2.5, "vitamin_b12": 1.0},  # Usually fortified
-
+    "almond milk": {
+        "calcium": 300,
+        "vitamin_d": 2.5,
+        "vitamin_e": 7,
+    },  # Usually fortified
+    "soy milk": {
+        "calcium": 300,
+        "vitamin_d": 2.5,
+        "vitamin_b12": 1.0,
+    },  # Usually fortified
     # -------------------------------------------------------------------------
     # VITAMIN D SOURCES
     # -------------------------------------------------------------------------
     "mushroom": {"vitamin_d": 7, "riboflavin": 0.3, "niacin": 3, "selenium": 10},
     "mushrooms": {"vitamin_d": 7, "riboflavin": 0.3, "niacin": 3},
     "shiitake": {"vitamin_d": 15, "riboflavin": 0.2, "niacin": 4},
-    "fortified": {"vitamin_d": 2.5, "vitamin_b12": 0.6, "calcium": 100},  # General fortification
-
+    "fortified": {
+        "vitamin_d": 2.5,
+        "vitamin_b12": 0.6,
+        "calcium": 100,
+    },  # General fortification
     # -------------------------------------------------------------------------
     # WHOLE GRAIN / FIBER RICH
     # -------------------------------------------------------------------------
@@ -146,11 +188,16 @@ INGREDIENT_MICRONUTRIENT_PROFILES: Dict[str, Dict[str, float]] = {
     "flaxseed": {"magnesium": 100, "thiamin": 0.5, "omega3": 2000, "fiber": 8},
     "chia": {"magnesium": 95, "calcium": 180, "iron": 2.0, "fiber": 10, "omega3": 5000},
     "hemp": {"magnesium": 200, "zinc": 3.0, "iron": 2.5, "omega3": 1000},
-
     # -------------------------------------------------------------------------
     # NUTS AND SEEDS (Vitamin E, Magnesium rich)
     # -------------------------------------------------------------------------
-    "almond": {"vitamin_e": 7.5, "magnesium": 75, "calcium": 75, "riboflavin": 0.3, "fiber": 3},
+    "almond": {
+        "vitamin_e": 7.5,
+        "magnesium": 75,
+        "calcium": 75,
+        "riboflavin": 0.3,
+        "fiber": 3,
+    },
     "almonds": {"vitamin_e": 7.5, "magnesium": 75, "calcium": 75, "riboflavin": 0.3},
     "walnut": {"omega3": 2500, "magnesium": 45, "vitamin_e": 2, "copper": 0.5},
     "walnuts": {"omega3": 2500, "magnesium": 45, "vitamin_e": 2},
@@ -163,16 +210,20 @@ INGREDIENT_MICRONUTRIENT_PROFILES: Dict[str, Dict[str, float]] = {
     "sunflower seed": {"vitamin_e": 10, "magnesium": 100, "selenium": 20, "folate": 65},
     "pumpkin seed": {"magnesium": 150, "zinc": 2.5, "iron": 2.5, "phosphorus": 350},
     "sesame": {"calcium": 280, "magnesium": 100, "zinc": 2.5, "iron": 4},
-
     # -------------------------------------------------------------------------
     # FORTIFICATION INDICATORS
     # -------------------------------------------------------------------------
-    "enriched": {"thiamin": 0.3, "riboflavin": 0.25, "niacin": 3, "folate": 140, "iron": 3},
+    "enriched": {
+        "thiamin": 0.3,
+        "riboflavin": 0.25,
+        "niacin": 3,
+        "folate": 140,
+        "iron": 3,
+    },
     "fortified with": {"vitamin_d": 2.5, "vitamin_b12": 1.0, "calcium": 100},
     "added vitamins": {"vitamin_d": 2, "vitamin_b12": 0.5, "vitamin_a": 100},
     "vitamin d added": {"vitamin_d": 2.5},
     "calcium added": {"calcium": 200},
-
     # -------------------------------------------------------------------------
     # HERBS AND SPICES (concentrated nutrients)
     # -------------------------------------------------------------------------
@@ -183,12 +234,17 @@ INGREDIENT_MICRONUTRIENT_PROFILES: Dict[str, Dict[str, float]] = {
     "oregano": {"vitamin_k": 100, "iron": 4, "calcium": 150},
     "turmeric": {"iron": 2, "manganese": 1.5},  # Also anti-inflammatory
     "ginger": {"magnesium": 12, "potassium": 100},
-
     # -------------------------------------------------------------------------
     # COMMON PRODUCE
     # -------------------------------------------------------------------------
     "banana": {"potassium": 400, "vitamin_b6": 0.4, "vitamin_c": 10, "magnesium": 30},
-    "avocado": {"potassium": 500, "vitamin_k": 20, "folate": 80, "vitamin_e": 2, "fiber": 7},
+    "avocado": {
+        "potassium": 500,
+        "vitamin_k": 20,
+        "folate": 80,
+        "vitamin_e": 2,
+        "fiber": 7,
+    },
     "potato": {"potassium": 600, "vitamin_c": 20, "vitamin_b6": 0.3, "fiber": 2},
     "apple": {"vitamin_c": 5, "potassium": 100, "fiber": 3},
     "blueberry": {"vitamin_c": 10, "vitamin_k": 20, "manganese": 0.4},
@@ -205,7 +261,6 @@ INGREDIENT_MICRONUTRIENT_PROFILES: Dict[str, Dict[str, float]] = {
     "cherry": {"vitamin_c": 10, "potassium": 175, "vitamin_a": 15},
     "fig": {"potassium": 230, "calcium": 35, "magnesium": 17, "fiber": 3},
     "date": {"potassium": 650, "magnesium": 40, "iron": 1, "fiber": 7},
-
     # -------------------------------------------------------------------------
     # VEGETABLES
     # -------------------------------------------------------------------------
@@ -232,14 +287,20 @@ INGREDIENT_MICRONUTRIENT_PROFILES: Dict[str, Dict[str, float]] = {
 
 # Fortification keywords that indicate added vitamins/minerals
 FORTIFICATION_KEYWORDS = [
-    "fortified", "enriched", "added vitamins", "vitamin d added",
-    "calcium added", "with vitamins", "vitamin enriched",
+    "fortified",
+    "enriched",
+    "added vitamins",
+    "vitamin d added",
+    "calcium added",
+    "with vitamins",
+    "vitamin enriched",
 ]
 
 
 @dataclass
 class EstimationSignal:
     """A signal contributing to micronutrient estimation"""
+
     source: str  # "ingredient", "food_match", "macros", "category"
     confidence: float  # 0.0 to 1.0
     estimates: Dict[str, float]  # micronutrient -> value
@@ -263,19 +324,19 @@ def parse_ingredients(ingredients_text: Optional[str]) -> List[Tuple[str, float]
     text = ingredients_text.lower()
 
     # Remove common non-ingredient text
-    text = re.sub(r'\([^)]*\)', ' ', text)  # Remove parenthetical notes
-    text = re.sub(r'\[[^\]]*\]', ' ', text)  # Remove bracketed notes
-    text = re.sub(r'\b(contains|may contain|less than|ingredients:?)\b', '', text)
-    text = re.sub(r'\d+%', '', text)  # Remove percentages
+    text = re.sub(r"\([^)]*\)", " ", text)  # Remove parenthetical notes
+    text = re.sub(r"\[[^\]]*\]", " ", text)  # Remove bracketed notes
+    text = re.sub(r"\b(contains|may contain|less than|ingredients:?)\b", "", text)
+    text = re.sub(r"\d+%", "", text)  # Remove percentages
 
     # Split by common delimiters
-    ingredients = re.split(r'[,;•·\n]', text)
+    ingredients = re.split(r"[,;•·\n]", text)
 
     # Clean each ingredient
     cleaned = []
     for ing in ingredients:
         ing = ing.strip()
-        ing = re.sub(r'\s+', ' ', ing)  # Normalize whitespace
+        ing = re.sub(r"\s+", " ", ing)  # Normalize whitespace
         if ing and len(ing) > 1 and len(ing) < 50:  # Filter noise
             cleaned.append(ing)
 
@@ -283,15 +344,14 @@ def parse_ingredients(ingredients_text: Optional[str]) -> List[Tuple[str, float]
     result = []
     for i, ing in enumerate(cleaned):
         # Weight decreases: 1.0, 0.85, 0.72, 0.61, 0.52, ...
-        weight = 0.85 ** i
+        weight = 0.85**i
         result.append((ing, weight))
 
     return result
 
 
 def match_ingredient_to_profiles(
-    ingredient: str,
-    profiles: Dict[str, Dict[str, float]]
+    ingredient: str, profiles: Dict[str, Dict[str, float]]
 ) -> Optional[Tuple[str, Dict[str, float]]]:
     """
     Match an ingredient string to known nutrient profiles.
@@ -322,8 +382,7 @@ def match_ingredient_to_profiles(
 
 
 def estimate_from_ingredients(
-    ingredients_text: Optional[str],
-    portion_weight: float = 100.0
+    ingredients_text: Optional[str], portion_weight: float = 100.0
 ) -> Optional[EstimationSignal]:
     """
     Estimate micronutrients from ingredient analysis.
@@ -348,7 +407,9 @@ def estimate_from_ingredients(
     matches_found = 0
 
     for ingredient, position_weight in parsed:
-        match = match_ingredient_to_profiles(ingredient, INGREDIENT_MICRONUTRIENT_PROFILES)
+        match = match_ingredient_to_profiles(
+            ingredient, INGREDIENT_MICRONUTRIENT_PROFILES
+        )
         if match:
             matched_key, profile = match
             matches_found += 1
@@ -358,7 +419,7 @@ def estimate_from_ingredients(
                 scaled_value = value * position_weight
 
                 # Scale by portion weight (profiles assume ~100g reference)
-                scaled_value *= (portion_weight / 100.0)
+                scaled_value *= portion_weight / 100.0
 
                 if nutrient in estimates:
                     estimates[nutrient] += scaled_value
@@ -388,15 +449,12 @@ def estimate_from_ingredients(
     )
 
     return EstimationSignal(
-        source="ingredient",
-        confidence=confidence,
-        estimates=estimates
+        source="ingredient", confidence=confidence, estimates=estimates
     )
 
 
 def estimate_from_food_name(
-    food_name: str,
-    portion_weight: float = 100.0
+    food_name: str, portion_weight: float = 100.0
 ) -> Optional[EstimationSignal]:
     """
     Try to match product name to our food database entries.
@@ -416,8 +474,7 @@ def estimate_from_food_name(
         if food_key in name_lower or entry.display_name.lower() in name_lower:
             # Get category estimates for this food's category
             category_estimates = MICRONUTRIENT_CATEGORY_ESTIMATES.get(
-                entry.category,
-                MICRONUTRIENT_CATEGORY_ESTIMATES[FoodCategory.UNKNOWN]
+                entry.category, MICRONUTRIENT_CATEGORY_ESTIMATES[FoodCategory.UNKNOWN]
             )
 
             # Scale to portion weight
@@ -428,12 +485,14 @@ def estimate_from_food_name(
                 if value is not None
             }
 
-            logger.debug(f"Food name match: '{food_name}' -> '{food_key}' ({entry.category.value})")
+            logger.debug(
+                f"Food name match: '{food_name}' -> '{food_key}' ({entry.category.value})"
+            )
 
             return EstimationSignal(
                 source="food_match",
                 confidence=0.8,  # High confidence for direct food match
-                estimates=estimates
+                estimates=estimates,
             )
 
         # Check aliases
@@ -442,7 +501,7 @@ def estimate_from_food_name(
                 if alias.lower() in name_lower:
                     category_estimates = MICRONUTRIENT_CATEGORY_ESTIMATES.get(
                         entry.category,
-                        MICRONUTRIENT_CATEGORY_ESTIMATES[FoodCategory.UNKNOWN]
+                        MICRONUTRIENT_CATEGORY_ESTIMATES[FoodCategory.UNKNOWN],
                     )
                     scale = portion_weight / 100.0
                     estimates = {
@@ -454,7 +513,7 @@ def estimate_from_food_name(
                     return EstimationSignal(
                         source="food_match",
                         confidence=0.7,  # Slightly lower for alias match
-                        estimates=estimates
+                        estimates=estimates,
                     )
 
     return None
@@ -464,7 +523,7 @@ def estimate_from_macros(
     protein: Optional[float],
     fiber: Optional[float],
     fat: Optional[float],
-    portion_weight: float = 100.0
+    portion_weight: float = 100.0,
 ) -> Optional[EstimationSignal]:
     """
     Infer likely micronutrient levels from macronutrient profile.
@@ -517,16 +576,11 @@ def estimate_from_macros(
     if not estimates:
         return None
 
-    return EstimationSignal(
-        source="macros",
-        confidence=confidence,
-        estimates=estimates
-    )
+    return EstimationSignal(source="macros", confidence=confidence, estimates=estimates)
 
 
 def combine_estimation_signals(
-    signals: List[EstimationSignal],
-    category_baseline: Dict[str, Optional[float]]
+    signals: List[EstimationSignal], category_baseline: Dict[str, Optional[float]]
 ) -> Dict[str, float]:
     """
     Combine multiple estimation signals using confidence-weighted averaging.
@@ -543,9 +597,23 @@ def combine_estimation_signals(
     """
     # All micronutrient keys we want to estimate
     all_keys = [
-        "potassium", "calcium", "iron", "magnesium", "zinc", "phosphorus",
-        "vitamin_a", "vitamin_c", "vitamin_d", "vitamin_e", "vitamin_k",
-        "vitamin_b6", "vitamin_b12", "folate", "thiamin", "riboflavin", "niacin"
+        "potassium",
+        "calcium",
+        "iron",
+        "magnesium",
+        "zinc",
+        "phosphorus",
+        "vitamin_a",
+        "vitamin_c",
+        "vitamin_d",
+        "vitamin_e",
+        "vitamin_k",
+        "vitamin_b6",
+        "vitamin_b12",
+        "folate",
+        "thiamin",
+        "riboflavin",
+        "niacin",
     ]
 
     combined = {}
@@ -632,8 +700,7 @@ def estimate_micronutrients_sophisticated(
     # Get category baseline
     food_category, category_confidence = map_off_categories_to_food_category(categories)
     category_estimates = MICRONUTRIENT_CATEGORY_ESTIMATES.get(
-        food_category,
-        MICRONUTRIENT_CATEGORY_ESTIMATES[FoodCategory.UNKNOWN]
+        food_category, MICRONUTRIENT_CATEGORY_ESTIMATES[FoodCategory.UNKNOWN]
     )
 
     # Scale category baseline to portion weight
@@ -655,8 +722,13 @@ def estimate_micronutrients_sophisticated(
     # Determine overall confidence and source description
     if signals:
         max_confidence_signal = max(signals, key=lambda s: s.confidence)
-        overall_confidence = "high" if max_confidence_signal.confidence > 0.6 else \
-                            "medium" if max_confidence_signal.confidence > 0.35 else "low"
+        overall_confidence = (
+            "high"
+            if max_confidence_signal.confidence > 0.6
+            else "medium"
+            if max_confidence_signal.confidence > 0.35
+            else "low"
+        )
         source_desc = "+".join(sources_used) if sources_used else "category"
     else:
         overall_confidence = category_confidence

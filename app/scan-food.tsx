@@ -10,6 +10,7 @@ import {
   Platform,
   ScrollView,
   DeviceEventEmitter,
+  TextInput,
 } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
@@ -46,6 +47,10 @@ export default function ScanFoodScreen() {
   const [arMeasurement, setArMeasurement] = useState<ARMeasurement | null>(null);
   const [hasARSupport, setHasARSupport] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  // Editable state for detected foods
+  const [editedFoodName, setEditedFoodName] = useState<string>('');
+  const [editedPortionMultiplier, setEditedPortionMultiplier] = useState<number>(1);
+  const [isEditingName, setIsEditingName] = useState(false);
   const cameraRef = useRef<CameraView>(null);
   const router = useRouter();
   const { isTablet, getSpacing } = useResponsive();
@@ -123,6 +128,25 @@ export default function ScanFoodScreen() {
     }
   }, [permission, requestPermission]);
 
+  // Initialize editable state when scan result changes
+  useEffect(() => {
+    if (scanResult && scanResult.foodItems.length > 0) {
+      setEditedFoodName(scanResult.foodItems[0].name);
+      setEditedPortionMultiplier(1);
+      setIsEditingName(false);
+    }
+  }, [scanResult]);
+
+  // Select an alternative food
+  const handleSelectAlternative = (alternativeName: string) => {
+    setEditedFoodName(alternativeName);
+  };
+
+  // Adjust portion multiplier
+  const handlePortionAdjust = (delta: number) => {
+    setEditedPortionMultiplier(prev => Math.max(0.25, Math.min(10, prev + delta)));
+  };
+
   const handleCapturePhoto = async () => {
     if (!cameraRef.current) return;
 
@@ -147,6 +171,14 @@ export default function ScanFoodScreen() {
       );
 
       setCapturedImage(manipulatedImage.uri);
+
+      // Auto-navigate to AR measure if LiDAR is available
+      if (Platform.OS === 'ios' && hasARSupport) {
+        // Small delay to let the preview render first
+        setTimeout(() => {
+          router.push('/ar-measure' as any);
+        }, 300);
+      }
     } catch (error) {
       console.error('Error capturing photo:', error);
       showAlert('Error', 'Failed to capture photo. Please try again.');
@@ -214,17 +246,27 @@ export default function ScanFoodScreen() {
     }
 
     // Navigate to add meal screen with pre-filled data
+    // Use edited values if available
     const primaryFood = scanResult.foodItems[0];
+    const displayName = editedFoodName || primaryFood.name;
+    const multiplier = editedPortionMultiplier;
+
     router.push({
       pathname: '/add-meal',
       params: {
-        name: primaryFood.name,
-        calories: primaryFood.nutrition.calories.toString(),
-        protein: primaryFood.nutrition.protein.toString(),
-        carbs: primaryFood.nutrition.carbs.toString(),
-        fat: primaryFood.nutrition.fat.toString(),
-        fiber: primaryFood.nutrition.fiber?.toString() || '',
-        servingSize: primaryFood.portionSize,
+        name: displayName.replace(/_/g, ' ').split(' ')
+          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' '),
+        calories: Math.round(primaryFood.nutrition.calories * multiplier).toString(),
+        protein: Math.round(primaryFood.nutrition.protein * multiplier).toString(),
+        carbs: Math.round(primaryFood.nutrition.carbs * multiplier).toString(),
+        fat: Math.round(primaryFood.nutrition.fat * multiplier).toString(),
+        fiber: primaryFood.nutrition.fiber
+          ? Math.round(primaryFood.nutrition.fiber * multiplier).toString()
+          : '',
+        servingSize: multiplier === 1
+          ? primaryFood.portionSize
+          : `${multiplier}x ${primaryFood.portionSize}`,
         fromScan: 'true',
       },
     });
@@ -338,8 +380,34 @@ export default function ScanFoodScreen() {
 
               {scanResult.foodItems.map((item: any, index: number) => (
                 <View key={index} style={styles.foodItem}>
+                  {/* Editable Food Name */}
                   <View style={styles.foodItemHeader}>
-                    <Text style={styles.foodName}>{item.name}</Text>
+                    {index === 0 && isEditingName ? (
+                      <TextInput
+                        style={styles.foodNameInput}
+                        value={editedFoodName.replace(/_/g, ' ')}
+                        onChangeText={(text) => setEditedFoodName(text.toLowerCase().replace(/ /g, '_'))}
+                        onBlur={() => setIsEditingName(false)}
+                        autoFocus
+                        selectTextOnFocus
+                      />
+                    ) : (
+                      <TouchableOpacity
+                        onPress={() => index === 0 && setIsEditingName(true)}
+                        style={styles.foodNameTouchable}
+                      >
+                        <Text style={styles.foodName}>
+                          {index === 0
+                            ? (editedFoodName || item.name).replace(/_/g, ' ').split(' ')
+                                .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                                .join(' ')
+                            : item.name}
+                        </Text>
+                        {index === 0 && (
+                          <Ionicons name="pencil" size={14} color={colors.text.tertiary} style={{ marginLeft: 4 }} />
+                        )}
+                      </TouchableOpacity>
+                    )}
                     <View style={styles.confidenceContainer}>
                       <Text style={styles.confidence}>
                         {Math.round(item.confidence * 100)}% confident
@@ -347,30 +415,90 @@ export default function ScanFoodScreen() {
                     </View>
                   </View>
 
-                  <Text style={styles.portionSize}>{item.portionSize}</Text>
+                  {/* Alternatives Selection - Only for primary food */}
+                  {index === 0 && item.alternatives && item.alternatives.length > 0 && (
+                    <View style={styles.alternativesSection}>
+                      <Text style={styles.alternativesLabel}>Or select:</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.alternativesScroll}>
+                        {item.alternatives.slice(0, 5).map((alt: any, altIndex: number) => (
+                          <TouchableOpacity
+                            key={altIndex}
+                            style={[
+                              styles.alternativeChip,
+                              editedFoodName === alt.name && styles.alternativeChipSelected,
+                            ]}
+                            onPress={() => handleSelectAlternative(alt.name)}
+                          >
+                            <Text
+                              style={[
+                                styles.alternativeChipText,
+                                editedFoodName === alt.name && styles.alternativeChipTextSelected,
+                              ]}
+                            >
+                              {(alt.display_name || alt.name).replace(/_/g, ' ').split(' ')
+                                .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                                .join(' ')}
+                            </Text>
+                            {editedFoodName === alt.name && (
+                              <Ionicons name="checkmark" size={14} color={colors.primary.main} />
+                            )}
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
 
+                  {/* Portion Size with Adjustment Controls - Only for primary food */}
+                  {index === 0 ? (
+                    <View style={styles.portionSection}>
+                      <Text style={styles.portionLabel}>Portion:</Text>
+                      <View style={styles.portionControls}>
+                        <TouchableOpacity
+                          style={styles.portionButton}
+                          onPress={() => handlePortionAdjust(-0.5)}
+                        >
+                          <Ionicons name="remove" size={18} color={colors.text.primary} />
+                        </TouchableOpacity>
+                        <Text style={styles.portionValue}>
+                          {editedPortionMultiplier === 1
+                            ? item.portionSize
+                            : `${editedPortionMultiplier}x (${item.portionSize})`}
+                        </Text>
+                        <TouchableOpacity
+                          style={styles.portionButton}
+                          onPress={() => handlePortionAdjust(0.5)}
+                        >
+                          <Ionicons name="add" size={18} color={colors.text.primary} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : (
+                    <Text style={styles.portionSize}>{item.portionSize}</Text>
+                  )}
+
+                  {/* Nutrition Grid - Apply multiplier for primary food */}
                   <View style={styles.nutritionGrid}>
                     <View style={styles.nutritionItem}>
                       <Text style={styles.nutritionValue}>
-                        {Math.round(item.nutrition.calories)}
+                        {Math.round(item.nutrition.calories * (index === 0 ? editedPortionMultiplier : 1))}
                       </Text>
                       <Text style={styles.nutritionLabel}>cal</Text>
                     </View>
                     <View style={styles.nutritionItem}>
                       <Text style={styles.nutritionValue}>
-                        {Math.round(item.nutrition.protein)}g
+                        {Math.round(item.nutrition.protein * (index === 0 ? editedPortionMultiplier : 1))}g
                       </Text>
                       <Text style={styles.nutritionLabel}>protein</Text>
                     </View>
                     <View style={styles.nutritionItem}>
                       <Text style={styles.nutritionValue}>
-                        {Math.round(item.nutrition.carbs)}g
+                        {Math.round(item.nutrition.carbs * (index === 0 ? editedPortionMultiplier : 1))}g
                       </Text>
                       <Text style={styles.nutritionLabel}>carbs</Text>
                     </View>
                     <View style={styles.nutritionItem}>
                       <Text style={styles.nutritionValue}>
-                        {Math.round(item.nutrition.fat)}g
+                        {Math.round(item.nutrition.fat * (index === 0 ? editedPortionMultiplier : 1))}g
                       </Text>
                       <Text style={styles.nutritionLabel}>fat</Text>
                     </View>
@@ -388,7 +516,7 @@ export default function ScanFoodScreen() {
                         size={18}
                         color={colors.text.tertiary}
                       />
-                      <Text style={styles.feedbackButtonText}>Not right?</Text>
+                      <Text style={styles.feedbackButtonText}>Report misclassification</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -413,6 +541,26 @@ export default function ScanFoodScreen() {
           { paddingHorizontal: responsiveSpacing.horizontal },
           isTablet && styles.actionsContainerTablet
         ]}>
+          {/* LiDAR Prompt Banner - Show when AR supported but measurement was skipped */}
+          {Platform.OS === 'ios' && hasARSupport && !arMeasurement && !scanResult && !isAnalyzing && (
+            <TouchableOpacity
+              style={styles.lidarPromptBanner}
+              onPress={handleMeasurePortion}
+              activeOpacity={0.8}
+            >
+              <View style={styles.lidarPromptIcon}>
+                <Ionicons name="cube-outline" size={24} color={colors.status.warning} />
+              </View>
+              <View style={styles.lidarPromptContent}>
+                <Text style={styles.lidarPromptTitle}>LiDAR measurement skipped</Text>
+                <Text style={styles.lidarPromptSubtitle}>
+                  Tap to measure portion size for better accuracy
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.status.warning} />
+            </TouchableOpacity>
+          )}
+
           {/* AR Measurement display */}
           {arMeasurement && !scanResult && (
             <View style={styles.measurementInfo}>
@@ -819,6 +967,87 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     flex: 1,
   },
+  foodNameTouchable: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  foodNameInput: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    flex: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.primary.main,
+    paddingVertical: spacing.xs,
+  },
+  alternativesSection: {
+    marginBottom: spacing.md,
+  },
+  alternativesLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+    marginBottom: spacing.xs,
+  },
+  alternativesScroll: {
+    flexDirection: 'row',
+  },
+  alternativeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+    marginRight: spacing.sm,
+  },
+  alternativeChipSelected: {
+    backgroundColor: colors.special.highlight,
+    borderColor: colors.primary.main,
+  },
+  alternativeChipText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+  },
+  alternativeChipTextSelected: {
+    color: colors.primary.main,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  portionSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  portionLabel: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.tertiary,
+    marginRight: spacing.sm,
+  },
+  portionControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  portionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.background.tertiary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+  },
+  portionValue: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.primary,
+    fontWeight: typography.fontWeight.semibold,
+    marginHorizontal: spacing.md,
+    flex: 1,
+    textAlign: 'center',
+  },
   confidenceContainer: {
     backgroundColor: colors.primary.main + '20',
     paddingHorizontal: spacing.sm,
@@ -979,6 +1208,40 @@ const styles = StyleSheet.create({
   },
   remeasureButtonText: {
     fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+  },
+  lidarPromptBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.status.warning + '15',
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.status.warning + '40',
+    width: '100%',
+    maxWidth: FORM_MAX_WIDTH,
+  },
+  lidarPromptIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.status.warning + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  lidarPromptContent: {
+    flex: 1,
+  },
+  lidarPromptTitle: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
+  lidarPromptSubtitle: {
+    fontSize: typography.fontSize.xs,
     color: colors.text.secondary,
   },
 });

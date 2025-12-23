@@ -42,12 +42,10 @@ describe('ARMeasurementOverlay', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetDepthAtPoint.mockResolvedValue(30); // 30cm default depth
-    jest.useFakeTimers();
+    // Note: Fake timers are already enabled globally in jest.setup.js
   });
 
-  afterEach(() => {
-    jest.useRealTimers();
-  });
+  // Note: Timer cleanup is handled globally in jest.setup.js afterEach
 
   // ===========================================================================
   // Rendering Tests
@@ -79,7 +77,7 @@ describe('ARMeasurementOverlay', () => {
       expect(getByText('LiDAR')).toBeTruthy();
     });
 
-    it('shows No LiDAR status when unavailable', () => {
+    it('shows No Depth status when unavailable', () => {
       const { getByText } = render(
         <ARMeasurementOverlay
           hasLiDAR={false}
@@ -89,7 +87,8 @@ describe('ARMeasurementOverlay', () => {
         />
       );
 
-      expect(getByText('No LiDAR')).toBeTruthy();
+      // Component shows 'No Depth' when neither LiDAR nor Scene Depth is available
+      expect(getByText('No Depth')).toBeTruthy();
     });
 
     it('shows surface detection status', () => {

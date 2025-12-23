@@ -74,8 +74,12 @@ class FoodItemAlternative(BaseModel):
     name: str
     display_name: Optional[str] = None  # Human-readable name
     confidence: float = Field(..., ge=0, le=1)
-    boosted: bool = Field(default=False, description="True if boosted by user feedback patterns")
-    from_feedback: bool = Field(default=False, description="True if suggested from historical corrections")
+    boosted: bool = Field(
+        default=False, description="True if boosted by user feedback patterns"
+    )
+    from_feedback: bool = Field(
+        default=False, description="True if suggested from historical corrections"
+    )
 
 
 class FoodItem(BaseModel):
@@ -91,11 +95,10 @@ class FoodItem(BaseModel):
     alternatives: Optional[List[FoodItemAlternative]] = None
     needs_confirmation: bool = Field(
         default=False,
-        description="True if confidence is low and user should confirm/correct the classification"
+        description="True if confidence is low and user should confirm/correct the classification",
     )
     confidence_threshold: float = Field(
-        default=0.8,
-        description="Threshold used to determine needs_confirmation"
+        default=0.8, description="Threshold used to determine needs_confirmation"
     )
 
 
@@ -175,14 +178,16 @@ class MicronutrientEstimationRequest(BaseModel):
 
     # Macronutrient profile (helps inform estimates)
     protein: Optional[float] = Field(
-        None, ge=0, description="Protein per 100g (helps infer B12, zinc for high-protein foods)"
+        None,
+        ge=0,
+        description="Protein per 100g (helps infer B12, zinc for high-protein foods)",
     )
     fiber: Optional[float] = Field(
-        None, ge=0, description="Fiber per 100g (helps infer magnesium, folate for high-fiber foods)"
+        None,
+        ge=0,
+        description="Fiber per 100g (helps infer magnesium, folate for high-fiber foods)",
     )
-    fat: Optional[float] = Field(
-        None, ge=0, description="Fat per 100g"
-    )
+    fat: Optional[float] = Field(None, ge=0, description="Fat per 100g")
 
     # Existing micronutrients (only estimate missing ones)
     existing: Optional[dict] = Field(
@@ -227,45 +232,34 @@ class FoodFeedbackRequest(BaseModel):
         ...,
         description="SHA-256 hash of the image (from analyze response)",
         min_length=16,
-        max_length=64
+        max_length=64,
     )
     original_prediction: str = Field(
-        ...,
-        description="What the model predicted (food name)",
-        min_length=1
+        ..., description="What the model predicted (food name)", min_length=1
     )
     original_confidence: float = Field(
-        ...,
-        ge=0,
-        le=1,
-        description="Model's confidence in original prediction"
+        ..., ge=0, le=1, description="Model's confidence in original prediction"
     )
     user_selected_food: str = Field(
-        ...,
-        description="What the user selected/confirmed as correct",
-        min_length=1
+        ..., description="What the user selected/confirmed as correct", min_length=1
     )
     alternatives_shown: List[str] = Field(
-        default=[],
-        description="List of alternative foods that were shown to the user"
+        default=[], description="List of alternative foods that were shown to the user"
     )
     user_description: Optional[str] = Field(
         None,
         description="Optional user description of the food (helps improve prompts)",
-        max_length=500
+        max_length=500,
     )
     # Context fields
     user_id: Optional[str] = Field(
-        None,
-        description="Anonymous user ID for tracking improvement patterns"
+        None, description="Anonymous user ID for tracking improvement patterns"
     )
     session_id: Optional[str] = Field(
-        None,
-        description="Session ID for grouping related feedback"
+        None, description="Session ID for grouping related feedback"
     )
     device_type: Optional[str] = Field(
-        None,
-        description="Device type (ios, android, web)"
+        None, description="Device type (ios, android, web)"
     )
 
 
@@ -275,13 +269,11 @@ class FoodFeedbackResponse(BaseModel):
     success: bool
     feedback_id: int = Field(..., description="ID of the recorded feedback")
     was_correction: bool = Field(
-        ...,
-        description="True if user selected a different food than predicted"
+        ..., description="True if user selected a different food than predicted"
     )
     message: str
     suggested_prompts: List[str] = Field(
-        default=[],
-        description="New CLIP prompts generated from user description"
+        default=[], description="New CLIP prompts generated from user description"
     )
 
 
@@ -295,19 +287,14 @@ class FeedbackStatsResponse(BaseModel):
         ...,
         ge=0,
         le=1,
-        description="Rate of correct predictions (confirmations / total)"
+        description="Rate of correct predictions (confirmations / total)",
     )
     correction_rate: float = Field(
-        ...,
-        ge=0,
-        le=1,
-        description="Rate of corrections needed"
+        ..., ge=0, le=1, description="Rate of corrections needed"
     )
     top_misclassifications: List[dict] = Field(
-        default=[],
-        description="Most common prediction errors"
+        default=[], description="Most common prediction errors"
     )
     problem_foods: List[dict] = Field(
-        default=[],
-        description="Foods with highest correction rates"
+        default=[], description="Foods with highest correction rates"
     )

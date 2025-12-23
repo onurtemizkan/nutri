@@ -5,6 +5,7 @@
  */
 
 import { Platform } from 'react-native';
+import { queryQuantitySamples } from '@kingstinct/react-native-healthkit';
 import {
   HealthKitSample,
   ProcessedHealthMetric,
@@ -23,8 +24,6 @@ export async function fetchStepCount(
   }
 
   try {
-    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
-
     const samples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount', {
       limit: -1,
       filter: {
@@ -55,8 +54,6 @@ export async function fetchTotalStepCount(
   }
 
   try {
-    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
-
     const samples = await queryQuantitySamples('HKQuantityTypeIdentifierStepCount', {
       limit: -1,
       filter: {
@@ -85,8 +82,6 @@ export async function fetchActiveCalories(
   }
 
   try {
-    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
-
     const samples = await queryQuantitySamples('HKQuantityTypeIdentifierActiveEnergyBurned', {
       limit: -1,
       filter: {
@@ -117,8 +112,6 @@ export async function fetchBasalCalories(
   }
 
   try {
-    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
-
     const samples = await queryQuantitySamples('HKQuantityTypeIdentifierBasalEnergyBurned', {
       limit: -1,
       filter: {
@@ -147,8 +140,6 @@ export async function fetchDistanceWalkingRunning(
   }
 
   try {
-    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
-
     const samples = await queryQuantitySamples('HKQuantityTypeIdentifierDistanceWalkingRunning', {
       limit: -1,
       filter: {

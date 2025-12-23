@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Nutri Complete Startup Script
-# Starts ALL services: Docker + Backend API + (optionally) ML Service
+# Nutri Backend + ML Service Startup Script
+# Starts Backend API and ML Service together (assumes Docker is already running)
 
 set -e  # Exit on error
 
@@ -35,118 +35,129 @@ print_header() {
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 }
 
-print_header "🚀 Starting ALL Nutri Services"
+# Function to check if a port is in use
+port_in_use() {
+    lsof -i ":$1" >/dev/null 2>&1
+}
+
+print_header "🚀 Starting Backend API + ML Service"
 
 # Get project root directory
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
-# ============================================================================
-# Step 1: Start Docker Services
-# ============================================================================
-print_info "Running start-dev.sh to start Docker services..."
-./scripts/start-dev.sh
+# Create logs directory if needed
+mkdir -p "$PROJECT_ROOT/logs"
 
 # ============================================================================
-# Step 2: Start Backend API
+# Step 1: Check Prerequisites
 # ============================================================================
-print_header "🚀 Step 2: Starting Backend API"
+print_header "📋 Step 1: Checking Prerequisites"
 
-cd server
+# Check if Docker services are running (PostgreSQL)
+if ! docker ps | grep -q "nutri-postgres"; then
+    print_warning "PostgreSQL is not running!"
+    print_info "Run './scripts/start-dev.sh' first to start all services including ML."
+    print_info "Or run 'docker compose up -d postgres redis' to start just Docker."
+    exit 1
+fi
+print_success "PostgreSQL is running"
+
+# Check if Redis is running
+if ! docker ps | grep -q "nutri-redis"; then
+    print_warning "Redis is not running!"
+    print_info "Run 'docker compose up -d redis' to start Redis."
+    exit 1
+fi
+print_success "Redis is running"
+
+# ============================================================================
+# Step 2: Start ML Service
+# ============================================================================
+print_header "🧠 Step 2: Starting ML Service"
 
 # Check if already running
-if lsof -ti:3000 >/dev/null 2>&1; then
-    print_warning "Backend API is already running on port 3000"
-    print_info "Stop it with: ./scripts/stop-dev.sh"
+if port_in_use 8000; then
+    print_warning "ML Service is already running on port 8000"
 else
-    print_info "Starting backend API on port 3000..."
-
-    # Start in background and save PID
-    npm run dev > ../logs/backend.log 2>&1 &
-    BACKEND_PID=$!
-    echo $BACKEND_PID > ../logs/backend.pid
-
-    # Wait a moment for server to start
-    sleep 3
-
-    # Check if it's running
-    if kill -0 $BACKEND_PID 2>/dev/null; then
-        print_success "Backend API started (PID: $BACKEND_PID)"
-        print_info "Logs: tail -f logs/backend.log"
-    else
-        print_error "Backend API failed to start. Check logs/backend.log"
-        exit 1
-    fi
-fi
-
-cd ..
-
-# ============================================================================
-# Step 3: Verify ML Service
-# ============================================================================
-print_header "🧠 Step 3: Verifying ML Service"
-
-# ML Service should already be running from start-dev.sh
-if lsof -ti:8000 >/dev/null 2>&1; then
-    print_success "ML Service is running on port 8000"
-    print_info "Logs: tail -f logs/ml-service.log"
-else
-    print_warning "ML Service is not running. It should have started with start-dev.sh"
-    print_info "Starting ML Service manually..."
+    print_info "Starting ML Service on port 8000..."
 
     # Check if venv exists
-    if [ ! -f "ml-service/venv/bin/uvicorn" ]; then
+    if [ ! -f "$PROJECT_ROOT/ml-service/venv/bin/uvicorn" ]; then
         print_warning "ML Service venv not set up. Installing dependencies..."
-        cd ml-service
+        cd "$PROJECT_ROOT/ml-service"
         python3 -m venv venv 2>/dev/null || true
-        ./venv/bin/pip install -r requirements.txt > ../logs/ml-service-install.log 2>&1
-        cd ..
+        ./venv/bin/pip install -r requirements.txt > "$PROJECT_ROOT/logs/ml-service-install.log" 2>&1
+        cd "$PROJECT_ROOT"
         print_success "ML Service dependencies installed"
     fi
 
     # Start ML service in background with hot reload
-    cd ml-service
-    ./venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload > ../logs/ml-service.log 2>&1 &
+    cd "$PROJECT_ROOT/ml-service"
+    ./venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload > "$PROJECT_ROOT/logs/ml-service.log" 2>&1 &
     ML_PID=$!
-    echo $ML_PID > ../logs/ml-service.pid
-    cd ..
+    echo $ML_PID > "$PROJECT_ROOT/logs/ml-service.pid"
+    cd "$PROJECT_ROOT"
 
     # Wait for server to start
     sleep 3
 
     # Check if it's running
-    if lsof -ti:8000 >/dev/null 2>&1; then
+    if port_in_use 8000; then
         print_success "ML Service started (PID: $ML_PID)"
-        print_info "Logs: tail -f logs/ml-service.log"
     else
         print_warning "ML Service may still be starting. Check logs/ml-service.log"
     fi
 fi
 
 # ============================================================================
-# Step 4: Get Network Info
+# Step 3: Start Backend API
 # ============================================================================
-print_header "📱 Network Configuration"
+print_header "📦 Step 3: Starting Backend API"
 
-# Get local IP address
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    LOCAL_IP=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo "localhost")
+# Check if already running
+if port_in_use 3000; then
+    print_warning "Backend API is already running on port 3000"
 else
-    LOCAL_IP=$(hostname -I | awk '{print $1}' 2>/dev/null || echo "localhost")
+    print_info "Starting backend API on port 3000..."
+
+    # Ensure node_modules exists
+    if [ ! -d "$PROJECT_ROOT/server/node_modules" ]; then
+        print_info "Installing backend dependencies..."
+        cd "$PROJECT_ROOT/server"
+        npm install
+        cd "$PROJECT_ROOT"
+        print_success "Dependencies installed"
+    fi
+
+    # Start backend in background
+    cd "$PROJECT_ROOT/server"
+    npm run dev > "$PROJECT_ROOT/logs/backend.log" 2>&1 &
+    BACKEND_PID=$!
+    echo $BACKEND_PID > "$PROJECT_ROOT/logs/backend.pid"
+    cd "$PROJECT_ROOT"
+
+    # Wait for server to start
+    sleep 3
+
+    # Check if it's running
+    if kill -0 $BACKEND_PID 2>/dev/null; then
+        print_success "Backend API started (PID: $BACKEND_PID)"
+    else
+        print_error "Backend API failed to start. Check logs/backend.log"
+        exit 1
+    fi
 fi
 
-print_success "Local IP: $LOCAL_IP"
-print_success "Backend API: http://localhost:3000"
-print_success "Health Check: http://localhost:3000/health"
-
 # ============================================================================
-# Step 5: Test Services
+# Step 4: Test Services
 # ============================================================================
-print_header "🔍 Testing Services"
+print_header "🔍 Step 4: Testing Services"
 
-print_info "Checking Backend API health endpoint..."
-sleep 2  # Give server a moment to fully start
+print_info "Waiting for services to be ready..."
+sleep 2
 
+# Test Backend API
 if curl -s http://localhost:3000/health >/dev/null 2>&1; then
     HEALTH_RESPONSE=$(curl -s http://localhost:3000/health)
     print_success "Backend API is healthy!"
@@ -155,7 +166,7 @@ else
     print_warning "Backend API health check failed. Server may still be starting..."
 fi
 
-print_info "Checking ML Service health endpoint..."
+# Test ML Service
 if curl -s http://localhost:8000/health >/dev/null 2>&1; then
     ML_HEALTH_RESPONSE=$(curl -s http://localhost:8000/health)
     print_success "ML Service is healthy!"
@@ -167,12 +178,19 @@ fi
 # ============================================================================
 # Final Status
 # ============================================================================
-print_header "✅ All Services Running"
+print_header "✅ Services Running"
+
+# Get local IP address
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    LOCAL_IP=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo "localhost")
+else
+    LOCAL_IP=$(hostname -I | awk '{print $1}' 2>/dev/null || echo "localhost")
+fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "🎉 ${GREEN}SUCCESS!${NC} All services are running!"
+echo "🎉 ${GREEN}SUCCESS!${NC} Backend API + ML Service running!"
 echo ""
 echo "📊 Service URLs:"
 echo "  • Backend API:     ${BLUE}http://localhost:3000${NC}"
@@ -184,17 +202,9 @@ echo ""
 echo "📝 Logs:"
 echo "  • Backend API:     ${BLUE}tail -f logs/backend.log${NC}"
 echo "  • ML Service:      ${BLUE}tail -f logs/ml-service.log${NC}"
-echo "  • Docker:          ${BLUE}docker-compose logs -f${NC}"
 echo ""
-echo "🛑 Stop all services:"
+echo "🛑 Stop services:"
 echo "  • ${GREEN}./scripts/stop-all.sh${NC}"
-echo ""
-echo "📱 Next Steps:"
-echo "  1. Update ${BLUE}lib/api/client.ts${NC} with:"
-echo "     ${YELLOW}http://$LOCAL_IP:3000/api${NC}"
-echo ""
-echo "  2. Start mobile app:"
-echo "     ${GREEN}npm start${NC}"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""

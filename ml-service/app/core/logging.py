@@ -68,7 +68,9 @@ def add_service_context(
     return event_dict
 
 
-def configure_logging(environment: str = "development", log_level: str = "INFO") -> None:
+def configure_logging(
+    environment: str = "development", log_level: str = "INFO"
+) -> None:
     """Configure structured logging based on environment."""
 
     # Set up standard library logging

@@ -85,7 +85,7 @@ openssl rand -hex 32
 
 | Variable | Description | Required | Default | Example |
 |----------|-------------|----------|---------|---------|
-| `ML_SERVICE_URL` | ML Service base URL | No | `http://localhost:8080` | `http://nutri-ml-service:8080` |
+| `ML_SERVICE_URL` | ML Service base URL | No | `http://localhost:8000` | `http://nutri-ml-service:8000` |
 
 **In Coolify:** Use Docker service name for inter-service communication.
 
@@ -121,7 +121,7 @@ CORS_ORIGIN=https://app.nutri.com,https://www.nutri.com
 | Variable | Description | Required | Default | Example |
 |----------|-------------|----------|---------|---------|
 | `ENVIRONMENT` | Application environment | Yes | `development` | `production` |
-| `PORT` | HTTP server port | No | `8080` | `8080` |
+| `PORT` | HTTP server port | No | `8000` | `8000` |
 | `HOST` | Bind address | No | `0.0.0.0` | `0.0.0.0` |
 | `WORKERS` | Uvicorn workers | No | `4` | `4` |
 | `DEBUG` | Debug mode | No | `false` | `false` |
@@ -202,7 +202,7 @@ JWT_SECRET=[64-char-secret]
 JWT_EXPIRES_IN=7d
 
 # Service Integration
-ML_SERVICE_URL=http://nutri-ml-service:8080
+ML_SERVICE_URL=http://nutri-ml-service:8000
 
 # Logging
 LOG_LEVEL=info
@@ -216,7 +216,7 @@ CORS_ORIGIN=https://api.yourdomain.com
 ```env
 # Core
 ENVIRONMENT=production
-PORT=8080
+PORT=8000
 HOST=0.0.0.0
 WORKERS=4
 DEBUG=false
@@ -258,7 +258,7 @@ JWT_SECRET=dev-secret-not-for-production
 JWT_EXPIRES_IN=7d
 
 # ML Service
-ML_SERVICE_URL=http://localhost:8080
+ML_SERVICE_URL=http://localhost:8000
 
 # Logging
 LOG_LEVEL=debug
@@ -271,7 +271,7 @@ CORS_ORIGIN=*
 
 ```env
 ENVIRONMENT=development
-PORT=8080
+PORT=8000
 HOST=0.0.0.0
 DEBUG=true
 

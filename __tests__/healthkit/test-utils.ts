@@ -27,7 +27,7 @@ jest.mock('react-native', () => ({
 // Error type that matches react-native-health behavior
 type HealthKitError = string | { message?: string } | null;
 
-// Mock HealthKit functions
+// Mock HealthKit functions for legacy react-native-health API (callback-based)
 export const mockHealthKit = {
   isAvailable: jest.fn((callback: (error: string | null, available: boolean) => void) =>
     callback(null, true)
@@ -54,6 +54,39 @@ export const mockHealthKit = {
 
 jest.mock('react-native-health', () => ({
   default: mockHealthKit,
+}));
+
+// Mock for @kingstinct/react-native-healthkit (promise-based API)
+// We define the mock functions here and use jest.mock with a factory
+export const mockKingstinctHealthKit = {
+  isHealthDataAvailable: jest.fn(() => true),
+  requestAuthorization: jest.fn(async () => true),
+  queryQuantitySamples: jest.fn(async () => []),
+  queryCategorySamples: jest.fn(async () => []),
+  HKQuantityTypeIdentifier: {
+    heartRate: 'HKQuantityTypeIdentifierHeartRate',
+    restingHeartRate: 'HKQuantityTypeIdentifierRestingHeartRate',
+    heartRateVariabilitySDNN: 'HKQuantityTypeIdentifierHeartRateVariabilitySDNN',
+    oxygenSaturation: 'HKQuantityTypeIdentifierOxygenSaturation',
+    vo2Max: 'HKQuantityTypeIdentifierVO2Max',
+    respiratoryRate: 'HKQuantityTypeIdentifierRespiratoryRate',
+    stepCount: 'HKQuantityTypeIdentifierStepCount',
+    activeEnergyBurned: 'HKQuantityTypeIdentifierActiveEnergyBurned',
+  },
+  HKCategoryTypeIdentifier: {
+    sleepAnalysis: 'HKCategoryTypeIdentifierSleepAnalysis',
+  },
+};
+
+jest.mock('@kingstinct/react-native-healthkit', () => ({
+  __esModule: true,
+  isHealthDataAvailable: mockKingstinctHealthKit.isHealthDataAvailable,
+  requestAuthorization: mockKingstinctHealthKit.requestAuthorization,
+  queryQuantitySamples: mockKingstinctHealthKit.queryQuantitySamples,
+  queryCategorySamples: mockKingstinctHealthKit.queryCategorySamples,
+  HKQuantityTypeIdentifier: mockKingstinctHealthKit.HKQuantityTypeIdentifier,
+  HKCategoryTypeIdentifier: mockKingstinctHealthKit.HKCategoryTypeIdentifier,
+  default: mockKingstinctHealthKit,
 }));
 
 // Sample data generators
@@ -148,10 +181,16 @@ export function resetMocks(): void {
       (fn as jest.Mock).mockReset();
     }
   });
+  Object.values(mockKingstinctHealthKit).forEach((fn) => {
+    if (typeof fn === 'function' && 'mockReset' in fn) {
+      (fn as jest.Mock).mockReset();
+    }
+  });
 }
 
 // Setup default mock implementations
 export function setupDefaultMocks(): void {
+  // Legacy react-native-health mock defaults
   mockHealthKit.isAvailable.mockImplementation(
     (callback: (error: string | null, available: boolean) => void) => callback(null, true)
   );
@@ -161,6 +200,12 @@ export function setupDefaultMocks(): void {
       callback: (error: string | null) => void
     ) => callback(null)
   );
+
+  // @kingstinct/react-native-healthkit mock defaults (promise-based)
+  mockKingstinctHealthKit.isHealthDataAvailable.mockReturnValue(true);
+  mockKingstinctHealthKit.requestAuthorization.mockResolvedValue(true);
+  mockKingstinctHealthKit.queryQuantitySamples.mockResolvedValue([]);
+  mockKingstinctHealthKit.queryCategorySamples.mockResolvedValue([]);
 
   mockSecureStore.getItemAsync.mockResolvedValue(null);
   mockSecureStore.setItemAsync.mockResolvedValue(undefined);

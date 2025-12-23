@@ -5,6 +5,7 @@
  */
 
 import { Platform } from 'react-native';
+import { queryQuantitySamples } from '@kingstinct/react-native-healthkit';
 import {
   HealthKitSample,
   ProcessedHealthMetric,
@@ -24,8 +25,6 @@ export async function fetchRespiratoryRate(
   }
 
   try {
-    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
-
     const samples = await queryQuantitySamples('HKQuantityTypeIdentifierRespiratoryRate', {
       limit: -1,
       filter: {
@@ -54,8 +53,6 @@ export async function fetchOxygenSaturation(
   }
 
   try {
-    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
-
     const samples = await queryQuantitySamples('HKQuantityTypeIdentifierOxygenSaturation', {
       limit: -1,
       filter: {
@@ -89,8 +86,6 @@ export async function fetchVo2Max(
   }
 
   try {
-    const { queryQuantitySamples } = await import('@kingstinct/react-native-healthkit');
-
     const samples = await queryQuantitySamples('HKQuantityTypeIdentifierVO2Max', {
       limit: 100, // VO2Max is updated infrequently
       filter: {

@@ -1,0 +1,84 @@
+# =============================================================================
+# Nutri ML Service - Production Requirements
+# Optimized for CPU inference on Hetzner AMD EPYC servers
+# =============================================================================
+
+# FastAPI & Web Server
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+pydantic-settings==2.1.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy==2.0.25
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
+alembic==1.13.1
+greenlet==3.1.1
+
+# Redis
+redis==5.0.1
+aioredis==2.0.1
+
+# ML & Data Science (Core)
+numpy==1.26.3
+pandas==2.2.0
+scikit-learn==1.4.0
+scipy==1.12.0
+
+# Time Series & Statistics
+statsmodels==0.14.1
+prophet==1.1.5
+
+# -----------------------------------------------------------------------------
+# Deep Learning - PyTorch (CPU-only build for smaller image)
+# Note: For AMD EPYC, the default PyTorch wheel works well
+# -----------------------------------------------------------------------------
+torch==2.4.1+cpu
+torchvision==0.19.1+cpu
+torchaudio==2.4.1+cpu
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# Hugging Face Transformers (CLIP Food Classification)
+transformers==4.36.2
+accelerate==0.25.0
+safetensors==0.4.1
+
+# -----------------------------------------------------------------------------
+# ONNX Runtime - Critical for CPU inference optimization
+# Provides 2-3x speedup over native PyTorch on CPU
+# -----------------------------------------------------------------------------
+onnx==1.15.0
+onnxruntime==1.17.0
+optimum[onnxruntime]==1.17.0
+
+# Text Processing & Fuzzy Matching
+rapidfuzz==3.6.1
+
+# Utilities
+python-dotenv==1.0.0
+python-jose[cryptography]==3.3.0
+PyJWT==2.8.0
+passlib[bcrypt]==1.7.4
+httpx==0.26.0
+email-validator==2.1.0
+
+# Model Management
+joblib==1.3.2
+cloudpickle==3.0.0
+
+# Monitoring & Logging (Production)
+prometheus-client==0.19.0
+structlog==24.1.0
+
+# =============================================================================
+# Excluded from production (dev-only):
+# - pytest, pytest-asyncio, pytest-cov (testing)
+# - black, flake8, mypy (linting)
+# - shap, lime, captum (interpretability - adds ~500MB)
+# - matplotlib, seaborn (visualization)
+# - optuna (hyperparameter tuning)
+# - feature-engine (can add if needed)
+# - aiosqlite (SQLite for dev only)
+# =============================================================================

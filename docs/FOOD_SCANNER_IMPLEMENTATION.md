@@ -1,5 +1,14 @@
 # Food Scanner Implementation Summary
 
+> **Note (December 2025):** This document describes the initial MVP implementation. The ML service has since been upgraded with **real production ML models**:
+> - **CLIP ViT-B/32** - Primary zero-shot food classifier (600MB)
+> - **Food-101 ViT** - Fine-tuned fallback classifier (350MB)
+> - **OWL-ViT** - Multi-food detection for plates with multiple items (1.5GB)
+> - **Inference queue** with circuit breaker pattern for high availability
+> - **Barcode scanning** with OpenFoodFacts database integration
+>
+> The "mock implementation" sections below are now historical. See `ml-service/app/ml_models/` for the actual model implementations.
+
 ## Overview
 
 Successfully implemented **AR-powered food scanning** feature for automatic nutrition estimation using camera + ML integration.
@@ -173,24 +182,25 @@ The service is architected for easy model integration:
    - **Replace with**: USDA FoodData Central API
    - **Integration point**: `NUTRITION_DATABASE` dict
 
-### 📋 Phase 2 Enhancements (Future)
+### 📋 Phase 2 Enhancements (Status Update)
 
-1. **Real ML Models**:
-   - Train/fine-tune food classifier
-   - Multi-food detection (YOLO)
-   - Ingredient identification
+1. **Real ML Models**: ✅ **IMPLEMENTED**
+   - CLIP zero-shot food classifier
+   - Food-101 fine-tuned fallback
+   - OWL-ViT multi-food detection
 
-2. **ARKit Integration**:
+2. **ARKit Integration**: 🔄 **IN PROGRESS**
    - Native iOS ARKit module
    - Real-time plane detection
    - Distance measurement
    - 3D food modeling
 
-3. **Enhanced Features**:
-   - Barcode scanning
-   - Historical meal patterns
-   - User-specific portion learning
-   - Meal recommendations
+3. **Enhanced Features**: ✅ **PARTIALLY IMPLEMENTED**
+   - ✅ Barcode scanning (OpenFoodFacts + custom DB)
+   - ✅ Supplement barcode scanning
+   - ⏳ Historical meal patterns
+   - ⏳ User-specific portion learning
+   - ⏳ Meal recommendations
 
 ## Installation & Setup
 

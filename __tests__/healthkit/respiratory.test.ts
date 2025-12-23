@@ -1,14 +1,27 @@
 /**
  * Respiratory Sync Tests
+ * Tests for @kingstinct/react-native-healthkit integration
  */
 
-import { mockHealthKit, resetMocks, setupDefaultMocks, mockPlatform } from './test-utils';
+import { mockKingstinctHealthKit, resetMocks, setupDefaultMocks, mockPlatform } from './test-utils';
 import {
   fetchRespiratoryRate,
   fetchOxygenSaturation,
   fetchVo2Max,
   syncRespiratoryMetrics,
 } from '@/lib/services/healthkit/respiratory';
+
+// Helper to create mock samples in @kingstinct/react-native-healthkit format
+function createKingstinctSample(quantity: number, date: Date) {
+  return {
+    quantity,
+    startDate: date,
+    endDate: date,
+    uuid: `uuid_${Date.now()}_${Math.random()}`,
+    device: { name: 'Apple Watch' },
+    sourceRevision: { source: { name: 'Apple Watch', bundleIdentifier: 'com.apple.health' } },
+  };
+}
 
 describe('Respiratory Sync', () => {
   beforeEach(() => {
@@ -36,23 +49,11 @@ describe('Respiratory Sync', () => {
 
     it('should transform respiratory rate samples correctly', async () => {
       const mockSamples = [
-        {
-          value: 14,
-          startDate: '2024-01-01T08:00:00Z',
-          endDate: '2024-01-01T08:00:00Z',
-          sourceName: 'Apple Watch',
-        },
-        {
-          value: 16,
-          startDate: '2024-01-02T08:00:00Z',
-          endDate: '2024-01-02T08:00:00Z',
-          sourceName: 'Apple Watch',
-        },
+        createKingstinctSample(14, new Date('2024-01-01T08:00:00Z')),
+        createKingstinctSample(16, new Date('2024-01-02T08:00:00Z')),
       ];
 
-      mockHealthKit.getRespiratoryRateSamples.mockImplementation((options, callback) =>
-        callback(null, mockSamples)
-      );
+      mockKingstinctHealthKit.queryQuantitySamples.mockResolvedValue(mockSamples);
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -71,9 +72,7 @@ describe('Respiratory Sync', () => {
     });
 
     it('should return empty array on HealthKit error', async () => {
-      mockHealthKit.getRespiratoryRateSamples.mockImplementation((options, callback) =>
-        callback('HealthKit error', null)
-      );
+      mockKingstinctHealthKit.queryQuantitySamples.mockRejectedValue(new Error('HealthKit error'));
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -88,23 +87,11 @@ describe('Respiratory Sync', () => {
   describe('fetchOxygenSaturation', () => {
     it('should convert SpO2 from decimal to percentage', async () => {
       const mockSamples = [
-        {
-          value: 0.98, // 98% as decimal
-          startDate: '2024-01-01T08:00:00Z',
-          endDate: '2024-01-01T08:00:00Z',
-          sourceName: 'Apple Watch',
-        },
-        {
-          value: 0.96, // 96% as decimal
-          startDate: '2024-01-02T08:00:00Z',
-          endDate: '2024-01-02T08:00:00Z',
-          sourceName: 'Apple Watch',
-        },
+        createKingstinctSample(0.98, new Date('2024-01-01T08:00:00Z')), // 98% as decimal
+        createKingstinctSample(0.96, new Date('2024-01-02T08:00:00Z')), // 96% as decimal
       ];
 
-      mockHealthKit.getOxygenSaturationSamples.mockImplementation((options, callback) =>
-        callback(null, mockSamples)
-      );
+      mockKingstinctHealthKit.queryQuantitySamples.mockResolvedValue(mockSamples);
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -125,17 +112,10 @@ describe('Respiratory Sync', () => {
 
     it('should handle already percentage values', async () => {
       const mockSamples = [
-        {
-          value: 97, // Already a percentage (some sources provide this)
-          startDate: '2024-01-01T08:00:00Z',
-          endDate: '2024-01-01T08:00:00Z',
-          sourceName: 'Apple Watch',
-        },
+        createKingstinctSample(97, new Date('2024-01-01T08:00:00Z')), // Already a percentage
       ];
 
-      mockHealthKit.getOxygenSaturationSamples.mockImplementation((options, callback) =>
-        callback(null, mockSamples)
-      );
+      mockKingstinctHealthKit.queryQuantitySamples.mockResolvedValue(mockSamples);
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -151,18 +131,9 @@ describe('Respiratory Sync', () => {
 
   describe('fetchVo2Max', () => {
     it('should transform VO2 max samples correctly', async () => {
-      const mockSamples = [
-        {
-          value: 42.5,
-          startDate: '2024-01-01T08:00:00Z',
-          endDate: '2024-01-01T08:00:00Z',
-          sourceName: 'Apple Watch',
-        },
-      ];
+      const mockSamples = [createKingstinctSample(42.5, new Date('2024-01-01T08:00:00Z'))];
 
-      mockHealthKit.getVo2MaxSamples.mockImplementation((options, callback) =>
-        callback(null, mockSamples)
-      );
+      mockKingstinctHealthKit.queryQuantitySamples.mockResolvedValue(mockSamples);
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -183,42 +154,15 @@ describe('Respiratory Sync', () => {
 
   describe('syncRespiratoryMetrics', () => {
     it('should combine all respiratory metrics', async () => {
-      const respRateSamples = [
-        {
-          value: 14,
-          startDate: '2024-01-01T08:00:00Z',
-          endDate: '2024-01-01T08:00:00Z',
-          sourceName: 'Apple Watch',
-        },
-      ];
+      const respRateSample = createKingstinctSample(14, new Date('2024-01-01T08:00:00Z'));
+      const spo2Sample = createKingstinctSample(0.98, new Date('2024-01-01T09:00:00Z'));
+      const vo2MaxSample = createKingstinctSample(42.5, new Date('2024-01-01T10:00:00Z'));
 
-      const spo2Samples = [
-        {
-          value: 0.98,
-          startDate: '2024-01-01T09:00:00Z',
-          endDate: '2024-01-01T09:00:00Z',
-          sourceName: 'Apple Watch',
-        },
-      ];
-
-      const vo2MaxSamples = [
-        {
-          value: 42.5,
-          startDate: '2024-01-01T10:00:00Z',
-          endDate: '2024-01-01T10:00:00Z',
-          sourceName: 'Apple Watch',
-        },
-      ];
-
-      mockHealthKit.getRespiratoryRateSamples.mockImplementation((options, callback) =>
-        callback(null, respRateSamples)
-      );
-      mockHealthKit.getOxygenSaturationSamples.mockImplementation((options, callback) =>
-        callback(null, spo2Samples)
-      );
-      mockHealthKit.getVo2MaxSamples.mockImplementation((options, callback) =>
-        callback(null, vo2MaxSamples)
-      );
+      // Three calls: respRate, spo2, vo2Max
+      mockKingstinctHealthKit.queryQuantitySamples
+        .mockResolvedValueOnce([respRateSample])
+        .mockResolvedValueOnce([spo2Sample])
+        .mockResolvedValueOnce([vo2MaxSample]);
 
       const options = {
         startDate: new Date('2024-01-01'),
@@ -235,33 +179,13 @@ describe('Respiratory Sync', () => {
     });
 
     it('should sort results by recordedAt (newest first)', async () => {
-      const respRateSamples = [
-        {
-          value: 14,
-          startDate: '2024-01-01T08:00:00Z',
-          endDate: '2024-01-01T08:00:00Z',
-          sourceName: 'Apple Watch',
-        },
-      ];
+      const respRateSample = createKingstinctSample(14, new Date('2024-01-01T08:00:00Z'));
+      const vo2MaxSample = createKingstinctSample(42.5, new Date('2024-01-03T10:00:00Z')); // Newer
 
-      const vo2MaxSamples = [
-        {
-          value: 42.5,
-          startDate: '2024-01-03T10:00:00Z', // Newer
-          endDate: '2024-01-03T10:00:00Z',
-          sourceName: 'Apple Watch',
-        },
-      ];
-
-      mockHealthKit.getRespiratoryRateSamples.mockImplementation((options, callback) =>
-        callback(null, respRateSamples)
-      );
-      mockHealthKit.getOxygenSaturationSamples.mockImplementation((options, callback) =>
-        callback(null, [])
-      );
-      mockHealthKit.getVo2MaxSamples.mockImplementation((options, callback) =>
-        callback(null, vo2MaxSamples)
-      );
+      mockKingstinctHealthKit.queryQuantitySamples
+        .mockResolvedValueOnce([respRateSample])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([vo2MaxSample]);
 
       const options = {
         startDate: new Date('2024-01-01'),
