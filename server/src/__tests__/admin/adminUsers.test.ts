@@ -111,8 +111,9 @@ describe('Admin User Management', () => {
     });
 
     it('should return 404 for non-existent user', async () => {
+      // Use a valid CUID format that doesn't exist
       const response = await request(app)
-        .get('/api/admin/users/non-existent-id')
+        .get('/api/admin/users/clxxxxxxxxxxxxxxxxxxxxxxxxx')
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(response.status).toBe(404);
@@ -167,7 +168,8 @@ describe('Admin User Management', () => {
 
       const response = await request(app)
         .delete(`/api/admin/users/${user.id}`)
-        .set('Authorization', `Bearer ${adminToken}`);
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ reason: 'User requested account deletion for testing purposes' });
 
       expect(response.status).toBe(200);
       expect(response.body.message).toContain('deleted');
@@ -184,13 +186,14 @@ describe('Admin User Management', () => {
         email: 'support@test.com',
         role: AdminRole.SUPPORT,
       });
-      const supportToken = createTestAdminToken(supportAdmin.id);
+      const supportToken = createTestAdminToken(supportAdmin.id, { role: AdminRole.SUPPORT });
 
       const user = await createTestUser();
 
       const response = await request(app)
         .delete(`/api/admin/users/${user.id}`)
-        .set('Authorization', `Bearer ${supportToken}`);
+        .set('Authorization', `Bearer ${supportToken}`)
+        .send({ reason: 'Testing role-based access control restrictions' });
 
       expect(response.status).toBe(403);
     });
@@ -201,7 +204,8 @@ describe('Admin User Management', () => {
 
       await request(app)
         .delete(`/api/admin/users/${user.id}`)
-        .set('Authorization', `Bearer ${adminToken}`);
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ reason: 'User account deletion for audit log testing' });
 
       const auditLog = await prisma.adminAuditLog.findFirst({
         where: {
@@ -215,9 +219,11 @@ describe('Admin User Management', () => {
     });
 
     it('should return 404 for non-existent user', async () => {
+      // Use a valid CUID format that doesn't exist
       const response = await request(app)
-        .delete('/api/admin/users/non-existent-id')
-        .set('Authorization', `Bearer ${adminToken}`);
+        .delete('/api/admin/users/clxxxxxxxxxxxxxxxxxxxxxxxxx')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ reason: 'Attempting to delete non-existent user for testing' });
 
       expect(response.status).toBe(404);
     });
