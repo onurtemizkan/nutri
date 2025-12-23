@@ -31,20 +31,26 @@ export const prisma = new PrismaClient({
 /**
  * Clean database by deleting all records
  * Preserves schema, only removes data
+ * Note: Using sequential deletes to respect foreign key constraints
+ * (Prisma batch transactions don't guarantee execution order)
  */
 export async function cleanDatabase() {
   // Delete in reverse order of dependencies to avoid foreign key constraints
-  // Using $transaction to ensure atomicity
-  await prisma.$transaction([
-    prisma.adminAuditLog.deleteMany(),
-    prisma.adminUser.deleteMany(),
-    prisma.healthMetric.deleteMany(),
-    prisma.activity.deleteMany(),
-    prisma.meal.deleteMany(),
-    prisma.waterIntake.deleteMany(),
-    prisma.weightRecord.deleteMany(),
-    prisma.user.deleteMany(),
-  ]);
+  // Must be sequential because batch transactions run concurrently
+  await prisma.adminAuditLog.deleteMany();
+  await prisma.adminUser.deleteMany();
+  await prisma.supplementLog.deleteMany();
+  await prisma.supplement.deleteMany();
+  await prisma.healthMetric.deleteMany();
+  await prisma.activity.deleteMany();
+  await prisma.meal.deleteMany();
+  await prisma.waterIntake.deleteMany();
+  await prisma.weightRecord.deleteMany();
+  await prisma.mLInsight.deleteMany();
+  await prisma.mLPrediction.deleteMany();
+  await prisma.mLFeature.deleteMany();
+  await prisma.userMLProfile.deleteMany();
+  await prisma.user.deleteMany();
 }
 
 /**
@@ -356,13 +362,13 @@ export async function createTestAdminUser(overrides?: Partial<{
 /**
  * Create a test admin JWT token
  */
-export function createTestAdminToken(adminId: string): string {
+export function createTestAdminToken(adminId: string, options?: { email?: string; role?: AdminRole }): string {
   const jwt = require('jsonwebtoken');
   return jwt.sign(
     {
       adminUserId: adminId,
-      email: 'admin@test.com',
-      role: 'SUPER_ADMIN',
+      email: options?.email || 'admin@test.com',
+      role: options?.role || 'SUPER_ADMIN',
       sessionId: 'test-session-id',
       type: 'admin'
     },

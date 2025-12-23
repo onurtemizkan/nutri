@@ -140,7 +140,8 @@ describe('Admin Authentication', () => {
 
   describe('POST /api/admin/auth/setup', () => {
     it('should create initial admin when no admins exist', async () => {
-      // Ensure no admins exist
+      // Ensure no admins exist (must delete audit logs first due to FK constraint)
+      await prisma.adminAuditLog.deleteMany();
       await prisma.adminUser.deleteMany();
 
       const response = await request(app)
@@ -203,7 +204,7 @@ describe('Admin Role-Based Access Control', () => {
       const admin = await createTestAdminUser({
         role: AdminRole.SUPPORT,
       });
-      const token = createTestAdminToken(admin.id);
+      const token = createTestAdminToken(admin.id, { role: AdminRole.SUPPORT });
 
       const response = await request(app)
         .get('/api/admin/users')
@@ -217,7 +218,7 @@ describe('Admin Role-Based Access Control', () => {
         email: 'support@test.com',
         role: AdminRole.SUPPORT,
       });
-      const token = createTestAdminToken(admin.id);
+      const token = createTestAdminToken(admin.id, { email: 'support@test.com', role: AdminRole.SUPPORT });
 
       const response = await request(app)
         .post('/api/admin/subscriptions/some-user-id/grant')
@@ -233,7 +234,7 @@ describe('Admin Role-Based Access Control', () => {
       const admin = await createTestAdminUser({
         role: AdminRole.ANALYST,
       });
-      const token = createTestAdminToken(admin.id);
+      const token = createTestAdminToken(admin.id, { role: AdminRole.ANALYST });
 
       const response = await request(app)
         .get('/api/admin/analytics/overview')
@@ -248,7 +249,7 @@ describe('Admin Role-Based Access Control', () => {
       const admin = await createTestAdminUser({
         role: AdminRole.VIEWER,
       });
-      const token = createTestAdminToken(admin.id);
+      const token = createTestAdminToken(admin.id, { role: AdminRole.VIEWER });
 
       // Should have access to view users
       const response = await request(app)
