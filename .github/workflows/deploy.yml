@@ -257,10 +257,9 @@ jobs:
   rollback:
     name: Rollback Deployment
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_tag != 'latest' }}
     needs: deploy
-    # Only runs if deploy job fails when using a specific image tag
-    if: ${{ failure() && github.event_name == 'workflow_dispatch' }}
+    # Only runs if deploy job fails when using a specific image tag (not latest)
+    if: ${{ failure() && github.event_name == 'workflow_dispatch' && github.event.inputs.image_tag != 'latest' }}
 
     steps:
       - name: Rollback notification
