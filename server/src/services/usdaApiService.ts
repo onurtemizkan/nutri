@@ -28,7 +28,6 @@ import {
 
 const USDA_API_BASE_URL =
   process.env.USDA_API_BASE_URL || 'https://api.nal.usda.gov/fdc/v1';
-const USDA_API_KEY = process.env.USDA_API_KEY || '';
 const USDA_RATE_LIMIT_PER_HOUR = parseInt(
   process.env.USDA_RATE_LIMIT_PER_HOUR || '1000',
   10
