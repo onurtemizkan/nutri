@@ -75,6 +75,7 @@ jobs:
       - name: Upload Trivy scan results to GitHub Security
         uses: github/codeql-action/upload-sarif@v4
         if: always()
+        continue-on-error: true  # Don't fail if Advanced Security not enabled
         with:
           sarif_file: 'trivy-backend.sarif'
           category: 'backend-container'
@@ -139,6 +140,7 @@ jobs:
       - name: Upload Trivy scan results to GitHub Security
         uses: github/codeql-action/upload-sarif@v4
         if: always()
+        continue-on-error: true  # Don't fail if Advanced Security not enabled
         with:
           sarif_file: 'trivy-ml.sarif'
           category: 'ml-service-container'
