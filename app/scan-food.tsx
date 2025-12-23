@@ -20,21 +20,24 @@ import { BlurView } from 'expo-blur';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { Ionicons } from '@expo/vector-icons';
 import { foodAnalysisApi } from '@/lib/api/food-analysis';
+import { foodsApi } from '@/lib/api/foods';
 import { showAlert } from '@/lib/utils/alert';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import FeedbackCorrectionModal from '@/lib/components/FeedbackCorrectionModal';
+import { ClassificationResult } from '@/lib/components/ClassificationResult';
 import { useResponsive } from '@/hooks/useResponsive';
 import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 import LiDARModule from '@/lib/modules/LiDARModule';
 import {
-  estimateWeightFromMeasurement,
-  formatWeight,
   formatDimensions,
 } from '@/lib/utils/portion-estimation';
 import type {
   FoodScanResult,
   ARMeasurement,
+  USDAClassificationResult,
+  USDAFoodMatch,
 } from '@/lib/types/food-analysis';
+import type { USDAFood, FoodClassification } from '@/lib/types/foods';
 
 export default function ScanFoodScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -47,6 +50,9 @@ export default function ScanFoodScreen() {
   const [arMeasurement, setArMeasurement] = useState<ARMeasurement | null>(null);
   const [hasARSupport, setHasARSupport] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  // USDA Classification state
+  const [usdaResult, setUsdaResult] = useState<USDAClassificationResult | null>(null);
+  const [useUSDASearch, setUseUSDASearch] = useState(true); // Default to USDA-enhanced search
   // Editable state for detected foods
   const [editedFoodName, setEditedFoodName] = useState<string>('');
   const [editedPortionMultiplier, setEditedPortionMultiplier] = useState<number>(1);
@@ -198,19 +204,47 @@ export default function ScanFoodScreen() {
       // Use AR measurement if available, otherwise undefined
       const measurements: ARMeasurement | undefined = arMeasurement || undefined;
 
-      // Call ML service
-      const response = await foodAnalysisApi.analyzeFood({
-        imageUri: capturedImage,
-        measurements,
-      });
+      if (useUSDASearch) {
+        // Use USDA-enhanced classification and search
+        try {
+          const usdaResponse = await foodAnalysisApi.classifyAndSearch(
+            capturedImage,
+            measurements
+          );
+          setUsdaResult(usdaResponse);
+          // Also set basic scan result for compatibility
+          setScanResult(null);
+        } catch (usdaError) {
+          console.error('USDA classification failed, falling back to basic analysis:', usdaError);
+          // Fallback to basic ML analysis
+          const response = await foodAnalysisApi.analyzeFood({
+            imageUri: capturedImage,
+            measurements,
+          });
+          const result: FoodScanResult = {
+            ...response,
+            imageUri: capturedImage,
+            timestamp: new Date(),
+          };
+          setScanResult(result);
+          setUsdaResult(null);
+        }
+      } else {
+        // Use basic ML analysis only
+        const response = await foodAnalysisApi.analyzeFood({
+          imageUri: capturedImage,
+          measurements,
+        });
 
-      const result: FoodScanResult = {
-        ...response,
-        imageUri: capturedImage,
-        timestamp: new Date(),
-      };
+        const result: FoodScanResult = {
+          ...response,
+          imageUri: capturedImage,
+          timestamp: new Date(),
+        };
 
-      setScanResult(result);
+        setScanResult(result);
+        setUsdaResult(null);
+      }
     } catch (error) {
       console.error('Food analysis error:', error);
       showAlert(
@@ -236,8 +270,51 @@ export default function ScanFoodScreen() {
   const handleRetake = () => {
     setCapturedImage(null);
     setScanResult(null);
+    setUsdaResult(null);
     setArMeasurement(null);
   };
+
+  // Handle USDA food confirmation from ClassificationResult
+  const handleUSDAConfirm = useCallback((food: USDAFood) => {
+    // Record the selection for recent foods
+    foodsApi.recordFoodSelection(food.fdcId).catch(() => {
+      // Ignore errors - this is a non-critical operation
+    });
+
+    // Navigate to add meal with USDA nutrition data
+    router.push({
+      pathname: '/add-meal',
+      params: {
+        name: food.description,
+        calories: Math.round(food.calories).toString(),
+        protein: Math.round(food.protein).toString(),
+        carbs: Math.round(food.carbs).toString(),
+        fat: Math.round(food.fat).toString(),
+        fiber: food.fiber ? Math.round(food.fiber).toString() : '',
+        servingSize: food.servingSize && food.servingSizeUnit
+          ? `${food.servingSize} ${food.servingSizeUnit}`
+          : '100g',
+        fromScan: 'true',
+        fdcId: food.fdcId.toString(),
+      },
+    });
+  }, [router]);
+
+  // Handle search instead from ClassificationResult
+  const handleSearchInstead = useCallback((query: string) => {
+    router.push({
+      pathname: '/food-search' as any,
+      params: {
+        initialQuery: query,
+        fromClassification: 'true',
+      },
+    });
+  }, [router]);
+
+  // Handle report incorrect from ClassificationResult
+  const handleReportIncorrect = useCallback(() => {
+    setShowFeedbackModal(true);
+  }, []);
 
   const handleUseScan = () => {
     if (!scanResult || scanResult.foodItems.length === 0) {
@@ -366,7 +443,28 @@ export default function ScanFoodScreen() {
             </BlurView>
           )}
 
-          {scanResult && (
+          {/* USDA Classification Results */}
+          {usdaResult && (
+            <View
+              style={[
+                styles.resultsScrollView,
+                { paddingHorizontal: responsiveSpacing.horizontal },
+                isTablet && styles.resultsContainerTablet
+              ]}
+            >
+              <ClassificationResult
+                classification={usdaResult.classification as FoodClassification}
+                usdaMatches={usdaResult.searchResults.foods as unknown as USDAFood[]}
+                portionEstimate={usdaResult.portionEstimate}
+                onConfirm={handleUSDAConfirm}
+                onSearchInstead={handleSearchInstead}
+                onReportIncorrect={handleReportIncorrect}
+              />
+            </View>
+          )}
+
+          {/* Legacy ML-only scan results (fallback) */}
+          {scanResult && !usdaResult && (
             <ScrollView
               style={styles.resultsScrollView}
               contentContainerStyle={[
@@ -542,7 +640,7 @@ export default function ScanFoodScreen() {
           isTablet && styles.actionsContainerTablet
         ]}>
           {/* LiDAR Prompt Banner - Show when AR supported but measurement was skipped */}
-          {Platform.OS === 'ios' && hasARSupport && !arMeasurement && !scanResult && !isAnalyzing && (
+          {Platform.OS === 'ios' && hasARSupport && !arMeasurement && !scanResult && !usdaResult && !isAnalyzing && (
             <TouchableOpacity
               style={styles.lidarPromptBanner}
               onPress={handleMeasurePortion}
@@ -562,7 +660,7 @@ export default function ScanFoodScreen() {
           )}
 
           {/* AR Measurement display */}
-          {arMeasurement && !scanResult && (
+          {arMeasurement && !scanResult && !usdaResult && (
             <View style={styles.measurementInfo}>
               <View style={styles.measurementHeader}>
                 <Ionicons name="resize-outline" size={20} color={colors.status.success} />
@@ -578,7 +676,7 @@ export default function ScanFoodScreen() {
             </View>
           )}
 
-          {!isAnalyzing && !scanResult && (
+          {!isAnalyzing && !scanResult && !usdaResult && (
             <>
               {/* Measure Portion button - only show on iOS with AR support */}
               {Platform.OS === 'ios' && hasARSupport && !arMeasurement && (
@@ -633,7 +731,8 @@ export default function ScanFoodScreen() {
             </>
           )}
 
-          {scanResult && (
+          {/* Legacy scan result button - only show for non-USDA scans */}
+          {scanResult && !usdaResult && (
             <TouchableOpacity
               style={styles.analyzeButton}
               onPress={handleUseScan}
@@ -652,15 +751,30 @@ export default function ScanFoodScreen() {
           )}
         </View>
 
-        {/* Feedback Correction Modal */}
-        {scanResult && scanResult.foodItems.length > 0 && (
+        {/* Feedback Correction Modal - works with both USDA and legacy results */}
+        {(usdaResult || (scanResult && scanResult.foodItems.length > 0)) && (
           <FeedbackCorrectionModal
             visible={showFeedbackModal}
             onClose={() => setShowFeedbackModal(false)}
-            originalPrediction={scanResult.foodItems[0].name}
-            originalConfidence={scanResult.foodItems[0].confidence}
-            alternatives={scanResult.foodItems[0].alternatives}
-            imageHash={scanResult.imageHash || ''}
+            originalPrediction={
+              usdaResult
+                ? usdaResult.classification.category
+                : scanResult?.foodItems[0].name || ''
+            }
+            originalConfidence={
+              usdaResult
+                ? usdaResult.classification.confidence
+                : scanResult?.foodItems[0].confidence || 0
+            }
+            alternatives={
+              usdaResult
+                ? usdaResult.classification.alternatives.map((alt) => ({
+                    name: alt.category,
+                    confidence: alt.confidence,
+                  }))
+                : scanResult?.foodItems[0].alternatives
+            }
+            imageHash={usdaResult?.imageHash || scanResult?.imageHash || ''}
             onFeedbackSubmitted={() => {
               // Could show a toast or update UI here
             }}

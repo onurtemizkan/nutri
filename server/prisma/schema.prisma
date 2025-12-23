@@ -345,6 +345,51 @@ model UserMLProfile {
 }
 
 // ============================================================================
+// FOOD FEEDBACK (ML Learning Loop)
+// ============================================================================
+
+// FoodFeedback - User corrections when food classification is wrong
+model FoodFeedback {
+  id                  String    @id @default(cuid())
+  userId              String?
+  imageHash           String
+  classificationId    String?
+  originalPrediction  String
+  originalConfidence  Float
+  originalCategory    String?
+  selectedFdcId       Int
+  selectedFoodName    String
+  wasCorrect          Boolean
+  classificationHints Json?
+  userDescription     String?
+  status              String    @default("pending") // pending, approved, rejected, applied
+
+  createdAt           DateTime  @default(now())
+
+  @@index([userId])
+  @@index([status])
+  @@index([originalPrediction])
+  @@unique([imageHash, originalPrediction, selectedFdcId])
+}
+
+// FoodFeedbackAggregation - Aggregated patterns for model improvement
+model FoodFeedbackAggregation {
+  id                  String    @id @default(cuid())
+  originalPrediction  String
+  correctedFood       String
+  correctionCount     Int       @default(0)
+  avgConfidence       Float     @default(0)
+  needsReview         Boolean   @default(false)
+  reviewedAt          DateTime?
+  firstOccurrence     DateTime
+  lastOccurrence      DateTime
+
+  @@unique([originalPrediction, correctedFood])
+  @@index([needsReview, reviewedAt])
+  @@index([correctionCount])
+}
+
+// ============================================================================
 // SUPPLEMENT TRACKING
 // ============================================================================
 

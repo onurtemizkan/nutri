@@ -69,27 +69,48 @@ export async function resetDatabase() {
 
 /**
  * Before all tests: Initialize database
+ * Note: Gracefully handles missing database for unit tests
  */
 beforeAll(async () => {
-  // Connect to database
-  await prisma.$connect();
-  // Clean database to ensure fresh start
-  await cleanDatabase();
+  try {
+    // Connect to database
+    await prisma.$connect();
+    // Clean database to ensure fresh start
+    await cleanDatabase();
+  } catch (error) {
+    // Database may not exist for unit tests - this is OK
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('does not exist') || errorMessage.includes('Connection refused')) {
+      console.warn('Database not available - skipping database setup for unit tests');
+    } else {
+      throw error;
+    }
+  }
 });
 
 /**
  * Before each test: Clean database for test isolation
  * This ensures each test starts with a clean slate
+ * Note: Gracefully handles missing database for unit tests
  */
 beforeEach(async () => {
-  await cleanDatabase();
+  try {
+    await cleanDatabase();
+  } catch {
+    // Database may not exist for unit tests - this is OK
+  }
 });
 
 /**
  * After all tests: Disconnect and cleanup
+ * Note: Gracefully handles missing database for unit tests
  */
 afterAll(async () => {
-  await prisma.$disconnect();
+  try {
+    await prisma.$disconnect();
+  } catch {
+    // Database may not exist for unit tests - this is OK
+  }
 
   // Clean up test database file (SQLite)
   if (process.env.DATABASE_URL?.includes('file:')) {

@@ -7,6 +7,8 @@ import {
   MLServiceConfig,
   FoodItem,
   NutritionInfo,
+  USDAClassificationResult,
+  ARMeasurement,
 } from '@/lib/types/food-analysis';
 
 /**
@@ -210,6 +212,68 @@ class FoodAnalysisAPI {
 
       return response.data.cooking_methods;
     } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Classify food image and search USDA database
+   * Uses the classify-and-search endpoint for combined ML + USDA lookup
+   */
+  async classifyAndSearch(
+    imageUri: string,
+    measurements?: ARMeasurement
+  ): Promise<USDAClassificationResult> {
+    try {
+      // Determine file extension and MIME type from URI
+      const extension = imageUri.split('.').pop()?.toLowerCase() || 'jpg';
+      const mimeType = extension === 'png' ? 'image/png' : 'image/jpeg';
+
+      // Create form data for the backend API
+      const formData = new FormData();
+
+      // Create a blob-like object for React Native
+      const imageFile = {
+        uri: imageUri,
+        type: mimeType,
+        name: `food.${extension}`,
+      } as unknown as Blob;
+
+      formData.append('image', imageFile);
+
+      // Add dimensions if available from AR measurement
+      if (measurements) {
+        formData.append('dimensions', JSON.stringify({
+          width: measurements.width,
+          height: measurements.height,
+          depth: measurements.depth,
+        }));
+      }
+
+      // Make request through backend API
+      const response = await this.makeRequestWithRetry<USDAClassificationResult>(
+        '/food/classify-and-search',
+        {
+          method: 'POST',
+          data: formData,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          timeout: this.timeout,
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error('Classify and search request failed:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('Axios error details:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message,
+          code: error.code,
+        });
+      }
       throw this.handleError(error);
     }
   }

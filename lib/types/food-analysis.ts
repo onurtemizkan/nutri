@@ -149,6 +149,80 @@ export interface PortionSizeEstimate {
   referenceUsed?: string; // e.g., "credit card", "hand", "coin"
 }
 
+// USDA Classification Result (from classify-and-search endpoint)
+export interface USDAClassificationResult {
+  classification: {
+    category: string;
+    confidence: number;
+    usda_datatypes: string[];
+    search_hints: {
+      subcategory_hints: string[];
+      suggested_query_enhancement: string;
+    };
+    alternatives: Array<{
+      category: string;
+      confidence: number;
+    }>;
+  };
+  searchResults: {
+    foods: USDAFoodMatch[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+      hasNextPage: boolean;
+      hasPrevPage: boolean;
+    };
+  };
+  portionEstimate?: {
+    estimated_grams: number;
+    dimensions?: {
+      width: number;
+      height: number;
+      depth?: number;
+    };
+    quality: 'low' | 'medium' | 'high';
+  };
+  query: string;
+  imageHash: string;
+}
+
+// USDA Food match from classification search
+export interface USDAFoodMatch {
+  fdcId: number;
+  description: string;
+  brandOwner?: string;
+  brandName?: string;
+  dataType: 'Foundation' | 'SR Legacy' | 'Survey (FNDDS)' | 'Branded' | 'Experimental';
+  publishedDate?: string;
+  servingSize?: number;
+  servingSizeUnit?: string;
+  ingredients?: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber?: number;
+  sugar?: number;
+  saturatedFat?: number;
+  transFat?: number;
+  cholesterol?: number;
+  sodium?: number;
+  potassium?: number;
+  calcium?: number;
+  iron?: number;
+  vitaminA?: number;
+  vitaminC?: number;
+  vitaminD?: number;
+}
+
+// Extended FoodScanResult with USDA data
+export interface FoodScanResultWithUSDA extends FoodScanResult {
+  usdaClassification?: USDAClassificationResult;
+  selectedUSDAFood?: USDAFoodMatch;
+}
+
 // Error types
 export type FoodAnalysisError =
   | 'network-error'

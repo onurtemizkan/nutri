@@ -10,6 +10,8 @@ import healthMetricRoutes from './routes/healthMetricRoutes';
 import activityRoutes from './routes/activityRoutes';
 import foodAnalysisRoutes from './routes/foodAnalysisRoutes';
 import supplementRoutes from './routes/supplementRoutes';
+import foodRoutes from './routes/foodRoutes';
+import foodFeedbackRoutes from './routes/foodFeedbackRoutes';
 import prisma from './config/database';
 
 // Import version from package.json
@@ -129,6 +131,8 @@ app.use('/api/meals', mealRoutes);
 app.use('/api/health-metrics', healthMetricRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/food', foodAnalysisRoutes);
+app.use('/api/foods', foodRoutes);
+app.use('/api/foods/feedback', foodFeedbackRoutes);
 app.use('/api/supplements', supplementRoutes);
 
 // Error handler (must be last)
