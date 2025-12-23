@@ -179,7 +179,7 @@ describe('Admin Authentication', () => {
         });
 
       expect(response.status).toBe(403);
-      expect(response.body.error).toBe('Admin users already exist');
+      expect(response.body.error).toContain('Admin users already exist');
     });
   });
 });

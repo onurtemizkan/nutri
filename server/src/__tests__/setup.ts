@@ -37,8 +37,23 @@ export const prisma = new PrismaClient({
 export async function cleanDatabase() {
   // Delete in reverse order of dependencies to avoid foreign key constraints
   // Must be sequential because batch transactions run concurrently
-  await prisma.adminAuditLog.deleteMany();
-  await prisma.adminUser.deleteMany();
+  // Retry admin tables cleanup due to potential async audit log creation race conditions
+  const maxRetries = 3;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await prisma.adminAuditLog.deleteMany();
+      await prisma.adminUser.deleteMany();
+      break; // Success, exit retry loop
+    } catch (error) {
+      if (attempt === maxRetries) {
+        // On final attempt, try with a small delay
+        await new Promise(resolve => setTimeout(resolve, 50));
+        await prisma.adminAuditLog.deleteMany();
+        await prisma.adminUser.deleteMany();
+      }
+      // Otherwise, retry immediately
+    }
+  }
   await prisma.supplementLog.deleteMany();
   await prisma.supplement.deleteMany();
   await prisma.healthMetric.deleteMany();
