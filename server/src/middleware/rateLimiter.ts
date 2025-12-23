@@ -95,4 +95,21 @@ export const rateLimiters = {
     windowMs: 60 * 1000,
     maxRequests: 50,
   }),
+
+  // Admin login: 15 requests per 1 minute per IP
+  adminAuth: createRateLimiter({
+    windowMs: 60 * 1000,
+    maxRequests: 15,
+  }),
+
+  // Admin API: 100 requests per 15 minutes per admin user
+  adminApi: createRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 100,
+    keyGenerator: (req: Request) => {
+      // Use admin user ID from request if available, otherwise IP
+      const adminUser = (req as Request & { adminUser?: { id: string } }).adminUser;
+      return adminUser?.id || req.ip || 'unknown';
+    },
+  }),
 };

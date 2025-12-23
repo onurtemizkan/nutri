@@ -8,7 +8,7 @@
  * - Configures global test lifecycle hooks
  */
 
-import { PrismaClient, Activity, HealthMetric, ActivityType, ActivityIntensity, HealthMetricType } from '@prisma/client';
+import { PrismaClient, Activity, HealthMetric, ActivityType, ActivityIntensity, HealthMetricType, AdminRole, AdminUser } from '@prisma/client';
 
 // Set test environment variables before any imports
 (process.env as { NODE_ENV: string }).NODE_ENV = 'test';
@@ -31,18 +31,41 @@ export const prisma = new PrismaClient({
 /**
  * Clean database by deleting all records
  * Preserves schema, only removes data
+ * Note: Using sequential deletes to respect foreign key constraints
+ * (Prisma batch transactions don't guarantee execution order)
  */
 export async function cleanDatabase() {
   // Delete in reverse order of dependencies to avoid foreign key constraints
-  // Using $transaction to ensure atomicity
-  await prisma.$transaction([
-    prisma.healthMetric.deleteMany(),
-    prisma.activity.deleteMany(),
-    prisma.meal.deleteMany(),
-    prisma.waterIntake.deleteMany(),
-    prisma.weightRecord.deleteMany(),
-    prisma.user.deleteMany(),
-  ]);
+  // Must be sequential because batch transactions run concurrently
+  // Retry admin tables cleanup due to potential async audit log creation race conditions
+  const maxRetries = 3;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await prisma.adminAuditLog.deleteMany();
+      await prisma.adminUser.deleteMany();
+      break; // Success, exit retry loop
+    } catch (error) {
+      if (attempt === maxRetries) {
+        // On final attempt, try with a small delay
+        await new Promise(resolve => setTimeout(resolve, 50));
+        await prisma.adminAuditLog.deleteMany();
+        await prisma.adminUser.deleteMany();
+      }
+      // Otherwise, retry immediately
+    }
+  }
+  await prisma.supplementLog.deleteMany();
+  await prisma.supplement.deleteMany();
+  await prisma.healthMetric.deleteMany();
+  await prisma.activity.deleteMany();
+  await prisma.meal.deleteMany();
+  await prisma.waterIntake.deleteMany();
+  await prisma.weightRecord.deleteMany();
+  await prisma.mLInsight.deleteMany();
+  await prisma.mLPrediction.deleteMany();
+  await prisma.mLFeature.deleteMany();
+  await prisma.userMLProfile.deleteMany();
+  await prisma.user.deleteMany();
 }
 
 /**
@@ -317,4 +340,66 @@ export function assertHealthMetricStructure(metric: unknown): void {
   expect(metric).toHaveProperty('recordedAt');
   expect(metric).toHaveProperty('unit');
   expect(metric).toHaveProperty('source');
+}
+
+// ============================================================================
+// Admin Test Utilities
+// ============================================================================
+
+/**
+ * Create a test admin user
+ */
+export async function createTestAdminUser(overrides?: Partial<{
+  email: string;
+  passwordHash: string;
+  name: string;
+  role: AdminRole;
+  mfaEnabled: boolean;
+}>): Promise<AdminUser> {
+  const bcrypt = require('bcryptjs');
+
+  const defaultPasswordHash = await bcrypt.hash('AdminPass123!', 10);
+
+  const defaultAdmin = {
+    email: 'admin@test.com',
+    passwordHash: defaultPasswordHash,
+    name: 'Test Admin',
+    role: AdminRole.SUPER_ADMIN,
+    mfaEnabled: false,
+    ...overrides,
+  };
+
+  return prisma.adminUser.create({
+    data: defaultAdmin,
+  });
+}
+
+/**
+ * Create a test admin JWT token
+ */
+export function createTestAdminToken(adminId: string, options?: { email?: string; role?: AdminRole }): string {
+  const jwt = require('jsonwebtoken');
+  return jwt.sign(
+    {
+      adminUserId: adminId,
+      email: options?.email || 'admin@test.com',
+      role: options?.role || 'SUPER_ADMIN',
+      sessionId: 'test-session-id',
+      type: 'admin'
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: '8h' }
+  );
+}
+
+/**
+ * Assert that response has admin user data structure
+ */
+export function assertAdminUserStructure(admin: unknown): void {
+  expect(admin).toHaveProperty('id');
+  expect(admin).toHaveProperty('email');
+  expect(admin).toHaveProperty('name');
+  expect(admin).toHaveProperty('role');
+  expect(admin).not.toHaveProperty('password');
+  expect(admin).not.toHaveProperty('mfaSecret');
 }

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm ci",
+  "devCommand": "npm run dev",
+  "regions": ["iad1"],
+  "functions": {
+    "app/**/*": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-DNS-Prefetch-Control",
+          "value": "on"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/backend/:path*",
+      "destination": "https://api.nutri.app/api/:path*"
+    }
+  ]
+}

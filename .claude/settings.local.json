@@ -38,15 +38,11 @@
       "mcp__task-master-ai__get_task",
       "mcp__task-master-ai__set_task_status",
       "mcp__task-master-ai__add_task",
-      "mcp__task-master-ai__next_task",
       "mcp__puppeteer__puppeteer_navigate",
       "mcp__puppeteer__puppeteer_screenshot",
       "mcp__puppeteer__puppeteer_fill",
       "mcp__puppeteer__puppeteer_click",
-      "mcp__puppeteer__puppeteer_evaluate",
-      "mcp__puppeteer__puppeteer_select",
-      "mcp__task-master-ai__generate",
-      "mcp__task-master-ai__update_task"
+      "mcp__puppeteer__puppeteer_evaluate"
     ],
     "deny": [],
     "ask": []
