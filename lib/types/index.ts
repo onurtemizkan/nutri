@@ -373,3 +373,6 @@ export interface TodaySupplementStatus {
   completionRate: number;
   supplements: SupplementStatus[];
 }
+
+// Re-export notification types
+export * from './notifications';

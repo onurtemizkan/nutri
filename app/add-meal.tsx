@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { mealsApi } from '@/lib/api/meals';
 import { CreateMealInput } from '@/lib/types';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
@@ -22,6 +23,13 @@ import { showAlert } from '@/lib/utils/alert';
 import { useResponsive } from '@/hooks/useResponsive';
 import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 import { TimePicker } from '@/lib/components/TimePicker';
+import {
+  NotificationPrimingModal,
+  useNotificationPriming,
+} from '@/lib/components/NotificationPrimingModal';
+
+// Key to track if user has logged a meal before
+const FIRST_MEAL_LOGGED_KEY = '@nutri:first_meal_logged';
 
 /**
  * Determines the appropriate meal type based on the current local time
@@ -70,18 +78,20 @@ interface MicronutrientParams {
   niacin?: string;
 }
 
+type MealSearchParams = {
+  name?: string;
+  calories?: string;
+  protein?: string;
+  carbs?: string;
+  fat?: string;
+  fiber?: string;
+  servingSize?: string;
+  fromScan?: string;
+  barcode?: string;
+} & MicronutrientParams;
+
 export default function AddMealScreen() {
-  const params = useLocalSearchParams<{
-    name?: string;
-    calories?: string;
-    protein?: string;
-    carbs?: string;
-    fat?: string;
-    fiber?: string;
-    servingSize?: string;
-    fromScan?: string;
-    barcode?: string;
-  } & MicronutrientParams>();
+  const params = useLocalSearchParams() as MealSearchParams;
 
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>(getMealTypeByTime);
   const [name, setName] = useState('');
@@ -101,6 +111,9 @@ export default function AddMealScreen() {
   const router = useRouter();
   const { isTablet, getSpacing } = useResponsive();
   const responsiveSpacing = getSpacing();
+
+  // Notification priming hook
+  const { shouldShowPriming, triggerPriming, dismissPriming } = useNotificationPriming();
 
   // Pre-fill form if coming from food scanner
   useEffect(() => {
@@ -148,6 +161,21 @@ export default function AddMealScreen() {
     'dinner',
     'snack',
   ];
+
+  // Check if this is the user's first meal and trigger notification priming
+  const checkAndTriggerPriming = useCallback(async () => {
+    try {
+      const hasLoggedMeal = await AsyncStorage.getItem(FIRST_MEAL_LOGGED_KEY);
+      if (hasLoggedMeal !== 'true') {
+        // Mark that user has logged their first meal
+        await AsyncStorage.setItem(FIRST_MEAL_LOGGED_KEY, 'true');
+        // Trigger notification priming modal
+        await triggerPriming();
+      }
+    } catch (error) {
+      console.error('Error checking first meal status:', error);
+    }
+  }, [triggerPriming]);
 
   const handleSaveMeal = async () => {
     if (!name || !calories || !protein || !carbs || !fat) {
@@ -202,13 +230,26 @@ export default function AddMealScreen() {
       };
 
       await mealsApi.createMeal(mealData);
+
+      // Check if we should show notification priming (first meal)
+      await checkAndTriggerPriming();
+
       // Navigate back to home immediately after success
-      router.replace('/');
+      // If priming modal is showing, it will handle dismissal
+      if (!shouldShowPriming) {
+        router.replace('/');
+      }
     } catch (error) {
       showAlert('Error', getErrorMessage(error, 'Failed to add meal'));
       setIsLoading(false);
     }
   };
+
+  // Handle priming modal close
+  const handlePrimingClose = useCallback(() => {
+    dismissPriming();
+    router.replace('/');
+  }, [dismissPriming, router]);
 
   return (
     <SafeAreaView style={styles.container} testID="add-meal-screen">
@@ -487,6 +528,16 @@ export default function AddMealScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Notification priming modal - shown after first meal */}
+      <NotificationPrimingModal
+        visible={shouldShowPriming}
+        onClose={handlePrimingClose}
+        onEnableNotifications={() => {
+          // Optional: Track that notifications were enabled
+          console.log('Notifications enabled after priming');
+        }}
+      />
     </SafeAreaView>
   );
 }

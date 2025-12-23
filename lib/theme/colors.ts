@@ -68,6 +68,8 @@ export const colors = {
     highlight: 'rgba(139, 92, 246, 0.1)', // Subtle purple highlight
     shimmer: 'rgba(255, 255, 255, 0.1)', // Shimmer effect
     warningLight: 'rgba(245, 158, 11, 0.1)', // Warning background
+    errorLight: 'rgba(239, 68, 68, 0.1)', // Error background
+    successLight: 'rgba(16, 185, 129, 0.1)', // Success background
     appleHealth: '#FF2D55', // Apple Health brand color
     appleHealthLight: 'rgba(255, 45, 85, 0.1)', // Apple Health background
   },

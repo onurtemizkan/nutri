@@ -574,6 +574,33 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* Notifications */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Notifications</Text>
+
+            <TouchableOpacity
+              style={[styles.menuItemWithArrow, styles.menuItemLast]}
+              onPress={() => router.push('/notification-settings')}
+              accessibilityLabel="Manage notification preferences"
+              testID="notification-settings-button"
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={styles.menuItemIcon}>
+                  <Ionicons
+                    name="notifications"
+                    size={20}
+                    color={colors.primary.main}
+                  />
+                </View>
+                <View>
+                  <Text style={styles.menuItemText}>Notification Preferences</Text>
+                  <Text style={styles.menuItemSubtext}>Manage reminders and alerts</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+            </TouchableOpacity>
+          </View>
+
           {/* Supplements */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Supplements</Text>
