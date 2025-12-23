@@ -96,10 +96,10 @@ export const rateLimiters = {
     maxRequests: 50,
   }),
 
-  // Admin login: 5 requests per 15 minutes per IP (stricter than regular auth)
+  // Admin login: 15 requests per 1 minute per IP
   adminAuth: createRateLimiter({
-    windowMs: 15 * 60 * 1000,
-    maxRequests: 5,
+    windowMs: 60 * 1000,
+    maxRequests: 15,
   }),
 
   // Admin API: 100 requests per 15 minutes per admin user

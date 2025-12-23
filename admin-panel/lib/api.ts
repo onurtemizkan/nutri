@@ -143,7 +143,7 @@ export const adminApi = {
   getUser: (id: string) => api.get<unknown>(`/admin/users/${id}`),
 
   exportUserData: (id: string) =>
-    api.post<Blob>(`/admin/users/${id}/export`, null, {
+    api.post<Blob>(`/admin/users/${id}/export`, undefined, {
       responseType: 'blob',
     }),
 

@@ -4,6 +4,8 @@ import { useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
 interface LoginFormState {
   email: string;
   password: string;
@@ -29,6 +31,45 @@ function LoginForm() {
     setFormState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
+      // Step 1: Call the backend API directly to check for MFA requirement
+      const loginResponse = await fetch(`${API_URL}/api/admin/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formState.email,
+          password: formState.password,
+        }),
+      });
+
+      const loginData = await loginResponse.json();
+
+      if (!loginResponse.ok) {
+        setFormState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: loginData.error || 'Invalid credentials',
+        }));
+        return;
+      }
+
+      // Step 2: Check if MFA is required
+      if (loginData.requiresMFA) {
+        // Store MFA data and redirect to MFA page
+        sessionStorage.setItem('mfa_pending_token', loginData.pendingToken);
+        sessionStorage.setItem('mfa_email', formState.email);
+        if (loginData.qrCode) {
+          sessionStorage.setItem('mfa_qr_code', loginData.qrCode);
+        }
+        sessionStorage.setItem(
+          'mfa_setup_required',
+          String(loginData.mfaSetupRequired || false)
+        );
+        router.push('/mfa');
+        return;
+      }
+
+      // Step 3: No MFA required - create NextAuth session
+      // This shouldn't normally happen for super admins, but handle it anyway
       const result = await signIn('credentials', {
         email: formState.email,
         password: formState.password,
@@ -36,22 +77,6 @@ function LoginForm() {
       });
 
       if (result?.error) {
-        // Check if it's an MFA required error
-        if (result.error.includes('MFA')) {
-          // Store pending token and redirect to MFA page
-          const pendingToken = (result as { pendingToken?: string }).pendingToken;
-          const qrCode = (result as { qrCode?: string }).qrCode;
-
-          if (pendingToken) {
-            sessionStorage.setItem('mfa_pending_token', pendingToken);
-            if (qrCode) {
-              sessionStorage.setItem('mfa_qr_code', qrCode);
-            }
-            router.push('/mfa');
-            return;
-          }
-        }
-
         setFormState((prev) => ({
           ...prev,
           isLoading: false,
@@ -67,7 +92,8 @@ function LoginForm() {
       setFormState((prev) => ({
         ...prev,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'An unexpected error occurred',
+        error:
+          error instanceof Error ? error.message : 'An unexpected error occurred',
       }));
     }
   };

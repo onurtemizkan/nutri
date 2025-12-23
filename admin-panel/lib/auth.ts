@@ -118,21 +118,16 @@ export const authConfig: NextAuthConfig = {
 
           const data = await response.json();
 
-          // If MFA is required, return special object that signals MFA flow
+          // If MFA is required, throw an error with MFA data encoded
+          // This prevents NextAuth from creating a session before MFA is completed
           if (data.requiresMFA) {
-            // Return a special object to indicate MFA is required
-            // The frontend will handle this and redirect to MFA page
-            return {
-              id: 'pending-mfa',
-              email: email as string,
-              name: 'Pending MFA',
-              role: 'VIEWER' as AdminRole,
-              accessToken: '',
+            const mfaData = {
               requiresMFA: true,
               mfaSetupRequired: data.mfaSetupRequired || false,
               pendingToken: data.pendingToken,
               qrCode: data.qrCode,
             };
+            throw new Error(`MFA_REQUIRED:${JSON.stringify(mfaData)}`);
           }
 
           // No MFA required, get user info
