@@ -533,9 +533,12 @@ class TestIntegrationWithFoodAnalysisService:
 
         service = FoodAnalysisService(use_ml_model=True)
 
-        food_items, measurement_quality, processing_time, suggestions = (
-            await service.analyze_food(sample_pil_image)
-        )
+        (
+            food_items,
+            measurement_quality,
+            processing_time,
+            suggestions,
+        ) = await service.analyze_food(sample_pil_image)
 
         assert len(food_items) == 1
         assert food_items[0].confidence > 0
