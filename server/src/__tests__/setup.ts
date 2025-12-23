@@ -359,7 +359,13 @@ export async function createTestAdminUser(overrides?: Partial<{
 export function createTestAdminToken(adminId: string): string {
   const jwt = require('jsonwebtoken');
   return jwt.sign(
-    { adminId, type: 'admin' },
+    {
+      adminUserId: adminId,
+      email: 'admin@test.com',
+      role: 'SUPER_ADMIN',
+      sessionId: 'test-session-id',
+      type: 'admin'
+    },
     process.env.JWT_SECRET,
     { expiresIn: '8h' }
   );
