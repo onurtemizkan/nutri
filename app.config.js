@@ -131,12 +131,14 @@ module.exports = {
     extra: {
       // Custom API URL override (works in dev and prod)
       // For physical device development, set this to your computer's IP
-      apiUrl: API_URL || 'http://192.168.1.68:3000/api',
-      // Production API URL (only used in production builds when apiUrl is not set)
-      productionApiUrl: PRODUCTION_API_URL || undefined,
+      // Set to undefined to use productionApiUrl in production builds
+      apiUrl: API_URL || undefined,
+      // Production API URL (used in production builds when apiUrl is not set)
+      productionApiUrl: PRODUCTION_API_URL || 'https://z8cg8kkg4o0wg8044c8g0s0o.195.201.228.58.sslip.io/api',
       // ML Service URL (for food analysis)
-      // Must match the IP used for apiUrl - ML service runs on port 8000
-      mlServiceUrl: ML_SERVICE_URL || 'http://192.168.1.68:8000',
+      // In production, ML service is accessed through the backend proxy
+      // For local dev, set ML_SERVICE_URL to your computer's IP:8000
+      mlServiceUrl: ML_SERVICE_URL || 'https://z8cg8kkg4o0wg8044c8g0s0o.195.201.228.58.sslip.io',
       // EAS configuration
       eas: {
         projectId: '543d7d98-c664-4db6-bffe-fceabff545d0',
