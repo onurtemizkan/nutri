@@ -2310,9 +2310,10 @@ DEFAULT_MODEL_PRESET = "fast"
 # This reduces startup time from ~7 minutes to <1 second.
 
 # Cache directory (uses HF_HOME if set, otherwise ~/.cache/nutri)
-TEXT_FEATURES_CACHE_DIR = Path(
-    os.environ.get("HF_HOME", os.path.expanduser("~/.cache/nutri"))
-) / "clip_text_features"
+TEXT_FEATURES_CACHE_DIR = (
+    Path(os.environ.get("HF_HOME", os.path.expanduser("~/.cache/nutri")))
+    / "clip_text_features"
+)
 
 # Batch size for text encoding (32 is efficient for most GPUs/CPUs)
 TEXT_ENCODING_BATCH_SIZE = 32
@@ -2329,7 +2330,11 @@ def _get_cache_path(model_name: str, use_detailed: bool) -> Path:
     """Get the cache file path for text features."""
     # Clean model name for filename
     safe_model_name = model_name.replace("/", "_").replace("-", "_")
-    prompts_dict = FOOD_PROMPTS if use_detailed else {k: [v] for k, v in SIMPLE_FOOD_PROMPTS.items()}
+    prompts_dict = (
+        FOOD_PROMPTS
+        if use_detailed
+        else {k: [v] for k, v in SIMPLE_FOOD_PROMPTS.items()}
+    )
     prompts_hash = _compute_prompts_hash(prompts_dict, model_name)
     mode = "detailed" if use_detailed else "simple"
     return TEXT_FEATURES_CACHE_DIR / f"{safe_model_name}_{mode}_{prompts_hash}.pt"
@@ -2894,7 +2899,9 @@ class CLIPFoodClassifier:
         if cache_path.exists():
             try:
                 logger.info(f"Loading text features from cache: {cache_path}")
-                cached_data = torch.load(cache_path, map_location=self.device, weights_only=True)
+                cached_data = torch.load(
+                    cache_path, map_location=self.device, weights_only=True
+                )
                 self._text_features_cache = cached_data
                 elapsed = time.time() - start_time
                 logger.info(
@@ -2905,7 +2912,9 @@ class CLIPFoodClassifier:
                 logger.warning(f"Failed to load cache, recomputing: {e}")
 
         # Compute text features with batching
-        logger.info("Computing text features (this may take a few minutes on first run)...")
+        logger.info(
+            "Computing text features (this may take a few minutes on first run)..."
+        )
 
         if self.use_detailed_prompts:
             self._compute_detailed_features_batched()
@@ -2933,14 +2942,16 @@ class CLIPFoodClassifier:
                 all_prompts.append(prompt)
                 prompt_to_food.append((food_key, idx))
 
-        logger.info(f"Encoding {len(all_prompts)} prompts for {len(FOOD_PROMPTS)} foods...")
+        logger.info(
+            f"Encoding {len(all_prompts)} prompts for {len(FOOD_PROMPTS)} foods..."
+        )
 
         # Process in batches
         all_features: List[torch.Tensor] = []
         batch_size = TEXT_ENCODING_BATCH_SIZE
 
         for i in range(0, len(all_prompts), batch_size):
-            batch_prompts = all_prompts[i:i + batch_size]
+            batch_prompts = all_prompts[i : i + batch_size]
             inputs = self._processor(  # type: ignore[misc]
                 text=batch_prompts, return_tensors="pt", padding=True, truncation=True
             )
@@ -2948,7 +2959,9 @@ class CLIPFoodClassifier:
 
             with torch.no_grad():
                 batch_features = self._model.get_text_features(**inputs)  # type: ignore[attr-defined]
-                batch_features = batch_features / batch_features.norm(dim=-1, keepdim=True)
+                batch_features = batch_features / batch_features.norm(
+                    dim=-1, keepdim=True
+                )
                 all_features.append(batch_features.cpu())
 
             # Log progress every 10 batches
@@ -2962,7 +2975,7 @@ class CLIPFoodClassifier:
         # Group by food and average
         feature_idx = 0
         for food_key, num_prompts in food_prompt_counts.items():
-            food_features = all_features_tensor[feature_idx:feature_idx + num_prompts]
+            food_features = all_features_tensor[feature_idx : feature_idx + num_prompts]
             avg_features = torch.mean(food_features, dim=0, keepdim=True)
             avg_features = avg_features / avg_features.norm(dim=-1, keepdim=True)
             self._text_features_cache[food_key] = avg_features.to(self.device)
@@ -2980,7 +2993,7 @@ class CLIPFoodClassifier:
         batch_size = TEXT_ENCODING_BATCH_SIZE
 
         for i in range(0, len(all_prompts), batch_size):
-            batch_prompts = all_prompts[i:i + batch_size]
+            batch_prompts = all_prompts[i : i + batch_size]
             inputs = self._processor(  # type: ignore[misc]
                 text=batch_prompts, return_tensors="pt", padding=True, truncation=True
             )
@@ -2988,13 +3001,17 @@ class CLIPFoodClassifier:
 
             with torch.no_grad():
                 batch_features = self._model.get_text_features(**inputs)  # type: ignore[attr-defined]
-                batch_features = batch_features / batch_features.norm(dim=-1, keepdim=True)
+                batch_features = batch_features / batch_features.norm(
+                    dim=-1, keepdim=True
+                )
                 all_features.append(batch_features.cpu())
 
         # Concatenate and assign to cache
         all_features_tensor = torch.cat(all_features, dim=0)
         for idx, food_key in enumerate(food_keys):
-            self._text_features_cache[food_key] = all_features_tensor[idx:idx+1].to(self.device)
+            self._text_features_cache[food_key] = all_features_tensor[idx : idx + 1].to(
+                self.device
+            )
 
     def _save_text_features_cache(self, cache_path: Path) -> None:
         """Save computed text features to disk cache."""
