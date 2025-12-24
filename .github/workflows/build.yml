@@ -8,8 +8,18 @@ name: Build and Push
 
 on:
   push:
-    branches: [master]
+    branches: [master, develop]
   workflow_dispatch:  # Allow manual trigger
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - production
+          - beta
 
 env:
   REGISTRY: ghcr.io
@@ -42,6 +52,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.event.inputs.environment }}" == "production" ]] || [[ "${{ github.ref }}" == "refs/heads/master" && "${{ github.event.inputs.environment }}" != "beta" ]]; then
+            echo "env_name=production" >> $GITHUB_OUTPUT
+            echo "tag_suffix=latest" >> $GITHUB_OUTPUT
+          else
+            echo "env_name=beta" >> $GITHUB_OUTPUT
+            echo "tag_suffix=beta" >> $GITHUB_OUTPUT
+          fi
+
       - name: Extract metadata for Docker
         id: meta
         uses: docker/metadata-action@v5
@@ -49,7 +70,7 @@ jobs:
           images: ${{ env.BACKEND_IMAGE }}
           tags: |
             type=sha,prefix=
-            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'master') }}
+            type=raw,value=${{ steps.env.outputs.tag_suffix }},enable=true
 
       - name: Build and push
         uses: docker/build-push-action@v5
@@ -83,6 +104,8 @@ jobs:
     outputs:
       image: ${{ env.BACKEND_IMAGE }}
       tags: ${{ steps.meta.outputs.tags }}
+      environment: ${{ steps.env.outputs.env_name }}
+      tag_suffix: ${{ steps.env.outputs.tag_suffix }}
 
   # ---------------------------------------------------------------------------
   # Build ML Service (Python/FastAPI)
@@ -109,6 +132,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.event.inputs.environment }}" == "production" ]] || [[ "${{ github.ref }}" == "refs/heads/master" && "${{ github.event.inputs.environment }}" != "beta" ]]; then
+            echo "env_name=production" >> $GITHUB_OUTPUT
+            echo "tag_suffix=latest" >> $GITHUB_OUTPUT
+          else
+            echo "env_name=beta" >> $GITHUB_OUTPUT
+            echo "tag_suffix=beta" >> $GITHUB_OUTPUT
+          fi
+
       - name: Extract metadata for Docker
         id: meta
         uses: docker/metadata-action@v5
@@ -116,7 +150,7 @@ jobs:
           images: ${{ env.ML_SERVICE_IMAGE }}
           tags: |
             type=sha,prefix=
-            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'master') }}
+            type=raw,value=${{ steps.env.outputs.tag_suffix }},enable=true
 
       - name: Build and push
         uses: docker/build-push-action@v5
@@ -131,7 +165,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.ML_SERVICE_IMAGE }}:latest
+          image-ref: ${{ env.ML_SERVICE_IMAGE }}:${{ steps.env.outputs.tag_suffix }}
           format: 'sarif'
           output: 'trivy-ml.sarif'
           severity: 'CRITICAL,HIGH'
@@ -148,6 +182,8 @@ jobs:
     outputs:
       image: ${{ env.ML_SERVICE_IMAGE }}
       tags: ${{ steps.meta.outputs.tags }}
+      environment: ${{ steps.env.outputs.env_name }}
+      tag_suffix: ${{ steps.env.outputs.tag_suffix }}
 
   # ---------------------------------------------------------------------------
   # Build Success Summary
@@ -158,26 +194,39 @@ jobs:
     needs: [build-backend, build-ml-service]
     if: success()
 
+    outputs:
+      environment: ${{ needs.build-backend.outputs.environment }}
+      tag_suffix: ${{ needs.build-backend.outputs.tag_suffix }}
+
     steps:
       - name: Generate build summary
         run: |
-          echo "## 🚀 Build Summary" >> $GITHUB_STEP_SUMMARY
+          ENV="${{ needs.build-backend.outputs.environment }}"
+          TAG="${{ needs.build-backend.outputs.tag_suffix }}"
+
+          if [ "$ENV" = "beta" ]; then
+            echo "## 🧪 Beta Build Summary" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## 🚀 Production Build Summary" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** \`$ENV\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Docker Images Built and Pushed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Service | Image | Tags |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|-------|------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Backend API | \`${{ needs.build-backend.outputs.image }}\` | \`${{ github.sha }}\`, \`latest\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| ML Service | \`${{ needs.build-ml-service.outputs.image }}\` | \`${{ github.sha }}\`, \`latest\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend API | \`${{ needs.build-backend.outputs.image }}\` | \`${{ github.sha }}\`, \`$TAG\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| ML Service | \`${{ needs.build-ml-service.outputs.image }}\` | \`${{ github.sha }}\`, \`$TAG\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Pull Commands" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
           echo "# Backend" >> $GITHUB_STEP_SUMMARY
-          echo "docker pull ${{ needs.build-backend.outputs.image }}:latest" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ needs.build-backend.outputs.image }}:$TAG" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "# ML Service" >> $GITHUB_STEP_SUMMARY
-          echo "docker pull ${{ needs.build-ml-service.outputs.image }}:latest" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ needs.build-ml-service.outputs.image }}:$TAG" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✅ All images built successfully and pushed to GitHub Container Registry" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,273 @@
+# =============================================================================
+# Nutri Beta Deploy Workflow
+# Deploys beta environment after successful build on develop branch
+# =============================================================================
+
+name: Deploy Beta
+
+on:
+  workflow_run:
+    workflows: ["Build and Push"]
+    types: [completed]
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy (default: beta)'
+        required: false
+        default: 'beta'
+      skip_ml_service:
+        description: 'Skip ML service deployment'
+        required: false
+        default: 'false'
+
+jobs:
+  deploy-beta:
+    name: Deploy to Beta
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    environment: beta
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deployment info
+        run: |
+          echo "## 🧪 Starting Beta Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | **Beta** |" >> $GITHUB_STEP_SUMMARY
+          echo "| Trigger | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Image Tag | ${{ github.event.inputs.image_tag || 'beta' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      # -------------------------------------------------------------------------
+      # Database Migration (Beta)
+      # -------------------------------------------------------------------------
+      - name: Setup Node.js for migrations
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install server dependencies
+        run: cd server && npm ci
+
+      - name: Generate Prisma client
+        run: cd server && npx prisma generate
+
+      - name: Run database migrations (Beta)
+        env:
+          DATABASE_URL: ${{ secrets.BETA_DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.BETA_DIRECT_URL || secrets.BETA_DATABASE_URL }}
+        run: |
+          echo "🗄️ Running beta database migrations..."
+          cd server
+          npx prisma migrate deploy
+          echo "✅ Beta database migrations complete"
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Database" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Beta migrations applied successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      # -------------------------------------------------------------------------
+      # Application Deployment (Beta)
+      # -------------------------------------------------------------------------
+      - name: Trigger Coolify Beta Backend Deployment
+        id: deploy-backend
+        continue-on-error: true
+        run: |
+          echo "Triggering beta backend deployment..."
+
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt/3..."
+
+            response=$(curl -s -w "\n%{http_code}" -X POST \
+              --connect-timeout 30 \
+              --max-time 120 \
+              -H "Authorization: Bearer ${{ secrets.COOLIFY_WEBHOOK_SECRET }}" \
+              -H "Content-Type: application/json" \
+              "${{ secrets.COOLIFY_BETA_BACKEND_WEBHOOK_URL }}" 2>/dev/null) || response=$'\n000'
+
+            http_code=$(echo "$response" | tail -n1)
+            body=$(echo "$response" | sed '$d')
+
+            echo "HTTP Status: $http_code"
+            echo "Response: $body"
+
+            if [ "$http_code" = "200" ] || [ "$http_code" = "201" ] || [ "$http_code" = "202" ]; then
+              echo "✅ Beta backend deployment triggered successfully"
+              echo "backend_status=success" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+
+            if [ "$http_code" = "504" ] || [ "$http_code" = "502" ]; then
+              echo "⚠️ Gateway timeout - deployment may still be processing"
+              if [ $attempt -eq 3 ]; then
+                echo "backend_status=timeout" >> $GITHUB_OUTPUT
+                exit 0
+              fi
+            fi
+
+            if [ $attempt -lt 3 ]; then
+              echo "⏳ Waiting 10 seconds before retry..."
+              sleep 10
+            fi
+          done
+
+          echo "❌ Beta backend deployment trigger failed after 3 attempts"
+          echo "backend_status=failed" >> $GITHUB_OUTPUT
+          exit 1
+
+      - name: Trigger Coolify Beta ML Service Deployment
+        id: deploy-ml
+        if: ${{ github.event.inputs.skip_ml_service != 'true' }}
+        continue-on-error: true
+        run: |
+          echo "Triggering beta ML service deployment..."
+
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt/3..."
+
+            response=$(curl -s -w "\n%{http_code}" -X POST \
+              --connect-timeout 30 \
+              --max-time 120 \
+              -H "Authorization: Bearer ${{ secrets.COOLIFY_WEBHOOK_SECRET }}" \
+              -H "Content-Type: application/json" \
+              "${{ secrets.COOLIFY_BETA_ML_WEBHOOK_URL }}" 2>/dev/null) || response=$'\n000'
+
+            http_code=$(echo "$response" | tail -n1)
+            body=$(echo "$response" | sed '$d')
+
+            echo "HTTP Status: $http_code"
+            echo "Response: $body"
+
+            if [ "$http_code" = "200" ] || [ "$http_code" = "201" ] || [ "$http_code" = "202" ]; then
+              echo "✅ Beta ML service deployment triggered successfully"
+              echo "ml_status=success" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+
+            if [ "$http_code" = "504" ] || [ "$http_code" = "502" ]; then
+              echo "⚠️ Gateway timeout - deployment may still be processing"
+              if [ $attempt -eq 3 ]; then
+                echo "ml_status=timeout" >> $GITHUB_OUTPUT
+                exit 0
+              fi
+            fi
+
+            if [ $attempt -lt 3 ]; then
+              echo "⏳ Waiting 10 seconds before retry..."
+              sleep 10
+            fi
+          done
+
+          echo "❌ Beta ML service deployment trigger failed after 3 attempts"
+          echo "ml_status=failed" >> $GITHUB_OUTPUT
+          exit 1
+
+      - name: Wait for containers to start
+        run: |
+          echo "⏳ Waiting 60 seconds for beta containers to start..."
+          sleep 60
+
+      - name: Verify Beta Backend Health
+        id: health-backend
+        continue-on-error: true
+        run: |
+          echo "🔍 Checking beta backend health..."
+
+          if [ -z "${{ secrets.BETA_API_URL }}" ]; then
+            echo "⚠️ BETA_API_URL secret not configured, skipping external health check"
+            echo "health_status=skipped" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          for i in {1..5}; do
+            echo "Health check attempt $i/5..."
+
+            http_code=$(curl -s -o /dev/null -w "%{http_code}" \
+              --connect-timeout 10 \
+              --max-time 15 \
+              "${{ secrets.BETA_API_URL }}/health" 2>/dev/null) || http_code="000"
+
+            echo "HTTP Status: $http_code"
+
+            if [ "$http_code" = "200" ]; then
+              echo "✅ Beta backend is healthy!"
+              echo "health_status=healthy" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+
+            if [ $i -lt 5 ]; then
+              echo "⏳ Waiting 15 seconds before next attempt..."
+              sleep 15
+            fi
+          done
+
+          echo "⚠️ Could not verify beta backend health from GitHub runner"
+          echo "health_status=unreachable" >> $GITHUB_OUTPUT
+
+      - name: Generate deployment summary
+        if: always()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Beta Deployment Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          backend_status="${{ steps.health-backend.outputs.health_status }}"
+          case "$backend_status" in
+            healthy)
+              echo "| Beta Backend | ✅ Verified healthy |" >> $GITHUB_STEP_SUMMARY
+              ;;
+            skipped)
+              echo "| Beta Backend | ⏭️ Check skipped (no URL configured) |" >> $GITHUB_STEP_SUMMARY
+              ;;
+            unreachable)
+              echo "| Beta Backend | ⚠️ Unreachable from GitHub (check Coolify) |" >> $GITHUB_STEP_SUMMARY
+              ;;
+            *)
+              echo "| Beta Backend | ⚠️ Unknown status |" >> $GITHUB_STEP_SUMMARY
+              ;;
+          esac
+
+          echo "| Beta ML Service | ${{ steps.health-ml.outcome == 'success' && '✅ Deployed' || '⚠️ Check Coolify dashboard' }} |" >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          backend_deploy="${{ steps.deploy-backend.outputs.backend_status }}"
+
+          if [ "$backend_deploy" = "success" ] || [ "$backend_deploy" = "timeout" ]; then
+            echo "🧪 **Beta deployment triggered successfully!**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Beta deployment trigger failed** - Check webhook configuration" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Send Beta Deploy Notification
+        if: success()
+        run: |
+          if [ -z "${{ secrets.DISCORD_WEBHOOK_URL }}" ]; then
+            echo "Discord webhook not configured, skipping notification"
+            exit 0
+          fi
+
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "🧪 Beta Deployment Successful",
+                "description": "Nutri beta environment has been updated",
+                "color": 16776960,
+                "fields": [
+                  {"name": "Environment", "value": "Beta", "inline": true},
+                  {"name": "Commit", "value": "`'"${{ github.sha }}"'`", "inline": true},
+                  {"name": "Branch", "value": "develop", "inline": true}
+                ],
+                "timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"
+              }]
+            }' || true

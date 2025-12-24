@@ -8,7 +8,7 @@ import { Platform } from 'react-native';
  *
  * Configuration priority:
  * 1. Custom API URL from expo config (app.config.js extra.apiUrl)
- * 2. Environment-specific defaults (production vs development)
+ * 2. Environment-specific URLs based on APP_ENV (beta vs production)
  * 3. Platform-specific development defaults (iOS/Android/Web)
  */
 function getApiBaseUrl(): string {
@@ -19,9 +19,21 @@ function getApiBaseUrl(): string {
     return customApiUrl;
   }
 
-  // Production environment
+  // Non-development environment (production or beta)
   if (!__DEV__) {
-    // Read production API URL from expo config
+    const appEnv = Constants.expoConfig?.extra?.appEnv || 'production';
+
+    // Beta environment
+    if (appEnv === 'beta') {
+      const betaApiUrl = Constants.expoConfig?.extra?.betaApiUrl;
+      if (betaApiUrl && typeof betaApiUrl === 'string' && betaApiUrl.trim() !== '') {
+        return betaApiUrl;
+      }
+      // Fall through to production URL if beta not configured
+      console.warn('⚠️ Beta API URL not configured, falling back to production URL');
+    }
+
+    // Production environment (default)
     const productionApiUrl = Constants.expoConfig?.extra?.productionApiUrl;
     if (productionApiUrl && typeof productionApiUrl === 'string' && productionApiUrl.trim() !== '') {
       return productionApiUrl;
@@ -57,10 +69,13 @@ function getApiBaseUrl(): string {
 
 const API_BASE_URL = getApiBaseUrl();
 
-// Log API URL in development for debugging
+// Log API URL for debugging
 if (__DEV__) {
   console.log('🌐 API Base URL:', API_BASE_URL);
   console.log('📱 Platform:', Platform.OS);
+} else {
+  const appEnv = Constants.expoConfig?.extra?.appEnv || 'production';
+  console.log(`🌐 API Base URL (${appEnv}):`, API_BASE_URL);
 }
 
 const api = axios.create({

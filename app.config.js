@@ -9,7 +9,9 @@
 // Note: In production builds, these should be set in your CI/CD pipeline
 const API_URL = process.env.API_URL;
 const PRODUCTION_API_URL = process.env.PRODUCTION_API_URL;
+const BETA_API_URL = process.env.BETA_API_URL;
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL;
+const APP_ENV = process.env.APP_ENV || 'production'; // 'production', 'beta', or 'development'
 
 module.exports = {
   expo: {
@@ -121,22 +123,32 @@ module.exports = {
      * Environment variables:
      * - API_URL: Override API URL for any environment (highest priority)
      * - PRODUCTION_API_URL: API URL for production builds
+     * - BETA_API_URL: API URL for beta builds
+     * - APP_ENV: Environment type ('production', 'beta', 'development')
      *
      * For development with physical devices:
      *   API_URL=http://192.168.1.100:3000/api npx expo start
      *
+     * For beta builds:
+     *   APP_ENV=beta BETA_API_URL=https://beta-api.yourapp.com/api eas build --profile beta
+     *
      * For production:
-     *   PRODUCTION_API_URL=https://api.yourapp.com/api eas build
+     *   PRODUCTION_API_URL=https://api.yourapp.com/api eas build --profile production
      */
     extra: {
+      // Current environment: 'production', 'beta', or 'development'
+      appEnv: APP_ENV,
       // Custom API URL override (works in dev and prod)
       // For physical device development, set this to your computer's IP
-      // Set to undefined to use productionApiUrl in production builds
+      // Set to undefined to use environment-specific URLs
       apiUrl: API_URL || undefined,
-      // Production API URL (used in production builds when apiUrl is not set)
+      // Production API URL (used when APP_ENV=production)
       productionApiUrl: PRODUCTION_API_URL || 'https://z8cg8kkg4o0wg8044c8g0s0o.195.201.228.58.sslip.io/api',
+      // Beta API URL (used when APP_ENV=beta)
+      // Set this in EAS secrets or eas.json for beta builds
+      betaApiUrl: BETA_API_URL || undefined,
       // ML Service URL (for food analysis)
-      // In production, ML service is accessed through the backend proxy
+      // In production/beta, ML service is accessed through the backend proxy
       // For local dev, set ML_SERVICE_URL to your computer's IP:8000
       mlServiceUrl: ML_SERVICE_URL || 'https://z8cg8kkg4o0wg8044c8g0s0o.195.201.228.58.sslip.io',
       // EAS configuration
