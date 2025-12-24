@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Animated, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -43,7 +43,11 @@ export default function OnboardingComplete() {
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient colors={gradients.dark} style={styles.gradient}>
-        <View style={styles.content}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Celebration Icon */}
           <Animated.View
             style={[
@@ -125,26 +129,23 @@ export default function OnboardingComplete() {
               <Text style={styles.nextStepText}>Get AI-powered nutrition insights</Text>
             </View>
           </Animated.View>
+        </ScrollView>
 
-          {/* Spacer */}
-          <View style={styles.spacer} />
-
-          {/* Action Button */}
-          <Animated.View style={[styles.footer, { opacity: fadeAnim }]}>
-            <TouchableOpacity
-              style={styles.startButton}
-              onPress={handleComplete}
-              disabled={isLoading}
-            >
-              <LinearGradient colors={gradients.primary} style={styles.startButtonGradient}>
-                <Text style={styles.startButtonText}>
-                  {isLoading ? 'Getting Ready...' : 'Start Tracking'}
-                </Text>
-                <Ionicons name="arrow-forward" size={20} color={colors.text.primary} />
-              </LinearGradient>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
+        {/* Sticky Footer with Action Button */}
+        <Animated.View style={[styles.footer, { opacity: fadeAnim }]}>
+          <TouchableOpacity
+            style={styles.startButton}
+            onPress={handleComplete}
+            disabled={isLoading}
+          >
+            <LinearGradient colors={gradients.primary} style={styles.startButtonGradient}>
+              <Text style={styles.startButtonText}>
+                {isLoading ? 'Getting Ready...' : 'Start Tracking'}
+              </Text>
+              <Ionicons name="arrow-forward" size={20} color={colors.text.primary} />
+            </LinearGradient>
+          </TouchableOpacity>
+        </Animated.View>
       </LinearGradient>
     </SafeAreaView>
   );
@@ -158,10 +159,13 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl * 2,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.md,
     alignItems: 'center',
   },
   iconContainer: {
@@ -258,11 +262,10 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     flex: 1,
   },
-  spacer: {
-    flex: 1,
-  },
   footer: {
     width: '100%',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
     paddingBottom: spacing.xl,
   },
   startButton: {
