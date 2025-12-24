@@ -78,7 +78,7 @@ export default function OnboardingLifestyle() {
 
     try {
       await saveStep(5, data);
-      router.push('/onboarding/complete');
+      router.push('/onboarding/sync');
     } catch (error) {
       Alert.alert('Error', getErrorMessage(error, 'Failed to save lifestyle data'));
     }
@@ -87,7 +87,7 @@ export default function OnboardingLifestyle() {
   const handleSkip = async () => {
     try {
       await skipStep(5);
-      router.push('/onboarding/complete');
+      router.push('/onboarding/sync');
     } catch (error) {
       Alert.alert('Error', getErrorMessage(error, 'Failed to skip step'));
     }

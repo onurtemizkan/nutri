@@ -82,6 +82,15 @@ export const ONBOARDING_STEPS: OnboardingStepConfig[] = [
   },
   {
     id: 6,
+    key: 'sync',
+    title: 'Syncing Health Data',
+    description: 'Importing your health data from Apple Health',
+    required: false,
+    skippable: true,
+    icon: 'sync-outline',
+  },
+  {
+    id: 7,
     key: 'completion',
     title: "You're All Set!",
     description: "Let's start your nutrition journey",
