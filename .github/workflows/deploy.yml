@@ -242,11 +242,11 @@ jobs:
           for i in {1..5}; do
             echo "Health check attempt $i/5..."
 
-            # Use separate variable to avoid concatenation issues
+            # Use /health/live for fast liveness check (doesn't check dependencies)
             http_code=$(curl -s -o /dev/null -w "%{http_code}" \
               --connect-timeout 10 \
               --max-time 15 \
-              "${{ secrets.PRODUCTION_API_URL }}/health" 2>/dev/null) || http_code="000"
+              "${{ secrets.PRODUCTION_API_URL }}/health/live" 2>/dev/null) || http_code="000"
 
             echo "HTTP Status: $http_code"
 
