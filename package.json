@@ -9,11 +9,9 @@
     "ios:device": "npx expo run:ios --device",
     "web": "expo start --web",
     "reset-project": "node ./scripts/reset-project.js",
-
     "test": "jest",
     "lint": "expo lint",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
-
     "docker:dev": "./scripts/docker-dev.sh",
     "docker:dev:start": "./scripts/docker-dev.sh start",
     "docker:dev:stop": "./scripts/docker-dev.sh stop",
@@ -23,14 +21,12 @@
     "docker:dev:status": "./scripts/docker-dev.sh status",
     "docker:dev:shell:backend": "docker exec -it nutri-dev-backend sh",
     "docker:dev:shell:ml": "docker exec -it nutri-dev-ml-service bash",
-
     "dev:services": "./scripts/start-dev.sh",
     "dev:services:stop": "./scripts/stop-dev.sh",
     "dev:start": "./scripts/start-all.sh",
     "dev:stop": "./scripts/stop-all.sh",
     "dev:full": "./scripts/start-full.sh",
     "dev:backend": "./scripts/start-backend.sh",
-
     "test:e2e": "./e2e/scripts/run-e2e-tests.sh",
     "test:e2e:seed": "./e2e/scripts/run-e2e-tests.sh --seed",
     "test:e2e:parallel": "./e2e/scripts/run-e2e-tests.sh --parallel",
@@ -44,11 +40,9 @@
     "test:e2e:health": "./e2e/scripts/run-e2e-tests.sh health",
     "test:e2e:profile": "./e2e/scripts/run-e2e-tests.sh profile",
     "test:e2e:supplements": "./e2e/scripts/run-e2e-tests.sh supplements",
-
     "deploy:device": "./scripts/deploy-device.sh",
     "deploy:device:local": "./scripts/deploy-device.sh --local",
     "deploy:device:clean": "./scripts/deploy-device.sh --local --clean",
-
     "build:ios": "eas build --profile development --platform ios",
     "build:ios:local": "eas build --profile development-local --platform ios --local",
     "build:ios:simulator": "eas build --profile simulator --platform ios --local",
@@ -75,6 +69,7 @@
     "expo-constants": "~18.0.12",
     "expo-crypto": "~15.0.8",
     "expo-dev-client": "~6.0.20",
+    "expo-device": "~8.0.10",
     "expo-file-system": "~19.0.21",
     "expo-font": "~14.0.10",
     "expo-gl": "~16.0.9",
@@ -83,6 +78,7 @@
     "expo-image-picker": "~17.0.10",
     "expo-linear-gradient": "~15.0.8",
     "expo-linking": "~8.0.10",
+    "expo-notifications": "~0.32.15",
     "expo-router": "~6.0.19",
     "expo-screen-orientation": "~9.0.8",
     "expo-secure-store": "~15.0.8",

@@ -12,8 +12,15 @@ import foodAnalysisRoutes from './routes/foodAnalysisRoutes';
 import supplementRoutes from './routes/supplementRoutes';
 import foodRoutes from './routes/foodRoutes';
 import foodFeedbackRoutes from './routes/foodFeedbackRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 import adminRoutes from './routes/admin';
 import prisma from './config/database';
+import { notificationScheduler } from './services/notificationScheduler';
+
+// Bull Board imports for queue monitoring
+import { createBullBoard } from '@bull-board/api';
+import { BullAdapter } from '@bull-board/api/bullAdapter';
+import { ExpressAdapter } from '@bull-board/express';
 
 // Import version from package.json
 const packageJson = require('../package.json');
@@ -28,6 +35,55 @@ app.use(express.urlencoded({ extended: true }));
 // Request logging (adds correlation ID to req.id)
 app.use(requestLogger);
 app.use(correlationIdHeader);
+
+// =============================================================================
+// Bull Board for Queue Monitoring
+// =============================================================================
+
+// Setup Bull Board for notification queue monitoring
+const serverAdapter = new ExpressAdapter();
+serverAdapter.setBasePath('/admin/queues');
+
+createBullBoard({
+  queues: [new BullAdapter(notificationScheduler.getQueue())],
+  serverAdapter,
+});
+
+// Mount Bull Board with basic auth protection
+// In production, use proper admin authentication
+app.use(
+  '/admin/queues',
+  (req, res, next) => {
+    // Simple basic auth for queue dashboard
+    // Use proper admin session auth in production
+    const auth = req.headers.authorization;
+
+    if (config.nodeEnv !== 'development') {
+      // In non-dev environments, require authentication
+      if (!auth || !auth.startsWith('Basic ')) {
+        res.setHeader('WWW-Authenticate', 'Basic realm="Queue Dashboard"');
+        res.status(401).send('Authentication required');
+        return;
+      }
+
+      const credentials = Buffer.from(auth.slice(6), 'base64').toString();
+      const [username, password] = credentials.split(':');
+
+      // Use environment variables for credentials
+      const adminUser = process.env.BULL_BOARD_USERNAME || 'admin';
+      const adminPass = process.env.BULL_BOARD_PASSWORD || 'admin';
+
+      if (username !== adminUser || password !== adminPass) {
+        res.setHeader('WWW-Authenticate', 'Basic realm="Queue Dashboard"');
+        res.status(401).send('Invalid credentials');
+        return;
+      }
+    }
+
+    next();
+  },
+  serverAdapter.getRouter()
+);
 
 // =============================================================================
 // Health Check Endpoints
@@ -117,6 +173,38 @@ app.get('/health', async (_req, res) => {
     }
   }
 
+  // Notification Queue check
+  if (notificationScheduler.isReady()) {
+    const queueStart = Date.now();
+    try {
+      const queue = notificationScheduler.getQueue();
+      const [waiting, active, completed, failed] = await Promise.all([
+        queue.getWaitingCount(),
+        queue.getActiveCount(),
+        queue.getCompletedCount(),
+        queue.getFailedCount(),
+      ]);
+
+      checks.notification_queue = {
+        status: 'healthy',
+        latency_ms: Date.now() - queueStart,
+        waiting,
+        active,
+        completed,
+        failed,
+      } as HealthCheck & { waiting: number; active: number; completed: number; failed: number };
+    } catch (error) {
+      checks.notification_queue = {
+        status: 'degraded',
+        latency_ms: Date.now() - queueStart,
+        error: error instanceof Error ? error.message : 'Queue unavailable',
+      };
+      if (overallStatus === 'healthy') {
+        overallStatus = 'degraded';
+      }
+    }
+  }
+
   const statusCode = overallStatus === 'unhealthy' ? 503 : 200;
   res.status(statusCode).json({
     status: overallStatus,
@@ -135,6 +223,7 @@ app.use('/api/food', foodAnalysisRoutes);
 app.use('/api/foods', foodRoutes);
 app.use('/api/foods/feedback', foodFeedbackRoutes);
 app.use('/api/supplements', supplementRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Error handler (must be last)
@@ -145,13 +234,22 @@ app.use(errorHandler);
 if (process.env.NODE_ENV !== 'test') {
   const PORT = config.port;
 
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
     logger.info({
       port: PORT,
       env: config.nodeEnv,
       version: packageJson.version,
       healthCheck: `http://localhost:${PORT}/health`,
+      queueDashboard: `http://localhost:${PORT}/admin/queues`,
     }, 'Server started');
+
+    // Initialize notification scheduler maintenance jobs
+    try {
+      await notificationScheduler.scheduleMaintenanceJobs();
+      logger.info('Notification scheduler maintenance jobs initialized');
+    } catch (error) {
+      logger.error({ error }, 'Failed to initialize notification scheduler maintenance jobs');
+    }
   });
 }
 

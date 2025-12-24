@@ -536,3 +536,114 @@ export const foodFeedbackSchema = z.object({
   wasCorrect: z.boolean(),
   imageHash: z.string().optional(),
 });
+
+// ============================================================================
+// PUSH NOTIFICATION SCHEMAS
+// ============================================================================
+
+/**
+ * Device Platform enum
+ */
+export const devicePlatformSchema = z.enum(['IOS', 'ANDROID']);
+
+/**
+ * Notification Category enum
+ */
+export const notificationCategorySchema = z.enum([
+  'MEAL_REMINDER',
+  'GOAL_PROGRESS',
+  'HEALTH_INSIGHT',
+  'SUPPLEMENT_REMINDER',
+  'STREAK_ALERT',
+  'WEEKLY_SUMMARY',
+  'MARKETING',
+  'SYSTEM',
+]);
+
+/**
+ * Notification Status enum
+ */
+export const notificationStatusSchema = z.enum([
+  'PENDING',
+  'SENT',
+  'DELIVERED',
+  'OPENED',
+  'FAILED',
+]);
+
+/**
+ * Time format schema (HH:mm)
+ */
+const timeFormatSchema = z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:mm format');
+
+/**
+ * Register Device Schema
+ */
+export const registerDeviceSchema = z.object({
+  token: nonEmptyStringSchema.min(10, 'Device token is required'),
+  platform: devicePlatformSchema,
+  expoPushToken: z.string().optional(),
+  deviceModel: z.string().optional(),
+  osVersion: z.string().optional(),
+  appVersion: z.string().optional(),
+});
+
+/**
+ * Unregister Device Schema
+ */
+export const unregisterDeviceSchema = z.object({
+  token: nonEmptyStringSchema.min(10, 'Device token is required'),
+});
+
+/**
+ * Meal Reminder Times Schema
+ */
+const mealReminderTimesSchema = z.object({
+  breakfast: timeFormatSchema.optional().nullable(),
+  lunch: timeFormatSchema.optional().nullable(),
+  dinner: timeFormatSchema.optional().nullable(),
+  snack: timeFormatSchema.optional().nullable(),
+});
+
+/**
+ * Update Notification Preferences Schema
+ */
+export const updateNotificationPreferencesSchema = z.object({
+  enabled: z.boolean().optional(),
+  enabledCategories: z.array(notificationCategorySchema).optional(),
+  quietHoursEnabled: z.boolean().optional(),
+  quietHoursStart: timeFormatSchema.optional().nullable(),
+  quietHoursEnd: timeFormatSchema.optional().nullable(),
+  mealReminderTimes: mealReminderTimesSchema.optional(),
+  settings: z.record(z.unknown()).optional(),
+});
+
+/**
+ * Get Notification History Query Schema
+ */
+export const getNotificationHistoryQuerySchema = z.object({
+  category: notificationCategorySchema.optional(),
+  status: notificationStatusSchema.optional(),
+  startDate: datetimeSchema.optional(),
+  endDate: datetimeSchema.optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+/**
+ * Track Notification Schema
+ */
+export const trackNotificationSchema = z.object({
+  notificationLogId: nonEmptyStringSchema,
+  action: z.enum(['delivered', 'opened']),
+  actionTaken: z.string().optional(),
+});
+
+/**
+ * Test Notification Schema (dev only)
+ */
+export const testNotificationSchema = z.object({
+  title: z.string().optional().default('Test Notification'),
+  body: z.string().optional().default('This is a test push notification'),
+  category: notificationCategorySchema.optional().default('SYSTEM'),
+});

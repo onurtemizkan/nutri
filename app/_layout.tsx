@@ -12,6 +12,7 @@ import { PortalProvider, PortalHost } from '@gorhom/portal';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/lib/context/AuthContext';
+import { NotificationProvider } from '@/lib/context/NotificationContext';
 import { AlertProvider } from '@/lib/components/CustomAlert';
 import { healthKitService } from '@/lib/services/healthkit';
 
@@ -103,6 +104,13 @@ function RootLayoutNav() {
       />
       <Stack.Screen
         name="health-settings"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right'
+        }}
+      />
+      <Stack.Screen
+        name="notification-settings"
         options={{
           headerShown: false,
           animation: 'slide_from_right'
@@ -269,10 +277,12 @@ export default function RootLayout() {
       <PortalProvider>
         <AlertProvider>
           <AuthProvider>
-            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-              <RootLayoutNav />
-              <StatusBar style="light" />
-            </ThemeProvider>
+            <NotificationProvider>
+              <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                <RootLayoutNav />
+                <StatusBar style="light" />
+              </ThemeProvider>
+            </NotificationProvider>
           </AuthProvider>
         </AlertProvider>
         <PortalHost name="alert-portal" />

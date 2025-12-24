@@ -32,6 +32,20 @@ import {
   getWebhook,
   retryWebhook,
 } from '../controllers/adminWebhookController';
+import {
+  listCampaigns,
+  getCampaign,
+  createCampaign,
+  updateCampaign,
+  deleteCampaign,
+  cancelCampaign,
+  sendCampaign,
+  getNotificationAnalytics,
+  getDeviceStats,
+  getUserNotifications,
+  sendTestNotification,
+  getNotificationTemplates,
+} from '../controllers/adminNotificationController';
 import { requireAnyAdmin, requireSuperAdmin } from '../middleware/adminAuth';
 import { auditLog, AuditActions } from '../middleware/adminAudit';
 import { rateLimiters } from '../middleware/rateLimiter';
@@ -325,5 +339,149 @@ router.get(
 // ============================================================================
 
 // GET /api/admin/audit-logs - List audit logs with filters
+
+// ============================================================================
+// NOTIFICATION CAMPAIGN ROUTES
+// ============================================================================
+
+/**
+ * GET /api/admin/notifications/campaigns
+ * List all notification campaigns
+ */
+router.get(
+  '/notifications/campaigns',
+  rateLimiters.adminApi,
+  requireAnyAdmin,
+  listCampaigns
+);
+
+/**
+ * POST /api/admin/notifications/campaigns
+ * Create a new notification campaign
+ */
+router.post(
+  '/notifications/campaigns',
+  rateLimiters.adminApi,
+  requireAnyAdmin,
+  createCampaign
+);
+
+/**
+ * GET /api/admin/notifications/campaigns/:id
+ * Get a specific campaign with detailed stats
+ */
+router.get(
+  '/notifications/campaigns/:id',
+  rateLimiters.adminApi,
+  requireAnyAdmin,
+  getCampaign
+);
+
+/**
+ * PUT /api/admin/notifications/campaigns/:id
+ * Update a campaign
+ */
+router.put(
+  '/notifications/campaigns/:id',
+  rateLimiters.adminApi,
+  requireAnyAdmin,
+  updateCampaign
+);
+
+/**
+ * DELETE /api/admin/notifications/campaigns/:id
+ * Delete a draft campaign
+ */
+router.delete(
+  '/notifications/campaigns/:id',
+  rateLimiters.adminApi,
+  requireSuperAdmin,
+  deleteCampaign
+);
+
+/**
+ * POST /api/admin/notifications/campaigns/:id/cancel
+ * Cancel a scheduled campaign
+ */
+router.post(
+  '/notifications/campaigns/:id/cancel',
+  rateLimiters.adminApi,
+  requireAnyAdmin,
+  cancelCampaign
+);
+
+/**
+ * POST /api/admin/notifications/campaigns/:id/send
+ * Send a campaign immediately
+ */
+router.post(
+  '/notifications/campaigns/:id/send',
+  rateLimiters.adminApi,
+  requireSuperAdmin,
+  sendCampaign
+);
+
+// ============================================================================
+// NOTIFICATION ANALYTICS ROUTES
+// ============================================================================
+
+/**
+ * GET /api/admin/notifications/analytics
+ * Get notification delivery analytics
+ */
+router.get(
+  '/notifications/analytics',
+  rateLimiters.adminApi,
+  requireAnyAdmin,
+  getNotificationAnalytics
+);
+
+/**
+ * GET /api/admin/notifications/devices
+ * Get device registration statistics
+ */
+router.get(
+  '/notifications/devices',
+  rateLimiters.adminApi,
+  requireAnyAdmin,
+  getDeviceStats
+);
+
+// ============================================================================
+// USER NOTIFICATION MANAGEMENT ROUTES
+// ============================================================================
+
+/**
+ * GET /api/admin/notifications/users/:userId
+ * Get a user's notification preferences and history
+ */
+router.get(
+  '/notifications/users/:userId',
+  rateLimiters.adminApi,
+  requireAnyAdmin,
+  getUserNotifications
+);
+
+/**
+ * POST /api/admin/notifications/users/:userId/test
+ * Send a test notification to a specific user
+ */
+router.post(
+  '/notifications/users/:userId/test',
+  rateLimiters.adminApi,
+  requireSuperAdmin,
+  sendTestNotification
+);
+
+/**
+ * GET /api/admin/notifications/templates
+ * Get available notification templates
+ */
+router.get(
+  '/notifications/templates',
+  rateLimiters.adminApi,
+  requireAnyAdmin,
+  getNotificationTemplates
+);
 
 export default router;

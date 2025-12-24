@@ -59,6 +59,14 @@ model User {
   supplements     Supplement[]
   supplementLogs  SupplementLog[]
 
+  // Notifications
+  deviceTokens            DeviceToken[]
+  notificationPreference  NotificationPreference?
+  notificationLogs        NotificationLog[]
+
+  // Timezone for notification scheduling
+  timezone        String?   // IANA timezone (e.g., "America/New_York", "Europe/London")
+
   @@index([email])
   @@index([appleId])
   @@index([resetToken])
@@ -771,4 +779,239 @@ model FeatureFlag {
 
   @@index([key])
   @@index([isEnabled])
+}
+
+// ============================================================================
+// PUSH NOTIFICATIONS MODELS
+// ============================================================================
+
+// DeviceToken - Stores push notification device tokens
+model DeviceToken {
+  id            String          @id @default(cuid())
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Token details
+  token         String          // APNs/FCM token
+  platform      DevicePlatform
+
+  // Expo push token (if using Expo)
+  expoPushToken String?
+
+  // Status
+  isActive      Boolean         @default(true)
+  lastActiveAt  DateTime        @default(now())
+
+  // Device info (optional, for analytics)
+  deviceModel   String?         // e.g., "iPhone 15 Pro", "Pixel 8"
+  osVersion     String?         // e.g., "iOS 17.2", "Android 14"
+  appVersion    String?         // e.g., "1.2.3"
+
+  // Audit
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([userId, token, platform])
+  @@index([userId, isActive])
+  @@index([token])
+  @@index([userId, platform])
+}
+
+// NotificationPreference - User notification settings
+model NotificationPreference {
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Master toggle
+  enabled             Boolean   @default(true)
+
+  // Category toggles (stored as array of enabled categories)
+  enabledCategories   NotificationCategory[]
+
+  // Quiet hours (24h format, stored as HH:mm strings)
+  quietHoursEnabled   Boolean   @default(false)
+  quietHoursStart     String?   // e.g., "22:00"
+  quietHoursEnd       String?   // e.g., "08:00"
+
+  // Meal reminder times (JSON for flexibility)
+  // { breakfast: "08:00", lunch: "12:30", dinner: "18:30", snack: null }
+  mealReminderTimes   Json?
+
+  // Additional settings (JSON for future extensibility)
+  // { frequency: "normal", sound: "default", vibration: true }
+  settings            Json?
+
+  // Audit
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+// NotificationLog - Record of sent notifications
+model NotificationLog {
+  id                String              @id @default(cuid())
+  userId            String
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Notification content
+  category          NotificationCategory
+  title             String
+  body              String
+  data              Json?               // Custom payload data
+
+  // Delivery details
+  platform          DevicePlatform
+  deviceToken       String?             // Token used for sending
+  expoPushToken     String?             // Expo token if used
+
+  // iOS-specific
+  interruptionLevel String?             // passive, active, timeSensitive, critical
+  threadId          String?             // For notification grouping
+  relevanceScore    Float?              // 0.0 to 1.0
+
+  // Campaign reference (if sent via campaign)
+  campaignId        String?
+  campaign          NotificationCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  // Status tracking
+  sentAt            DateTime            @default(now())
+  deliveredAt       DateTime?
+  openedAt          DateTime?
+  actionTaken       String?             // Which action button was tapped
+
+  // Error tracking
+  error             String?             // Error message if send failed
+  status            NotificationStatus  @default(SENT)
+
+  // Audit
+  createdAt         DateTime            @default(now())
+
+  @@index([userId, sentAt])
+  @@index([category])
+  @@index([campaignId])
+  @@index([status])
+  @@index([userId, category, sentAt])
+}
+
+// NotificationCampaign - Bulk notification campaigns
+model NotificationCampaign {
+  id                String            @id @default(cuid())
+
+  // Campaign details
+  title             String            // Internal name for admin
+  description       String?           // Internal description
+
+  // Notification content
+  notificationTitle String            // Displayed to users
+  notificationBody  String            // Displayed to users
+  category          NotificationCategory
+  data              Json?             // Custom payload data
+
+  // Targeting
+  targetSegment     Json              // Segmentation rules (JSON)
+  // { activityLevel: "active", goals: ["weight_loss"], subscriptionTier: "PRO" }
+  estimatedRecipients Int?            // Calculated recipient count
+
+  // A/B Testing (optional)
+  isAbTest          Boolean           @default(false)
+  variants          Json?             // { A: { title, body }, B: { title, body } }
+  winningVariant    String?           // "A" or "B" after test completes
+
+  // Scheduling
+  scheduledAt       DateTime?         // When to send (null = immediately)
+  sentAt            DateTime?         // When actually sent
+
+  // Status
+  status            CampaignStatus    @default(DRAFT)
+
+  // Analytics
+  deliveryCount     Int               @default(0)
+  openCount         Int               @default(0)
+  actionCount       Int               @default(0) // Action button taps
+  failureCount      Int               @default(0)
+
+  // Relations
+  notificationLogs  NotificationLog[]
+
+  // Audit (created by admin)
+  createdByAdminId  String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([category])
+  @@index([createdByAdminId])
+}
+
+// NotificationTemplate - Reusable notification templates
+model NotificationTemplate {
+  id            String              @id @default(cuid())
+
+  // Template details
+  name          String              // Internal name
+  description   String?             // Description of when to use
+
+  // Content
+  category      NotificationCategory
+  title         String              // Supports variables: {{userName}}, {{goalProgress}}, etc.
+  body          String              // Supports variables
+  data          Json?               // Default custom payload
+
+  // Variable definitions
+  // ["userName", "goalProgress", "streakDays"]
+  variables     String[]
+
+  // Usage tracking
+  usageCount    Int                 @default(0)
+
+  // Locale support (for future i18n)
+  locale        String              @default("en")
+
+  // Audit
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@unique([name, locale])
+  @@index([category])
+  @@index([locale])
+}
+
+// ============================================================================
+// NOTIFICATION ENUMS
+// ============================================================================
+
+enum DevicePlatform {
+  IOS
+  ANDROID
+}
+
+enum NotificationCategory {
+  MEAL_REMINDER
+  GOAL_PROGRESS
+  HEALTH_INSIGHT
+  SUPPLEMENT_REMINDER
+  STREAK_ALERT
+  WEEKLY_SUMMARY
+  MARKETING           // Requires separate consent
+  SYSTEM              // Account alerts, security, etc.
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  OPENED
+  FAILED
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  COMPLETED
+  CANCELLED
+  FAILED
 }

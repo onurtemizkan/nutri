@@ -279,3 +279,91 @@ export interface GetActivitiesQuery {
   source?: ActivitySource;
   limit?: number;
 }
+
+// ============================================================================
+// PUSH NOTIFICATION TYPES
+// ============================================================================
+
+export type DevicePlatform = 'IOS' | 'ANDROID';
+
+export type NotificationCategory =
+  | 'MEAL_REMINDER'
+  | 'GOAL_PROGRESS'
+  | 'HEALTH_INSIGHT'
+  | 'SUPPLEMENT_REMINDER'
+  | 'STREAK_ALERT'
+  | 'WEEKLY_SUMMARY'
+  | 'MARKETING'
+  | 'SYSTEM';
+
+export type NotificationStatus = 'PENDING' | 'SENT' | 'DELIVERED' | 'OPENED' | 'FAILED';
+
+export type CampaignStatus = 'DRAFT' | 'SCHEDULED' | 'SENDING' | 'COMPLETED' | 'CANCELLED' | 'FAILED';
+
+// iOS interruption levels (iOS 15+)
+export type InterruptionLevel = 'passive' | 'active' | 'timeSensitive' | 'critical';
+
+export interface RegisterDeviceInput {
+  token: string;
+  platform: DevicePlatform;
+  expoPushToken?: string;
+  deviceModel?: string;
+  osVersion?: string;
+  appVersion?: string;
+}
+
+export interface NotificationPreferencesInput {
+  enabled?: boolean;
+  enabledCategories?: NotificationCategory[];
+  quietHoursEnabled?: boolean;
+  quietHoursStart?: string; // HH:mm format
+  quietHoursEnd?: string; // HH:mm format
+  mealReminderTimes?: {
+    breakfast?: string;
+    lunch?: string;
+    dinner?: string;
+    snack?: string;
+  };
+  settings?: Record<string, unknown>;
+}
+
+export interface NotificationPayload {
+  title: string;
+  body: string;
+  category: NotificationCategory;
+  data?: Record<string, unknown>;
+  // iOS-specific
+  interruptionLevel?: InterruptionLevel;
+  relevanceScore?: number; // 0.0 to 1.0
+  threadId?: string;
+  badge?: number;
+  sound?: string;
+}
+
+export interface SendNotificationOptions {
+  skipQuietHours?: boolean;
+  campaignId?: string;
+}
+
+export interface NotificationResult {
+  success: boolean;
+  deviceToken?: string;
+  expoPushToken?: string;
+  error?: string;
+  platform: DevicePlatform;
+}
+
+export interface GetNotificationHistoryQuery {
+  category?: NotificationCategory;
+  status?: NotificationStatus;
+  startDate?: Date;
+  endDate?: Date;
+  limit?: number;
+  page?: number;
+}
+
+export interface TrackNotificationInput {
+  notificationLogId: string;
+  action: 'delivered' | 'opened';
+  actionTaken?: string;
+}
