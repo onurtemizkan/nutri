@@ -112,9 +112,9 @@ USER mlservice
 # Expose port
 EXPOSE 8000
 
-# Health check disabled for deployment - Coolify has its own health monitoring
-# HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=5 \
-#     CMD curl -f http://localhost:8000/health/live || exit 1
+# Health check for Coolify deployment
+HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=5 \
+    CMD curl -f http://localhost:8000/health/live || exit 1
 
 # -----------------------------------------------------------------------------
 # Run Configuration
