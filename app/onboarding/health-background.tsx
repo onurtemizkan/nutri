@@ -38,7 +38,8 @@ export default function OnboardingHealthBackground() {
       setAllergies(draft.allergies || []);
       setAllergyNotes(draft.allergyNotes || '');
     }
-  }, [getDraftForStep]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Save draft when form changes
   useEffect(() => {

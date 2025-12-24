@@ -47,7 +47,8 @@ export default function OnboardingLifestyle() {
       setStressLevel(draft.stressLevel || 5);
       setWorkSchedule(draft.workSchedule || 'regular');
     }
-  }, [getDraftForStep]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Save draft when form changes
   useEffect(() => {

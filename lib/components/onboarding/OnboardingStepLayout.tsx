@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   backButton: {
-    width: 40,
+    flex: 1,
     height: 40,
     alignItems: 'flex-start',
     justifyContent: 'center',
@@ -172,9 +172,10 @@ const styles = StyleSheet.create({
   stepIndicator: {
     ...typography.body,
     color: colors.text.secondary,
+    textAlign: 'center',
   },
   skipButton: {
-    width: 100,
+    flex: 1,
     alignItems: 'flex-end',
     justifyContent: 'center',
   },

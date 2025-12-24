@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { OnboardingStepLayout } from '@/lib/components/onboarding';
@@ -27,7 +27,7 @@ export default function OnboardingGoals() {
   const [customCarbs, setCustomCarbs] = useState('');
   const [customFat, setCustomFat] = useState('');
 
-  // Load draft data on mount
+  // Load draft data on mount only
   useEffect(() => {
     const draft = getDraftForStep<OnboardingStep2Data>(2);
     if (draft) {
@@ -42,7 +42,8 @@ export default function OnboardingGoals() {
         setCustomFat(draft.customMacros.goalFat?.toString() || '');
       }
     }
-  }, [getDraftForStep]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Save draft when form changes
   useEffect(() => {
@@ -136,13 +137,14 @@ export default function OnboardingGoals() {
               <Ionicons
                 name={option.icon as keyof typeof Ionicons.glyphMap}
                 size={28}
-                color={primaryGoal === option.value ? colors.primary.main : colors.text.secondary}
+                color={primaryGoal === option.value ? colors.text.primary : colors.text.secondary}
               />
               <Text
                 style={[
                   styles.goalCardText,
                   primaryGoal === option.value && styles.goalCardTextSelected,
                 ]}
+                numberOfLines={2}
               >
                 {option.label}
               </Text>
@@ -196,7 +198,10 @@ export default function OnboardingGoals() {
       {/* Custom Macros Toggle */}
       <TouchableOpacity
         style={styles.customMacrosToggle}
-        onPress={() => setShowCustomMacros(!showCustomMacros)}
+        onPress={() => {
+          Keyboard.dismiss();
+          setShowCustomMacros(!showCustomMacros);
+        }}
       >
         <Text style={styles.customMacrosToggleText}>
           {showCustomMacros ? 'Use auto-calculated macros' : 'Set custom macro targets'}
@@ -295,7 +300,8 @@ const styles = StyleSheet.create({
   goalCard: {
     width: '31%',
     backgroundColor: colors.surface.card,
-    padding: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
     borderRadius: borderRadius.md,
     alignItems: 'center',
     borderWidth: 1,

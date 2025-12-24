@@ -33,7 +33,8 @@ export default function OnboardingPermissions() {
       setHealthKitEnabled(draft.healthKitEnabled ?? false);
       setHealthKitScopes(draft.healthKitScopes || []);
     }
-  }, [getDraftForStep]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Save draft when form changes
   useEffect(() => {
