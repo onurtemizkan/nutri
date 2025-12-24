@@ -1,0 +1,93 @@
+appId: com.nutri.app
+name: Onboarding - Form Validation
+tags:
+  - onboarding
+  - e2e
+  - validation
+---
+
+# Test: Verify form validation works correctly
+# Prerequisites: User must be logged in and not have completed onboarding
+
+- launchApp:
+    clearState: true
+
+# Start onboarding
+- assertVisible: "Welcome to Nutri"
+- tapOn: "Get Started"
+
+# Step 1: Profile Basics - Test validation
+- assertVisible: "Profile Basics"
+
+# Try to continue without filling required fields
+- tapOn: "Continue"
+# Should show validation error
+- assertVisible: "Please fill in all required fields"
+
+# Fill name only and try to continue
+- tapOn: "Your name"
+- inputText: "Validation Test"
+- hideKeyboard
+- tapOn: "Continue"
+- assertVisible: "Please fill in all required fields"
+
+# Fill invalid height (too short)
+- tapOn: "Date of Birth"
+- inputText: "01/01/2000"
+- hideKeyboard
+
+- tapOn: "Biological Sex"
+- tapOn: "Male"
+
+- tapOn: "Height"
+- inputText: "10"
+- hideKeyboard
+
+- tapOn: "Current Weight"
+- inputText: "75"
+- hideKeyboard
+
+- tapOn:
+    id: "activity-level-picker"
+- tapOn: "Moderate"
+
+- tapOn: "Continue"
+- assertVisible: "Height must be between"
+
+# Fix height to valid value
+- clearText:
+    id: "height-input"
+- tapOn: "Height"
+- inputText: "175"
+- hideKeyboard
+
+# Fill invalid weight (too light)
+- clearText:
+    id: "weight-input"
+- tapOn: "Current Weight"
+- inputText: "5"
+- hideKeyboard
+
+- tapOn: "Continue"
+- assertVisible: "Weight must be between"
+
+# Fix weight
+- clearText:
+    id: "weight-input"
+- tapOn: "Current Weight"
+- inputText: "70"
+- hideKeyboard
+
+# Now should proceed to next step
+- tapOn: "Continue"
+- assertVisible: "Health Goals"
+
+# Step 2: Health Goals - Test validation
+# Try to continue without selecting goal
+- tapOn: "Continue"
+- assertVisible: "Please select a primary goal"
+
+# Select goal and continue
+- tapOn: "Weight Loss"
+- tapOn: "Continue"
+- assertVisible: "Permissions"

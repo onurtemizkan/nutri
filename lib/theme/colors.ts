@@ -31,7 +31,22 @@ export const colors = {
     cyan: '#06B6D4', // Cyan accent
   },
 
-  // Status colors
+  // Surface colors (for cards, inputs, etc.)
+  surface: {
+    card: '#1E2330', // Card background
+    elevated: '#252B3A', // Elevated surfaces
+    input: '#1A1F2E', // Input background
+  },
+
+  // Semantic colors (for meaning-based styling)
+  semantic: {
+    success: '#10B981', // Green
+    warning: '#F59E0B', // Amber
+    error: '#EF4444', // Red
+    info: '#3B82F6', // Blue
+  },
+
+  // Status colors (legacy - same as semantic)
   status: {
     success: '#10B981', // Green
     warning: '#F59E0B', // Amber
@@ -178,14 +193,55 @@ export const typography = {
     '5xl': 48,
   },
   fontWeight: {
-    regular: '400',
-    medium: '500',
-    semibold: '600',
-    bold: '700',
+    regular: '400' as const,
+    medium: '500' as const,
+    semibold: '600' as const,
+    bold: '700' as const,
   },
   lineHeight: {
     tight: 1.2,
     normal: 1.5,
     relaxed: 1.75,
+  },
+  // Pre-composed typography styles
+  h1: {
+    fontSize: 30,
+    fontWeight: '700' as const,
+    lineHeight: 36,
+  },
+  h2: {
+    fontSize: 24,
+    fontWeight: '700' as const,
+    lineHeight: 32,
+  },
+  h3: {
+    fontSize: 20,
+    fontWeight: '600' as const,
+    lineHeight: 28,
+  },
+  body: {
+    fontSize: 16,
+    fontWeight: '400' as const,
+    lineHeight: 24,
+  },
+  bodyBold: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    lineHeight: 24,
+  },
+  bodySmall: {
+    fontSize: 14,
+    fontWeight: '400' as const,
+    lineHeight: 20,
+  },
+  button: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    lineHeight: 24,
+  },
+  caption: {
+    fontSize: 12,
+    fontWeight: '400' as const,
+    lineHeight: 16,
   },
 } as const;

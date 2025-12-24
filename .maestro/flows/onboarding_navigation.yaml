@@ -1,0 +1,85 @@
+appId: com.nutri.app
+name: Onboarding - Navigation and Back Button
+tags:
+  - onboarding
+  - e2e
+  - navigation
+---
+
+# Test: Verify back navigation works and preserves form data
+# Prerequisites: User must be logged in and not have completed onboarding
+
+- launchApp:
+    clearState: true
+
+# Start onboarding
+- assertVisible: "Welcome to Nutri"
+- tapOn: "Get Started"
+
+# Fill Step 1: Profile Basics
+- assertVisible: "Profile Basics"
+- tapOn: "Your name"
+- inputText: "Navigation Test"
+- hideKeyboard
+
+- tapOn: "Date of Birth"
+- inputText: "03/10/1992"
+- hideKeyboard
+
+- tapOn: "Biological Sex"
+- tapOn: "Female"
+
+- tapOn: "Height"
+- inputText: "170"
+- hideKeyboard
+
+- tapOn: "Current Weight"
+- inputText: "65"
+- hideKeyboard
+
+- tapOn:
+    id: "activity-level-picker"
+- tapOn: "Active"
+
+- tapOn: "Continue"
+
+# Fill Step 2: Health Goals
+- assertVisible: "Health Goals"
+- tapOn: "Muscle Gain"
+- tapOn: "Continue"
+
+# Now on Step 3: Permissions
+- assertVisible: "Permissions"
+
+# Go back to Step 2
+- tapOn:
+    id: "back-button"
+
+# Verify we're back on Health Goals
+- assertVisible: "Health Goals"
+# Verify selection is preserved
+- assertVisible:
+    id: "muscle-gain-selected"
+
+# Go back to Step 1
+- tapOn:
+    id: "back-button"
+
+# Verify we're back on Profile Basics
+- assertVisible: "Profile Basics"
+
+# Verify data is preserved
+- assertVisible: "Navigation Test"
+- assertVisible: "170"
+- assertVisible: "65"
+
+# Navigate forward again
+- tapOn: "Continue"
+- assertVisible: "Health Goals"
+- tapOn: "Continue"
+- assertVisible: "Permissions"
+- tapOn: "Continue"
+- assertVisible: "Health Background"
+
+# Verify progress indicator shows correct step (4 of 6)
+- assertVisible: "Step 4 of 6"

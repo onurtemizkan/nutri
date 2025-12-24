@@ -1,0 +1,135 @@
+appId: com.nutri.app
+name: Onboarding - Complete Flow
+tags:
+  - onboarding
+  - e2e
+  - happy-path
+---
+
+# Test: Complete onboarding flow from start to finish
+# Prerequisites: User must be logged in and not have completed onboarding
+
+- launchApp:
+    clearState: true
+
+# Wait for app to load and navigate to onboarding welcome screen
+- assertVisible: "Welcome to Nutri"
+- assertVisible: "Get Started"
+
+# Step 1: Welcome screen - tap get started
+- tapOn: "Get Started"
+
+# Step 2: Profile Basics screen
+- assertVisible: "Profile Basics"
+- assertVisible: "Tell us about yourself"
+
+# Fill in profile information
+- tapOn: "Your name"
+- inputText: "Test User"
+- hideKeyboard
+
+- tapOn: "Date of Birth"
+- inputText: "01/15/1990"
+- hideKeyboard
+
+# Select biological sex
+- tapOn: "Biological Sex"
+- tapOn: "Male"
+
+# Input height
+- tapOn: "Height"
+- inputText: "180"
+- hideKeyboard
+
+# Input weight
+- tapOn: "Current Weight"
+- inputText: "75"
+- hideKeyboard
+
+# Select activity level
+- tapOn:
+    id: "activity-level-picker"
+- tapOn: "Moderate"
+
+# Proceed to next step
+- tapOn: "Continue"
+
+# Step 3: Health Goals screen
+- assertVisible: "Health Goals"
+- assertVisible: "What do you want to achieve?"
+
+# Select primary goal
+- tapOn: "Weight Loss"
+
+# Input goal weight (optional)
+- tapOn: "Goal Weight"
+- inputText: "70"
+- hideKeyboard
+
+# Select dietary preferences
+- tapOn: "Vegetarian"
+- tapOn: "Gluten Free"
+
+# Proceed to next step
+- tapOn: "Continue"
+
+# Step 4: Permissions screen
+- assertVisible: "Permissions"
+- assertVisible: "Enable features to get the most out of Nutri"
+
+# Toggle notifications
+- tapOn:
+    id: "notifications-toggle"
+
+# Proceed to next step (permissions can be skipped)
+- tapOn: "Continue"
+
+# Step 5: Health Background screen
+- assertVisible: "Health Background"
+- assertVisible: "Help us personalize your experience"
+
+# Add allergy
+- tapOn: "Add Allergy"
+- inputText: "Peanuts"
+- tapOn: "Add"
+
+# Proceed to next step
+- tapOn: "Continue"
+
+# Step 6: Lifestyle screen
+- assertVisible: "Lifestyle"
+- assertVisible: "Tell us about your daily habits"
+
+# Set caffeine intake
+- tapOn:
+    id: "caffeine-input"
+- inputText: "3"
+- hideKeyboard
+
+# Set sleep schedule
+- tapOn:
+    id: "bedtime-input"
+- inputText: "22:00"
+- hideKeyboard
+
+- tapOn:
+    id: "waketime-input"
+- inputText: "07:00"
+- hideKeyboard
+
+# Proceed to next step
+- tapOn: "Continue"
+
+# Step 7: Completion screen
+- assertVisible: "You're All Set"
+- assertVisible: "Start Tracking"
+
+# Verify setup summary is displayed
+- assertVisible: "Setup Complete"
+
+# Complete onboarding
+- tapOn: "Start Tracking"
+
+# Verify we're on the main app screen (dashboard/home)
+- assertVisible:
+    id: "home-screen"

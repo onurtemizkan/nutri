@@ -4,7 +4,7 @@ import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -15,6 +15,7 @@ import { AuthProvider, useAuth } from '@/lib/context/AuthContext';
 import { NotificationProvider } from '@/lib/context/NotificationContext';
 import { AlertProvider } from '@/lib/components/CustomAlert';
 import { healthKitService } from '@/lib/services/healthkit';
+import { onboardingApi } from '@/lib/onboarding/api';
 
 // Check if running in Expo Go or a dev build without native modules
 // Screen orientation native module is only available in production EAS builds
@@ -39,18 +40,69 @@ function RootLayoutNav() {
   const { isAuthenticated, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+
+  // Check onboarding status when user is authenticated
+  useEffect(() => {
+    async function checkOnboarding() {
+      if (!isAuthenticated) {
+        setOnboardingChecked(false);
+        setNeedsOnboarding(false);
+        return;
+      }
+
+      try {
+        const status = await onboardingApi.getStatus();
+        // User needs onboarding if they haven't completed it yet
+        setNeedsOnboarding(!status?.isComplete);
+      } catch (error) {
+        // If we can't get status, assume onboarding might be needed
+        // 404 means onboarding hasn't started
+        setNeedsOnboarding(true);
+      } finally {
+        setOnboardingChecked(true);
+      }
+    }
+
+    if (isAuthenticated && !isLoading) {
+      checkOnboarding();
+    }
+  }, [isAuthenticated, isLoading]);
 
   useEffect(() => {
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === 'auth';
+    const inOnboardingGroup = segments[0] === 'onboarding';
 
+    // Not authenticated - go to auth
     if (!isAuthenticated && !inAuthGroup) {
       router.replace('/auth/welcome');
-    } else if (isAuthenticated && inAuthGroup) {
-      router.replace('/(tabs)');
+      return;
     }
-  }, [isAuthenticated, segments, isLoading, router]);
+
+    // Authenticated but in auth group - redirect based on onboarding status
+    if (isAuthenticated && inAuthGroup) {
+      if (!onboardingChecked) return; // Wait for onboarding check
+
+      if (needsOnboarding) {
+        router.replace('/onboarding');
+      } else {
+        router.replace('/(tabs)');
+      }
+      return;
+    }
+
+    // Authenticated - check onboarding status
+    if (isAuthenticated && onboardingChecked) {
+      if (needsOnboarding && !inOnboardingGroup) {
+        router.replace('/onboarding');
+      } else if (!needsOnboarding && inOnboardingGroup) {
+        router.replace('/(tabs)');
+      }
+    }
+  }, [isAuthenticated, segments, isLoading, router, onboardingChecked, needsOnboarding]);
 
   return (
     <Stack>
@@ -59,6 +111,7 @@ function RootLayoutNav() {
       <Stack.Screen name="auth/signup" options={{ headerShown: false }} />
       <Stack.Screen name="auth/forgot-password" options={{ headerShown: false }} />
       <Stack.Screen name="auth/reset-password" options={{ headerShown: false }} />
+      <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
         name="add-meal"

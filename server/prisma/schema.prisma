@@ -27,6 +27,8 @@ model User {
 
   // User profile data
   profilePicture  String?  // Base64 data URL for profile picture
+  dateOfBirth     DateTime?
+  biologicalSex   BiologicalSex?
   goalCalories    Int      @default(2000)
   goalProtein     Float    @default(150)
   goalCarbs       Float    @default(200)
@@ -35,6 +37,8 @@ model User {
   goalWeight      Float?
   height          Float?
   activityLevel   String   @default("moderate") // sedentary, light, moderate, active, veryActive
+  primaryGoal     PrimaryGoal?
+  dietaryPreferences Json?  // ["vegetarian", "gluten_free", ...]
 
   // Subscription
   subscriptionTier        SubscriptionTier @default(FREE)
@@ -66,6 +70,12 @@ model User {
 
   // Timezone for notification scheduling
   timezone        String?   // IANA timezone (e.g., "America/New_York", "Europe/London")
+
+  // Onboarding Relations
+  onboarding      UserOnboarding?
+  healthBackground UserHealthBackground?
+  lifestyle       UserLifestyle?
+  permissions     UserPermissions?
 
   @@index([email])
   @@index([appleId])
@@ -492,6 +502,118 @@ model SupplementLog {
 }
 
 // ============================================================================
+// ONBOARDING MODELS
+// ============================================================================
+
+// Tracks user onboarding progress and completion
+model UserOnboarding {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Progress tracking
+  currentStep     Int       @default(1)
+  totalSteps      Int       @default(6)
+  completedAt     DateTime?
+  skippedSteps    Int[]     @default([])
+
+  // Onboarding version (for A/B testing and migrations)
+  version         String    @default("1.0")
+
+  // Audit
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+// User health background: conditions, medications, supplements
+model UserHealthBackground {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Stored as JSON for flexibility during iteration
+  // Structure: [{type: "diabetes", subtype: "type2", diagnosedYear: 2020}]
+  chronicConditions Json?
+
+  // Structure: [{name: "metformin", dosage: "500mg", frequency: "daily", category: "diabetes"}]
+  medications     Json?
+
+  // Structure: [{name: "vitamin_d", dosage: "2000IU", frequency: "daily", category: "vitamin"}]
+  supplements     Json?
+
+  // Structure: ["peanuts", "shellfish", "dairy"]
+  allergies       Json?
+
+  // Audit
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// User lifestyle factors that may affect health metrics
+model UserLifestyle {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Nicotine
+  nicotineUse     NicotineUseLevel?
+  nicotineType    String?              // "cigarettes", "vape", "chewing", "other"
+
+  // Alcohol
+  alcoholUse      AlcoholUseLevel?
+
+  // Caffeine (cups per day of coffee/tea equivalent)
+  caffeineDaily   Int?
+
+  // Sleep patterns
+  typicalBedtime  String?              // "22:30" (24h format)
+  typicalWakeTime String?              // "06:30" (24h format)
+  sleepQuality    Int?                 // 1-10 self-reported
+
+  // Stress
+  stressLevel     Int?                 // 1-10 self-reported
+
+  // Work/lifestyle
+  workSchedule    String?              // "regular", "shift", "irregular"
+
+  // Audit
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// User permission settings for app features
+model UserPermissions {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Push notifications
+  notificationsEnabled  Boolean  @default(false)
+  notificationTypes     Json?    // ["meal_reminders", "insights", "goals", "weekly_summary"]
+
+  // Health data integrations
+  healthKitEnabled      Boolean  @default(false)
+  healthKitScopes       Json?    // ["heartRate", "steps", "sleep", "weight", ...]
+  healthConnectEnabled  Boolean  @default(false)
+  healthConnectScopes   Json?    // Android Health Connect scopes
+
+  // Privacy settings
+  shareAnonymousData    Boolean  @default(false)
+
+  // Audit
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ============================================================================
 // ENUMS
 // ============================================================================
 
@@ -524,6 +646,37 @@ enum SubscriptionTier {
 enum BillingCycle {
   MONTHLY
   ANNUAL
+}
+
+enum BiologicalSex {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum PrimaryGoal {
+  WEIGHT_LOSS
+  MUSCLE_GAIN
+  MAINTENANCE
+  GENERAL_HEALTH
+  ATHLETIC_PERFORMANCE
+  BETTER_SLEEP
+  STRESS_REDUCTION
+}
+
+enum NicotineUseLevel {
+  NONE
+  OCCASIONAL
+  DAILY
+  HEAVY
+}
+
+enum AlcoholUseLevel {
+  NONE
+  OCCASIONAL
+  MODERATE
+  FREQUENT
 }
 
 enum HealthMetricType {
