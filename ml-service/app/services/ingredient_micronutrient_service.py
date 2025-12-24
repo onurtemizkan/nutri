@@ -150,6 +150,10 @@ INGREDIENT_MICRONUTRIENT_PROFILES: Dict[str, Dict[str, float]] = {
     "parmesan": {"calcium": 350, "vitamin_b12": 1.2, "phosphorus": 250, "zinc": 2.5},
     "yogurt": {"calcium": 250, "vitamin_b12": 0.9, "riboflavin": 0.3, "potassium": 350},
     "greek yogurt": {"calcium": 200, "vitamin_b12": 1.0, "riboflavin": 0.25},
+    "quark": {"calcium": 90, "vitamin_b12": 0.8, "riboflavin": 0.2, "phosphorus": 150},
+    "fromage frais": {"calcium": 85, "vitamin_b12": 0.6, "riboflavin": 0.2},  # French quark
+    "skyr": {"calcium": 150, "vitamin_b12": 1.0, "riboflavin": 0.25, "phosphorus": 180},  # Icelandic
+    "protein yogurt": {"calcium": 180, "vitamin_b12": 1.0, "riboflavin": 0.25},
     "cottage cheese": {"calcium": 80, "vitamin_b12": 0.6, "riboflavin": 0.2},
     "kefir": {"calcium": 250, "vitamin_b12": 0.8, "vitamin_k": 30, "riboflavin": 0.3},
     "fortified plant milk": {"calcium": 300, "vitamin_d": 2.5, "vitamin_b12": 1.0},

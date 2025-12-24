@@ -7,7 +7,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import type { Meal, SupplementStatus } from '@/lib/types';
@@ -243,14 +243,8 @@ export function DailyMicronutrientSummary({
   const nutrientsOver100 = nutrientData.filter(n => n.percent >= 100).length;
   const nutrientsOver50 = nutrientData.filter(n => n.percent >= 50).length;
 
-  return (
-    <TouchableOpacity
-      style={styles.container}
-      onPress={onPress}
-      activeOpacity={onPress ? 0.7 : 1}
-      accessibilityLabel="Daily micronutrient summary"
-      accessibilityHint={onPress ? 'Tap to view detailed breakdown' : undefined}
-    >
+  const content = (
+    <>
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <Ionicons name="sparkles" size={16} color={colors.primary.main} />
@@ -266,51 +260,39 @@ export function DailyMicronutrientSummary({
         </View>
       </View>
 
-      {/* Vitamins Row */}
+      {/* Vitamins Grid */}
       {vitamins.length > 0 && (
         <View style={styles.categorySection}>
           <Text style={styles.categoryLabel}>Vitamins</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.nutrientsRow}
-          >
+          <View style={styles.nutrientsGrid}>
             {vitamins.map(nutrient => (
               <NutrientBadge key={nutrient.key} nutrient={nutrient} />
             ))}
-          </ScrollView>
+          </View>
         </View>
       )}
 
-      {/* Minerals Row */}
+      {/* Minerals Grid */}
       {minerals.length > 0 && (
         <View style={styles.categorySection}>
           <Text style={styles.categoryLabel}>Minerals</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.nutrientsRow}
-          >
+          <View style={styles.nutrientsGrid}>
             {minerals.map(nutrient => (
               <NutrientBadge key={nutrient.key} nutrient={nutrient} />
             ))}
-          </ScrollView>
+          </View>
         </View>
       )}
 
-      {/* Other Row */}
+      {/* Other Grid */}
       {other.length > 0 && (
         <View style={styles.categorySection}>
           <Text style={styles.categoryLabel}>Other</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.nutrientsRow}
-          >
+          <View style={styles.nutrientsGrid}>
             {other.map(nutrient => (
               <NutrientBadge key={nutrient.key} nutrient={nutrient} />
             ))}
-          </ScrollView>
+          </View>
         </View>
       )}
 
@@ -320,7 +302,31 @@ export function DailyMicronutrientSummary({
           <Ionicons name="chevron-forward" size={14} color={colors.text.disabled} />
         </View>
       )}
-    </TouchableOpacity>
+    </>
+  );
+
+  // Only use TouchableOpacity when onPress is provided to avoid blocking scroll gestures
+  if (onPress) {
+    return (
+      <TouchableOpacity
+        style={styles.container}
+        onPress={onPress}
+        activeOpacity={0.7}
+        accessibilityLabel="Daily micronutrient summary"
+        accessibilityHint="Tap to view detailed breakdown"
+      >
+        {content}
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <View
+      style={styles.container}
+      accessibilityLabel="Daily micronutrient summary"
+    >
+      {content}
+    </View>
   );
 }
 
@@ -424,10 +430,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: spacing.xs,
   },
-  nutrientsRow: {
+  nutrientsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.xs,
-    paddingRight: spacing.md,
   },
   nutrientBadge: {
     alignItems: 'center',

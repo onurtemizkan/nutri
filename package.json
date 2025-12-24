@@ -48,7 +48,10 @@
     "build:ios:simulator": "eas build --profile simulator --platform ios --local",
     "build:ios:xcode": "eas build --profile development-xcode --platform ios --local",
     "prebuild:ios": "npx expo prebuild --platform ios",
-    "prebuild:ios:clean": "npx expo prebuild --platform ios --clean"
+    "prebuild:ios:clean": "npx expo prebuild --platform ios --clean",
+    "deploy:native": "./scripts/deploy-native.sh",
+    "deploy:native:debug": "./scripts/deploy-native.sh --debug",
+    "deploy:native:clean": "./scripts/deploy-native.sh --clean"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
