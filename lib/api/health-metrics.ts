@@ -223,14 +223,21 @@ export const healthMetricsApi = {
   > {
     const results: Record<HealthMetricType, { latest: HealthMetric | null; stats: HealthMetricStats | null }> = {} as Record<HealthMetricType, { latest: HealthMetric | null; stats: HealthMetricStats | null }>;
 
-    // Fetch all metrics in parallel
+    // Fetch all metrics in parallel, handling errors per-metric
+    // This ensures one failing metric doesn't break the entire dashboard
     await Promise.all(
       metricTypes.map(async (metricType) => {
-        const [latest, stats] = await Promise.all([
-          this.getLatest(metricType),
-          this.getStats(metricType, days),
-        ]);
-        results[metricType] = { latest, stats };
+        try {
+          const [latest, stats] = await Promise.all([
+            this.getLatest(metricType),
+            this.getStats(metricType, days),
+          ]);
+          results[metricType] = { latest, stats };
+        } catch (error) {
+          // Log the error but don't fail the entire request
+          console.warn(`Failed to fetch data for ${metricType}:`, error);
+          results[metricType] = { latest: null, stats: null };
+        }
       })
     );
 
