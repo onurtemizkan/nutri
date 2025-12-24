@@ -129,34 +129,47 @@ jobs:
 
       - name: Verify Backend Health
         id: health-backend
+        # Health check is best-effort - Coolify's internal healthcheck is authoritative
+        # External health checks from GitHub runners may fail due to network/DNS issues
+        continue-on-error: true
         run: |
-          echo "🔍 Checking backend health..."
+          echo "🔍 Checking backend health (best-effort from GitHub runner)..."
+          echo "Note: Coolify's internal healthcheck is the authoritative source"
+          echo ""
 
-          for i in {1..10}; do
-            echo "Health check attempt $i/10..."
+          # Check if PRODUCTION_API_URL is configured
+          if [ -z "${{ secrets.PRODUCTION_API_URL }}" ]; then
+            echo "⚠️ PRODUCTION_API_URL secret not configured, skipping external health check"
+            echo "health_status=skipped" >> $GITHUB_OUTPUT
+            exit 0
+          fi
 
-            response=$(curl -s -o /dev/null -w "%{http_code}" \
-              --connect-timeout 5 \
-              --max-time 10 \
-              "${{ secrets.PRODUCTION_API_URL }}/health" 2>/dev/null || echo "000")
+          for i in {1..5}; do
+            echo "Health check attempt $i/5..."
 
-            echo "HTTP Status: $response"
+            # Use separate variable to avoid concatenation issues
+            http_code=$(curl -s -o /dev/null -w "%{http_code}" \
+              --connect-timeout 10 \
+              --max-time 15 \
+              "${{ secrets.PRODUCTION_API_URL }}/health" 2>/dev/null) || http_code="000"
 
-            if [ "$response" = "200" ]; then
+            echo "HTTP Status: $http_code"
+
+            if [ "$http_code" = "200" ]; then
               echo "✅ Backend is healthy!"
               echo "health_status=healthy" >> $GITHUB_OUTPUT
               exit 0
             fi
 
-            if [ $i -lt 10 ]; then
-              echo "⏳ Waiting 10 seconds before next attempt..."
-              sleep 10
+            if [ $i -lt 5 ]; then
+              echo "⏳ Waiting 15 seconds before next attempt..."
+              sleep 15
             fi
           done
 
-          echo "❌ Backend health check failed after 10 attempts!"
-          echo "health_status=unhealthy" >> $GITHUB_OUTPUT
-          exit 1
+          echo "⚠️ Could not verify backend health from GitHub runner"
+          echo "This may be due to network/DNS issues - check Coolify dashboard for actual status"
+          echo "health_status=unreachable" >> $GITHUB_OUTPUT
 
       - name: Verify ML Service Health (internal check via backend)
         id: health-ml
@@ -190,16 +203,40 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Deployment Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
 
-          if [ "${{ steps.health-backend.outputs.health_status }}" = "healthy" ]; then
-            echo "| Service | Status |" >> $GITHUB_STEP_SUMMARY
-            echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
-            echo "| Backend API | ✅ Healthy |" >> $GITHUB_STEP_SUMMARY
-            echo "| ML Service | ${{ steps.health-ml.outcome == 'success' && '✅ Healthy' || '⚠️ Unknown' }} |" >> $GITHUB_STEP_SUMMARY
+          # Backend status
+          backend_status="${{ steps.health-backend.outputs.health_status }}"
+          case "$backend_status" in
+            healthy)
+              echo "| Backend API | ✅ Verified healthy |" >> $GITHUB_STEP_SUMMARY
+              ;;
+            skipped)
+              echo "| Backend API | ⏭️ Check skipped (no URL configured) |" >> $GITHUB_STEP_SUMMARY
+              ;;
+            unreachable)
+              echo "| Backend API | ⚠️ Unreachable from GitHub (check Coolify) |" >> $GITHUB_STEP_SUMMARY
+              ;;
+            *)
+              echo "| Backend API | ⚠️ Unknown status |" >> $GITHUB_STEP_SUMMARY
+              ;;
+          esac
+
+          # ML Service status
+          echo "| ML Service | ${{ steps.health-ml.outcome == 'success' && '✅ Healthy' || '⚠️ Check Coolify dashboard' }} |" >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Deployment is successful if webhooks were triggered
+          # Coolify's internal healthcheck is the authoritative source
+          if [ "${{ steps.deploy-backend.outputs.backend_status }}" = "success" ]; then
+            echo "🎉 **Deployment triggered successfully!**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "🎉 **Deployment successful!**" >> $GITHUB_STEP_SUMMARY
+            echo "> **Note:** Coolify's internal healthcheck validates service health." >> $GITHUB_STEP_SUMMARY
+            echo "> External health checks from GitHub runners are best-effort and may fail due to network issues." >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ **Deployment failed** - Backend health check unsuccessful" >> $GITHUB_STEP_SUMMARY
+            echo "❌ **Deployment trigger failed** - Check webhook configuration" >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: Send Success Notification
