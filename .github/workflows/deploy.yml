@@ -78,52 +78,106 @@ jobs:
       # -------------------------------------------------------------------------
       - name: Trigger Coolify Backend Deployment
         id: deploy-backend
+        # Webhook may timeout but deployment still starts - continue on error
+        continue-on-error: true
         run: |
           echo "Triggering backend deployment..."
-          response=$(curl -s -w "\n%{http_code}" -X POST \
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_WEBHOOK_SECRET }}" \
-            -H "Content-Type: application/json" \
-            "${{ secrets.COOLIFY_BACKEND_WEBHOOK_URL }}")
 
-          http_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | sed '$d')
+          # Retry logic for transient failures
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt/3..."
 
-          echo "HTTP Status: $http_code"
-          echo "Response: $body"
+            response=$(curl -s -w "\n%{http_code}" -X POST \
+              --connect-timeout 30 \
+              --max-time 120 \
+              -H "Authorization: Bearer ${{ secrets.COOLIFY_WEBHOOK_SECRET }}" \
+              -H "Content-Type: application/json" \
+              "${{ secrets.COOLIFY_BACKEND_WEBHOOK_URL }}" 2>/dev/null) || response=$'\n000'
 
-          if [ "$http_code" != "200" ] && [ "$http_code" != "201" ] && [ "$http_code" != "202" ]; then
-            echo "❌ Backend deployment trigger failed!"
-            echo "backend_status=failed" >> $GITHUB_OUTPUT
-            exit 1
-          fi
+            http_code=$(echo "$response" | tail -n1)
+            body=$(echo "$response" | sed '$d')
 
-          echo "✅ Backend deployment triggered successfully"
-          echo "backend_status=success" >> $GITHUB_OUTPUT
+            echo "HTTP Status: $http_code"
+            echo "Response: $body"
+
+            # Success codes
+            if [ "$http_code" = "200" ] || [ "$http_code" = "201" ] || [ "$http_code" = "202" ]; then
+              echo "✅ Backend deployment triggered successfully"
+              echo "backend_status=success" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+
+            # Gateway timeout - deployment may still start
+            if [ "$http_code" = "504" ] || [ "$http_code" = "502" ]; then
+              echo "⚠️ Gateway timeout - deployment may still be processing"
+              if [ $attempt -eq 3 ]; then
+                echo "backend_status=timeout" >> $GITHUB_OUTPUT
+                exit 0  # Don't fail, Coolify may still deploy
+              fi
+            fi
+
+            # Wait before retry
+            if [ $attempt -lt 3 ]; then
+              echo "⏳ Waiting 10 seconds before retry..."
+              sleep 10
+            fi
+          done
+
+          echo "❌ Backend deployment trigger failed after 3 attempts"
+          echo "backend_status=failed" >> $GITHUB_OUTPUT
+          exit 1
 
       - name: Trigger Coolify ML Service Deployment
         id: deploy-ml
         if: ${{ github.event.inputs.skip_ml_service != 'true' }}
+        # Webhook may timeout but deployment still starts - continue on error
+        continue-on-error: true
         run: |
           echo "Triggering ML service deployment..."
-          response=$(curl -s -w "\n%{http_code}" -X POST \
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_WEBHOOK_SECRET }}" \
-            -H "Content-Type: application/json" \
-            "${{ secrets.COOLIFY_ML_WEBHOOK_URL }}")
 
-          http_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | sed '$d')
+          # Retry logic for transient failures
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt/3..."
 
-          echo "HTTP Status: $http_code"
-          echo "Response: $body"
+            response=$(curl -s -w "\n%{http_code}" -X POST \
+              --connect-timeout 30 \
+              --max-time 120 \
+              -H "Authorization: Bearer ${{ secrets.COOLIFY_WEBHOOK_SECRET }}" \
+              -H "Content-Type: application/json" \
+              "${{ secrets.COOLIFY_ML_WEBHOOK_URL }}" 2>/dev/null) || response=$'\n000'
 
-          if [ "$http_code" != "200" ] && [ "$http_code" != "201" ] && [ "$http_code" != "202" ]; then
-            echo "❌ ML service deployment trigger failed!"
-            echo "ml_status=failed" >> $GITHUB_OUTPUT
-            exit 1
-          fi
+            http_code=$(echo "$response" | tail -n1)
+            body=$(echo "$response" | sed '$d')
 
-          echo "✅ ML service deployment triggered successfully"
-          echo "ml_status=success" >> $GITHUB_OUTPUT
+            echo "HTTP Status: $http_code"
+            echo "Response: $body"
+
+            # Success codes
+            if [ "$http_code" = "200" ] || [ "$http_code" = "201" ] || [ "$http_code" = "202" ]; then
+              echo "✅ ML service deployment triggered successfully"
+              echo "ml_status=success" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+
+            # Gateway timeout - deployment may still start
+            if [ "$http_code" = "504" ] || [ "$http_code" = "502" ]; then
+              echo "⚠️ Gateway timeout - deployment may still be processing"
+              if [ $attempt -eq 3 ]; then
+                echo "ml_status=timeout" >> $GITHUB_OUTPUT
+                exit 0  # Don't fail, Coolify may still deploy
+              fi
+            fi
+
+            # Wait before retry
+            if [ $attempt -lt 3 ]; then
+              echo "⏳ Waiting 10 seconds before retry..."
+              sleep 10
+            fi
+          done
+
+          echo "❌ ML service deployment trigger failed after 3 attempts"
+          echo "ml_status=failed" >> $GITHUB_OUTPUT
+          exit 1
 
       - name: Wait for containers to start
         run: |
@@ -231,10 +285,19 @@ jobs:
 
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          # Deployment is successful if webhooks were triggered
-          # Coolify's internal healthcheck is the authoritative source
-          if [ "${{ steps.deploy-backend.outputs.backend_status }}" = "success" ]; then
-            echo "🎉 **Deployment triggered successfully!**" >> $GITHUB_STEP_SUMMARY
+          # Deployment is successful if webhooks were triggered or timed out
+          # (timeout still likely means deployment started on Coolify side)
+          backend_deploy="${{ steps.deploy-backend.outputs.backend_status }}"
+          ml_deploy="${{ steps.deploy-ml.outputs.ml_status }}"
+
+          if [ "$backend_deploy" = "success" ] || [ "$backend_deploy" = "timeout" ]; then
+            if [ "$backend_deploy" = "timeout" ]; then
+              echo "⚠️ **Deployment triggered (webhook timed out)**" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "> Webhook timed out but deployment likely started." >> $GITHUB_STEP_SUMMARY
+            else
+              echo "🎉 **Deployment triggered successfully!**" >> $GITHUB_STEP_SUMMARY
+            fi
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "> **Note:** Coolify's internal healthcheck validates service health." >> $GITHUB_STEP_SUMMARY
             echo "> External health checks from GitHub runners are best-effort and may fail due to network issues." >> $GITHUB_STEP_SUMMARY
