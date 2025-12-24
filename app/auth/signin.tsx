@@ -69,7 +69,7 @@ export default function SignInScreen() {
             isTablet && styles.tabletContent
           ]}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="always"
+          keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
         >
           {/* Header */}
@@ -246,6 +246,7 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.md,
     color: colors.text.primary,
     height: 52,
+    textAlignVertical: 'center',
   },
 
   // Button

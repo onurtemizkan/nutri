@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, gradients, typography, spacing, borderRadius } from '@/lib/theme/colors';
 import { useOnboarding } from '@/lib/context/OnboardingContext';
 import { ONBOARDING_STEPS } from '@/lib/onboarding/config';
+import { getErrorMessage } from '@/lib/utils/errorHandling';
 
 export default function OnboardingWelcome() {
   const router = useRouter();
@@ -24,14 +25,22 @@ export default function OnboardingWelcome() {
       await startOnboarding();
       router.push('/onboarding/profile');
     } catch (error) {
-      console.error('Failed to start onboarding:', error);
+      Alert.alert(
+        'Unable to Start',
+        getErrorMessage(error, 'Failed to start onboarding. Please check your connection and try again.')
+      );
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient colors={gradients.dark} style={styles.gradient}>
-        <View style={styles.content}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Logo Section */}
           <View style={styles.logoSection}>
             <LinearGradient colors={gradients.primary} style={styles.logoContainer}>
@@ -57,20 +66,20 @@ export default function OnboardingWelcome() {
               </View>
             ))}
           </View>
+        </ScrollView>
 
-          {/* Start Button */}
-          <View style={styles.footer}>
-            <TouchableOpacity onPress={handleStart} disabled={isLoading} style={styles.startButton}>
-              <LinearGradient colors={gradients.primary} style={styles.startButtonGradient}>
-                <Text style={styles.startButtonText}>
-                  {isLoading ? 'Starting...' : "Let's Get Started"}
-                </Text>
-                <Ionicons name="arrow-forward" size={20} color={colors.text.primary} />
-              </LinearGradient>
-            </TouchableOpacity>
+        {/* Sticky Footer */}
+        <View style={styles.footer}>
+          <TouchableOpacity onPress={handleStart} disabled={isLoading} style={styles.startButton}>
+            <LinearGradient colors={gradients.primary} style={styles.startButtonGradient}>
+              <Text style={styles.startButtonText}>
+                {isLoading ? 'Starting...' : "Let's Get Started"}
+              </Text>
+              <Ionicons name="arrow-forward" size={20} color={colors.text.primary} />
+            </LinearGradient>
+          </TouchableOpacity>
 
-            <Text style={styles.timeEstimate}>Takes about 3-5 minutes</Text>
-          </View>
+          <Text style={styles.timeEstimate}>Takes about 3-5 minutes</Text>
         </View>
       </LinearGradient>
     </SafeAreaView>
@@ -85,10 +94,14 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
+    paddingBottom: spacing.md,
   },
   logoSection: {
     alignItems: 'center',
@@ -118,8 +131,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   featuresContainer: {
-    flex: 1,
     marginTop: spacing.lg,
+    marginBottom: spacing.xl,
   },
   featureItem: {
     flexDirection: 'row',
@@ -149,6 +162,8 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   footer: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
     paddingBottom: spacing.xl,
   },
   startButton: {

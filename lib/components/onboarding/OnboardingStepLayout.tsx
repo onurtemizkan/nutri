@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { RefObject } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
+import type { ScrollView as ScrollViewType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,6 +30,7 @@ interface OnboardingStepLayoutProps {
   isLoading?: boolean;
   showSkip?: boolean;
   showBack?: boolean;
+  scrollRef?: RefObject<ScrollViewType | null>;
 }
 
 export function OnboardingStepLayout({
@@ -46,6 +48,7 @@ export function OnboardingStepLayout({
   isLoading = false,
   showSkip = false,
   showBack = true,
+  scrollRef,
 }: OnboardingStepLayoutProps) {
   const progress = ((currentStep - 1) / totalSteps) * 100;
 
@@ -93,6 +96,7 @@ export function OnboardingStepLayout({
 
           {/* Content */}
           <ScrollView
+            ref={scrollRef}
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}

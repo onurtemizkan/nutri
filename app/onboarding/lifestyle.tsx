@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   optionTextSelected: {
-    color: colors.primary.main,
+    color: colors.text.primary,
   },
   sleepRow: {
     flexDirection: 'row',

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  ScrollView,
+  Keyboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -27,6 +29,10 @@ export default function OnboardingProfile() {
   const { user } = useAuth();
   const { saveStep, isLoading, getDraftForStep, updateDraft } = useOnboarding();
 
+  // Refs for scrolling
+  const scrollRef = useRef<ScrollView>(null);
+  const dateOfBirthY = useRef<number>(0);
+
   // Form state
   const [name, setName] = useState(user?.name || '');
   const [dateOfBirth, setDateOfBirth] = useState<Date>(new Date(2000, 0, 1));
@@ -36,20 +42,31 @@ export default function OnboardingProfile() {
   const [weight, setWeight] = useState('70');
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('moderate');
 
-  // Load draft data on mount
+  // Load draft data on mount only
   useEffect(() => {
     const draft = getDraftForStep<OnboardingStep1Data>(1);
     if (draft) {
-      setName(draft.name || user?.name || '');
+      if (draft.name) {
+        setName(draft.name);
+      }
       if (draft.dateOfBirth) {
         setDateOfBirth(new Date(draft.dateOfBirth));
       }
-      setBiologicalSex(draft.biologicalSex || 'PREFER_NOT_TO_SAY');
-      setHeight(String(draft.height || 170));
-      setWeight(String(draft.currentWeight || 70));
-      setActivityLevel(draft.activityLevel || 'moderate');
+      if (draft.biologicalSex) {
+        setBiologicalSex(draft.biologicalSex);
+      }
+      if (draft.height) {
+        setHeight(String(draft.height));
+      }
+      if (draft.currentWeight) {
+        setWeight(String(draft.currentWeight));
+      }
+      if (draft.activityLevel) {
+        setActivityLevel(draft.activityLevel);
+      }
     }
-  }, [getDraftForStep, user?.name]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Save draft when form changes
   useEffect(() => {
@@ -107,6 +124,15 @@ export default function OnboardingProfile() {
     }
   };
 
+  const handleDateFieldPress = () => {
+    Keyboard.dismiss();
+    setShowDatePicker(true);
+    // Scroll to the date of birth field so it's visible above the date picker
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: Math.max(0, dateOfBirthY.current - 20), animated: true });
+    }, 100);
+  };
+
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -126,6 +152,7 @@ export default function OnboardingProfile() {
       isNextDisabled={!isFormValid()}
       isLoading={isLoading}
       showBack={true}
+      scrollRef={scrollRef}
     >
       {/* Name */}
       <View style={styles.inputGroup}>
@@ -141,11 +168,14 @@ export default function OnboardingProfile() {
       </View>
 
       {/* Date of Birth */}
-      <View style={styles.inputGroup}>
+      <View
+        style={styles.inputGroup}
+        onLayout={(e) => { dateOfBirthY.current = e.nativeEvent.layout.y; }}
+      >
         <Text style={styles.label}>Date of Birth</Text>
         <TouchableOpacity
           style={styles.textInput}
-          onPress={() => setShowDatePicker(true)}
+          onPress={handleDateFieldPress}
         >
           <Text style={styles.dateText}>{formatDate(dateOfBirth)}</Text>
         </TouchableOpacity>
@@ -265,6 +295,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     ...typography.body,
     color: colors.text.primary,
+    textAlignVertical: 'center',
   },
   dateText: {
     ...typography.body,
@@ -292,7 +323,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   optionButtonTextSelected: {
-    color: colors.primary.main,
+    color: colors.text.primary,
   },
   rowInputs: {
     flexDirection: 'row',
@@ -317,7 +348,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   activityOptionTitleSelected: {
-    color: colors.primary.main,
+    color: colors.text.primary,
   },
   activityOptionDescription: {
     ...typography.bodySmall,

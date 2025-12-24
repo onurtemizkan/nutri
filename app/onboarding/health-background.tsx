@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   chipTextSelected: {
-    color: colors.primary.main,
+    color: colors.text.primary,
   },
   textInput: {
     backgroundColor: colors.surface.card,

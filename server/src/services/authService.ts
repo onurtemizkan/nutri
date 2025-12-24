@@ -309,7 +309,7 @@ export class AuthService {
 
       const firstName = data.user?.name?.firstName || '';
       const lastName = data.user?.name?.lastName || '';
-      const name = `${firstName} ${lastName}`.trim() || 'Apple User';
+      const name = `${firstName} ${lastName}`.trim() || '';
 
       user = await prisma.user.create({
         data: {

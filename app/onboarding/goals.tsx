@@ -285,6 +285,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     ...typography.body,
     color: colors.text.primary,
+    textAlignVertical: 'center',
   },
   goalGrid: {
     flexDirection: 'row',
@@ -311,7 +312,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   goalCardTextSelected: {
-    color: colors.primary.main,
+    color: colors.text.primary,
   },
   preferencesGrid: {
     flexDirection: 'row',
@@ -335,7 +336,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   preferenceChipTextSelected: {
-    color: colors.primary.main,
+    color: colors.text.primary,
   },
   customMacrosToggle: {
     flexDirection: 'row',
