@@ -183,11 +183,16 @@ jobs:
       # Force Deployment via SSH (workaround for Coolify not starting containers)
       # -------------------------------------------------------------------------
       - name: Force Deploy via SSH
-        if: ${{ secrets.COOLIFY_SSH_KEY != '' }}
         env:
           SSH_KEY: ${{ secrets.COOLIFY_SSH_KEY }}
           SERVER_IP: ${{ secrets.COOLIFY_SERVER_IP }}
         run: |
+          # Skip if SSH key not configured
+          if [ -z "$SSH_KEY" ]; then
+            echo "⏭️ SSH key not configured, skipping direct deployment"
+            exit 0
+          fi
+
           echo "🔧 Forcing deployment via SSH..."
 
           # Setup SSH
