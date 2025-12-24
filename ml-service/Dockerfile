@@ -113,7 +113,8 @@ USER mlservice
 EXPOSE 8000
 
 # Health check with longer start period for model loading
-HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+# Increased to 300s to allow time for CLIP and other ML models to load
+HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=5 \
     CMD curl -f http://localhost:8000/health/live || exit 1
 
 # -----------------------------------------------------------------------------
