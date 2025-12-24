@@ -12,7 +12,11 @@ Prompt engineering is critical for accuracy.
 """
 # mypy: ignore-errors
 
+import hashlib
+import json
 import logging
+import os
+from pathlib import Path
 from typing import List, Tuple, Dict, Optional, Any
 
 import torch
@@ -2300,6 +2304,38 @@ CLIP_MODELS = {
 DEFAULT_MODEL_PRESET = "fast"
 
 # ==============================================================================
+# TEXT FEATURES CACHE CONFIGURATION
+# ==============================================================================
+# Cache pre-computed text features to disk to avoid recomputing on every restart.
+# This reduces startup time from ~7 minutes to <1 second.
+
+# Cache directory (uses HF_HOME if set, otherwise ~/.cache/nutri)
+TEXT_FEATURES_CACHE_DIR = Path(
+    os.environ.get("HF_HOME", os.path.expanduser("~/.cache/nutri"))
+) / "clip_text_features"
+
+# Batch size for text encoding (32 is efficient for most GPUs/CPUs)
+TEXT_ENCODING_BATCH_SIZE = 32
+
+
+def _compute_prompts_hash(prompts_dict: Dict[str, List[str]], model_name: str) -> str:
+    """Compute a hash of the prompts dictionary and model name for cache invalidation."""
+    # Sort for deterministic ordering
+    content = json.dumps(prompts_dict, sort_keys=True) + model_name
+    return hashlib.sha256(content.encode()).hexdigest()[:16]
+
+
+def _get_cache_path(model_name: str, use_detailed: bool) -> Path:
+    """Get the cache file path for text features."""
+    # Clean model name for filename
+    safe_model_name = model_name.replace("/", "_").replace("-", "_")
+    prompts_dict = FOOD_PROMPTS if use_detailed else {k: [v] for k, v in SIMPLE_FOOD_PROMPTS.items()}
+    prompts_hash = _compute_prompts_hash(prompts_dict, model_name)
+    mode = "detailed" if use_detailed else "simple"
+    return TEXT_FEATURES_CACHE_DIR / f"{safe_model_name}_{mode}_{prompts_hash}.pt"
+
+
+# ==============================================================================
 # HIERARCHICAL FOOD CLASSIFICATION
 # ==============================================================================
 # Maps broad cuisine/food categories to their specific dishes.
@@ -2842,48 +2878,136 @@ class CLIPFoodClassifier:
             raise
 
     def _precompute_text_features(self) -> None:
-        """Pre-compute text embeddings for all food categories."""
-        logger.info("Pre-computing text features for food categories...")
+        """
+        Pre-compute text embeddings for all food categories.
+
+        Optimizations:
+        1. Disk caching - Load from cache if available (instant startup)
+        2. Batch encoding - Process multiple prompts at once (faster computation)
+        """
+        import time
+
+        start_time = time.time()
+
+        # Try to load from cache first
+        cache_path = _get_cache_path(self.model_name, self.use_detailed_prompts)
+        if cache_path.exists():
+            try:
+                logger.info(f"Loading text features from cache: {cache_path}")
+                cached_data = torch.load(cache_path, map_location=self.device, weights_only=True)
+                self._text_features_cache = cached_data
+                elapsed = time.time() - start_time
+                logger.info(
+                    f"Loaded {len(self._text_features_cache)} cached text features in {elapsed:.2f}s"
+                )
+                return
+            except Exception as e:
+                logger.warning(f"Failed to load cache, recomputing: {e}")
+
+        # Compute text features with batching
+        logger.info("Computing text features (this may take a few minutes on first run)...")
 
         if self.use_detailed_prompts:
-            # Use multiple prompts per food and average
-            for food_key, prompts in FOOD_PROMPTS.items():
-                features_list = []
-                for prompt in prompts:
-                    inputs = self._processor(  # type: ignore[misc]
-                        text=[prompt], return_tensors="pt", padding=True
-                    )
-                    inputs = {k: v.to(self.device) for k, v in inputs.items()}
-
-                    with torch.no_grad():
-                        text_features = self._model.get_text_features(**inputs)  # type: ignore[attr-defined]
-                        text_features = text_features / text_features.norm(
-                            dim=-1, keepdim=True
-                        )
-                        features_list.append(text_features)
-
-                # Average the features from all prompts
-                avg_features = torch.mean(torch.stack(features_list), dim=0)
-                avg_features = avg_features / avg_features.norm(dim=-1, keepdim=True)
-                self._text_features_cache[food_key] = avg_features
+            self._compute_detailed_features_batched()
         else:
-            # Use simple prompts (faster)
-            for food_key, prompt in SIMPLE_FOOD_PROMPTS.items():
-                inputs = self._processor(  # type: ignore[misc]
-                    text=[prompt], return_tensors="pt", padding=True
-                )
-                inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            self._compute_simple_features_batched()
 
-                with torch.no_grad():
-                    text_features = self._model.get_text_features(**inputs)  # type: ignore[attr-defined]
-                    text_features = text_features / text_features.norm(
-                        dim=-1, keepdim=True
-                    )
-                    self._text_features_cache[food_key] = text_features
-
+        elapsed = time.time() - start_time
         logger.info(
-            f"Pre-computed features for {len(self._text_features_cache)} food categories"
+            f"Computed features for {len(self._text_features_cache)} food categories in {elapsed:.2f}s"
         )
+
+        # Save to cache for next startup
+        self._save_text_features_cache(cache_path)
+
+    def _compute_detailed_features_batched(self) -> None:
+        """Compute detailed text features using batched encoding."""
+        # Collect all prompts with their food keys
+        all_prompts: List[str] = []
+        prompt_to_food: List[Tuple[str, int]] = []  # (food_key, prompt_index_in_food)
+        food_prompt_counts: Dict[str, int] = {}
+
+        for food_key, prompts in FOOD_PROMPTS.items():
+            food_prompt_counts[food_key] = len(prompts)
+            for idx, prompt in enumerate(prompts):
+                all_prompts.append(prompt)
+                prompt_to_food.append((food_key, idx))
+
+        logger.info(f"Encoding {len(all_prompts)} prompts for {len(FOOD_PROMPTS)} foods...")
+
+        # Process in batches
+        all_features: List[torch.Tensor] = []
+        batch_size = TEXT_ENCODING_BATCH_SIZE
+
+        for i in range(0, len(all_prompts), batch_size):
+            batch_prompts = all_prompts[i:i + batch_size]
+            inputs = self._processor(  # type: ignore[misc]
+                text=batch_prompts, return_tensors="pt", padding=True, truncation=True
+            )
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
+            with torch.no_grad():
+                batch_features = self._model.get_text_features(**inputs)  # type: ignore[attr-defined]
+                batch_features = batch_features / batch_features.norm(dim=-1, keepdim=True)
+                all_features.append(batch_features.cpu())
+
+            # Log progress every 10 batches
+            if (i // batch_size) % 10 == 0:
+                progress = min(100, (i + batch_size) * 100 // len(all_prompts))
+                logger.info(f"Text encoding progress: {progress}%")
+
+        # Concatenate all features
+        all_features_tensor = torch.cat(all_features, dim=0)
+
+        # Group by food and average
+        feature_idx = 0
+        for food_key, num_prompts in food_prompt_counts.items():
+            food_features = all_features_tensor[feature_idx:feature_idx + num_prompts]
+            avg_features = torch.mean(food_features, dim=0, keepdim=True)
+            avg_features = avg_features / avg_features.norm(dim=-1, keepdim=True)
+            self._text_features_cache[food_key] = avg_features.to(self.device)
+            feature_idx += num_prompts
+
+    def _compute_simple_features_batched(self) -> None:
+        """Compute simple text features using batched encoding."""
+        food_keys = list(SIMPLE_FOOD_PROMPTS.keys())
+        all_prompts = list(SIMPLE_FOOD_PROMPTS.values())
+
+        logger.info(f"Encoding {len(all_prompts)} simple prompts...")
+
+        # Process in batches
+        all_features: List[torch.Tensor] = []
+        batch_size = TEXT_ENCODING_BATCH_SIZE
+
+        for i in range(0, len(all_prompts), batch_size):
+            batch_prompts = all_prompts[i:i + batch_size]
+            inputs = self._processor(  # type: ignore[misc]
+                text=batch_prompts, return_tensors="pt", padding=True, truncation=True
+            )
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
+            with torch.no_grad():
+                batch_features = self._model.get_text_features(**inputs)  # type: ignore[attr-defined]
+                batch_features = batch_features / batch_features.norm(dim=-1, keepdim=True)
+                all_features.append(batch_features.cpu())
+
+        # Concatenate and assign to cache
+        all_features_tensor = torch.cat(all_features, dim=0)
+        for idx, food_key in enumerate(food_keys):
+            self._text_features_cache[food_key] = all_features_tensor[idx:idx+1].to(self.device)
+
+    def _save_text_features_cache(self, cache_path: Path) -> None:
+        """Save computed text features to disk cache."""
+        try:
+            # Ensure cache directory exists
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Move tensors to CPU for storage
+            cache_data = {k: v.cpu() for k, v in self._text_features_cache.items()}
+            torch.save(cache_data, cache_path)
+            logger.info(f"Saved text features cache to {cache_path}")
+        except Exception as e:
+            logger.warning(f"Failed to save text features cache: {e}")
 
     @torch.no_grad()
     def classify(
