@@ -679,7 +679,7 @@ class TestAllergenDatabase:
         all_allergens = set()
         for data in INGREDIENT_DATABASE.values():
             for mapping in data.allergens:
-                all_allergens.add(mapping.allergen_type)
+                all_allergens.add(mapping.allergen)
 
         # Check each Big 9 is represented
         for allergen in fda_big_9:

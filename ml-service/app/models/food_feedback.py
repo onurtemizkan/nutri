@@ -25,23 +25,29 @@ class FoodFeedback(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     # Image identification (hash for deduplication)
-    image_hash = Column(String(64), nullable=False, index=True)
+    image_hash = Column("imageHash", String(64), nullable=False, index=True)
 
     # Original prediction from the classifier
-    original_prediction = Column(String(100), nullable=False, index=True)
-    original_confidence = Column(Float, nullable=False)
+    original_prediction = Column("originalPrediction", String(100), nullable=False, index=True)
+    original_confidence = Column("originalConfidence", Float, nullable=False)
+    original_category = Column("originalCategory", String(100), nullable=True)
 
-    # Top alternatives at time of prediction (JSON string)
-    alternatives = Column(Text, nullable=True)
+    # Classification reference
+    classification_id = Column("classificationId", String, nullable=True)
 
-    # User's correction
-    corrected_label = Column(String(100), nullable=False, index=True)
+    # User's correction (selected food from FDC)
+    selected_fdc_id = Column("selectedFdcId", Integer, nullable=False)
+    selected_food_name = Column("selectedFoodName", String(200), nullable=False)
+    was_correct = Column("wasCorrect", Integer, nullable=False)  # SQLite boolean
+
+    # Classification hints for future improvements (JSON)
+    classification_hints = Column("classificationHints", Text, nullable=True)
 
     # Optional: user-provided description for prompt learning
-    user_description = Column(Text, nullable=True)
+    user_description = Column("userDescription", Text, nullable=True)
 
     # Optional: user ID if authenticated
-    user_id = Column(String, nullable=True, index=True)
+    user_id = Column("userId", String, nullable=True, index=True)
 
     # Feedback status
     status = Column(String(20), default="pending")  # pending, approved, rejected
@@ -49,14 +55,14 @@ class FoodFeedback(Base):
     # Timestamps
     created_at = Column("createdAt", DateTime, server_default=func.now())
 
-    # Create composite index for common queries
+    # Create composite index for common queries (matching Prisma schema)
     __table_args__ = (
-        Index('idx_feedback_prediction_correction', 'original_prediction', 'corrected_label'),
+        Index('idx_feedback_prediction_food', 'originalPrediction', 'selectedFoodName'),
         Index('idx_feedback_status_created', 'status', 'createdAt'),
     )
 
     def __repr__(self):
-        return f"<FoodFeedback(id={self.id}, {self.original_prediction} -> {self.corrected_label})>"
+        return f"<FoodFeedback(id={self.id}, {self.original_prediction} -> {self.selected_food_name})>"
 
 
 class LearnedPrompt(Base):

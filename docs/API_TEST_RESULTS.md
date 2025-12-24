@@ -55,19 +55,19 @@
 
 ---
 
-## Known Issues
+## Known Issues (FIXED)
 
-### 1. Column Naming Mismatch (FoodFeedback)
+### 1. Column Naming Mismatch (FoodFeedback) ✅ FIXED
 **Endpoint:** `/api/food/feedback/stats`
 **Error:** `column FoodFeedback.original_prediction does not exist`
-**Cause:** SQLAlchemy model uses `original_prediction` but Prisma schema has `originalPrediction`
-**Severity:** Low (non-critical endpoint)
+**Cause:** SQLAlchemy model used snake_case but Prisma schema has camelCase
+**Fix:** Added proper Column mappings in `food_feedback.py` and updated `feedback_service.py`
 
-### 2. AllergenMapping Attribute Error
+### 2. AllergenMapping Attribute Error ✅ FIXED
 **Endpoints:** `/api/sensitivity/ingredients/search`, `/api/sensitivity/extract-ingredients`
 **Error:** `'AllergenMapping' object has no attribute 'allergen_type'`
-**Cause:** Likely camelCase vs snake_case mismatch in SQLAlchemy model
-**Severity:** Medium (affects ingredient search functionality)
+**Cause:** Code accessed `.allergen_type` but dataclass has `.allergen`
+**Fix:** Updated `ingredient_extraction_service.py` to use `.allergen`
 
 ---
 
@@ -98,10 +98,10 @@
 - ✅ Allergen information
 - ✅ Compound analysis (DAO inhibitors, histamine liberators)
 
-### Features with Issues
-- ⚠️ Feedback analytics (column naming)
-- ⚠️ Ingredient extraction (attribute error)
-- ⚠️ Ingredient search (attribute error)
+### Previously Fixed Issues
+- ✅ Feedback analytics (column naming) - Fixed in commit
+- ✅ Ingredient extraction (attribute error) - Fixed in commit
+- ✅ Ingredient search (attribute error) - Fixed in commit
 
 ---
 

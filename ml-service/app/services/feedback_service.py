@@ -50,6 +50,7 @@ class FeedbackService:
         alternatives: Optional[List[Dict]] = None,
         user_description: Optional[str] = None,
         user_id: Optional[str] = None,
+        selected_fdc_id: Optional[int] = None,
     ) -> Tuple[int, List[str]]:
         """
         Submit user feedback for a misclassification.
@@ -59,14 +60,17 @@ class FeedbackService:
         """
         # Normalize labels
         original_prediction = original_prediction.lower().strip().replace(" ", "_")
-        corrected_label = corrected_label.lower().strip().replace(" ", "_")
+        selected_food_name = corrected_label.lower().strip().replace(" ", "_")
+
+        # Determine if the prediction was correct
+        was_correct = original_prediction == selected_food_name
 
         # Check if this exact feedback already exists (same image, same correction)
         existing = await db.execute(
             select(FoodFeedback).where(
                 and_(
                     FoodFeedback.image_hash == image_hash,
-                    FoodFeedback.corrected_label == corrected_label,
+                    FoodFeedback.selected_food_name == selected_food_name,
                 )
             )
         )
@@ -79,8 +83,10 @@ class FeedbackService:
             image_hash=image_hash,
             original_prediction=original_prediction,
             original_confidence=original_confidence,
-            corrected_label=corrected_label,
-            alternatives=json.dumps(alternatives) if alternatives else None,
+            selected_food_name=selected_food_name,
+            selected_fdc_id=selected_fdc_id or 0,  # Default to 0 if not provided
+            was_correct=1 if was_correct else 0,
+            classification_hints=json.dumps(alternatives) if alternatives else None,
             user_description=user_description,
             user_id=user_id,
             status="pending",
@@ -93,17 +99,17 @@ class FeedbackService:
         suggestions = []
         if user_description:
             suggestions = self._generate_prompts_from_description(
-                corrected_label, user_description
+                selected_food_name, user_description
             )
             # Store as learned prompts
             for prompt in suggestions:
                 learned = LearnedPrompt(
-                    food_key=corrected_label, prompt=prompt, source="user_description"
+                    food_key=selected_food_name, prompt=prompt, source="user_description"
                 )
                 db.add(learned)
 
         logger.info(
-            f"Feedback submitted: {original_prediction} -> {corrected_label} "
+            f"Feedback submitted: {original_prediction} -> {selected_food_name} "
             f"(confidence: {original_confidence:.2f})"
         )
 
@@ -162,10 +168,10 @@ class FeedbackService:
         misclass_query = await db.execute(
             select(
                 FoodFeedback.original_prediction,
-                FoodFeedback.corrected_label,
+                FoodFeedback.selected_food_name,
                 func.count(FoodFeedback.id).label("count"),
             )
-            .group_by(FoodFeedback.original_prediction, FoodFeedback.corrected_label)
+            .group_by(FoodFeedback.original_prediction, FoodFeedback.selected_food_name)
             .order_by(desc("count"))
             .limit(10)
         )
@@ -240,7 +246,7 @@ class FeedbackService:
             query = query.where(
                 or_(
                     FoodFeedback.original_prediction == food_key,
-                    FoodFeedback.corrected_label == food_key,
+                    FoodFeedback.selected_food_name == food_key,
                 )
             )
 
@@ -259,7 +265,7 @@ class FeedbackService:
                 "image_hash": fb.image_hash,
                 "original_prediction": fb.original_prediction,
                 "original_confidence": fb.original_confidence,
-                "corrected_label": fb.corrected_label,
+                "corrected_label": fb.selected_food_name,  # Alias for backwards compatibility
                 "user_description": fb.user_description,
                 "status": fb.status,
                 "created_at": fb.created_at.isoformat() if fb.created_at else None,
@@ -306,7 +312,7 @@ class FeedbackService:
                 FoodFeedback.original_prediction,
                 func.count(FoodFeedback.id).label("count"),
             )
-            .where(FoodFeedback.corrected_label == food_key)
+            .where(FoodFeedback.selected_food_name == food_key)
             .group_by(FoodFeedback.original_prediction)
             .order_by(desc("count"))
             .limit(5)
@@ -324,7 +330,7 @@ class FeedbackService:
         # Count total feedback for this food
         feedback_count = await db.execute(
             select(func.count(FoodFeedback.id)).where(
-                FoodFeedback.corrected_label == food_key
+                FoodFeedback.selected_food_name == food_key
             )
         )
         count = feedback_count.scalar() or 0
@@ -403,7 +409,7 @@ class FeedbackService:
             # Check feedback count
             feedback_count = await db.execute(
                 select(func.count(FoodFeedback.id)).where(
-                    FoodFeedback.corrected_label == food_key
+                    FoodFeedback.selected_food_name == food_key
                 )
             )
             count = feedback_count.scalar() or 0
@@ -457,9 +463,9 @@ class FeedbackService:
         )
 
         for fb in feedbacks:
-            by_category[fb.corrected_label]["corrections"] += 1
-            if len(by_category[fb.corrected_label]["examples"]) < 3:
-                by_category[fb.corrected_label]["examples"].append(
+            by_category[fb.selected_food_name]["corrections"] += 1
+            if len(by_category[fb.selected_food_name]["examples"]) < 3:
+                by_category[fb.selected_food_name]["examples"].append(
                     {
                         "from": fb.original_prediction,
                         "confidence": fb.original_confidence,
@@ -469,7 +475,7 @@ class FeedbackService:
         # Correction patterns
         pattern_counts: Dict[Tuple[str, str], int] = defaultdict(int)
         for fb in feedbacks:
-            pattern_counts[(fb.original_prediction, fb.corrected_label)] += 1
+            pattern_counts[(fb.original_prediction, fb.selected_food_name)] += 1
 
         patterns = [
             {

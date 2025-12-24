@@ -579,7 +579,7 @@ class IngredientExtractionService:
                 continue
 
             for allergen_mapping in match.ingredient_data.allergens:
-                allergen = allergen_mapping.allergen_type
+                allergen = allergen_mapping.allergen
                 confidence = match.confidence * allergen_mapping.confidence
 
                 # Keep highest confidence warning for each allergen
@@ -878,7 +878,7 @@ class IngredientExtractionService:
                         "name": data.display_name,
                         "category": data.category.value,
                         "score": round(score, 3),
-                        "allergens": [a.allergen_type.value for a in data.allergens],
+                        "allergens": [a.allergen.value for a in data.allergens],
                         "histamine_level": (
                             data.histamine_level.value if data.histamine_level else None
                         ),
