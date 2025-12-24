@@ -389,6 +389,17 @@ export function calculateProgress(currentStep: number, totalSteps: number): numb
   return Math.round(((currentStep - 1) / totalSteps) * 100);
 }
 
+/**
+ * Get the route path for a given step ID
+ */
+export function getStepRoute(stepId: number): string {
+  const step = getStepConfig(stepId);
+  if (!step) {
+    return '/onboarding/profile'; // Default to first step
+  }
+  return `/onboarding/${step.key}` as const;
+}
+
 // ============================================================================
 // DEFAULT VALUES
 // ============================================================================

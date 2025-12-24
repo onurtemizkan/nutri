@@ -1,24 +1,33 @@
-import { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, gradients, typography, spacing, borderRadius } from '@/lib/theme/colors';
 import { useOnboarding } from '@/lib/context/OnboardingContext';
-import { ONBOARDING_STEPS } from '@/lib/onboarding/config';
+import { ONBOARDING_STEPS, getStepRoute } from '@/lib/onboarding/config';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 
 export default function OnboardingWelcome() {
   const router = useRouter();
   const { startOnboarding, isLoading, status } = useOnboarding();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
     // If onboarding is already complete, redirect to main app
     if (status?.isComplete) {
       router.replace('/(tabs)');
+      return;
     }
-  }, [status?.isComplete, router]);
+
+    // If onboarding is in progress (started but not complete), resume at current step
+    if (status && !status.isComplete && status.currentStep >= 1) {
+      setIsRedirecting(true);
+      const route = getStepRoute(status.currentStep);
+      router.replace(route as never);
+    }
+  }, [status, router]);
 
   const handleStart = async () => {
     try {
@@ -31,6 +40,19 @@ export default function OnboardingWelcome() {
       );
     }
   };
+
+  // Show loading while checking status or redirecting
+  if (isLoading || isRedirecting) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <LinearGradient colors={gradients.dark} style={styles.gradient}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary.main} />
+          </View>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -93,6 +115,11 @@ const styles = StyleSheet.create({
   },
   gradient: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollView: {
     flex: 1,
