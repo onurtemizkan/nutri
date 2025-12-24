@@ -15,7 +15,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, desc, and_, or_
+from sqlalchemy import select, func, desc, and_, or_, literal_column, case
 
 from app.models.food_feedback import FoodFeedback, LearnedPrompt
 from app.ml_models.clip_food_classifier import FOOD_PROMPTS, get_clip_classifier
@@ -203,10 +203,14 @@ class FeedbackService:
         ]
 
         # Learned prompts count
+        # Use case() to properly count active prompts
+        # (SQLAlchemy func.sum doesn't always apply column name mapping correctly)
         prompts_query = await db.execute(
             select(
                 func.count(LearnedPrompt.id).label("total"),
-                func.sum(LearnedPrompt.is_active).label("active"),
+                func.sum(case((LearnedPrompt.is_active == 1, 1), else_=0)).label(
+                    "active"
+                ),
             )
         )
         prompts_row = prompts_query.fetchone()
