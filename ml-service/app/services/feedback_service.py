@@ -104,7 +104,9 @@ class FeedbackService:
             # Store as learned prompts
             for prompt in suggestions:
                 learned = LearnedPrompt(
-                    food_key=selected_food_name, prompt=prompt, source="user_description"
+                    food_key=selected_food_name,
+                    prompt=prompt,
+                    source="user_description",
                 )
                 db.add(learned)
 
