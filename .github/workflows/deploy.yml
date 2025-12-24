@@ -60,6 +60,9 @@ jobs:
       - name: Run database migrations
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # DIRECT_URL is needed for Prisma migrations when using connection poolers
+          # Falls back to DATABASE_URL if DIRECT_URL secret is not configured
+          DIRECT_URL: ${{ secrets.DIRECT_URL || secrets.DATABASE_URL }}
         run: |
           echo "🗄️ Running database migrations..."
           cd server
