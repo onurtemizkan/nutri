@@ -71,6 +71,11 @@ export async function fetchSleepSamples(
       },
     }) as RawCategorySample[];
 
+    if (!samples || !Array.isArray(samples)) {
+      console.warn('queryCategorySamples returned invalid response for SleepAnalysis');
+      return [];
+    }
+
     // Map the results to our SleepSample type
     return samples.map((sample) => ({
       value: mapSleepValue(sample.value),

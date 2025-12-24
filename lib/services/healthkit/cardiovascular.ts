@@ -42,7 +42,6 @@ export async function fetchRestingHeartRate(
   }
 
   try {
-
     const samples = await queryQuantitySamples('HKQuantityTypeIdentifierRestingHeartRate', {
       limit: -1,
       filter: {
@@ -52,6 +51,12 @@ export async function fetchRestingHeartRate(
         },
       },
     });
+
+    // Handle undefined or non-array response
+    if (!samples || !Array.isArray(samples)) {
+      console.warn('queryQuantitySamples returned invalid response for RestingHeartRate');
+      return [];
+    }
 
     return samples.map((sample) => transformToHealthMetric(sample, 'RESTING_HEART_RATE'));
   } catch (error) {
@@ -80,6 +85,12 @@ export async function fetchHeartRateVariability(
         },
       },
     });
+
+    // Handle undefined or non-array response
+    if (!samples || !Array.isArray(samples)) {
+      console.warn('queryQuantitySamples returned invalid response for HRV');
+      return [];
+    }
 
     // HRV SDNN is returned in seconds, convert to milliseconds
     return samples.map((sample) => {
@@ -113,6 +124,12 @@ export async function fetchHeartRateSamples(
         },
       },
     });
+
+    // Handle undefined or non-array response
+    if (!samples || !Array.isArray(samples)) {
+      console.warn('queryQuantitySamples returned invalid response for HeartRate');
+      return [];
+    }
 
     return [...samples];
   } catch (error) {

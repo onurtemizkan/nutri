@@ -34,6 +34,11 @@ export async function fetchStepCount(
       },
     });
 
+    if (!samples || !Array.isArray(samples)) {
+      console.warn('queryQuantitySamples returned invalid response for StepCount');
+      return [];
+    }
+
     // Aggregate steps by day
     const dailySteps = aggregateByDay([...samples]);
     return dailySteps.map((daily) => transformStepsToHealthMetric(daily));
@@ -64,6 +69,11 @@ export async function fetchTotalStepCount(
       },
     });
 
+    if (!samples || !Array.isArray(samples)) {
+      console.warn('queryQuantitySamples returned invalid response for TotalStepCount');
+      return 0;
+    }
+
     return samples.reduce((total, sample) => total + sample.quantity, 0);
   } catch (error) {
     console.warn('Error fetching total step count:', error);
@@ -91,6 +101,11 @@ export async function fetchActiveCalories(
         },
       },
     });
+
+    if (!samples || !Array.isArray(samples)) {
+      console.warn('queryQuantitySamples returned invalid response for ActiveEnergy');
+      return [];
+    }
 
     // Aggregate by day
     const dailyCalories = aggregateByDay([...samples]);
@@ -122,6 +137,11 @@ export async function fetchBasalCalories(
       },
     });
 
+    if (!samples || !Array.isArray(samples)) {
+      console.warn('queryQuantitySamples returned invalid response for BasalEnergy');
+      return [];
+    }
+
     return [...samples];
   } catch (error) {
     console.warn('Error fetching basal calories:', error);
@@ -149,6 +169,11 @@ export async function fetchDistanceWalkingRunning(
         },
       },
     });
+
+    if (!samples || !Array.isArray(samples)) {
+      console.warn('queryQuantitySamples returned invalid response for Distance');
+      return [];
+    }
 
     return [...samples];
   } catch (error) {

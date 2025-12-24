@@ -35,6 +35,11 @@ export async function fetchRespiratoryRate(
       },
     });
 
+    if (!samples || !Array.isArray(samples)) {
+      console.warn('queryQuantitySamples returned invalid response for RespiratoryRate');
+      return [];
+    }
+
     return samples.map((sample) => transformToHealthMetric(sample, 'RESPIRATORY_RATE'));
   } catch (error) {
     console.warn('Error fetching respiratory rate:', error);
@@ -62,6 +67,11 @@ export async function fetchOxygenSaturation(
         },
       },
     });
+
+    if (!samples || !Array.isArray(samples)) {
+      console.warn('queryQuantitySamples returned invalid response for OxygenSaturation');
+      return [];
+    }
 
     // SpO2 is returned as a decimal (0.98 for 98%), we convert to percentage
     return samples.map((sample) => {
@@ -95,6 +105,11 @@ export async function fetchVo2Max(
         },
       },
     });
+
+    if (!samples || !Array.isArray(samples)) {
+      console.warn('queryQuantitySamples returned invalid response for VO2Max');
+      return [];
+    }
 
     return samples.map((sample) => transformToHealthMetric(sample, 'VO2_MAX'));
   } catch (error) {
