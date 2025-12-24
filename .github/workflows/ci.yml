@@ -51,6 +51,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nutri_test_db
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/nutri_test_db
       JWT_SECRET: test-jwt-secret-key-for-ci
       JWT_EXPIRES_IN: 7d
       NODE_ENV: test
