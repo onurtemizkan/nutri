@@ -76,8 +76,8 @@ class LearnedPrompt(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-    # Target food category
-    food_key = Column(String(100), nullable=False, index=True)
+    # Target food category (maps to Prisma's foodKey)
+    food_key = Column("foodKey", String(100), nullable=False, index=True)
 
     # The learned prompt text
     prompt = Column(Text, nullable=False)
@@ -85,19 +85,19 @@ class LearnedPrompt(Base):
     # Source: how this prompt was generated
     source = Column(String(50), nullable=False)  # user_description, auto_generated, admin
 
-    # Effectiveness tracking
-    times_used = Column(Integer, default=0)
-    success_count = Column(Integer, default=0)
+    # Effectiveness tracking (maps to Prisma's camelCase)
+    times_used = Column("timesUsed", Integer, default=0)
+    success_count = Column("successCount", Integer, default=0)
 
-    # Status
-    is_active = Column(Integer, default=1)  # SQLite doesn't have boolean
+    # Status (maps to Prisma's isActive Boolean)
+    is_active = Column("isActive", Integer, default=1)
 
     # Timestamps
     created_at = Column("createdAt", DateTime, server_default=func.now())
     updated_at = Column("updatedAt", DateTime, server_default=func.now(), onupdate=func.now())
 
     __table_args__ = (
-        Index('idx_learned_prompt_food_active', 'food_key', 'is_active'),
+        Index('LearnedPrompt_foodKey_isActive_idx', 'foodKey', 'isActive'),
     )
 
     def __repr__(self):

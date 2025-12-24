@@ -8,6 +8,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // For migrations and direct access
 }
 
 model User {
@@ -405,6 +406,21 @@ model FoodFeedbackAggregation {
   @@unique([originalPrediction, correctedFood])
   @@index([needsReview, reviewedAt])
   @@index([correctionCount])
+}
+
+// LearnedPrompt - AI prompts learned from user feedback for CLIP classification
+model LearnedPrompt {
+  id            Int       @id @default(autoincrement())
+  foodKey       String    @db.VarChar(100)
+  prompt        String    @db.Text
+  source        String    @db.VarChar(50)  // user_description, auto_generated, admin
+  timesUsed     Int       @default(0)
+  successCount  Int       @default(0)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([foodKey, isActive])
 }
 
 // ============================================================================
