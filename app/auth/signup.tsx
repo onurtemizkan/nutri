@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  type TextInput as TextInputType,
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -30,6 +31,10 @@ export default function SignUpScreen() {
   const router = useRouter();
   const { isTablet, getSpacing } = useResponsive();
   const responsiveSpacing = getSpacing();
+
+  const emailInputRef = useRef<TextInputType>(null);
+  const passwordInputRef = useRef<TextInputType>(null);
+  const confirmPasswordInputRef = useRef<TextInputType>(null);
 
   const handleSignUp = async () => {
     if (!name || !email || !password || !confirmPassword) {
@@ -86,7 +91,8 @@ export default function SignUpScreen() {
             isTablet && styles.tabletContent
           ]}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
+          keyboardDismissMode="interactive"
         >
           {/* Header */}
           <View style={styles.header}>
@@ -108,6 +114,9 @@ export default function SignUpScreen() {
                   onChangeText={setName}
                   editable={!isLoading}
                   autoComplete="name"
+                  returnKeyType="next"
+                  onSubmitEditing={() => emailInputRef.current?.focus()}
+                  blurOnSubmit={false}
                   testID="signup-name-input"
                 />
               </View>
@@ -118,6 +127,7 @@ export default function SignUpScreen() {
               <Text style={styles.label}>Email</Text>
               <View style={styles.inputWrapper}>
                 <TextInput
+                  ref={emailInputRef}
                   style={styles.input}
                   placeholder="your@email.com"
                   placeholderTextColor={colors.text.disabled}
@@ -127,6 +137,9 @@ export default function SignUpScreen() {
                   keyboardType="email-address"
                   editable={!isLoading}
                   autoComplete="email"
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordInputRef.current?.focus()}
+                  blurOnSubmit={false}
                   testID="signup-email-input"
                 />
               </View>
@@ -137,6 +150,7 @@ export default function SignUpScreen() {
               <Text style={styles.label}>Password</Text>
               <View style={styles.inputWrapper}>
                 <TextInput
+                  ref={passwordInputRef}
                   style={styles.input}
                   placeholder="At least 6 characters"
                   placeholderTextColor={colors.text.disabled}
@@ -145,6 +159,9 @@ export default function SignUpScreen() {
                   secureTextEntry
                   editable={!isLoading}
                   autoComplete="password-new"
+                  returnKeyType="next"
+                  onSubmitEditing={() => confirmPasswordInputRef.current?.focus()}
+                  blurOnSubmit={false}
                   testID="signup-password-input"
                 />
               </View>
@@ -156,6 +173,7 @@ export default function SignUpScreen() {
               <Text style={styles.label}>Confirm Password</Text>
               <View style={styles.inputWrapper}>
                 <TextInput
+                  ref={confirmPasswordInputRef}
                   style={styles.input}
                   placeholder="Re-enter password"
                   placeholderTextColor={colors.text.disabled}
@@ -164,6 +182,8 @@ export default function SignUpScreen() {
                   secureTextEntry
                   editable={!isLoading}
                   autoComplete="password-new"
+                  returnKeyType="done"
+                  onSubmitEditing={handleSignUp}
                   testID="signup-confirm-password-input"
                 />
               </View>

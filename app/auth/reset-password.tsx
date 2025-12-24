@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  type TextInput as TextInputType,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -32,6 +33,8 @@ export default function ResetPasswordScreen() {
   const params = useLocalSearchParams();
   const { isTablet, getSpacing } = useResponsive();
   const responsiveSpacing = getSpacing();
+
+  const confirmPasswordInputRef = useRef<TextInputType>(null);
 
   const verifyToken = useCallback(async (tokenToVerify: string) => {
     setIsVerifying(true);
@@ -147,7 +150,8 @@ export default function ResetPasswordScreen() {
               isTablet && styles.tabletContent
             ]}
             showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
+            keyboardShouldPersistTaps="always"
+            keyboardDismissMode="interactive"
           >
             <View style={styles.header}>
               <Text style={styles.title}>Enter Reset Token</Text>
@@ -227,7 +231,8 @@ export default function ResetPasswordScreen() {
             isTablet && styles.tabletContent
           ]}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
+          keyboardDismissMode="interactive"
         >
           <View style={styles.header}>
             <Text style={styles.title}>Reset Password</Text>
@@ -251,6 +256,9 @@ export default function ResetPasswordScreen() {
                   secureTextEntry
                   editable={!isLoading}
                   autoComplete="password-new"
+                  returnKeyType="next"
+                  onSubmitEditing={() => confirmPasswordInputRef.current?.focus()}
+                  blurOnSubmit={false}
                   testID="reset-password-new-password-input"
                 />
               </View>
@@ -260,6 +268,7 @@ export default function ResetPasswordScreen() {
               <Text style={styles.label}>Confirm New Password</Text>
               <View style={styles.inputWrapper}>
                 <TextInput
+                  ref={confirmPasswordInputRef}
                   style={styles.input}
                   placeholder="Re-enter your password"
                   placeholderTextColor={colors.text.disabled}
@@ -268,6 +277,8 @@ export default function ResetPasswordScreen() {
                   secureTextEntry
                   editable={!isLoading}
                   autoComplete="password-new"
+                  returnKeyType="done"
+                  onSubmitEditing={handleResetPassword}
                   testID="reset-password-confirm-password-input"
                 />
               </View>

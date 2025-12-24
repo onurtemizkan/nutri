@@ -179,9 +179,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
+    paddingTop: spacing.md,
     paddingBottom: spacing.lg,
-    minHeight: '100%',
   },
   tabletContent: {
     maxWidth: FORM_MAX_WIDTH,
@@ -192,7 +191,7 @@ const styles = StyleSheet.create({
   // Header
   header: {
     alignItems: 'center',
-    marginTop: spacing.lg,
+    marginTop: spacing.sm,
   },
   logoContainer: {
     marginBottom: spacing.lg,

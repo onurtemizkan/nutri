@@ -75,9 +75,11 @@ function RootLayoutNav() {
 
     const inAuthGroup = segments[0] === 'auth';
     const inOnboardingGroup = segments[0] === 'onboarding';
+    // These routes are accessible without authentication
+    const inPublicRoute = segments[0] === 'terms' || segments[0] === 'privacy';
 
-    // Not authenticated - go to auth
-    if (!isAuthenticated && !inAuthGroup) {
+    // Not authenticated - go to auth (unless on a public route)
+    if (!isAuthenticated && !inAuthGroup && !inPublicRoute) {
       router.replace('/auth/welcome');
       return;
     }

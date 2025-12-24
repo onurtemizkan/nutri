@@ -140,7 +140,8 @@ export default function ForgotPasswordScreen() {
             isTablet && styles.tabletContent
           ]}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
+          keyboardDismissMode="interactive"
         >
           {/* Header */}
           <View style={styles.header}>
@@ -166,6 +167,8 @@ export default function ForgotPasswordScreen() {
                   editable={!isLoading}
                   autoFocus
                   autoComplete="email"
+                  returnKeyType="done"
+                  onSubmitEditing={handleForgotPassword}
                   testID="forgot-password-email-input"
                 />
               </View>

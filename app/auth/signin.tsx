@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  type TextInput as TextInputType,
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,6 +29,8 @@ export default function SignInScreen() {
   const router = useRouter();
   const { isTablet, getSpacing } = useResponsive();
   const responsiveSpacing = getSpacing();
+
+  const passwordInputRef = useRef<TextInputType>(null);
 
   const handleSignIn = async () => {
     if (!email || !password) {
@@ -66,7 +69,8 @@ export default function SignInScreen() {
             isTablet && styles.tabletContent
           ]}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
+          keyboardDismissMode="interactive"
         >
           {/* Header */}
           <View style={styles.header}>
@@ -90,6 +94,9 @@ export default function SignInScreen() {
                   keyboardType="email-address"
                   editable={!isLoading}
                   autoComplete="email"
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordInputRef.current?.focus()}
+                  blurOnSubmit={false}
                   testID="signin-email-input"
                 />
               </View>
@@ -107,6 +114,7 @@ export default function SignInScreen() {
               </View>
               <View style={styles.inputWrapper}>
                 <TextInput
+                  ref={passwordInputRef}
                   style={styles.input}
                   placeholder="Enter your password"
                   placeholderTextColor={colors.text.disabled}
@@ -115,6 +123,8 @@ export default function SignInScreen() {
                   secureTextEntry
                   editable={!isLoading}
                   autoComplete="password"
+                  returnKeyType="done"
+                  onSubmitEditing={handleSignIn}
                   testID="signin-password-input"
                 />
               </View>
