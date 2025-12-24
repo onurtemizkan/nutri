@@ -49,7 +49,7 @@ class AllergenType(str, Enum):
     CELERY = "celery"
     MUSTARD = "mustard"
     LUPIN = "lupin"
-    SULPHITES = "sulphites"
+    SULFITES = "sulfites"
 
 
 class SensitivityType(str, Enum):
