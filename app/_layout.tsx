@@ -4,7 +4,7 @@ import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Platform } from 'react-native';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -43,13 +43,28 @@ function RootLayoutNav() {
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
+  // Track if we were in onboarding to detect when leaving (completion)
+  const wasInOnboardingRef = useRef(false);
+  const inOnboardingGroup = segments[0] === 'onboarding';
+
   // Check onboarding status when user is authenticated
+  // Also re-check when leaving onboarding flow (to detect completion)
   useEffect(() => {
+    // Detect when we just left onboarding
+    const justLeftOnboarding = wasInOnboardingRef.current && !inOnboardingGroup;
+    wasInOnboardingRef.current = inOnboardingGroup;
+
     async function checkOnboarding() {
       if (!isAuthenticated) {
         setOnboardingChecked(false);
         setNeedsOnboarding(false);
         return;
+      }
+
+      // If we just left onboarding, reset checked state to prevent
+      // the navigation effect from redirecting before we re-verify
+      if (justLeftOnboarding) {
+        setOnboardingChecked(false);
       }
 
       try {
@@ -65,16 +80,21 @@ function RootLayoutNav() {
       }
     }
 
+    // Run check if:
+    // 1. Initial auth check (isAuthenticated && !isLoading && !onboardingChecked)
+    // 2. We just left onboarding (need to verify completion)
     if (isAuthenticated && !isLoading) {
-      checkOnboarding();
+      if (!onboardingChecked || justLeftOnboarding) {
+        checkOnboarding();
+      }
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, inOnboardingGroup, onboardingChecked]);
 
   useEffect(() => {
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === 'auth';
-    const inOnboardingGroup = segments[0] === 'onboarding';
+    // Note: inOnboardingGroup is already defined at component level
     // These routes are accessible without authentication
     const inPublicRoute = segments[0] === 'terms' || segments[0] === 'privacy';
 
@@ -106,7 +126,7 @@ function RootLayoutNav() {
         router.replace('/(tabs)');
       }
     }
-  }, [isAuthenticated, segments, isLoading, router, onboardingChecked, needsOnboarding]);
+  }, [isAuthenticated, segments, isLoading, router, onboardingChecked, needsOnboarding, inOnboardingGroup]);
 
   return (
     <Stack>
