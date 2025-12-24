@@ -174,17 +174,30 @@ app.get('/health', async (_req, res) => {
     }
   }
 
-  // Notification Queue check
+  // Notification Queue check (with timeout to prevent blocking health checks)
   if (notificationScheduler.isReady()) {
     const queueStart = Date.now();
+    const QUEUE_CHECK_TIMEOUT = 5000; // 5 second timeout
+
     try {
       const queue = notificationScheduler.getQueue();
-      const [waiting, active, completed, failed] = await Promise.all([
+
+      // Wrap queue checks in a timeout to prevent blocking
+      const queueCheckPromise = Promise.all([
         queue.getWaitingCount(),
         queue.getActiveCount(),
         queue.getCompletedCount(),
         queue.getFailedCount(),
       ]);
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Queue health check timeout')), QUEUE_CHECK_TIMEOUT)
+      );
+
+      const [waiting, active, completed, failed] = await Promise.race([
+        queueCheckPromise,
+        timeoutPromise,
+      ]) as [number, number, number, number];
 
       checks.notification_queue = {
         status: 'healthy',
