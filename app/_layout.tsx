@@ -84,23 +84,25 @@ function RootLayoutNav() {
       return;
     }
 
-    // Authenticated but in auth group - redirect based on onboarding status
-    if (isAuthenticated && inAuthGroup) {
-      if (!onboardingChecked) return; // Wait for onboarding check
-
-      if (needsOnboarding) {
-        router.replace('/onboarding');
-      } else {
-        router.replace('/(tabs)');
-      }
-      return;
+    // Authenticated - wait for onboarding check before any navigation
+    if (isAuthenticated && !onboardingChecked) {
+      return; // Don't navigate until we know onboarding status
     }
 
-    // Authenticated - check onboarding status
+    // Authenticated and onboarding checked - redirect based on status
     if (isAuthenticated && onboardingChecked) {
-      if (needsOnboarding && !inOnboardingGroup) {
+      if (inAuthGroup) {
+        // Just logged in - go to appropriate screen
+        if (needsOnboarding) {
+          router.replace('/onboarding');
+        } else {
+          router.replace('/(tabs)');
+        }
+      } else if (needsOnboarding && !inOnboardingGroup) {
+        // Needs onboarding but not in onboarding flow
         router.replace('/onboarding');
       } else if (!needsOnboarding && inOnboardingGroup) {
+        // Completed onboarding but still in onboarding flow
         router.replace('/(tabs)');
       }
     }
