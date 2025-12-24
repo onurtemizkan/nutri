@@ -99,6 +99,9 @@ export class NotificationScheduler {
     const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
     const concurrency = parseInt(process.env.NOTIFICATION_QUEUE_CONCURRENCY || '5', 10);
 
+    // Detect if using Upstash or other managed Redis (rediss://)
+    const isSecureRedis = redisUrl.startsWith('rediss://');
+
     this.queue = new Bull<NotificationJobData>('notifications', redisUrl, {
       defaultJobOptions: {
         attempts: 3,
@@ -109,6 +112,18 @@ export class NotificationScheduler {
         removeOnComplete: 100, // Keep last 100 completed jobs
         removeOnFail: 50, // Keep last 50 failed jobs
       },
+      // Redis client options for Upstash/managed Redis compatibility
+      redis: isSecureRedis
+        ? {
+            maxRetriesPerRequest: null, // Prevents "max retries" error with Upstash
+            enableReadyCheck: false, // Upstash doesn't support CLUSTER commands
+            enableOfflineQueue: true, // Queue commands while reconnecting
+            retryStrategy: (times: number) => {
+              // Exponential backoff with max 30 seconds
+              return Math.min(times * 200, 30000);
+            },
+          }
+        : undefined,
     });
 
     // Setup job processors
