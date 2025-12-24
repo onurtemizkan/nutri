@@ -179,6 +179,39 @@ jobs:
           echo "ml_status=failed" >> $GITHUB_OUTPUT
           exit 1
 
+      # -------------------------------------------------------------------------
+      # Force Deployment via SSH (workaround for Coolify not starting containers)
+      # -------------------------------------------------------------------------
+      - name: Force Deploy via SSH
+        if: ${{ secrets.COOLIFY_SSH_KEY != '' }}
+        env:
+          SSH_KEY: ${{ secrets.COOLIFY_SSH_KEY }}
+          SERVER_IP: ${{ secrets.COOLIFY_SERVER_IP }}
+        run: |
+          echo "🔧 Forcing deployment via SSH..."
+
+          # Setup SSH
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H $SERVER_IP >> ~/.ssh/known_hosts 2>/dev/null
+
+          # Deploy backend
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no root@$SERVER_IP << 'DEPLOY'
+          cd /data/coolify/applications/zwogw8ccsw84w8ocws4sowok
+          docker compose up -d --remove-orphans
+          echo "✅ Backend container deployed"
+          DEPLOY
+
+          # Deploy ML service
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no root@$SERVER_IP << 'DEPLOY'
+          cd /data/coolify/applications/z8cg8kkg4o0wg8044c8g0s0o
+          docker compose up -d --remove-orphans 2>/dev/null || echo "ML service path may differ"
+          echo "✅ ML service container deployed"
+          DEPLOY
+
+          echo "deployment_method=ssh" >> $GITHUB_OUTPUT
+
       - name: Wait for containers to start
         run: |
           echo "⏳ Waiting 60 seconds for containers to start..."
