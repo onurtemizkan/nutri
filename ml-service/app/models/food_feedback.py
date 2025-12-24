@@ -4,7 +4,7 @@ Food Classification Feedback Model
 Stores user corrections for misclassified food items.
 Used to improve CLIP prompts and track classification accuracy over time.
 """
-from sqlalchemy import Column, String, Integer, Float, DateTime, Text, Index
+from sqlalchemy import Boolean, Column, String, Integer, Float, DateTime, Text, Index
 from sqlalchemy import func
 from app.database import Base
 import hashlib
@@ -20,6 +20,7 @@ class FoodFeedback(Base):
     2. Generate new CLIP prompts for problem foods
     3. Measure classifier accuracy over time
     """
+
     __tablename__ = "FoodFeedback"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -28,7 +29,9 @@ class FoodFeedback(Base):
     image_hash = Column("imageHash", String(64), nullable=False, index=True)
 
     # Original prediction from the classifier
-    original_prediction = Column("originalPrediction", String(100), nullable=False, index=True)
+    original_prediction = Column(
+        "originalPrediction", String(100), nullable=False, index=True
+    )
     original_confidence = Column("originalConfidence", Float, nullable=False)
     original_category = Column("originalCategory", String(100), nullable=True)
 
@@ -57,8 +60,8 @@ class FoodFeedback(Base):
 
     # Create composite index for common queries (matching Prisma schema)
     __table_args__ = (
-        Index('idx_feedback_prediction_food', 'originalPrediction', 'selectedFoodName'),
-        Index('idx_feedback_status_created', 'status', 'createdAt'),
+        Index("idx_feedback_prediction_food", "originalPrediction", "selectedFoodName"),
+        Index("idx_feedback_status_created", "status", "createdAt"),
     )
 
     def __repr__(self):
@@ -72,6 +75,7 @@ class LearnedPrompt(Base):
     When the same correction is received multiple times,
     the system generates new CLIP prompts to improve accuracy.
     """
+
     __tablename__ = "LearnedPrompt"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -83,21 +87,25 @@ class LearnedPrompt(Base):
     prompt = Column(Text, nullable=False)
 
     # Source: how this prompt was generated
-    source = Column(String(50), nullable=False)  # user_description, auto_generated, admin
+    source = Column(
+        String(50), nullable=False
+    )  # user_description, auto_generated, admin
 
     # Effectiveness tracking (maps to Prisma's camelCase)
     times_used = Column("timesUsed", Integer, default=0)
     success_count = Column("successCount", Integer, default=0)
 
     # Status (maps to Prisma's isActive Boolean)
-    is_active = Column("isActive", Integer, default=1)
+    is_active = Column("isActive", Boolean, default=True)
 
     # Timestamps
     created_at = Column("createdAt", DateTime, server_default=func.now())
-    updated_at = Column("updatedAt", DateTime, server_default=func.now(), onupdate=func.now())
+    updated_at = Column(
+        "updatedAt", DateTime, server_default=func.now(), onupdate=func.now()
+    )
 
     __table_args__ = (
-        Index('LearnedPrompt_foodKey_isActive_idx', 'foodKey', 'isActive'),
+        Index("LearnedPrompt_foodKey_isActive_idx", "foodKey", "isActive"),
     )
 
     def __repr__(self):

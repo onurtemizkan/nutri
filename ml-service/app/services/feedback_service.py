@@ -203,12 +203,11 @@ class FeedbackService:
         ]
 
         # Learned prompts count
-        # Use case() to properly count active prompts
-        # (SQLAlchemy func.sum doesn't always apply column name mapping correctly)
+        # Use case() to properly count active prompts (is_active is Boolean)
         prompts_query = await db.execute(
             select(
                 func.count(LearnedPrompt.id).label("total"),
-                func.sum(case((LearnedPrompt.is_active == 1, 1), else_=0)).label(
+                func.sum(case((LearnedPrompt.is_active.is_(True), 1), else_=0)).label(
                     "active"
                 ),
             )
@@ -393,8 +392,8 @@ class FeedbackService:
         Returns:
             Tuple of (number of prompts applied, list of updated foods)
         """
-        # Get active learned prompts
-        query = select(LearnedPrompt).where(LearnedPrompt.is_active == 1)
+        # Get active learned prompts (is_active is Boolean)
+        query = select(LearnedPrompt).where(LearnedPrompt.is_active.is_(True))
 
         if food_keys:
             query = query.where(LearnedPrompt.food_key.in_(food_keys))
