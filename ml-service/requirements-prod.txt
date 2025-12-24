@@ -56,6 +56,9 @@ optimum[onnxruntime]==1.17.0
 # Text Processing & Fuzzy Matching
 rapidfuzz==3.6.1
 
+# Model Interpretability (required - shap_explainer.py imports unconditionally)
+shap==0.44.1
+
 # Utilities
 python-dotenv==1.0.0
 python-jose[cryptography]==3.3.0
@@ -76,7 +79,7 @@ structlog==24.1.0
 # Excluded from production (dev-only):
 # - pytest, pytest-asyncio, pytest-cov (testing)
 # - black, flake8, mypy (linting)
-# - shap, lime, captum (interpretability - adds ~500MB)
+# - lime, captum (interpretability - shap is included as it's required)
 # - matplotlib, seaborn (visualization)
 # - optuna (hyperparameter tuning)
 # - feature-engine (can add if needed)
