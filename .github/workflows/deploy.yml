@@ -239,10 +239,22 @@ jobs:
             exit 0
           fi
 
+          # First, verify DNS resolution
+          echo "Checking DNS resolution for the API URL..."
+          API_HOST=$(echo "${{ secrets.PRODUCTION_API_URL }}" | sed -E 's|https?://([^/]+).*|\1|')
+          echo "API Host: $API_HOST"
+          nslookup "$API_HOST" 2>&1 | head -5 || echo "DNS lookup failed"
+
           for i in {1..5}; do
             echo "Health check attempt $i/5..."
 
             # Use /health/live for fast liveness check (doesn't check dependencies)
+            # Add -v for first attempt to debug connection issues
+            if [ $i -eq 1 ]; then
+              curl -v --connect-timeout 10 --max-time 15 \
+                "${{ secrets.PRODUCTION_API_URL }}/health/live" 2>&1 | head -30 || true
+            fi
+
             http_code=$(curl -s -o /dev/null -w "%{http_code}" \
               --connect-timeout 10 \
               --max-time 15 \
