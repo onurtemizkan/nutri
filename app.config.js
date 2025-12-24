@@ -143,7 +143,7 @@ module.exports = {
       // Set to undefined to use environment-specific URLs
       apiUrl: API_URL || undefined,
       // Production API URL (used when APP_ENV=production)
-      productionApiUrl: PRODUCTION_API_URL || 'https://z8cg8kkg4o0wg8044c8g0s0o.195.201.228.58.sslip.io/api',
+      productionApiUrl: PRODUCTION_API_URL || 'https://zwogw8ccsw84w8ocws4sowok.195.201.228.58.sslip.io/api',
       // Beta API URL (used when APP_ENV=beta)
       // Set this in EAS secrets or eas.json for beta builds
       betaApiUrl: BETA_API_URL || undefined,
