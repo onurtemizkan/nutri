@@ -346,6 +346,10 @@ class CoarseFoodClassifier:
         self._processor = None
         self._loaded = False
         self._device = self._detect_device()
+        # Cache for pre-computed text embeddings (computed once, reused for all requests)
+        self._text_embeddings_cache = None
+        self._prompt_to_category_cache = None
+        self._all_prompts_cache = None
 
         logger.info(f"CoarseFoodClassifier initialized (device: {self._device})")
 
@@ -364,8 +368,10 @@ class CoarseFoodClassifier:
 
         try:
             from transformers import CLIPProcessor, CLIPModel
+            import time
 
             logger.info("Loading CLIP model for coarse classification...")
+            start_time = time.time()
 
             model_name = "openai/clip-vit-base-patch32"
             self._processor = CLIPProcessor.from_pretrained(model_name)
@@ -373,12 +379,53 @@ class CoarseFoodClassifier:
             self._model = self._model.to(self._device)
             self._model.eval()
 
+            model_load_time = time.time() - start_time
+            logger.info(
+                f"CLIP model loaded on {self._device} in {model_load_time:.2f}s"
+            )
+
+            # Pre-compute and cache text embeddings for all prompts
+            # This is the key optimization - text encoding is slow (~20s on CPU)
+            # but only needs to be done once since prompts never change
+            logger.info("Pre-computing text embeddings for all food categories...")
+            text_start = time.time()
+            self._precompute_text_embeddings()
+            text_time = time.time() - text_start
+            logger.info(f"Text embeddings cached in {text_time:.2f}s")
+
             self._loaded = True
-            logger.info(f"CLIP model loaded on {self._device}")
+            total_time = time.time() - start_time
+            logger.info(f"CoarseFoodClassifier fully loaded in {total_time:.2f}s")
 
         except Exception as e:
             logger.error(f"Failed to load CLIP model: {e}")
             raise
+
+    def _precompute_text_embeddings(self) -> None:
+        """Pre-compute and cache text embeddings for all category prompts."""
+        # Build prompt list and mapping
+        self._all_prompts_cache = []
+        self._prompt_to_category_cache = {}
+
+        for category, prompts in CATEGORY_PROMPTS.items():
+            for prompt in prompts:
+                self._all_prompts_cache.append(prompt)
+                self._prompt_to_category_cache[prompt] = category
+
+        # Encode all prompts once
+        with torch.no_grad():
+            text_inputs = self._processor(
+                text=self._all_prompts_cache,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+            )
+            text_inputs = {k: v.to(self._device) for k, v in text_inputs.items()}
+            text_features = self._model.get_text_features(**text_inputs)
+            # Normalize and cache
+            self._text_embeddings_cache = text_features / text_features.norm(
+                dim=-1, keepdim=True
+            )
 
     def _build_text_features(self) -> Dict[FoodCategory, torch.Tensor]:
         """Pre-compute text embeddings for all category prompts."""
@@ -421,32 +468,22 @@ class CoarseFoodClassifier:
             if image.mode != "RGB":
                 image = image.convert("RGB")
 
-            # Get all category prompts as a flat list
-            all_prompts = []
-            prompt_to_category = {}
+            # Use cached prompt data (computed once at model load time)
+            all_prompts = self._all_prompts_cache
+            prompt_to_category = self._prompt_to_category_cache
 
-            for category, prompts in CATEGORY_PROMPTS.items():
-                for prompt in prompts:
-                    all_prompts.append(prompt)
-                    prompt_to_category[prompt] = category
-
-            # Encode image
+            # Encode image (this is fast, ~50-100ms)
             image_inputs = self._processor(images=image, return_tensors="pt")
             image_inputs = {k: v.to(self._device) for k, v in image_inputs.items()}
             image_features = self._model.get_image_features(**image_inputs)
 
-            # Encode all prompts
-            text_inputs = self._processor(
-                text=all_prompts, return_tensors="pt", padding=True, truncation=True
-            )
-            text_inputs = {k: v.to(self._device) for k, v in text_inputs.items()}
-            text_features = self._model.get_text_features(**text_inputs)
-
-            # Normalize features
+            # Normalize image features
             image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-            text_features = text_features / text_features.norm(dim=-1, keepdim=True)
 
-            # Calculate similarities
+            # Use cached text embeddings (pre-computed at load time, saves ~20-30s!)
+            text_features = self._text_embeddings_cache
+
+            # Calculate similarities using cached text embeddings
             similarities = (image_features @ text_features.T).squeeze(0)
 
             # Aggregate scores per category (max pooling over prompts)

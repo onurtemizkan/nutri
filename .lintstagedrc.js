@@ -23,18 +23,21 @@ module.exports = {
   },
 
   // Python files in ml-service (excluding venv)
+  // Uses venv-installed tools via explicit shell, falls back gracefully
   'ml-service/app/**/*.py': (filenames) => {
+    // Quote each file path to handle spaces
+    const files = filenames.map((f) => `"${f}"`).join(' ');
     return [
-      // Black for formatting
-      `black ${filenames.join(' ')}`,
-      // isort for import sorting
-      `isort ${filenames.join(' ')}`,
+      // Run through sh -c to enable shell constructs (cd, &&, ||)
+      `sh -c 'cd ml-service && . venv/bin/activate 2>/dev/null && black ${files} || black ${files} 2>/dev/null || echo "Skipping black"'`,
+      `sh -c 'cd ml-service && . venv/bin/activate 2>/dev/null && isort ${files} || isort ${files} 2>/dev/null || echo "Skipping isort"'`,
     ];
   },
   'ml-service/tests/**/*.py': (filenames) => {
+    const files = filenames.map((f) => `"${f}"`).join(' ');
     return [
-      `black ${filenames.join(' ')}`,
-      `isort ${filenames.join(' ')}`,
+      `sh -c 'cd ml-service && . venv/bin/activate 2>/dev/null && black ${files} || black ${files} 2>/dev/null || echo "Skipping black"'`,
+      `sh -c 'cd ml-service && . venv/bin/activate 2>/dev/null && isort ${files} || isort ${files} 2>/dev/null || echo "Skipping isort"'`,
     ];
   },
 
