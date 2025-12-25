@@ -11,9 +11,17 @@ Categories are designed to:
 1. Map directly to USDA data types (Foundation, SR Legacy, Survey, Branded)
 2. Support efficient USDA search filtering
 3. Enable portion estimation based on food type
+
+Performance optimization:
+- Text embeddings are pre-computed and cached during model load
+- This reduces classification time from ~25-30s to ~200ms per request
 """
 
 import logging
+import time
+
+# Version for tracking deployments
+CLASSIFIER_VERSION = "2.1.0-text-cache"
 from typing import List, Tuple, Dict, Optional
 from dataclasses import dataclass
 from enum import Enum
@@ -460,28 +468,57 @@ class CoarseFoodClassifier:
         Returns:
             CoarseClassification with category, confidence, and hints
         """
+        classify_start = time.time()
+
         if not self._loaded:
+            load_start = time.time()
             self.load_model()
+            logger.info(
+                f"[TIMING] Model loaded in classify: {time.time() - load_start:.2f}s"
+            )
 
         try:
             # Ensure RGB format
             if image.mode != "RGB":
                 image = image.convert("RGB")
 
+            # Check if cache is populated
+            cache_status = "HIT" if self._text_embeddings_cache is not None else "MISS"
+            logger.info(
+                f"[TIMING] Classify start - cache: {cache_status}, "
+                f"version: {CLASSIFIER_VERSION}"
+            )
+
             # Use cached prompt data (computed once at model load time)
             all_prompts = self._all_prompts_cache
             prompt_to_category = self._prompt_to_category_cache
 
             # Encode image (this is fast, ~50-100ms)
+            img_start = time.time()
             image_inputs = self._processor(images=image, return_tensors="pt")
             image_inputs = {k: v.to(self._device) for k, v in image_inputs.items()}
             image_features = self._model.get_image_features(**image_inputs)
+            img_time = time.time() - img_start
+            logger.info(f"[TIMING] Image encoding: {img_time:.2f}s")
 
             # Normalize image features
             image_features = image_features / image_features.norm(dim=-1, keepdim=True)
 
             # Use cached text embeddings (pre-computed at load time, saves ~20-30s!)
-            text_features = self._text_embeddings_cache
+            text_start = time.time()
+            if self._text_embeddings_cache is not None:
+                text_features = self._text_embeddings_cache
+                logger.info(
+                    f"[TIMING] Text cache HIT - {time.time() - text_start:.4f}s"
+                )
+            else:
+                # Fallback: compute text embeddings (SLOW - should not happen after warmup)
+                logger.warning(
+                    "[TIMING] Text cache MISS - computing text embeddings now!"
+                )
+                self._precompute_text_embeddings()
+                text_features = self._text_embeddings_cache
+                logger.info(f"[TIMING] Text computed: {time.time() - text_start:.2f}s")
 
             # Calculate similarities using cached text embeddings
             similarities = (image_features @ text_features.T).squeeze(0)
@@ -524,9 +561,10 @@ class CoarseFoodClassifier:
                 best_category, ["Foundation", "SR Legacy", "Survey (FNDDS)", "Branded"]
             )
 
+            total_time = time.time() - classify_start
             logger.info(
-                f"Coarse classification: {best_category.value} "
-                f"(confidence: {best_confidence:.2%})"
+                f"[TIMING] Coarse classify complete: {total_time:.2f}s - "
+                f"{best_category.value} ({best_confidence:.2%})"
             )
 
             return CoarseClassification(
