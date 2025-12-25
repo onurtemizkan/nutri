@@ -13,6 +13,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import { mealsApi } from '@/lib/api/meals';
 import { supplementsApi } from '@/lib/api/supplements';
 import { healthMetricsApi } from '@/lib/api/health-metrics';
@@ -256,17 +257,43 @@ export default function HomeScreen() {
 
             {/* Calories - Right Side */}
             <View style={styles.calorieSection}>
-              <LinearGradient
-                colors={gradients.primary}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.calorieRing}
-              >
+              <View style={styles.calorieRingContainer}>
+                <Svg width={88} height={88} style={styles.calorieSvg}>
+                  <Defs>
+                    <SvgLinearGradient id="calorieGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <Stop offset="0%" stopColor={colors.primary.main} />
+                      <Stop offset="100%" stopColor={colors.primary.light} />
+                    </SvgLinearGradient>
+                  </Defs>
+                  {/* Background circle */}
+                  <Circle
+                    cx={44}
+                    cy={44}
+                    r={38}
+                    stroke={colors.background.elevated}
+                    strokeWidth={8}
+                    fill="transparent"
+                  />
+                  {/* Progress circle */}
+                  <Circle
+                    cx={44}
+                    cy={44}
+                    r={38}
+                    stroke="url(#calorieGradient)"
+                    strokeWidth={8}
+                    fill="transparent"
+                    strokeLinecap="round"
+                    strokeDasharray={2 * Math.PI * 38}
+                    strokeDashoffset={2 * Math.PI * 38 * (1 - Math.min(calorieProgress / 100, 1))}
+                    rotation={-90}
+                    origin="44, 44"
+                  />
+                </Svg>
                 <View style={styles.calorieContent}>
                   <Text style={styles.calorieValue}>{Math.round(summary?.totalCalories || 0)}</Text>
                   <Text style={styles.calorieGoal}>/ {summary?.goals?.goalCalories || 2000}</Text>
                 </View>
-              </LinearGradient>
+              </View>
               <Text style={styles.calorieLabel}>Calories</Text>
             </View>
           </View>
@@ -500,20 +527,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginLeft: spacing.md,
   },
-  calorieRing: {
+  calorieRingContainer: {
     width: 88,
     height: 88,
-    borderRadius: 44,
     justifyContent: 'center',
     alignItems: 'center',
-    ...shadows.glow,
+  },
+  calorieSvg: {
+    position: 'absolute',
   },
   calorieContent: {
     alignItems: 'center',
-    backgroundColor: colors.background.tertiary,
-    width: 72,
-    height: 72,
-    borderRadius: 36,
     justifyContent: 'center',
   },
   calorieValue: {
