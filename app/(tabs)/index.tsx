@@ -280,6 +280,12 @@ export default function HomeScreen() {
             </View>
           </View>
 
+          {/* Daily Micronutrient Summary (Food + Supplements) */}
+          <DailyMicronutrientSummary
+            meals={summary?.meals || []}
+            supplements={supplementStatus?.supplements}
+          />
+
           {/* 7-Day Health Trends */}
           {healthTrends && Object.keys(healthTrends).length > 0 && (
             <View style={styles.trendsSection} testID="home-health-trends">
@@ -347,12 +353,6 @@ export default function HomeScreen() {
               </View>
             </View>
           )}
-
-          {/* Daily Micronutrient Summary (Food + Supplements) */}
-          <DailyMicronutrientSummary
-            meals={summary?.meals || []}
-            supplements={supplementStatus?.supplements}
-          />
 
           {/* Today's Meals */}
           <View style={styles.mealsSection} testID="home-meals-section">
