@@ -468,13 +468,13 @@ const styles = StyleSheet.create({
   },
   filterTabActive: {
     backgroundColor: 'transparent',
+    paddingVertical: 0,
   },
   filterTabGradient: {
-    flex: 1,
-    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     borderRadius: borderRadius.md,
   },
   filterTabText: {
