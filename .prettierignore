@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+server/node_modules/
+
+# Build outputs
+dist/
+build/
+.expo/
+ios/
+android/
+
+# Python
+ml-service/venv/
+ml-service/.venv/
+ml-service/__pycache__/
+*.pyc
+
+# Generated files
+*.lock
+package-lock.json
+
+# Coverage
+coverage/
+
+# IDE
+.idea/
+.vscode/
+
+# Prisma
+server/prisma/migrations/
+
+# Task Master
+.taskmaster/
