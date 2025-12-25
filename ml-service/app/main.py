@@ -31,6 +31,7 @@ def warmup_ml_models():
     - CLIP classifier (primary) - ~600MB
     - OWL-ViT detector (multi-food) - ~1.5GB
     - Food-101 ViT (fallback) - ~350MB
+    - Coarse food classifier (CLIP-based) - shared with primary
 
     This prevents the first food analysis request from timing out
     while models are being downloaded/loaded.
@@ -43,6 +44,7 @@ def warmup_ml_models():
     try:
         # Import here to avoid circular imports
         from app.services.food_analysis_service import food_analysis_service
+        from app.ml_models.coarse_classifier import get_coarse_classifier
 
         # 1. Pre-load CLIP classifier (primary)
         logger.info("loading_clip_classifier")
@@ -78,6 +80,17 @@ def warmup_ml_models():
         logger.info(
             "food101_fallback_loaded",
             duration_ms=int((time.time() - f101_start) * 1000),
+        )
+
+        # 4. Pre-load Coarse Food Classifier (used by classify-and-search)
+        # This is critical for food scanning - it uses CLIP for zero-shot classification
+        logger.info("loading_coarse_classifier")
+        coarse_start = time.time()
+        coarse_classifier = get_coarse_classifier()
+        coarse_classifier.load_model()
+        logger.info(
+            "coarse_classifier_loaded",
+            duration_ms=int((time.time() - coarse_start) * 1000),
         )
 
         total_time = time.time() - start_time
