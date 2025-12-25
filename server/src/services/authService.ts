@@ -5,6 +5,7 @@ import prisma from '../config/database';
 import { config } from '../config/env';
 import { RegisterInput, LoginInput } from '../types';
 import { logger } from '../config/logger';
+import { processAppleToken } from './appleTokenVerification';
 
 export class AuthService {
   async register(data: RegisterInput) {
@@ -264,31 +265,12 @@ export class AuthService {
       };
     };
   }) {
-    // Note: In production, you should verify the identityToken with Apple's servers
-    // For now, we'll decode it without verification (development only)
-    // See: https://developer.apple.com/documentation/sign_in_with_apple/sign_in_with_apple_rest_api/verifying_a_user
-
-    let appleId: string;
-    let email: string | undefined;
-
-    try {
-      // Decode the identity token (without verification)
-      // The token is a JWT with three parts: header.payload.signature
-      const tokenParts = data.identityToken.split('.');
-      if (tokenParts.length !== 3) {
-        throw new Error('Invalid identity token format');
-      }
-
-      const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString('utf8'));
-      appleId = payload.sub; // Apple user ID
-      email = payload.email || data.user?.email;
-
-      if (!appleId) {
-        throw new Error('Invalid identity token: missing user ID');
-      }
-    } catch {
-      throw new Error('Failed to decode Apple identity token');
-    }
+    // Verify or decode the Apple identity token
+    // In production (APPLE_APP_ID set): Verifies with Apple's servers
+    // In development: Decodes without verification (logs warning)
+    const tokenResult = await processAppleToken(data.identityToken);
+    const appleId = tokenResult.sub;
+    const email = tokenResult.email || data.user?.email;
 
     // Check if user already exists with this Apple ID
     let user = await prisma.user.findUnique({
