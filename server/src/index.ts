@@ -29,7 +29,48 @@ const packageJson = require('../package.json');
 const app = express();
 
 // Middleware
-app.use(cors());
+
+// CORS configuration with explicit origins
+// In production: requires CORS_ORIGIN env var
+// In development: allows localhost origins for mobile development
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      // Check if origin is in allowed list
+      if (config.cors.origins.length === 0) {
+        // No origins configured - reject in production, warn in development
+        if (config.nodeEnv === 'production') {
+          callback(new Error('CORS_ORIGIN not configured for production'));
+          return;
+        }
+        // In development without config, allow the request but log warning
+        logger.warn({ origin }, 'CORS: Allowing request from unconfigured origin in development');
+        callback(null, true);
+        return;
+      }
+
+      if (config.cors.origins.includes(origin)) {
+        callback(null, true);
+      } else {
+        logger.warn(
+          { origin, allowedOrigins: config.cors.origins },
+          'CORS: Blocked request from unauthorized origin'
+        );
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: config.cors.credentials,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID'],
+    exposedHeaders: ['X-Correlation-ID'],
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -194,10 +235,10 @@ app.get('/health', async (_req, res) => {
         setTimeout(() => reject(new Error('Queue health check timeout')), QUEUE_CHECK_TIMEOUT)
       );
 
-      const [waiting, active, completed, failed] = await Promise.race([
+      const [waiting, active, completed, failed] = (await Promise.race([
         queueCheckPromise,
         timeoutPromise,
-      ]) as [number, number, number, number];
+      ])) as [number, number, number, number];
 
       checks.notification_queue = {
         status: 'healthy',
@@ -250,13 +291,16 @@ if (process.env.NODE_ENV !== 'test') {
   const PORT = config.port;
 
   app.listen(PORT, async () => {
-    logger.info({
-      port: PORT,
-      env: config.nodeEnv,
-      version: packageJson.version,
-      healthCheck: `http://localhost:${PORT}/health`,
-      queueDashboard: `http://localhost:${PORT}/admin/queues`,
-    }, 'Server started');
+    logger.info(
+      {
+        port: PORT,
+        env: config.nodeEnv,
+        version: packageJson.version,
+        healthCheck: `http://localhost:${PORT}/health`,
+        queueDashboard: `http://localhost:${PORT}/admin/queues`,
+      },
+      'Server started'
+    );
 
     // Initialize notification scheduler maintenance jobs
     try {
