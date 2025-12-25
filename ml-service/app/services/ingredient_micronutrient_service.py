@@ -156,6 +156,7 @@ INGREDIENT_MICRONUTRIENT_PROFILES: Dict[str, Dict[str, float]] = {
     "protein yogurt": {"calcium": 180, "vitamin_b12": 1.0, "riboflavin": 0.25},
     "cottage cheese": {"calcium": 80, "vitamin_b12": 0.6, "riboflavin": 0.2},
     "kefir": {"calcium": 250, "vitamin_b12": 0.8, "vitamin_k": 30, "riboflavin": 0.3},
+    "cream": {"vitamin_a": 400, "calcium": 65, "vitamin_b12": 0.2, "riboflavin": 0.1},
     "fortified plant milk": {"calcium": 300, "vitamin_d": 2.5, "vitamin_b12": 1.0},
     "almond milk": {
         "calcium": 300,
@@ -257,6 +258,7 @@ INGREDIENT_MICRONUTRIENT_PROFILES: Dict[str, Dict[str, float]] = {
     "blackberry": {"vitamin_c": 20, "vitamin_k": 20, "manganese": 0.9, "fiber": 5},
     "cranberry": {"vitamin_c": 15, "vitamin_e": 1},
     "pomegranate": {"vitamin_c": 10, "vitamin_k": 15, "folate": 40, "potassium": 200},
+    "pineapple": {"vitamin_c": 48, "manganese": 0.9, "vitamin_b6": 0.1, "thiamin": 0.08},
     "grape": {"vitamin_k": 15, "vitamin_c": 5, "potassium": 190},
     "grapes": {"vitamin_k": 15, "vitamin_c": 5, "potassium": 190},
     "pear": {"vitamin_c": 5, "vitamin_k": 5, "potassium": 120, "fiber": 4},
@@ -300,6 +302,297 @@ FORTIFICATION_KEYWORDS = [
     "vitamin enriched",
 ]
 
+# ==============================================================================
+# INGREDIENT SYNONYMS AND ALIASES
+# Maps variations to canonical ingredient names for better matching
+# ==============================================================================
+INGREDIENT_SYNONYMS: Dict[str, str] = {
+    # Dairy variations
+    "whole milk": "milk",
+    "skim milk": "milk",
+    "skimmed milk": "milk",
+    "semi-skimmed milk": "milk",
+    "low-fat milk": "milk",
+    "fat-free milk": "milk",
+    "pasteurized milk": "milk",
+    "reconstituted milk": "milk",
+    "milk powder": "milk",
+    "dried milk": "milk",
+    "powdered milk": "milk",
+    "nonfat dry milk": "milk",
+    "evaporated milk": "milk",
+    "condensed milk": "milk",
+    "buttermilk": "milk",
+    "heavy cream": "cream",
+    "heavy whipping cream": "cream",
+    "double cream": "cream",
+    "single cream": "cream",
+    "light cream": "cream",
+    "whipping cream": "cream",
+    "sour cream": "cream",
+    "creme fraiche": "cream",
+    "crème fraîche": "cream",
+    "clotted cream": "cream",
+    "plain yogurt": "yogurt",
+    "natural yogurt": "yogurt",
+    "low-fat yogurt": "yogurt",
+    "nonfat yogurt": "yogurt",
+    "whole milk yogurt": "yogurt",
+    "strained yogurt": "greek yogurt",
+    "greek-style yogurt": "greek yogurt",
+    "icelandic yogurt": "skyr",
+    "quark cheese": "quark",
+    "curd cheese": "quark",
+    "farmer cheese": "cottage cheese",
+    "pot cheese": "cottage cheese",
+    "ricotta cheese": "cottage cheese",  # Similar profile
+    "cream cheese": "cheese",
+    "soft cheese": "cheese",
+    "hard cheese": "cheese",
+    "aged cheese": "cheese",
+
+    # Protein variations
+    "chicken breast": "chicken",
+    "chicken thigh": "chicken",
+    "chicken leg": "chicken",
+    "chicken wing": "chicken",
+    "ground chicken": "chicken",
+    "turkey breast": "turkey",
+    "ground turkey": "turkey",
+    "beef steak": "beef",
+    "ground beef": "beef",
+    "minced beef": "beef",
+    "beef mince": "beef",
+    "lean beef": "beef",
+    "pork loin": "pork",
+    "ground pork": "pork",
+    "pork shoulder": "pork",
+    "lamb chop": "lamb",
+    "ground lamb": "lamb",
+    "lamb mince": "lamb",
+
+    # Fish variations
+    "wild salmon": "salmon",
+    "atlantic salmon": "salmon",
+    "pacific salmon": "salmon",
+    "smoked salmon": "salmon",
+    "canned salmon": "salmon",
+    "salmon fillet": "salmon",
+    "yellowfin tuna": "tuna",
+    "albacore tuna": "tuna",
+    "skipjack tuna": "tuna",
+    "canned tuna": "tuna",
+    "tuna steak": "tuna",
+    "atlantic cod": "cod",
+    "pacific cod": "cod",
+    "fresh cod": "cod",
+
+    # Egg variations
+    "whole egg": "egg",
+    "whole eggs": "eggs",
+    "egg white": "egg",
+    "egg whites": "eggs",
+    "egg yolk": "egg",
+    "egg yolks": "eggs",
+    "pasteurized egg": "egg",
+    "liquid egg": "egg",
+    "dried egg": "egg",
+    "egg powder": "egg",
+
+    # Grain variations
+    "rolled oats": "oats",
+    "quick oats": "oats",
+    "steel-cut oats": "oats",
+    "instant oats": "oats",
+    "oat flour": "oats",
+    "oat bran": "oats",
+    "whole wheat flour": "whole wheat",
+    "whole grain wheat": "whole wheat",
+    "wheat flour": "whole wheat",
+    "bread flour": "whole wheat",
+    "brown rice flour": "brown rice",
+    "long grain rice": "brown rice",
+    "basmati rice": "brown rice",
+    "jasmine rice": "brown rice",
+    "white rice": "brown rice",  # Less nutrients but similar category
+
+    # Nut variations
+    "raw almonds": "almond",
+    "roasted almonds": "almond",
+    "sliced almonds": "almond",
+    "almond flour": "almond",
+    "almond butter": "almond",
+    "raw walnuts": "walnut",
+    "walnut pieces": "walnut",
+    "walnut halves": "walnut",
+    "raw cashews": "cashew",
+    "roasted cashews": "cashew",
+    "cashew butter": "cashew",
+    "raw peanuts": "peanut",
+    "roasted peanuts": "peanut",
+    "dry roasted peanuts": "peanut",
+    "ground flaxseed": "flaxseed",
+    "flax meal": "flaxseed",
+    "milled flaxseed": "flaxseed",
+    "chia seeds": "chia",
+    "hemp seeds": "hemp",
+    "hemp hearts": "hemp",
+
+    # Legume variations
+    "dried lentils": "lentils",
+    "red lentils": "lentils",
+    "green lentils": "lentils",
+    "brown lentils": "lentils",
+    "split lentils": "lentils",
+    "canned chickpeas": "chickpeas",
+    "garbanzo beans": "chickpeas",
+    "canned black beans": "black bean",
+    "dried black beans": "black bean",
+    "canned kidney beans": "kidney bean",
+    "red kidney beans": "kidney bean",
+    "white kidney beans": "white bean",
+    "cannellini beans": "white bean",
+    "great northern beans": "white bean",
+    "firm tofu": "tofu",
+    "silken tofu": "tofu",
+    "extra firm tofu": "tofu",
+    "pressed tofu": "tofu",
+
+    # Vegetable variations
+    "fresh spinach": "spinach",
+    "baby spinach": "spinach",
+    "frozen spinach": "spinach",
+    "fresh kale": "kale",
+    "baby kale": "kale",
+    "curly kale": "kale",
+    "lacinato kale": "kale",
+    "romaine lettuce": "lettuce",
+    "iceberg lettuce": "lettuce",
+    "butter lettuce": "lettuce",
+    "red cabbage": "cabbage",
+    "green cabbage": "cabbage",
+    "napa cabbage": "cabbage",
+    "savoy cabbage": "cabbage",
+    "fresh broccoli": "broccoli",
+    "broccoli florets": "broccoli",
+    "frozen broccoli": "broccoli",
+    "sweet potato": "sweet potato",
+    "yam": "sweet potato",
+    "red bell pepper": "bell pepper",
+    "green bell pepper": "bell pepper",
+    "yellow bell pepper": "bell pepper",
+
+    # Fruit variations
+    "fresh strawberries": "strawberry",
+    "frozen strawberries": "strawberry",
+    "fresh blueberries": "blueberry",
+    "frozen blueberries": "blueberry",
+    "wild blueberries": "blueberry",
+    "fresh raspberries": "raspberry",
+    "frozen raspberries": "raspberry",
+    "navel orange": "orange",
+    "blood orange": "orange",
+    "mandarin orange": "orange",
+    "valencia orange": "orange",
+    "fresh mango": "mango",
+    "mango puree": "mango",
+    "mango pulp": "mango",
+    "dried mango": "mango",
+    "passion fruit": "mango",  # Similar tropical profile
+    "papaya pulp": "papaya",
+    "fresh papaya": "papaya",
+    "fresh pineapple": "pineapple",
+    "pineapple chunks": "pineapple",
+    "crushed pineapple": "pineapple",
+}
+
+# Additional high-value ingredients to add to the main profiles
+ADDITIONAL_INGREDIENT_PROFILES: Dict[str, Dict[str, float]] = {
+    # More dairy products
+    "mascarpone": {"calcium": 60, "vitamin_a": 150, "vitamin_b12": 0.4},
+    "ricotta": {"calcium": 200, "vitamin_b12": 0.3, "phosphorus": 150},
+    "paneer": {"calcium": 200, "vitamin_b12": 0.4, "phosphorus": 130},
+    "ghee": {"vitamin_a": 400, "vitamin_e": 2.5, "vitamin_k": 8},
+    "cream cheese": {"calcium": 80, "vitamin_a": 300, "vitamin_b12": 0.3},
+    "sour cream": {"calcium": 100, "vitamin_a": 120, "vitamin_b12": 0.3, "riboflavin": 0.1},
+    "buttermilk": {"calcium": 280, "vitamin_b12": 0.5, "riboflavin": 0.15, "potassium": 150},
+    "evaporated milk": {"calcium": 260, "vitamin_d": 2.5, "vitamin_b12": 0.4},
+    "condensed milk": {"calcium": 280, "vitamin_b12": 0.3, "riboflavin": 0.3},
+    "whey protein": {"calcium": 150, "vitamin_b12": 0.5, "phosphorus": 100},
+    "casein": {"calcium": 500, "phosphorus": 300},
+
+    # More grains
+    "spelt": {"magnesium": 45, "zinc": 2.5, "iron": 2.0, "thiamin": 0.25, "fiber": 5},
+    "kamut": {"magnesium": 50, "zinc": 2.5, "iron": 2.5, "niacin": 3, "fiber": 4},
+    "teff": {"calcium": 180, "iron": 7.5, "magnesium": 180, "zinc": 3.5, "fiber": 8},
+    "amaranth": {"calcium": 160, "iron": 7.5, "magnesium": 250, "phosphorus": 550, "fiber": 7},
+    "farro": {"magnesium": 40, "zinc": 2.5, "iron": 2.5, "niacin": 3, "fiber": 5},
+    "sorghum": {"magnesium": 35, "iron": 4.5, "phosphorus": 300, "thiamin": 0.25, "fiber": 6},
+    "freekeh": {"magnesium": 35, "zinc": 2.0, "iron": 2.0, "fiber": 8},
+
+    # More proteins
+    "seitan": {"iron": 5.0, "zinc": 1.5, "niacin": 3, "vitamin_b6": 0.2},
+    "textured vegetable protein": {"iron": 5.0, "zinc": 2.0, "magnesium": 80, "folate": 150},
+    "tvp": {"iron": 5.0, "zinc": 2.0, "magnesium": 80, "folate": 150},
+    "soy protein": {"iron": 5.0, "calcium": 100, "magnesium": 50, "zinc": 2.0},
+    "pea protein": {"iron": 3.0, "zinc": 1.5, "magnesium": 40},
+    "duck": {"vitamin_b12": 0.4, "iron": 2.5, "zinc": 2.0, "niacin": 5},
+    "goose": {"vitamin_b12": 0.4, "iron": 2.5, "zinc": 2.5, "niacin": 4},
+    "venison": {"vitamin_b12": 4.0, "iron": 3.5, "zinc": 3.5, "niacin": 7},
+    "bison": {"vitamin_b12": 2.5, "iron": 3.0, "zinc": 4.5, "niacin": 6},
+    "rabbit": {"vitamin_b12": 7.0, "iron": 2.0, "zinc": 2.0, "niacin": 6},
+
+    # More seafood
+    "scallop": {"vitamin_b12": 1.5, "zinc": 1.0, "phosphorus": 200, "magnesium": 25},
+    "lobster": {"vitamin_b12": 1.5, "zinc": 3.5, "phosphorus": 200, "copper": 1.5},
+    "squid": {"vitamin_b12": 1.5, "zinc": 1.5, "phosphorus": 200, "copper": 2.0},
+    "octopus": {"vitamin_b12": 20, "iron": 5.0, "zinc": 1.5, "copper": 0.5},
+    "mussels": {"vitamin_b12": 12, "iron": 4.0, "zinc": 1.5, "manganese": 3.5},
+    "tilapia": {"vitamin_b12": 1.5, "niacin": 4, "vitamin_d": 3, "phosphorus": 200},
+    "halibut": {"vitamin_b12": 1.2, "vitamin_d": 5, "niacin": 6, "magnesium": 25},
+    "sole": {"vitamin_b12": 1.0, "vitamin_d": 3, "niacin": 2, "phosphorus": 200},
+    "flounder": {"vitamin_b12": 1.5, "vitamin_d": 3, "niacin": 2, "magnesium": 20},
+    "anchovy": {"vitamin_b12": 6, "calcium": 230, "iron": 3, "niacin": 14},
+    "herring": {"vitamin_b12": 13, "vitamin_d": 20, "niacin": 3, "omega3": 2000},
+
+    # More vegetables
+    "artichoke": {"folate": 70, "vitamin_c": 12, "vitamin_k": 15, "magnesium": 60, "fiber": 5},
+    "fennel": {"vitamin_c": 12, "potassium": 400, "folate": 25, "fiber": 3},
+    "kohlrabi": {"vitamin_c": 60, "potassium": 350, "vitamin_b6": 0.15, "fiber": 3.5},
+    "turnip": {"vitamin_c": 20, "potassium": 230, "folate": 15, "fiber": 2},
+    "rutabaga": {"vitamin_c": 25, "potassium": 300, "magnesium": 20, "fiber": 2.5},
+    "parsnip": {"vitamin_c": 17, "potassium": 375, "folate": 65, "fiber": 4.5},
+    "daikon": {"vitamin_c": 22, "potassium": 230, "folate": 25},
+    "jicama": {"vitamin_c": 20, "potassium": 150, "fiber": 5},
+    "water chestnut": {"potassium": 580, "vitamin_b6": 0.3, "copper": 0.3},
+    "bamboo shoots": {"potassium": 530, "vitamin_b6": 0.2, "zinc": 1.0},
+
+    # Regional/ethnic ingredients
+    "tahini": {"calcium": 430, "iron": 9, "magnesium": 95, "zinc": 5, "phosphorus": 750},
+    "miso": {"vitamin_k": 30, "zinc": 2.5, "manganese": 0.9, "sodium": 3700},
+    "natto": {"vitamin_k": 1000, "iron": 8, "zinc": 3, "manganese": 1.5},
+    "kimchi": {"vitamin_k": 40, "vitamin_c": 18, "folate": 50, "vitamin_b6": 0.2},
+    "sauerkraut": {"vitamin_c": 15, "vitamin_k": 13, "folate": 20, "iron": 1.5},
+    "nutritional yeast": {"vitamin_b12": 8, "folate": 300, "thiamin": 10, "riboflavin": 10, "niacin": 50},
+
+    # Common processed ingredients (minimal but some nutrients)
+    "cocoa powder": {"iron": 13, "magnesium": 500, "zinc": 7, "phosphorus": 730, "potassium": 1500},
+    "dark chocolate": {"iron": 8, "magnesium": 175, "zinc": 3, "copper": 1.8, "fiber": 10},
+    "honey": {"potassium": 50, "vitamin_c": 0.5},
+    "maple syrup": {"manganese": 2.5, "zinc": 1.5, "potassium": 200, "calcium": 100},
+    "molasses": {"iron": 4.7, "calcium": 200, "magnesium": 240, "potassium": 1460, "vitamin_b6": 0.7},
+
+    # More seeds
+    "poppy seeds": {"calcium": 1440, "iron": 9.5, "magnesium": 330, "zinc": 8, "phosphorus": 870},
+    "caraway seeds": {"calcium": 690, "iron": 16, "magnesium": 260, "zinc": 5.5},
+    "fennel seeds": {"calcium": 1200, "iron": 18, "magnesium": 385, "manganese": 6.5},
+    "cumin seeds": {"iron": 66, "calcium": 930, "magnesium": 365, "zinc": 4.8, "potassium": 1790},
+    "coriander seeds": {"calcium": 710, "iron": 16, "magnesium": 330, "potassium": 1270},
+}
+
+# Merge additional profiles into main dictionary
+INGREDIENT_MICRONUTRIENT_PROFILES.update(ADDITIONAL_INGREDIENT_PROFILES)
+
 
 @dataclass
 class EstimationSignal:
@@ -310,6 +603,15 @@ class EstimationSignal:
     estimates: Dict[str, float]  # micronutrient -> value
 
 
+@dataclass
+class ParsedIngredient:
+    """A parsed ingredient with weight information"""
+    name: str
+    position_weight: float
+    percentage: Optional[float] = None  # If percentage was specified
+    is_minor: bool = False  # True if in "contains less than X%" section
+
+
 def parse_ingredients(ingredients_text: Optional[str]) -> List[Tuple[str, float]]:
     """
     Parse ingredients text and return list of (ingredient, weight) tuples.
@@ -318,69 +620,203 @@ def parse_ingredients(ingredients_text: Optional[str]) -> List[Tuple[str, float]
     We assign position-based weights: first ingredient gets weight 1.0,
     subsequent ingredients get decreasing weights.
 
+    Improvements over basic parsing:
+    - Extracts and uses percentages when available
+    - Handles "contains less than X%" sections
+    - Preserves useful parenthetical content (like "milk" in "quark (milk)")
+    - Better handling of compound ingredients
+
     Returns:
         List of (ingredient_name, position_weight) tuples
     """
     if not ingredients_text:
         return []
 
-    # Clean the text
     text = ingredients_text.lower()
 
-    # Remove common non-ingredient text
-    text = re.sub(r"\([^)]*\)", " ", text)  # Remove parenthetical notes
-    text = re.sub(r"\[[^\]]*\]", " ", text)  # Remove bracketed notes
-    text = re.sub(r"\b(contains|may contain|less than|ingredients:?)\b", "", text)
-    text = re.sub(r"\d+%", "", text)  # Remove percentages
+    # First, extract any explicit percentages and store them
+    # e.g., "milk (30%)" -> we want to use 0.30 as weight
+    percentage_map: Dict[str, float] = {}
+    percentage_pattern = r"(\w[\w\s]*?)\s*\(?\s*(\d+(?:\.\d+)?)\s*%\s*\)?"
+    for match in re.finditer(percentage_pattern, text):
+        ingredient_name = match.group(1).strip()
+        percentage = float(match.group(2)) / 100.0
+        if ingredient_name and len(ingredient_name) > 1:
+            percentage_map[ingredient_name] = percentage
+
+    # Check for "contains less than X% of" or "contains 2% or less of"
+    minor_ingredients_section = ""
+    minor_pattern = r"contains?\s+(?:less\s+than\s+)?(\d+)%?\s*(?:or\s+less\s+)?(?:of)?[:\s]+(.+?)(?:\.|$)"
+    minor_match = re.search(minor_pattern, text)
+    if minor_match:
+        minor_percentage = float(minor_match.group(1)) / 100.0
+        minor_ingredients_section = minor_match.group(2)
+
+    # Clean the text but preserve useful parenthetical content
+    # Extract parenthetical content that might be useful (like "milk" in "quark (milk)")
+    parenthetical_additions = []
+    paren_pattern = r"\(([^)]+)\)"
+    for match in re.finditer(paren_pattern, text):
+        content = match.group(1).lower()
+        # Keep if it looks like an ingredient (not a percentage or note)
+        if not re.match(r"^[\d.]+%?$", content) and len(content) < 30:
+            # Check if it's a known ingredient
+            if any(ing in content for ing in ["milk", "wheat", "soy", "egg", "fish", "nut"]):
+                parenthetical_additions.append(content)
+
+    # Remove parenthetical notes but track what we removed
+    text = re.sub(r"\([^)]*\)", " ", text)
+    text = re.sub(r"\[[^\]]*\]", " ", text)
+
+    # Remove common non-ingredient phrases
+    text = re.sub(r"\b(contains|may contain|ingredients:?|and|or)\b", " ", text)
 
     # Split by common delimiters
     ingredients = re.split(r"[,;•·\n]", text)
 
     # Clean each ingredient
-    cleaned = []
-    for ing in ingredients:
+    parsed: List[ParsedIngredient] = []
+    for i, ing in enumerate(ingredients):
         ing = ing.strip()
         ing = re.sub(r"\s+", " ", ing)  # Normalize whitespace
-        if ing and len(ing) > 1 and len(ing) < 50:  # Filter noise
-            cleaned.append(ing)
+        ing = re.sub(r"^\d+%?\s*", "", ing)  # Remove leading percentages
+        ing = re.sub(r"\s*\d+%?$", "", ing)  # Remove trailing percentages
 
-    # Assign position-based weights (first = 1.0, decreasing by position)
-    result = []
-    for i, ing in enumerate(cleaned):
-        # Weight decreases: 1.0, 0.85, 0.72, 0.61, 0.52, ...
-        weight = 0.85**i
-        result.append((ing, weight))
+        if not ing or len(ing) < 2 or len(ing) > 60:
+            continue
 
+        # Check if this ingredient is in the minor section
+        is_minor = minor_ingredients_section and ing in minor_ingredients_section
+
+        # Get percentage if available
+        percentage = percentage_map.get(ing)
+
+        # Calculate weight
+        if percentage is not None:
+            # Use the actual percentage
+            weight = percentage
+        elif is_minor:
+            # Minor ingredients get low weight
+            weight = 0.02
+        else:
+            # Position-based weight: 1.0, 0.85, 0.72, 0.61, 0.52, ...
+            weight = 0.85 ** i
+
+        parsed.append(ParsedIngredient(
+            name=ing,
+            position_weight=weight,
+            percentage=percentage,
+            is_minor=is_minor
+        ))
+
+    # Add parenthetical ingredients with moderate weight
+    for paren_ing in parenthetical_additions:
+        if not any(p.name == paren_ing for p in parsed):
+            parsed.append(ParsedIngredient(
+                name=paren_ing,
+                position_weight=0.5,  # Moderate weight for parenthetical
+            ))
+
+    # Convert to simple tuple format for backward compatibility
+    return [(p.name, p.position_weight) for p in parsed]
+
+
+def normalize_ingredient(ingredient: str) -> str:
+    """
+    Normalize an ingredient name by removing modifiers and standardizing.
+
+    Examples:
+    - "organic fresh spinach" -> "spinach"
+    - "low-fat vanilla yogurt" -> "yogurt"
+    """
+    # Common modifiers to remove
+    modifiers = [
+        "organic", "fresh", "frozen", "dried", "raw", "cooked",
+        "roasted", "toasted", "blanched", "steamed", "grilled", "baked",
+        "low-fat", "lowfat", "low fat", "nonfat", "non-fat", "fat-free",
+        "reduced-fat", "light", "lite", "diet",
+        "unsweetened", "sweetened", "natural", "pure", "100%",
+        "whole", "sliced", "diced", "chopped", "minced", "ground", "crushed",
+        "canned", "jarred", "bottled", "packaged",
+        "premium", "gourmet", "artisan", "homemade", "homestyle",
+    ]
+
+    result = ingredient.lower()
+    for mod in modifiers:
+        result = re.sub(rf"\b{mod}\b", "", result)
+
+    # Clean up
+    result = re.sub(r"\s+", " ", result).strip()
     return result
 
 
 def match_ingredient_to_profiles(
     ingredient: str, profiles: Dict[str, Dict[str, float]]
-) -> Optional[Tuple[str, Dict[str, float]]]:
+) -> Optional[Tuple[str, Dict[str, float], float]]:
     """
     Match an ingredient string to known nutrient profiles.
 
-    Uses fuzzy matching to handle variations like:
-    - "organic spinach" -> "spinach"
-    - "whole wheat flour" -> "whole wheat"
+    Uses multi-level matching:
+    1. Direct match (highest confidence)
+    2. Synonym lookup
+    3. Normalized match (after removing modifiers)
+    4. Partial/fuzzy match (lowest confidence)
+
+    Returns:
+        Tuple of (matched_key, profile, match_confidence) or None
     """
-    ingredient_lower = ingredient.lower()
+    ingredient_lower = ingredient.lower().strip()
 
-    # Direct match first
+    # 1. Direct match - highest confidence
     if ingredient_lower in profiles:
-        return (ingredient_lower, profiles[ingredient_lower])
+        return (ingredient_lower, profiles[ingredient_lower], 1.0)
 
-    # Check if any profile key is contained in the ingredient
+    # 2. Check synonyms
+    if ingredient_lower in INGREDIENT_SYNONYMS:
+        canonical = INGREDIENT_SYNONYMS[ingredient_lower]
+        if canonical in profiles:
+            return (canonical, profiles[canonical], 0.95)
+
+    # 3. Normalize and try again
+    normalized = normalize_ingredient(ingredient_lower)
+    if normalized != ingredient_lower:
+        if normalized in profiles:
+            return (normalized, profiles[normalized], 0.9)
+        if normalized in INGREDIENT_SYNONYMS:
+            canonical = INGREDIENT_SYNONYMS[normalized]
+            if canonical in profiles:
+                return (canonical, profiles[canonical], 0.85)
+
+    # 4. Check if any profile key is contained in the ingredient (fuzzy match)
     matches = []
     for key, profile in profiles.items():
         if key in ingredient_lower:
             # Prefer longer matches (more specific)
-            matches.append((len(key), key, profile))
+            # Confidence based on how much of the ingredient is matched
+            match_ratio = len(key) / max(len(ingredient_lower), 1)
+            confidence = 0.5 + (0.3 * match_ratio)  # 0.5-0.8 range
+            matches.append((len(key), key, profile, confidence))
 
     if matches:
         # Return the longest (most specific) match
         matches.sort(reverse=True)
-        return (matches[0][1], matches[0][2])
+        return (matches[0][1], matches[0][2], matches[0][3])
+
+    # 5. Try compound ingredient splitting
+    # e.g., "whole milk powder" -> try "whole milk", then "milk"
+    words = ingredient_lower.split()
+    if len(words) > 1:
+        # Try progressively shorter suffixes
+        for start in range(len(words)):
+            partial = " ".join(words[start:])
+            if partial in profiles:
+                confidence = 0.6 - (start * 0.1)  # Lower confidence for later words
+                return (partial, profiles[partial], max(confidence, 0.4))
+            if partial in INGREDIENT_SYNONYMS:
+                canonical = INGREDIENT_SYNONYMS[partial]
+                if canonical in profiles:
+                    confidence = 0.55 - (start * 0.1)
+                    return (canonical, profiles[canonical], max(confidence, 0.35))
 
     return None
 
@@ -410,17 +846,20 @@ def estimate_from_ingredients(
     total_weight = 0.0
     matches_found = 0
 
+    total_match_confidence = 0.0
     for ingredient, position_weight in parsed:
         match = match_ingredient_to_profiles(
             ingredient, INGREDIENT_MICRONUTRIENT_PROFILES
         )
         if match:
-            matched_key, profile = match
+            matched_key, profile, match_confidence = match
             matches_found += 1
+            total_match_confidence += match_confidence
 
             for nutrient, value in profile.items():
                 # Scale by position weight (first ingredients contribute more)
-                scaled_value = value * position_weight
+                # Also scale by match confidence (lower for fuzzy matches)
+                scaled_value = value * position_weight * match_confidence
 
                 # Scale by portion weight (profiles assume ~100g reference)
                 scaled_value *= portion_weight / 100.0
@@ -430,16 +869,21 @@ def estimate_from_ingredients(
                 else:
                     estimates[nutrient] = scaled_value
 
-            total_weight += position_weight
+            total_weight += position_weight * match_confidence
 
     if not estimates:
         return None
 
-    # Calculate confidence based on how many ingredients we matched
-    # and their cumulative position weight
+    # Calculate confidence based on:
+    # 1. How many ingredients we matched
+    # 2. Their cumulative position weight
+    # 3. Average match quality (direct vs fuzzy matches)
     coverage = min(1.0, total_weight / 2.0)  # Full confidence at weight sum >= 2.0
     match_ratio = matches_found / max(len(parsed), 1)
-    confidence = (coverage * 0.6) + (match_ratio * 0.4)
+    avg_match_confidence = total_match_confidence / max(matches_found, 1)
+
+    # Weight: 40% coverage, 30% match ratio, 30% match quality
+    confidence = (coverage * 0.4) + (match_ratio * 0.3) + (avg_match_confidence * 0.3)
 
     # Check for fortification indicators
     for keyword in FORTIFICATION_KEYWORDS:

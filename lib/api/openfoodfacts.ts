@@ -461,6 +461,262 @@ function isMissingMicronutrients(nutrition: BarcodeProduct['nutrition']): boolea
   return missingCount >= 5;
 }
 
+// ==============================================================================
+// FOOD CATEGORY DETECTION
+// ==============================================================================
+
+/**
+ * Food categories for nutrient sanity checking
+ */
+type FoodCategory =
+  | 'dairy'
+  | 'meat'
+  | 'poultry'
+  | 'fish'
+  | 'seafood'
+  | 'eggs'
+  | 'citrus'
+  | 'fruit'
+  | 'leafy_greens'
+  | 'vegetable'
+  | 'nuts_seeds'
+  | 'legumes'
+  | 'whole_grains'
+  | 'fortified'
+  | 'unknown';
+
+/**
+ * Category detection patterns
+ */
+const CATEGORY_PATTERNS: Record<FoodCategory, { categories: string[]; ingredients: string[] }> = {
+  dairy: {
+    categories: ['dairy', 'yogurt', 'yoghurt', 'milk', 'cheese', 'quark', 'skyr', 'fromage', 'lait', 'yaourt', 'kefir', 'cream', 'butter', 'curd'],
+    ingredients: ['milk', 'quark', 'yogurt', 'yoghurt', 'cream', 'skyr', 'fromage frais', 'cheese', 'whey', 'casein', 'lactose'],
+  },
+  meat: {
+    categories: ['meat', 'beef', 'pork', 'lamb', 'veal', 'venison', 'bison', 'game'],
+    ingredients: ['beef', 'pork', 'lamb', 'veal', 'meat', 'steak', 'ground beef', 'bacon', 'ham', 'sausage'],
+  },
+  poultry: {
+    categories: ['poultry', 'chicken', 'turkey', 'duck', 'goose'],
+    ingredients: ['chicken', 'turkey', 'duck', 'poultry'],
+  },
+  fish: {
+    categories: ['fish', 'salmon', 'tuna', 'cod', 'mackerel', 'sardine', 'herring', 'trout', 'halibut', 'tilapia'],
+    ingredients: ['salmon', 'tuna', 'cod', 'mackerel', 'sardine', 'herring', 'trout', 'fish', 'halibut', 'tilapia', 'anchovies'],
+  },
+  seafood: {
+    categories: ['seafood', 'shrimp', 'prawn', 'crab', 'lobster', 'oyster', 'mussel', 'clam', 'scallop', 'squid', 'octopus'],
+    ingredients: ['shrimp', 'prawn', 'crab', 'lobster', 'oyster', 'mussel', 'clam', 'scallop', 'squid', 'octopus', 'shellfish'],
+  },
+  eggs: {
+    categories: ['egg', 'eggs', 'omelette', 'omelet', 'frittata'],
+    ingredients: ['egg', 'eggs', 'egg white', 'egg yolk', 'whole egg'],
+  },
+  citrus: {
+    categories: ['citrus', 'orange', 'lemon', 'lime', 'grapefruit', 'tangerine', 'mandarin', 'clementine'],
+    ingredients: ['orange', 'lemon', 'lime', 'grapefruit', 'tangerine', 'mandarin', 'citrus'],
+  },
+  fruit: {
+    categories: ['fruit', 'berry', 'berries', 'apple', 'banana', 'grape', 'melon', 'mango', 'papaya', 'kiwi', 'pineapple'],
+    ingredients: ['strawberry', 'blueberry', 'raspberry', 'apple', 'banana', 'mango', 'papaya', 'kiwi', 'pineapple', 'grape'],
+  },
+  leafy_greens: {
+    categories: ['salad', 'leafy', 'spinach', 'kale', 'lettuce', 'arugula', 'chard', 'collard'],
+    ingredients: ['spinach', 'kale', 'lettuce', 'arugula', 'chard', 'collard', 'cabbage', 'bok choy', 'watercress'],
+  },
+  vegetable: {
+    categories: ['vegetable', 'broccoli', 'carrot', 'tomato', 'pepper', 'onion', 'potato', 'squash', 'zucchini'],
+    ingredients: ['broccoli', 'carrot', 'tomato', 'pepper', 'onion', 'potato', 'squash', 'zucchini', 'cauliflower', 'asparagus'],
+  },
+  nuts_seeds: {
+    categories: ['nut', 'nuts', 'seed', 'seeds', 'almond', 'walnut', 'cashew', 'peanut', 'pistachio', 'sunflower', 'pumpkin seed', 'chia', 'flax'],
+    ingredients: ['almond', 'walnut', 'cashew', 'peanut', 'pistachio', 'hazelnut', 'pecan', 'sunflower seed', 'pumpkin seed', 'chia', 'flax', 'sesame'],
+  },
+  legumes: {
+    categories: ['legume', 'bean', 'lentil', 'chickpea', 'pea', 'soy', 'tofu', 'tempeh', 'edamame'],
+    ingredients: ['bean', 'lentil', 'chickpea', 'pea', 'soy', 'tofu', 'tempeh', 'edamame', 'hummus', 'falafel'],
+  },
+  whole_grains: {
+    categories: ['whole grain', 'whole wheat', 'oat', 'oats', 'quinoa', 'brown rice', 'barley', 'buckwheat', 'millet', 'farro'],
+    ingredients: ['whole wheat', 'oat', 'oats', 'quinoa', 'brown rice', 'barley', 'buckwheat', 'millet', 'whole grain'],
+  },
+  fortified: {
+    categories: ['fortified', 'enriched', 'breakfast cereal', 'cereal'],
+    ingredients: ['fortified', 'enriched', 'added vitamins', 'vitamin d added'],
+  },
+  unknown: {
+    categories: [],
+    ingredients: [],
+  },
+};
+
+/**
+ * Minimum expected nutrient values per 100g for each food category
+ * Values below these thresholds are flagged as suspicious (likely data errors)
+ * Thresholds are set conservatively low to avoid false positives
+ */
+const CATEGORY_NUTRIENT_MINIMUMS: Record<FoodCategory, Partial<Record<keyof BarcodeProduct['nutrition'], number>>> = {
+  dairy: {
+    calcium: 50,        // mg - dairy is calcium-rich (typical: 100-300mg)
+    vitaminB12: 0.2,    // mcg - dairy has B12 (typical: 0.4-1.5mcg)
+    riboflavin: 0.05,   // mg - dairy is riboflavin source (typical: 0.1-0.4mg)
+    phosphorus: 30,     // mg - dairy has phosphorus (typical: 80-200mg)
+  },
+  meat: {
+    vitaminB12: 0.3,    // mcg - meat is B12-rich (typical: 1-6mcg)
+    iron: 0.3,          // mg - red meat has iron (typical: 1-3mg)
+    zinc: 0.5,          // mg - meat has zinc (typical: 2-6mg)
+    niacin: 1,          // mg - meat has niacin (typical: 3-8mg)
+    vitaminB6: 0.1,     // mg - meat has B6 (typical: 0.3-0.6mg)
+  },
+  poultry: {
+    vitaminB12: 0.1,    // mcg - poultry has some B12 (typical: 0.2-0.5mcg)
+    niacin: 2,          // mg - poultry is niacin-rich (typical: 5-12mg)
+    vitaminB6: 0.2,     // mg - poultry has B6 (typical: 0.4-0.6mg)
+    zinc: 0.5,          // mg - poultry has zinc (typical: 1-3mg)
+  },
+  fish: {
+    vitaminB12: 1,      // mcg - fish is B12-rich (typical: 2-10mcg)
+    vitaminD: 1,        // mcg - fatty fish is vitamin D source (typical: 5-20mcg)
+    niacin: 2,          // mg - fish has niacin (typical: 3-10mg)
+    phosphorus: 50,     // mg - fish has phosphorus (typical: 150-300mg)
+  },
+  seafood: {
+    vitaminB12: 0.5,    // mcg - shellfish has B12 (typical: 1-20mcg for clams/oysters)
+    zinc: 0.5,          // mg - oysters are zinc-rich (typical: 1-75mg)
+    iron: 0.3,          // mg - shellfish has iron (typical: 1-5mg)
+  },
+  eggs: {
+    vitaminB12: 0.3,    // mcg - eggs have B12 (typical: 0.5-1mcg)
+    vitaminD: 0.5,      // mcg - eggs have vitamin D (typical: 1-2mcg)
+    riboflavin: 0.1,    // mg - eggs have riboflavin (typical: 0.2-0.5mg)
+  },
+  citrus: {
+    vitaminC: 20,       // mg - citrus is vitamin C-rich (typical: 30-60mg)
+    folate: 10,         // mcg - citrus has folate (typical: 20-40mcg)
+    potassium: 50,      // mg - citrus has potassium (typical: 100-200mg)
+  },
+  fruit: {
+    vitaminC: 3,        // mg - most fruits have some C (typical: 5-20mg)
+    potassium: 50,      // mg - fruits have potassium (typical: 100-400mg)
+  },
+  leafy_greens: {
+    vitaminK: 50,       // mcg - leafy greens are K-rich (typical: 100-500mcg)
+    vitaminA: 100,      // mcg RAE - dark greens have A (typical: 200-1000mcg)
+    folate: 30,         // mcg - greens have folate (typical: 50-200mcg)
+    iron: 0.5,          // mg - greens have iron (typical: 1-4mg)
+  },
+  vegetable: {
+    potassium: 50,      // mg - vegetables have potassium (typical: 100-400mg)
+    vitaminC: 3,        // mg - most vegetables have some C (typical: 5-30mg)
+  },
+  nuts_seeds: {
+    vitaminE: 1,        // mg - nuts/seeds are E-rich (typical: 2-25mg)
+    magnesium: 30,      // mg - nuts/seeds have magnesium (typical: 50-300mg)
+    zinc: 0.5,          // mg - nuts/seeds have zinc (typical: 1-5mg)
+    phosphorus: 50,     // mg - nuts/seeds have phosphorus (typical: 200-600mg)
+  },
+  legumes: {
+    folate: 50,         // mcg - legumes are folate-rich (typical: 100-400mcg)
+    iron: 1,            // mg - legumes have iron (typical: 2-6mg)
+    magnesium: 20,      // mg - legumes have magnesium (typical: 40-100mg)
+    potassium: 100,     // mg - legumes have potassium (typical: 300-600mg)
+    zinc: 0.5,          // mg - legumes have zinc (typical: 1-3mg)
+  },
+  whole_grains: {
+    magnesium: 20,      // mg - whole grains have magnesium (typical: 30-150mg)
+    thiamin: 0.1,       // mg - grains have thiamin (typical: 0.2-0.5mg)
+    iron: 0.5,          // mg - grains have iron (typical: 1-4mg)
+    zinc: 0.5,          // mg - grains have zinc (typical: 1-3mg)
+  },
+  fortified: {
+    // Fortified products should have added vitamins
+    vitaminD: 0.5,      // mcg - fortified foods have D (typical: 1-3mcg)
+  },
+  unknown: {
+    // No minimums for unknown category
+  },
+};
+
+/**
+ * Detects the primary food category based on categories and ingredients
+ * Returns the most specific category that matches
+ */
+function detectFoodCategory(categories?: string[], ingredientsText?: string): FoodCategory {
+  const categoriesLower = categories?.map(c => c.toLowerCase()) || [];
+  const ingredientsLower = ingredientsText?.toLowerCase() || '';
+
+  // Check each category in order of specificity
+  // More specific categories (dairy, fish) before general ones (fruit, vegetable)
+  const categoryOrder: FoodCategory[] = [
+    'dairy', 'fish', 'seafood', 'meat', 'poultry', 'eggs',
+    'citrus', 'leafy_greens', 'nuts_seeds', 'legumes', 'whole_grains',
+    'fortified', 'fruit', 'vegetable',
+  ];
+
+  for (const category of categoryOrder) {
+    const patterns = CATEGORY_PATTERNS[category];
+
+    // Check category tags
+    if (patterns.categories.some(p => categoriesLower.some(c => c.includes(p)))) {
+      return category;
+    }
+
+    // Check ingredients (only for primary ingredients at the start)
+    // First 100 chars typically contain main ingredients
+    const primaryIngredients = ingredientsLower.slice(0, 150);
+    if (patterns.ingredients.some(p => primaryIngredients.includes(p))) {
+      return category;
+    }
+  }
+
+  return 'unknown';
+}
+
+/**
+ * Gets all suspicious nutrient values for a product
+ * Returns a record of nutrient keys that have implausibly low values for the detected category
+ */
+function getSuspiciousNutrients(
+  nutrition: BarcodeProduct['nutrition'],
+  categories?: string[],
+  ingredientsText?: string
+): Set<keyof BarcodeProduct['nutrition']> {
+  const suspicious = new Set<keyof BarcodeProduct['nutrition']>();
+  const category = detectFoodCategory(categories, ingredientsText);
+
+  if (category === 'unknown') {
+    return suspicious; // No sanity checks for unknown categories
+  }
+
+  const minimums = CATEGORY_NUTRIENT_MINIMUMS[category];
+
+  // Check each nutrient against its minimum
+  for (const [nutrient, minimum] of Object.entries(minimums)) {
+    const key = nutrient as keyof BarcodeProduct['nutrition'];
+    const value = nutrition[key];
+
+    // If value exists and is below minimum, it's suspicious
+    if (value !== undefined && value !== null && typeof value === 'number' && value < minimum) {
+      suspicious.add(key);
+    }
+  }
+
+  return suspicious;
+}
+
+/**
+ * Checks if any micronutrient values are suspiciously low for the product category
+ */
+function hasSuspiciousNutrients(
+  nutrition: BarcodeProduct['nutrition'],
+  categories?: string[],
+  ingredientsText?: string
+): boolean {
+  return getSuspiciousNutrients(nutrition, categories, ingredientsText).size > 0;
+}
+
 /**
  * Estimates missing micronutrients for a product using the ML service
  *
@@ -469,6 +725,12 @@ function isMissingMicronutrients(nutrition: BarcodeProduct['nutrition']): boolea
  * 2. Food name matching - matches to our food database
  * 3. Macronutrient inference - high protein → likely B12 rich, high fiber → magnesium rich
  * 4. Category baseline - fallback when other signals weak
+ *
+ * Also detects and corrects suspiciously low values based on food category:
+ * - Dairy with <50mg calcium
+ * - Fish with <1mcg B12
+ * - Citrus with <20mg vitamin C
+ * - etc.
  *
  * @param product - The barcode product with potentially incomplete nutrition
  * @param categories - Open Food Facts category tags (original format with "en:" prefix)
@@ -480,119 +742,119 @@ async function estimateMissingMicronutrients(
   categories?: string[],
   ingredientsText?: string
 ): Promise<BarcodeProduct> {
-  // Skip if nutrition data is already complete
-  if (!isMissingMicronutrients(product.nutrition)) {
+  // Detect the food category and find all suspicious nutrient values
+  const detectedCategory = detectFoodCategory(categories, ingredientsText);
+  const suspiciousNutrients = getSuspiciousNutrients(product.nutrition, categories, ingredientsText);
+  const hasSuspiciousValues = suspiciousNutrients.size > 0;
+
+  // Skip if nutrition data is already complete AND no suspicious values
+  if (!isMissingMicronutrients(product.nutrition) && !hasSuspiciousValues) {
     return product;
   }
 
   try {
-    // Build existing micronutrients object (only include non-undefined values)
+    // Build existing micronutrients object
+    // Exclude suspicious values so ML can re-estimate them
     const existing: Record<string, number> = {};
     const nutrition = product.nutrition;
 
-    if (nutrition.potassium !== undefined) existing.potassium = nutrition.potassium;
-    if (nutrition.calcium !== undefined) existing.calcium = nutrition.calcium;
-    if (nutrition.iron !== undefined) existing.iron = nutrition.iron;
-    if (nutrition.magnesium !== undefined) existing.magnesium = nutrition.magnesium;
-    if (nutrition.zinc !== undefined) existing.zinc = nutrition.zinc;
-    if (nutrition.phosphorus !== undefined) existing.phosphorus = nutrition.phosphorus;
-    if (nutrition.vitaminA !== undefined) existing.vitamin_a = nutrition.vitaminA;
-    if (nutrition.vitaminC !== undefined) existing.vitamin_c = nutrition.vitaminC;
-    if (nutrition.vitaminD !== undefined) existing.vitamin_d = nutrition.vitaminD;
-    if (nutrition.vitaminE !== undefined) existing.vitamin_e = nutrition.vitaminE;
-    if (nutrition.vitaminK !== undefined) existing.vitamin_k = nutrition.vitaminK;
-    if (nutrition.vitaminB6 !== undefined) existing.vitamin_b6 = nutrition.vitaminB6;
-    if (nutrition.vitaminB12 !== undefined) existing.vitamin_b12 = nutrition.vitaminB12;
-    if (nutrition.folate !== undefined) existing.folate = nutrition.folate;
-    if (nutrition.thiamin !== undefined) existing.thiamin = nutrition.thiamin;
-    if (nutrition.riboflavin !== undefined) existing.riboflavin = nutrition.riboflavin;
-    if (nutrition.niacin !== undefined) existing.niacin = nutrition.niacin;
+    // Mapping from nutrition keys to ML service keys
+    const nutrientMapping: [keyof BarcodeProduct['nutrition'], string][] = [
+      ['potassium', 'potassium'],
+      ['calcium', 'calcium'],
+      ['iron', 'iron'],
+      ['magnesium', 'magnesium'],
+      ['zinc', 'zinc'],
+      ['phosphorus', 'phosphorus'],
+      ['vitaminA', 'vitamin_a'],
+      ['vitaminC', 'vitamin_c'],
+      ['vitaminD', 'vitamin_d'],
+      ['vitaminE', 'vitamin_e'],
+      ['vitaminK', 'vitamin_k'],
+      ['vitaminB6', 'vitamin_b6'],
+      ['vitaminB12', 'vitamin_b12'],
+      ['folate', 'folate'],
+      ['thiamin', 'thiamin'],
+      ['riboflavin', 'riboflavin'],
+      ['niacin', 'niacin'],
+    ];
+
+    // Only include non-suspicious values in existing
+    for (const [nutritionKey, mlKey] of nutrientMapping) {
+      const value = nutrition[nutritionKey];
+      if (value !== undefined && !suspiciousNutrients.has(nutritionKey)) {
+        existing[mlKey] = value;
+      }
+    }
 
     // Call ML service with sophisticated multi-signal estimation
-    // Includes ingredients text and macros for better accuracy
     const response = await axios.post<MicronutrientEstimationResponse>(
       `${ML_SERVICE_URL}/api/food/estimate-micronutrients`,
       {
         food_name: product.name,
-        categories: categories, // Pass original format for ML service mapping
+        categories: categories,
         portion_weight: 100, // Per 100g (we scale in calculateServingNutrition)
-        // NEW: Send ingredients for ingredient-based estimation
         ingredients_text: ingredientsText,
-        // NEW: Send macros for macro-informed estimation
         protein: nutrition.protein,
         fiber: nutrition.fiber,
         fat: nutrition.fat,
         existing: Object.keys(existing).length > 0 ? existing : undefined,
       },
       {
-        timeout: 5000, // 5 second timeout for ML calls
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        timeout: 5000,
+        headers: { 'Content-Type': 'application/json' },
       }
     );
 
     const estimates = response.data.estimated;
-
-    // Only fill in undefined values with estimates
     const updatedNutrition = { ...product.nutrition };
 
-    if (updatedNutrition.potassium === undefined && estimates.potassium !== undefined) {
-      updatedNutrition.potassium = estimates.potassium;
-    }
-    if (updatedNutrition.calcium === undefined && estimates.calcium !== undefined) {
-      updatedNutrition.calcium = estimates.calcium;
-    }
-    if (updatedNutrition.iron === undefined && estimates.iron !== undefined) {
-      updatedNutrition.iron = estimates.iron;
-    }
-    if (updatedNutrition.magnesium === undefined && estimates.magnesium !== undefined) {
-      updatedNutrition.magnesium = estimates.magnesium;
-    }
-    if (updatedNutrition.zinc === undefined && estimates.zinc !== undefined) {
-      updatedNutrition.zinc = estimates.zinc;
-    }
-    if (updatedNutrition.phosphorus === undefined && estimates.phosphorus !== undefined) {
-      updatedNutrition.phosphorus = estimates.phosphorus;
-    }
-    if (updatedNutrition.vitaminA === undefined && estimates.vitamin_a !== undefined) {
-      updatedNutrition.vitaminA = estimates.vitamin_a;
-    }
-    if (updatedNutrition.vitaminC === undefined && estimates.vitamin_c !== undefined) {
-      updatedNutrition.vitaminC = estimates.vitamin_c;
-    }
-    if (updatedNutrition.vitaminD === undefined && estimates.vitamin_d !== undefined) {
-      updatedNutrition.vitaminD = estimates.vitamin_d;
-    }
-    if (updatedNutrition.vitaminE === undefined && estimates.vitamin_e !== undefined) {
-      updatedNutrition.vitaminE = estimates.vitamin_e;
-    }
-    if (updatedNutrition.vitaminK === undefined && estimates.vitamin_k !== undefined) {
-      updatedNutrition.vitaminK = estimates.vitamin_k;
-    }
-    if (updatedNutrition.vitaminB6 === undefined && estimates.vitamin_b6 !== undefined) {
-      updatedNutrition.vitaminB6 = estimates.vitamin_b6;
-    }
-    if (updatedNutrition.vitaminB12 === undefined && estimates.vitamin_b12 !== undefined) {
-      updatedNutrition.vitaminB12 = estimates.vitamin_b12;
-    }
-    if (updatedNutrition.folate === undefined && estimates.folate !== undefined) {
-      updatedNutrition.folate = estimates.folate;
-    }
-    if (updatedNutrition.thiamin === undefined && estimates.thiamin !== undefined) {
-      updatedNutrition.thiamin = estimates.thiamin;
-    }
-    if (updatedNutrition.riboflavin === undefined && estimates.riboflavin !== undefined) {
-      updatedNutrition.riboflavin = estimates.riboflavin;
-    }
-    if (updatedNutrition.niacin === undefined && estimates.niacin !== undefined) {
-      updatedNutrition.niacin = estimates.niacin;
-    }
+    // Track what we override for logging
+    const overrides: string[] = [];
+
+    // Apply estimates - override if undefined OR suspicious
+    const applyEstimate = (
+      nutritionKey: keyof BarcodeProduct['nutrition'],
+      estimateKey: keyof MicronutrientEstimationResponse['estimated']
+    ) => {
+      const estimate = estimates[estimateKey];
+      const isSuspicious = suspiciousNutrients.has(nutritionKey);
+      const isUndefined = updatedNutrition[nutritionKey] === undefined;
+
+      if ((isUndefined || isSuspicious) && estimate !== undefined) {
+        if (isSuspicious) {
+          overrides.push(`${nutritionKey}: ${updatedNutrition[nutritionKey]}→${estimate}`);
+        }
+        (updatedNutrition as Record<string, number | undefined>)[nutritionKey] = estimate;
+      }
+    };
+
+    applyEstimate('potassium', 'potassium');
+    applyEstimate('calcium', 'calcium');
+    applyEstimate('iron', 'iron');
+    applyEstimate('magnesium', 'magnesium');
+    applyEstimate('zinc', 'zinc');
+    applyEstimate('phosphorus', 'phosphorus');
+    applyEstimate('vitaminA', 'vitamin_a');
+    applyEstimate('vitaminC', 'vitamin_c');
+    applyEstimate('vitaminD', 'vitamin_d');
+    applyEstimate('vitaminE', 'vitamin_e');
+    applyEstimate('vitaminK', 'vitamin_k');
+    applyEstimate('vitaminB6', 'vitamin_b6');
+    applyEstimate('vitaminB12', 'vitamin_b12');
+    applyEstimate('folate', 'folate');
+    applyEstimate('thiamin', 'thiamin');
+    applyEstimate('riboflavin', 'riboflavin');
+    applyEstimate('niacin', 'niacin');
 
     if (__DEV__) {
+      const overrideNote = overrides.length > 0
+        ? `, ⚠️ corrected ${overrides.length} suspicious values: ${overrides.join(', ')}`
+        : '';
       console.log(
-        `📊 Estimated ${Object.keys(estimates).length} micronutrients for "${product.name}" ` +
-        `(category: ${response.data.category_used}, confidence: ${response.data.confidence})`
+        `📊 Estimated micronutrients for "${product.name}" ` +
+        `(detected: ${detectedCategory}, category: ${response.data.category_used}, ` +
+        `confidence: ${response.data.confidence}${overrideNote})`
       );
     }
 
@@ -641,10 +903,14 @@ export async function fetchProductByBarcode(
     const cachedProduct = await getFromCache(cleanBarcode);
     if (cachedProduct) {
       // Check if cached product needs micronutrient estimation
-      // (for products cached before the estimation feature was added)
-      if (isMissingMicronutrients(cachedProduct.nutrition)) {
-        // Re-estimate micronutrients for old cached products
-        // We don't have ingredients/categories in cache, so use basic estimation
+      // (for products cached before the estimation feature was added,
+      // or with suspiciously low values for the detected category)
+      const needsEstimation = isMissingMicronutrients(cachedProduct.nutrition) ||
+        hasSuspiciousNutrients(cachedProduct.nutrition, undefined, cachedProduct.ingredients);
+
+      if (needsEstimation) {
+        // Re-estimate micronutrients for old cached products or suspicious values
+        // We don't have categories in cache, so use ingredients-based estimation
         const updatedProduct = await estimateMissingMicronutrients(
           cachedProduct,
           undefined, // No categories available from cache
