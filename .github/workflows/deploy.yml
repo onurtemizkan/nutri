@@ -26,6 +26,7 @@ jobs:
     name: Deploy to Production
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    environment: production
 
     steps:
       - name: Checkout code
