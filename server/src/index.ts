@@ -3,6 +3,7 @@ import cors from 'cors';
 import { config } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger, correlationIdHeader } from './middleware/requestLogger';
+import { httpsRedirect, securityHeaders, getTrustProxyConfig } from './middleware/security';
 import { logger } from './config/logger';
 import authRoutes from './routes/authRoutes';
 import mealRoutes from './routes/mealRoutes';
@@ -27,6 +28,13 @@ import { ExpressAdapter } from '@bull-board/express';
 const packageJson = require('../package.json');
 
 const app = express();
+
+// Trust proxy configuration for production (needed for X-Forwarded-* headers)
+app.set('trust proxy', getTrustProxyConfig());
+
+// Security middleware (must be early in the chain)
+app.use(httpsRedirect);  // Redirect HTTP to HTTPS in production
+app.use(securityHeaders); // Set security headers including HSTS
 
 // Middleware
 app.use(cors());
