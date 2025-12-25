@@ -186,6 +186,7 @@ jobs:
         env:
           SSH_KEY: ${{ secrets.COOLIFY_SSH_KEY }}
           SERVER_IP: ${{ secrets.COOLIFY_SERVER_IP }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Skip if SSH key not configured
           if [ -z "$SSH_KEY" ]; then
@@ -209,19 +210,28 @@ jobs:
           echo "✅ Backend container deployed"
           DEPLOY
 
-          # Deploy ML service - rebuild image and recreate container
-          # Coolify builds locally, so we need to pull latest code and rebuild
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no root@$SERVER_IP << 'DEPLOY'
+          # Deploy ML service - pull from ghcr.io and update Coolify's image
+          # The Build workflow pushes to ghcr.io, so we pull from there
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no root@$SERVER_IP << DEPLOY
           cd /data/coolify/applications/z8cg8kkg4o0wg8044c8g0s0o || exit 0
 
-          # Pull latest code from git
-          echo "📥 Pulling latest code..."
-          git fetch origin master 2>/dev/null || true
-          git reset --hard origin/master 2>/dev/null || true
+          echo "📥 Pulling ML service image from ghcr.io..."
 
-          # Rebuild the Docker image with --no-cache to ensure latest code is used
-          echo "🔨 Rebuilding ML service image..."
-          docker compose build --no-cache 2>&1 || echo "Build failed or not configured"
+          # Login to ghcr.io (using the GitHub token passed as env)
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u onurtemizkan --password-stdin 2>/dev/null || true
+
+          # Pull the latest image
+          docker pull ghcr.io/onurtemizkan/nutri/ml-service:latest || {
+            echo "⚠️ Failed to pull from ghcr.io, trying local rebuild..."
+            docker compose build --no-cache 2>&1 || echo "Build also failed"
+          }
+
+          # Find the current image name from compose and re-tag
+          CURRENT_IMAGE=\$(docker compose config --images 2>/dev/null | head -1)
+          if [ -n "\$CURRENT_IMAGE" ]; then
+            echo "🔄 Tagging ghcr.io image as \$CURRENT_IMAGE..."
+            docker tag ghcr.io/onurtemizkan/nutri/ml-service:latest "\$CURRENT_IMAGE" 2>/dev/null || true
+          fi
 
           # Force recreate the container with new image
           echo "🚀 Recreating container..."
