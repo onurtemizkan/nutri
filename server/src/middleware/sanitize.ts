@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import sanitizeHtml from 'sanitize-html';
+import { logger } from '../config/logger';
 
 /**
  * Input sanitization middleware
@@ -25,20 +26,39 @@ const STRICT_SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   // Strip all tags and their content for dangerous elements
   exclusiveFilter: (frame: sanitizeHtml.IFrame) => {
     // Remove script, style, and other dangerous tags completely
-    const dangerousTags = ['script', 'style', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'form', 'input', 'button', 'textarea', 'select', 'meta', 'link', 'base'];
+    const dangerousTags = [
+      'script',
+      'style',
+      'iframe',
+      'frame',
+      'frameset',
+      'object',
+      'embed',
+      'applet',
+      'form',
+      'input',
+      'button',
+      'textarea',
+      'select',
+      'meta',
+      'link',
+      'base',
+    ];
     return dangerousTags.includes(frame.tag);
   },
   textFilter: (text: string) => {
     // Additional text-level sanitization
-    return text
-      // Remove null bytes
-      .replace(/\0/g, '')
-      // Remove javascript: and other dangerous URI schemes (case insensitive, with possible whitespace/encoding)
-      .replace(/j\s*a\s*v\s*a\s*s\s*c\s*r\s*i\s*p\s*t\s*:/gi, '')
-      .replace(/v\s*b\s*s\s*c\s*r\s*i\s*p\s*t\s*:/gi, '')
-      .replace(/d\s*a\s*t\s*a\s*:/gi, '')
-      // Remove event handlers that might slip through
-      .replace(/on\w+\s*=/gi, '');
+    return (
+      text
+        // Remove null bytes
+        .replace(/\0/g, '')
+        // Remove javascript: and other dangerous URI schemes (case insensitive, with possible whitespace/encoding)
+        .replace(/j\s*a\s*v\s*a\s*s\s*c\s*r\s*i\s*p\s*t\s*:/gi, '')
+        .replace(/v\s*b\s*s\s*c\s*r\s*i\s*p\s*t\s*:/gi, '')
+        .replace(/d\s*a\s*t\s*a\s*:/gi, '')
+        // Remove event handlers that might slip through
+        .replace(/on\w+\s*=/gi, '')
+    );
   },
 };
 
@@ -78,9 +98,10 @@ function sanitizeValue(value: unknown): unknown {
     const sanitized: Record<string, unknown> = {};
     for (const [key, val] of Object.entries(value)) {
       // Also sanitize object keys to prevent prototype pollution via key names
-      const sanitizedKey = typeof key === 'string'
-        ? sanitizeHtml(key, STRICT_SANITIZE_OPTIONS).slice(0, 100) // Limit key length
-        : key;
+      const sanitizedKey =
+        typeof key === 'string'
+          ? sanitizeHtml(key, STRICT_SANITIZE_OPTIONS).slice(0, 100) // Limit key length
+          : key;
       sanitized[sanitizedKey] = sanitizeValue(val);
     }
     return sanitized;
@@ -149,7 +170,7 @@ export function sanitizeInput(req: Request, _res: Response, next: NextFunction):
     next();
   } catch (error) {
     // Log error but don't expose details to client
-    console.error('Sanitization error:', error);
+    logger.error({ err: error }, 'Sanitization error');
     next();
   }
 }
@@ -209,7 +230,10 @@ export function preventParameterPollution(req: Request, res: Response, next: Nex
   function checkStructure(obj: unknown, depth: number = 0): { valid: boolean; reason?: string } {
     // Check nesting depth
     if (depth > MAX_NESTING_DEPTH) {
-      return { valid: false, reason: `Object nesting exceeds maximum depth of ${MAX_NESTING_DEPTH}` };
+      return {
+        valid: false,
+        reason: `Object nesting exceeds maximum depth of ${MAX_NESTING_DEPTH}`,
+      };
     }
 
     if (Array.isArray(obj)) {

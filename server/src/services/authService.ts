@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import prisma from '../config/database';
 import { config } from '../config/env';
 import { RegisterInput, LoginInput } from '../types';
+import { logger } from '../config/logger';
 
 export class AuthService {
   async register(data: RegisterInput) {
@@ -43,11 +44,9 @@ export class AuthService {
     });
 
     // Generate JWT token
-    const token = jwt.sign(
-      { userId: user.id },
-      config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn } as jwt.SignOptions
-    );
+    const token = jwt.sign({ userId: user.id }, config.jwt.secret, {
+      expiresIn: config.jwt.expiresIn,
+    } as jwt.SignOptions);
 
     return { user, token };
   }
@@ -75,11 +74,9 @@ export class AuthService {
     }
 
     // Generate JWT token
-    const token = jwt.sign(
-      { userId: user.id },
-      config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn } as jwt.SignOptions
-    );
+    const token = jwt.sign({ userId: user.id }, config.jwt.secret, {
+      expiresIn: config.jwt.expiresIn,
+    } as jwt.SignOptions);
 
     return {
       user: {
@@ -133,7 +130,9 @@ export class AuthService {
 
     // Don't reveal if user exists or not for security
     if (!user) {
-      return { message: 'If an account with that email exists, a password reset link has been sent.' };
+      return {
+        message: 'If an account with that email exists, a password reset link has been sent.',
+      };
     }
 
     // Generate reset token
@@ -155,16 +154,28 @@ export class AuthService {
     // In a real app, you would send an email here with the reset link
     // For now, we'll return the token (in production, this would be sent via email)
     if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
-      console.log('Password reset token:', resetToken);
-      // eslint-disable-next-line no-console
-      console.log('Reset link would be: /auth/reset-password?token=' + resetToken);
+      // Log only a short hash prefix for debugging - never log the actual token
+      const tokenHashPrefix = crypto
+        .createHash('sha256')
+        .update(resetToken)
+        .digest('hex')
+        .substring(0, 8);
+      logger.debug(
+        {
+          tokenHashPrefix,
+          email: user.email,
+          expiresAt: resetTokenExpiresAt.toISOString(),
+        },
+        'Password reset token generated (hash prefix for debugging only)'
+      );
     }
 
     return {
       message: 'If an account with that email exists, a password reset link has been sent.',
       // In development/test, return the token so we can test
-      ...((process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') && { resetToken })
+      ...((process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') && {
+        resetToken,
+      }),
     };
   }
 
@@ -322,11 +333,9 @@ export class AuthService {
     }
 
     // Generate JWT token
-    const token = jwt.sign(
-      { userId: user.id },
-      config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn } as jwt.SignOptions
-    );
+    const token = jwt.sign({ userId: user.id }, config.jwt.secret, {
+      expiresIn: config.jwt.expiresIn,
+    } as jwt.SignOptions);
 
     return {
       user: {
