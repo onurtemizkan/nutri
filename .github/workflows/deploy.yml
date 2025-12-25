@@ -209,12 +209,25 @@ jobs:
           echo "✅ Backend container deployed"
           DEPLOY
 
-          # Deploy ML service - pull latest image and force recreate
+          # Deploy ML service - rebuild image and recreate container
+          # Coolify builds locally, so we need to pull latest code and rebuild
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no root@$SERVER_IP << 'DEPLOY'
-          cd /data/coolify/applications/z8cg8kkg4o0wg8044c8g0s0o
-          docker compose pull 2>/dev/null || true
-          docker compose up -d --force-recreate --remove-orphans 2>/dev/null || echo "ML service path may differ"
-          echo "✅ ML service container deployed"
+          cd /data/coolify/applications/z8cg8kkg4o0wg8044c8g0s0o || exit 0
+
+          # Pull latest code from git
+          echo "📥 Pulling latest code..."
+          git fetch origin master 2>/dev/null || true
+          git reset --hard origin/master 2>/dev/null || true
+
+          # Rebuild the Docker image with --no-cache to ensure latest code is used
+          echo "🔨 Rebuilding ML service image..."
+          docker compose build --no-cache 2>&1 || echo "Build failed or not configured"
+
+          # Force recreate the container with new image
+          echo "🚀 Recreating container..."
+          docker compose up -d --force-recreate --remove-orphans 2>&1 || echo "Container update failed"
+
+          echo "✅ ML service deployment complete"
           DEPLOY
 
           echo "deployment_method=ssh" >> $GITHUB_OUTPUT
