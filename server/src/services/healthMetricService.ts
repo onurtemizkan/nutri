@@ -27,9 +27,15 @@ export class HealthMetricService {
 
   /**
    * Bulk create health metrics (for wearable sync)
-   * Returns { created, updated, errors } format expected by frontend
+   * Returns { created, skipped, total, errors } format for transparency
+   *
+   * Note: Uses skipDuplicates to handle unique constraint violations gracefully.
+   * The 'skipped' count represents metrics that were not inserted due to
+   * duplicate detection (based on unique constraint).
    */
   async createBulkHealthMetrics(userId: string, metrics: CreateHealthMetricInput[]) {
+    const totalSubmitted = metrics.length;
+
     const result = await prisma.healthMetric.createMany({
       data: metrics.map((metric) => ({
         userId,
@@ -44,12 +50,15 @@ export class HealthMetricService {
       skipDuplicates: true, // Skip if exact same metric already exists (based on unique constraint)
     });
 
-    // Return format expected by frontend
-    // Note: Prisma createMany with skipDuplicates doesn't tell us how many were skipped vs created
-    // So we return count as "created" and 0 for "updated" (since createMany doesn't update)
+    // Calculate how many were skipped due to duplicates
+    const skippedCount = totalSubmitted - result.count;
+
+    // Return detailed response for transparency
     return {
       created: result.count,
-      updated: 0,
+      skipped: skippedCount,
+      total: totalSubmitted,
+      updated: 0, // createMany doesn't update, kept for API compatibility
       errors: [] as { index: number; error: string }[],
     };
   }
