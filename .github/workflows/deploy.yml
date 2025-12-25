@@ -278,31 +278,45 @@ jobs:
           echo "This may be due to network/DNS issues - check Coolify dashboard for actual status"
           echo "health_status=unreachable" >> $GITHUB_OUTPUT
 
-      - name: Verify ML Service Health (internal check via backend)
+      - name: Verify ML Service Health (e2e via backend → ML)
         id: health-ml
         if: ${{ github.event.inputs.skip_ml_service != 'true' }}
         continue-on-error: true
         run: |
-          echo "🔍 Checking ML service health via backend..."
+          echo "🔍 Checking Backend → ML service connectivity (e2e health check)..."
 
-          # ML service health is checked via the backend's /health endpoint
-          # which includes an ml_service check when ML_SERVICE_URL is configured
-          response=$(curl -s --connect-timeout 5 --max-time 10 \
-            "${{ secrets.PRODUCTION_API_URL }}/health" 2>/dev/null || echo "{}")
-
-          echo "Backend health response: $response"
-
-          # Check if ML service is reported in the health response
-          if echo "$response" | grep -q "ml_service"; then
-            ml_status=$(echo "$response" | grep -o '"ml_service"[^}]*' | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
-            if [ "$ml_status" = "healthy" ]; then
-              echo "✅ ML service is healthy!"
-            else
-              echo "⚠️ ML service status: $ml_status (may still be starting)"
-            fi
-          else
-            echo "⚠️ ML service health not reported (service may not be configured)"
+          # Skip if no PRODUCTION_API_URL configured
+          if [ -z "${{ secrets.PRODUCTION_API_URL }}" ]; then
+            echo "⏭️ PRODUCTION_API_URL not configured, skipping ML check"
+            echo "ml_status=skipped" >> $GITHUB_OUTPUT
+            exit 0
           fi
+
+          # Check the /api/food/health endpoint which verifies Backend can reach ML service
+          for i in {1..3}; do
+            echo "ML connectivity check attempt $i/3..."
+
+            response=$(curl -s --connect-timeout 10 --max-time 15 \
+              "${{ secrets.PRODUCTION_API_URL }}/api/food/health" 2>/dev/null || echo '{"status":"error"}')
+
+            echo "Response: $response"
+
+            if echo "$response" | grep -q '"status":"healthy"'; then
+              model_name=$(echo "$response" | grep -o '"name":"[^"]*"' | cut -d'"' -f4 || echo "unknown")
+              echo "✅ ML service is healthy! Model: $model_name"
+              echo "ml_status=healthy" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+
+            if [ $i -lt 3 ]; then
+              echo "⏳ Waiting 10 seconds before retry..."
+              sleep 10
+            fi
+          done
+
+          echo "⚠️ ML service not reachable from backend"
+          echo "This indicates ML_SERVICE_URL may not be configured on the backend"
+          echo "ml_status=unreachable" >> $GITHUB_OUTPUT
 
       - name: Generate deployment summary
         if: always()
