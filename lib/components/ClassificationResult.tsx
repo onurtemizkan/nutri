@@ -11,7 +11,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -156,11 +155,7 @@ export function ClassificationResult({
           Select the best match from USDA database
         </Text>
 
-        <ScrollView
-          style={styles.matchesList}
-          showsVerticalScrollIndicator={false}
-          nestedScrollEnabled
-        >
+        <View style={styles.matchesList}>
           {usdaMatches.slice(0, 5).map((food, index) => (
             <TouchableOpacity
               key={food.fdcId}
@@ -226,7 +221,7 @@ export function ClassificationResult({
               />
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
       </View>
 
       {/* Actions */}
@@ -281,7 +276,6 @@ export function ClassificationResult({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: colors.background.primary,
   },
   header: {
@@ -380,7 +374,6 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
   },
   matchesSection: {
-    flex: 1,
     marginBottom: spacing.md,
   },
   sectionTitle: {
@@ -395,7 +388,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   matchesList: {
-    maxHeight: 300,
+    // No maxHeight - let parent ScrollView handle scrolling
   },
   matchCard: {
     flexDirection: 'row',

@@ -406,7 +406,13 @@ export default function ScanFoodScreen() {
         </View>
 
         <View style={styles.previewContainer}>
-          <Image source={{ uri: capturedImage }} style={styles.previewImage} />
+          <Image
+            source={{ uri: capturedImage }}
+            style={[
+              styles.previewImage,
+              (scanResult || usdaResult) && styles.previewImageSmall,
+            ]}
+          />
 
           {isAnalyzing && (
             <BlurView intensity={80} tint="dark" style={styles.analyzingOverlay}>
@@ -445,12 +451,14 @@ export default function ScanFoodScreen() {
 
           {/* USDA Classification Results */}
           {usdaResult && (
-            <View
-              style={[
-                styles.resultsScrollView,
+            <ScrollView
+              style={styles.resultsScrollView}
+              contentContainerStyle={[
+                styles.resultsContainer,
                 { paddingHorizontal: responsiveSpacing.horizontal },
                 isTablet && styles.resultsContainerTablet
               ]}
+              showsVerticalScrollIndicator={false}
             >
               <ClassificationResult
                 classification={usdaResult.classification as FoodClassification}
@@ -460,7 +468,7 @@ export default function ScanFoodScreen() {
                 onSearchInstead={handleSearchInstead}
                 onReportIncorrect={handleReportIncorrect}
               />
-            </View>
+            </ScrollView>
           )}
 
           {/* Legacy ML-only scan results (fallback) */}
@@ -993,6 +1001,9 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '50%',
     resizeMode: 'contain',
+  },
+  previewImageSmall: {
+    height: '30%',
   },
   analyzingOverlay: {
     ...StyleSheet.absoluteFillObject,
