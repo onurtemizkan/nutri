@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { authService } from '../services/authService';
 import { AuthenticatedRequest, UpdateUserProfileInput } from '../types';
 import { requireAuth } from '../utils/authHelpers';
-import prisma from '../config/database';
 import {
   appleSignInSchema,
   registerSchema,
@@ -14,7 +13,7 @@ import {
   withErrorHandling,
   ErrorHandlers,
 } from '../utils/controllerHelpers';
-import { HTTP_STATUS, USER_PROFILE_SELECT_FIELDS } from '../config/constants';
+import { HTTP_STATUS } from '../config/constants';
 import { z } from 'zod';
 
 const verifyTokenSchema = z.object({
@@ -49,12 +48,7 @@ export class AuthController {
     if (!userId) return;
 
     const data: UpdateUserProfileInput = req.body;
-
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data,
-      select: USER_PROFILE_SELECT_FIELDS,
-    });
+    const user = await authService.updateUserProfile(userId, data);
 
     res.status(HTTP_STATUS.OK).json(user);
   });
