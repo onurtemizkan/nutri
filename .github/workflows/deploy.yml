@@ -7,7 +7,7 @@ name: Deploy
 
 on:
   workflow_run:
-    workflows: ["Build and Push"]
+    workflows: ['Build and Push']
     types: [completed]
     branches: [master]
   workflow_dispatch:
@@ -201,17 +201,19 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H $SERVER_IP >> ~/.ssh/known_hosts 2>/dev/null
 
-          # Deploy backend
+          # Deploy backend - pull latest image and force recreate
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no root@$SERVER_IP << 'DEPLOY'
           cd /data/coolify/applications/zwogw8ccsw84w8ocws4sowok
-          docker compose up -d --remove-orphans
+          docker compose pull 2>/dev/null || true
+          docker compose up -d --force-recreate --remove-orphans
           echo "✅ Backend container deployed"
           DEPLOY
 
-          # Deploy ML service
+          # Deploy ML service - pull latest image and force recreate
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no root@$SERVER_IP << 'DEPLOY'
           cd /data/coolify/applications/z8cg8kkg4o0wg8044c8g0s0o
-          docker compose up -d --remove-orphans 2>/dev/null || echo "ML service path may differ"
+          docker compose pull 2>/dev/null || true
+          docker compose up -d --force-recreate --remove-orphans 2>/dev/null || echo "ML service path may differ"
           echo "✅ ML service container deployed"
           DEPLOY
 
