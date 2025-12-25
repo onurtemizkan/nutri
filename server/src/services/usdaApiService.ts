@@ -370,11 +370,55 @@ export class USDAApiService {
   }
 
   /**
+   * Extract a readable error message from various response formats
+   */
+  private extractErrorMessage(data: unknown, fallback: string): string {
+    if (!data) {
+      return fallback;
+    }
+
+    // If it's already a string, return it
+    if (typeof data === 'string') {
+      return data;
+    }
+
+    // If it's an object, try to extract message
+    if (typeof data === 'object') {
+      const obj = data as Record<string, unknown>;
+
+      // Try common error message fields
+      if (typeof obj.error === 'string') {
+        return obj.error;
+      }
+      if (typeof obj.message === 'string') {
+        return obj.message;
+      }
+
+      // Nested error object: { error: { message: "..." } }
+      if (obj.error && typeof obj.error === 'object') {
+        const nestedError = obj.error as Record<string, unknown>;
+        if (typeof nestedError.message === 'string') {
+          return nestedError.message;
+        }
+      }
+
+      // Try to stringify the object for debugging
+      try {
+        return JSON.stringify(data);
+      } catch {
+        return fallback;
+      }
+    }
+
+    return fallback;
+  }
+
+  /**
    * Handle and transform errors
    */
   private handleError(error: unknown, operationName: string): USDAApiError {
     if (axios.isAxiosError(error)) {
-      const axiosError = error as AxiosError<{ error?: string; message?: string }>;
+      const axiosError = error as AxiosError<{ error?: unknown; message?: unknown }>;
 
       // Timeout error
       if (axiosError.code === 'ECONNABORTED' || axiosError.code === 'ETIMEDOUT') {
@@ -382,10 +426,10 @@ export class USDAApiService {
       }
 
       const status = axiosError.response?.status || 500;
-      const responseMessage =
-        axiosError.response?.data?.error ||
-        axiosError.response?.data?.message ||
-        axiosError.message;
+      const responseMessage = this.extractErrorMessage(
+        axiosError.response?.data,
+        axiosError.message
+      );
 
       // Rate limit error
       if (status === 429) {
