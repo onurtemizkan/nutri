@@ -58,36 +58,83 @@ createBullBoard({
   serverAdapter,
 });
 
-// Mount Bull Board with basic auth protection
-// In production, use proper admin authentication
+// Mount Bull Board with secure authentication
+// Credentials MUST be set via environment variables (no defaults)
 app.use(
   '/admin/queues',
   (req, res, next) => {
-    // Simple basic auth for queue dashboard
-    // Use proper admin session auth in production
-    const auth = req.headers.authorization;
-
-    if (config.nodeEnv !== 'development') {
-      // In non-dev environments, require authentication
-      if (!auth || !auth.startsWith('Basic ')) {
-        res.setHeader('WWW-Authenticate', 'Basic realm="Queue Dashboard"');
-        res.status(401).send('Authentication required');
-        return;
-      }
-
-      const credentials = Buffer.from(auth.slice(6), 'base64').toString();
-      const [username, password] = credentials.split(':');
-
-      // Use environment variables for credentials
-      const adminUser = process.env.BULL_BOARD_USERNAME || 'admin';
-      const adminPass = process.env.BULL_BOARD_PASSWORD || 'admin';
-
-      if (username !== adminUser || password !== adminPass) {
-        res.setHeader('WWW-Authenticate', 'Basic realm="Queue Dashboard"');
-        res.status(401).send('Invalid credentials');
-        return;
-      }
+    // In development, allow access without credentials
+    if (config.nodeEnv === 'development') {
+      next();
+      return;
     }
+
+    // Production: require explicitly configured credentials
+    const adminUser = process.env.BULL_BOARD_USERNAME;
+    const adminPass = process.env.BULL_BOARD_PASSWORD;
+
+    // Validate that credentials are configured
+    if (!adminUser || !adminPass) {
+      logger.error('Bull Board credentials not configured. Set BULL_BOARD_USERNAME and BULL_BOARD_PASSWORD');
+      res.status(503).json({
+        error: 'Queue dashboard not configured',
+        message: 'Administrator credentials must be set in environment variables',
+      });
+      return;
+    }
+
+    // Validate password strength (minimum 12 characters)
+    if (adminPass.length < 12) {
+      logger.error('BULL_BOARD_PASSWORD is too weak. Must be at least 12 characters');
+      res.status(503).json({
+        error: 'Queue dashboard misconfigured',
+        message: 'Administrator password does not meet security requirements',
+      });
+      return;
+    }
+
+    // Require basic auth header
+    const auth = req.headers.authorization;
+    if (!auth || !auth.startsWith('Basic ')) {
+      res.setHeader('WWW-Authenticate', 'Basic realm="Queue Dashboard"');
+      res.status(401).send('Authentication required');
+      return;
+    }
+
+    const credentials = Buffer.from(auth.slice(6), 'base64').toString();
+    const [providedUser, providedPass] = credentials.split(':');
+
+    // Use constant-time comparison to prevent timing attacks
+    const userMatch = providedUser.length === adminUser.length &&
+      require('crypto').timingSafeEqual(
+        Buffer.from(providedUser),
+        Buffer.from(adminUser)
+      );
+
+    const passMatch = providedPass && providedPass.length === adminPass.length &&
+      require('crypto').timingSafeEqual(
+        Buffer.from(providedPass),
+        Buffer.from(adminPass)
+      );
+
+    if (!userMatch || !passMatch) {
+      logger.warn({
+        ip: req.ip,
+        path: req.path,
+        correlationId: req.id,
+      }, 'Failed Bull Board authentication attempt');
+
+      res.setHeader('WWW-Authenticate', 'Basic realm="Queue Dashboard"');
+      res.status(401).send('Invalid credentials');
+      return;
+    }
+
+    // Log successful access
+    logger.info({
+      ip: req.ip,
+      path: req.path,
+      correlationId: req.id,
+    }, 'Bull Board access granted');
 
     next();
   },
