@@ -1,35 +1,21 @@
 import { Request, Response } from 'express';
-import { z } from 'zod';
 import { authService } from '../services/authService';
 import { AuthenticatedRequest, UpdateUserProfileInput } from '../types';
 import { requireAuth } from '../utils/authHelpers';
 import prisma from '../config/database';
-import { appleSignInSchema } from '../validation/schemas';
+import {
+  appleSignInSchema,
+  registerSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from '../validation/schemas';
 import {
   withErrorHandling,
   ErrorHandlers,
 } from '../utils/controllerHelpers';
 import { HTTP_STATUS, USER_PROFILE_SELECT_FIELDS } from '../config/constants';
-
-const registerSchema = z.object({
-  email: z.string().email('Invalid email format'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  name: z.string().min(1, 'Name is required'),
-});
-
-const loginSchema = z.object({
-  email: z.string().email('Invalid email format'),
-  password: z.string().min(1, 'Password is required'),
-});
-
-const forgotPasswordSchema = z.object({
-  email: z.string().email('Invalid email format'),
-});
-
-const resetPasswordSchema = z.object({
-  token: z.string().min(1, 'Reset token is required'),
-  newPassword: z.string().min(6, 'Password must be at least 6 characters'),
-});
+import { z } from 'zod';
 
 const verifyTokenSchema = z.object({
   token: z.string().min(1, 'Reset token is required'),

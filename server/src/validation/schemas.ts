@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MIN_PASSWORD_LENGTH } from '../config/constants';
 
 /**
  * Centralized Zod validation schemas
@@ -130,9 +131,12 @@ export const nonEmptyStringSchema = z.string().min(1);
 export const emailSchema = z.string().email();
 
 /**
- * Password (minimum 6 characters)
+ * Password (minimum 12 characters per OWASP guidelines)
  */
-export const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
+export const passwordSchema = z.string().min(
+  MIN_PASSWORD_LENGTH,
+  `Password must be at least ${MIN_PASSWORD_LENGTH} characters`
+);
 
 /**
  * Non-negative number schema (for micronutrients that can be 0)
