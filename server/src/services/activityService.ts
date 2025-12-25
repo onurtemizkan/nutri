@@ -1,7 +1,7 @@
 import prisma from '../config/database';
 import { CreateActivityInput, UpdateActivityInput, GetActivitiesQuery, ActivityType } from '../types';
 import { Prisma } from '@prisma/client';
-import { DEFAULT_PAGE_LIMIT, WEEK_IN_DAYS } from '../config/constants';
+import { DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT, WEEK_IN_DAYS } from '../config/constants';
 import { getDayBoundaries, getDaysAgo } from '../utils/dateHelpers';
 
 export class ActivityService {
@@ -64,6 +64,9 @@ export class ActivityService {
   async getActivities(userId: string, query: GetActivitiesQuery = {}) {
     const { activityType, intensity, startDate, endDate, source, limit = DEFAULT_PAGE_LIMIT } = query;
 
+    // Cap limit to MAX_PAGE_LIMIT to prevent excessive data retrieval
+    const cappedLimit = Math.min(limit, MAX_PAGE_LIMIT);
+
     const where: Prisma.ActivityWhereInput = { userId };
 
     if (activityType) {
@@ -93,7 +96,7 @@ export class ActivityService {
       orderBy: {
         startedAt: 'desc',
       },
-      take: limit,
+      take: cappedLimit,
     });
 
     return activities;

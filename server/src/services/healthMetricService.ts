@@ -1,7 +1,7 @@
 import prisma from '../config/database';
 import { CreateHealthMetricInput, GetHealthMetricsQuery, HealthMetricType } from '../types';
 import { Prisma } from '@prisma/client';
-import { DEFAULT_PAGE_LIMIT, WEEK_IN_DAYS } from '../config/constants';
+import { DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT, WEEK_IN_DAYS } from '../config/constants';
 import { getDayBoundaries, getDaysAgo } from '../utils/dateHelpers';
 
 export class HealthMetricService {
@@ -60,6 +60,9 @@ export class HealthMetricService {
   async getHealthMetrics(userId: string, query: GetHealthMetricsQuery = {}) {
     const { metricType, startDate, endDate, source, limit = DEFAULT_PAGE_LIMIT } = query;
 
+    // Cap limit to MAX_PAGE_LIMIT to prevent excessive data retrieval
+    const cappedLimit = Math.min(limit, MAX_PAGE_LIMIT);
+
     const where: Prisma.HealthMetricWhereInput = { userId };
 
     if (metricType) {
@@ -85,7 +88,7 @@ export class HealthMetricService {
       orderBy: {
         recordedAt: 'desc',
       },
-      take: limit,
+      take: cappedLimit,
     });
 
     return metrics;
