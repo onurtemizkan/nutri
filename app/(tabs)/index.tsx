@@ -57,13 +57,6 @@ export default function HomeScreen() {
     tablet: spacing.xl,
     default: spacing.lg,
   });
-  const calorieRingSize = getResponsiveValue({
-    small: 120,
-    medium: 140,
-    large: 160,
-    tablet: 180,
-    default: 140,
-  });
   const fabSize = getResponsiveValue({
     small: 52,
     medium: 56,
@@ -190,93 +183,91 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* Calorie Summary Card */}
-          <View style={[styles.summaryCard, isTablet && styles.summaryCardTablet]} testID="home-calorie-summary">
-            <LinearGradient
-              colors={gradients.primary}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[
-                styles.calorieRing,
-                { width: calorieRingSize, height: calorieRingSize, borderRadius: calorieRingSize / 2 }
-              ]}
-            >
-              <View style={[
-                styles.calorieContent,
-                { width: calorieRingSize - 24, height: calorieRingSize - 24, borderRadius: (calorieRingSize - 24) / 2 }
-              ]}>
-                <Text style={styles.calorieValue}>{Math.round(summary?.totalCalories || 0)}</Text>
-                <Text style={styles.calorieLabel}>/ {summary?.goals?.goalCalories || 2000}</Text>
+          {/* Nutrition Summary - Macros + Calories */}
+          <View style={[styles.nutritionCard, isTablet && styles.nutritionCardTablet]} testID="home-calorie-summary">
+            {/* Macros - Left Side */}
+            <View style={styles.macrosColumn} testID="home-macros-container">
+              <View style={styles.macroRow}>
+                <View style={styles.macroInfo}>
+                  <Text style={styles.macroLabel}>Protein</Text>
+                  <Text style={styles.macroValue}>{Math.round(summary?.totalProtein || 0)}g</Text>
+                </View>
+                <View style={styles.macroProgressContainer}>
+                  <View style={styles.macroProgress}>
+                    <LinearGradient
+                      colors={gradients.success}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={[
+                        styles.macroProgressFill,
+                        {
+                          width: `${Math.min(((summary?.totalProtein || 0) / (summary?.goals?.goalProtein || 1)) * 100, 100)}%`,
+                        }
+                      ]}
+                    />
+                  </View>
+                </View>
               </View>
-            </LinearGradient>
-            <Text style={styles.calorieSubtext}>Calories</Text>
-            <View style={styles.progressBar}>
+
+              <View style={styles.macroRow}>
+                <View style={styles.macroInfo}>
+                  <Text style={styles.macroLabel}>Carbs</Text>
+                  <Text style={styles.macroValue}>{Math.round(summary?.totalCarbs || 0)}g</Text>
+                </View>
+                <View style={styles.macroProgressContainer}>
+                  <View style={styles.macroProgress}>
+                    <LinearGradient
+                      colors={gradients.accent}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={[
+                        styles.macroProgressFill,
+                        {
+                          width: `${Math.min(((summary?.totalCarbs || 0) / (summary?.goals?.goalCarbs || 1)) * 100, 100)}%`,
+                        }
+                      ]}
+                    />
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.macroRow}>
+                <View style={styles.macroInfo}>
+                  <Text style={styles.macroLabel}>Fat</Text>
+                  <Text style={styles.macroValue}>{Math.round(summary?.totalFat || 0)}g</Text>
+                </View>
+                <View style={styles.macroProgressContainer}>
+                  <View style={styles.macroProgress}>
+                    <LinearGradient
+                      colors={gradients.secondary}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={[
+                        styles.macroProgressFill,
+                        {
+                          width: `${Math.min(((summary?.totalFat || 0) / (summary?.goals?.goalFat || 1)) * 100, 100)}%`,
+                        }
+                      ]}
+                    />
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Calories - Right Side */}
+            <View style={styles.calorieSection}>
               <LinearGradient
                 colors={gradients.primary}
                 start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={[
-                  styles.progressFill,
-                  { width: `${Math.min(calorieProgress, 100)}%` }
-                ]}
-              />
-            </View>
-          </View>
-
-          {/* Macros */}
-          <View style={[styles.macrosContainer, isTablet && styles.macrosContainerTablet]} testID="home-macros-container">
-            <View style={styles.macroCard}>
-              <Text style={styles.macroValue}>{Math.round(summary?.totalProtein || 0)}g</Text>
-              <Text style={styles.macroLabel}>Protein</Text>
-              <View style={styles.macroProgress}>
-                <LinearGradient
-                  colors={gradients.success}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[
-                    styles.macroProgressFill,
-                    {
-                      width: `${Math.min(((summary?.totalProtein || 0) / (summary?.goals?.goalProtein || 1)) * 100, 100)}%`,
-                    }
-                  ]}
-                />
-              </View>
-            </View>
-
-            <View style={styles.macroCard}>
-              <Text style={styles.macroValue}>{Math.round(summary?.totalCarbs || 0)}g</Text>
-              <Text style={styles.macroLabel}>Carbs</Text>
-              <View style={styles.macroProgress}>
-                <LinearGradient
-                  colors={gradients.accent}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[
-                    styles.macroProgressFill,
-                    {
-                      width: `${Math.min(((summary?.totalCarbs || 0) / (summary?.goals?.goalCarbs || 1)) * 100, 100)}%`,
-                    }
-                  ]}
-                />
-              </View>
-            </View>
-
-            <View style={styles.macroCard}>
-              <Text style={styles.macroValue}>{Math.round(summary?.totalFat || 0)}g</Text>
-              <Text style={styles.macroLabel}>Fat</Text>
-              <View style={styles.macroProgress}>
-                <LinearGradient
-                  colors={gradients.secondary}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[
-                    styles.macroProgressFill,
-                    {
-                      width: `${Math.min(((summary?.totalFat || 0) / (summary?.goals?.goalFat || 1)) * 100, 100)}%`,
-                    }
-                  ]}
-                />
-              </View>
+                end={{ x: 1, y: 1 }}
+                style={styles.calorieRing}
+              >
+                <View style={styles.calorieContent}>
+                  <Text style={styles.calorieValue}>{Math.round(summary?.totalCalories || 0)}</Text>
+                  <Text style={styles.calorieGoal}>/ {summary?.goals?.goalCalories || 2000}</Text>
+                </View>
+              </LinearGradient>
+              <Text style={styles.calorieLabel}>Calories</Text>
             </View>
           </View>
 
@@ -447,105 +438,54 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.medium,
   },
 
-  // Summary Card
-  summaryCard: {
+  // Nutrition Card (Combined Macros + Calories)
+  nutritionCard: {
     backgroundColor: colors.background.tertiary,
     borderRadius: borderRadius.lg,
-    padding: spacing.xl,
-    alignItems: 'center',
+    padding: spacing.md,
     marginBottom: spacing.lg,
     borderWidth: 1,
     borderColor: colors.border.secondary,
+    flexDirection: 'row',
+    alignItems: 'center',
     ...shadows.md,
   },
-  summaryCardTablet: {
-    maxWidth: 500,
-    alignSelf: 'center',
-    width: '100%',
-  },
-  calorieRing: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-    ...shadows.glow,
-  },
-  calorieContent: {
-    alignItems: 'center',
-    backgroundColor: colors.background.tertiary,
-    width: 116,
-    height: 116,
-    borderRadius: 58,
-    justifyContent: 'center',
-  },
-  calorieValue: {
-    fontSize: typography.fontSize['4xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-  },
-  calorieLabel: {
-    fontSize: typography.fontSize.md,
-    color: colors.text.tertiary,
-  },
-  calorieSubtext: {
-    fontSize: typography.fontSize.md,
-    color: colors.text.secondary,
-    marginBottom: spacing.md,
-    fontWeight: typography.fontWeight.medium,
-  },
-  progressBar: {
-    width: '100%',
-    height: 6,
-    backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.xs,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: borderRadius.xs,
-  },
-
-  // Macros
-  macrosContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xl,
-    gap: spacing.md,
-  },
-  macrosContainerTablet: {
+  nutritionCardTablet: {
     maxWidth: 600,
     alignSelf: 'center',
     width: '100%',
   },
-  macroCard: {
+
+  // Macros - Left Side
+  macrosColumn: {
     flex: 1,
-    backgroundColor: colors.background.tertiary,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border.secondary,
-    ...shadows.sm,
+    gap: spacing.sm,
   },
-  macroValue: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
+  macroRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  macroInfo: {
+    width: 70,
   },
   macroLabel: {
     fontSize: typography.fontSize.xs,
     color: colors.text.tertiary,
-    marginBottom: spacing.sm,
     fontWeight: typography.fontWeight.semibold,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
+  },
+  macroValue: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+  },
+  macroProgressContainer: {
+    flex: 1,
   },
   macroProgress: {
-    width: '100%',
-    height: 4,
+    height: 6,
     backgroundColor: colors.background.elevated,
     borderRadius: borderRadius.xs,
     overflow: 'hidden',
@@ -553,6 +493,43 @@ const styles = StyleSheet.create({
   macroProgressFill: {
     height: '100%',
     borderRadius: borderRadius.xs,
+  },
+
+  // Calories - Right Side
+  calorieSection: {
+    alignItems: 'center',
+    marginLeft: spacing.md,
+  },
+  calorieRing: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.glow,
+  },
+  calorieContent: {
+    alignItems: 'center',
+    backgroundColor: colors.background.tertiary,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    justifyContent: 'center',
+  },
+  calorieValue: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+  },
+  calorieGoal: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+  },
+  calorieLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
+    fontWeight: typography.fontWeight.medium,
   },
 
   // Health Trends
