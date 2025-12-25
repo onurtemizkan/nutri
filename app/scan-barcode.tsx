@@ -19,11 +19,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import {
-  CameraView,
-  useCameraPermissions,
-  BarcodeScanningResult,
-} from 'expo-camera';
+import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -37,14 +33,7 @@ import {
   getNutritionGradeColor,
 } from '@/lib/api/openfoodfacts';
 import { showAlert } from '@/lib/utils/alert';
-import {
-  colors,
-  gradients,
-  shadows,
-  spacing,
-  borderRadius,
-  typography,
-} from '@/lib/theme/colors';
+import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import { useResponsive } from '@/hooks/useResponsive';
 import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 import type { BarcodeProduct, BarcodeScannerState } from '@/lib/types/barcode';
@@ -78,8 +67,10 @@ export default function ScanBarcodeScreen() {
   const scanLineAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    let animation: Animated.CompositeAnimation | null = null;
+
     if (state.isScanning && !state.isLoading && !product) {
-      Animated.loop(
+      animation = Animated.loop(
         Animated.sequence([
           Animated.timing(scanLineAnim, {
             toValue: 1,
@@ -92,10 +83,16 @@ export default function ScanBarcodeScreen() {
             useNativeDriver: true,
           }),
         ])
-      ).start();
+      );
+      animation.start();
     } else {
       scanLineAnim.setValue(0);
     }
+
+    // Cleanup: stop animation on unmount or when dependencies change
+    return () => {
+      animation?.stop();
+    };
   }, [state.isScanning, state.isLoading, product, scanLineAnim]);
 
   // Request permission on mount
@@ -119,9 +116,7 @@ export default function ScanBarcodeScreen() {
       // Check if barcode type is supported
       const barcodeType = result.type.toLowerCase();
       if (
-        !SUPPORTED_BARCODE_TYPES.includes(
-          barcodeType as (typeof SUPPORTED_BARCODE_TYPES)[number]
-        )
+        !SUPPORTED_BARCODE_TYPES.includes(barcodeType as (typeof SUPPORTED_BARCODE_TYPES)[number])
       ) {
         return;
       }
@@ -144,9 +139,7 @@ export default function ScanBarcodeScreen() {
 
       if (scanResult.success && scanResult.product) {
         setProduct(scanResult.product);
-        setServingAmount(
-          scanResult.product.servingQuantity?.toString() || '100'
-        );
+        setServingAmount(scanResult.product.servingQuantity?.toString() || '100');
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } else {
         setState((prev) => ({
@@ -235,9 +228,7 @@ export default function ScanBarcodeScreen() {
 
     // Build params with all available nutrition data including micronutrients
     const params: Record<string, string> = {
-      name: product.brand
-        ? `${product.name} (${product.brand})`
-        : product.name,
+      name: product.brand ? `${product.name} (${product.brand})` : product.name,
       calories: nutrition.calories.toString(),
       protein: nutrition.protein.toString(),
       carbs: nutrition.carbs.toString(),
@@ -252,7 +243,8 @@ export default function ScanBarcodeScreen() {
     if (nutrition.sugar !== undefined) params.sugar = nutrition.sugar.toString();
 
     // Fat breakdown
-    if (nutrition.saturatedFat !== undefined) params.saturatedFat = nutrition.saturatedFat.toString();
+    if (nutrition.saturatedFat !== undefined)
+      params.saturatedFat = nutrition.saturatedFat.toString();
     if (nutrition.transFat !== undefined) params.transFat = nutrition.transFat.toString();
     if (nutrition.cholesterol !== undefined) params.cholesterol = nutrition.cholesterol.toString();
 
@@ -296,15 +288,10 @@ export default function ScanBarcodeScreen() {
   // Permission denied
   if (!permission.granted) {
     return (
-      <View
-        style={styles.permissionContainer}
-        testID="scan-barcode-permission-screen"
-      >
+      <View style={styles.permissionContainer} testID="scan-barcode-permission-screen">
         <Ionicons name="barcode-outline" size={64} color={colors.text.tertiary} />
         <Text style={styles.permissionText}>Camera access is required</Text>
-        <Text style={styles.permissionSubtext}>
-          We need camera access to scan product barcodes
-        </Text>
+        <Text style={styles.permissionSubtext}>We need camera access to scan product barcodes</Text>
         <TouchableOpacity
           style={styles.permissionButton}
           onPress={requestPermission}
@@ -373,18 +360,12 @@ export default function ScanBarcodeScreen() {
               />
             ) : (
               <View style={styles.productImagePlaceholder}>
-                <Ionicons
-                  name="cube-outline"
-                  size={48}
-                  color={colors.text.tertiary}
-                />
+                <Ionicons name="cube-outline" size={48} color={colors.text.tertiary} />
               </View>
             )}
             <View style={styles.productInfo}>
               <Text style={styles.productName}>{product.name}</Text>
-              {product.brand && (
-                <Text style={styles.productBrand}>{product.brand}</Text>
-              )}
+              {product.brand && <Text style={styles.productBrand}>{product.brand}</Text>}
               <Text style={styles.barcodeText}>
                 <Ionicons name="barcode-outline" size={14} color={colors.text.tertiary} />{' '}
                 {product.barcode}
@@ -396,12 +377,7 @@ export default function ScanBarcodeScreen() {
           {nutriscoreGrade && (
             <View style={styles.nutriscoreContainer}>
               <Text style={styles.nutriscoreLabel}>Nutri-Score</Text>
-              <View
-                style={[
-                  styles.nutriscoreBadge,
-                  { backgroundColor: nutriscoreColor },
-                ]}
-              >
+              <View style={[styles.nutriscoreBadge, { backgroundColor: nutriscoreColor }]}>
                 <Text style={styles.nutriscoreGrade}>{nutriscoreGrade}</Text>
               </View>
             </View>
@@ -423,17 +399,13 @@ export default function ScanBarcodeScreen() {
               <Text style={styles.servingUnit}>grams</Text>
             </View>
             {product.servingSize && (
-              <Text style={styles.servingSuggestion}>
-                Suggested serving: {product.servingSize}
-              </Text>
+              <Text style={styles.servingSuggestion}>Suggested serving: {product.servingSize}</Text>
             )}
           </View>
 
           {/* Nutrition info */}
           <View style={styles.nutritionCard}>
-            <Text style={styles.nutritionTitle}>
-              Nutrition for {serving}g serving
-            </Text>
+            <Text style={styles.nutritionTitle}>Nutrition for {serving}g serving</Text>
 
             <View style={styles.nutritionGrid}>
               <View style={styles.nutritionItem}>
@@ -458,17 +430,13 @@ export default function ScanBarcodeScreen() {
               <View style={styles.nutritionSecondaryGrid}>
                 {nutrition.fiber !== undefined && (
                   <View style={styles.nutritionSecondaryItem}>
-                    <Text style={styles.nutritionSecondaryValue}>
-                      {nutrition.fiber}g
-                    </Text>
+                    <Text style={styles.nutritionSecondaryValue}>{nutrition.fiber}g</Text>
                     <Text style={styles.nutritionSecondaryLabel}>Fiber</Text>
                   </View>
                 )}
                 {nutrition.sugar !== undefined && (
                   <View style={styles.nutritionSecondaryItem}>
-                    <Text style={styles.nutritionSecondaryValue}>
-                      {nutrition.sugar}g
-                    </Text>
+                    <Text style={styles.nutritionSecondaryValue}>{nutrition.sugar}g</Text>
                     <Text style={styles.nutritionSecondaryLabel}>Sugar</Text>
                   </View>
                 )}
@@ -480,16 +448,10 @@ export default function ScanBarcodeScreen() {
           {product.allergens && product.allergens.length > 0 && (
             <View style={styles.allergensContainer}>
               <View style={styles.allergensHeader}>
-                <Ionicons
-                  name="warning-outline"
-                  size={18}
-                  color={colors.status.warning}
-                />
+                <Ionicons name="warning-outline" size={18} color={colors.status.warning} />
                 <Text style={styles.allergensTitle}>Allergens</Text>
               </View>
-              <Text style={styles.allergensText}>
-                {product.allergens.join(', ')}
-              </Text>
+              <Text style={styles.allergensText}>{product.allergens.join(', ')}</Text>
             </View>
           )}
 
@@ -600,9 +562,7 @@ export default function ScanBarcodeScreen() {
             )}
           </View>
 
-          <Text style={styles.scannerHint}>
-            Position the barcode within the frame
-          </Text>
+          <Text style={styles.scannerHint}>Position the barcode within the frame</Text>
         </View>
       </CameraView>
 
@@ -613,9 +573,7 @@ export default function ScanBarcodeScreen() {
             <View style={styles.loadingCard}>
               <ActivityIndicator size="large" color={colors.primary.main} />
               <Text style={styles.loadingText}>Looking up product...</Text>
-              <Text style={styles.loadingBarcode}>
-                {state.lastScannedBarcode}
-              </Text>
+              <Text style={styles.loadingBarcode}>{state.lastScannedBarcode}</Text>
             </View>
           </BlurView>
         </View>
@@ -643,20 +601,18 @@ export default function ScanBarcodeScreen() {
                 {state.error.type === 'PRODUCT_NOT_FOUND'
                   ? 'Product Not Found'
                   : state.error.type === 'NETWORK_ERROR'
-                  ? 'Connection Error'
-                  : 'Something Went Wrong'}
+                    ? 'Connection Error'
+                    : 'Something Went Wrong'}
               </Text>
               <Text style={styles.errorMessage}>
                 {state.error.type === 'PRODUCT_NOT_FOUND'
                   ? "This product isn't in the Open Food Facts database yet. You can add it manually or try scanning a different product."
                   : state.error.type === 'NETWORK_ERROR'
-                  ? 'Please check your internet connection and try again.'
-                  : state.error.message}
+                    ? 'Please check your internet connection and try again.'
+                    : state.error.message}
               </Text>
               {state.error.barcode && (
-                <Text style={styles.errorBarcode}>
-                  Barcode: {state.error.barcode}
-                </Text>
+                <Text style={styles.errorBarcode}>Barcode: {state.error.barcode}</Text>
               )}
               <TouchableOpacity
                 style={styles.errorButton}
@@ -674,9 +630,7 @@ export default function ScanBarcodeScreen() {
                 activeOpacity={0.8}
                 testID="scan-barcode-enter-manually-button"
               >
-                <Text style={styles.errorSecondaryButtonText}>
-                  Enter Manually Instead
-                </Text>
+                <Text style={styles.errorSecondaryButtonText}>Enter Manually Instead</Text>
               </TouchableOpacity>
             </View>
           </BlurView>
@@ -698,11 +652,7 @@ export default function ScanBarcodeScreen() {
                     onPress={() => setShowManualEntry(false)}
                     testID="scan-barcode-close-manual-button"
                   >
-                    <Ionicons
-                      name="close"
-                      size={24}
-                      color={colors.text.secondary}
-                    />
+                    <Ionicons name="close" size={24} color={colors.text.secondary} />
                   </TouchableOpacity>
                 </View>
 
