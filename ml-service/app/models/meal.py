@@ -12,10 +12,14 @@ class Meal(Base):
     )
 
     id = Column(String, primary_key=True)
-    user_id = Column("userId", String, ForeignKey("User.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(
+        "userId", String, ForeignKey("User.id", ondelete="CASCADE"), nullable=False
+    )
 
     name = Column(String, nullable=False)
-    meal_type = Column("mealType", String, nullable=False)  # breakfast, lunch, dinner, snack
+    meal_type = Column(
+        "mealType", String, nullable=False
+    )  # breakfast, lunch, dinner, snack
     calories = Column(Float, nullable=False)
     protein = Column(Float, nullable=False)
     carbs = Column(Float, nullable=False)
@@ -29,7 +33,9 @@ class Meal(Base):
 
     consumed_at = Column("consumedAt", DateTime, server_default=func.now())
     created_at = Column("createdAt", DateTime, server_default=func.now())
-    updated_at = Column("updatedAt", DateTime, server_default=func.now(), onupdate=func.now())
+    updated_at = Column(
+        "updatedAt", DateTime, server_default=func.now(), onupdate=func.now()
+    )
 
     # Relationship
     user = relationship("User", back_populates="meals")

@@ -8,11 +8,18 @@ class Activity(Base):
     __tablename__ = "Activity"
     __table_args__ = (
         Index("Activity_userId_startedAt_idx", "userId", "startedAt"),
-        Index("Activity_userId_activityType_startedAt_idx", "userId", "activityType", "startedAt"),
+        Index(
+            "Activity_userId_activityType_startedAt_idx",
+            "userId",
+            "activityType",
+            "startedAt",
+        ),
     )
 
     id = Column(String, primary_key=True)
-    user_id = Column("userId", String, ForeignKey("User.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(
+        "userId", String, ForeignKey("User.id", ondelete="CASCADE"), nullable=False
+    )
 
     # Timing
     started_at = Column("startedAt", DateTime, nullable=False)
@@ -31,7 +38,9 @@ class Activity(Base):
     steps = Column(Integer, nullable=True)
 
     # Source
-    source = Column(String, nullable=False)  # "apple_health", "strava", "garmin", "manual"
+    source = Column(
+        String, nullable=False
+    )  # "apple_health", "strava", "garmin", "manual"
     source_id = Column("sourceId", String, nullable=True)
 
     # Notes
@@ -39,7 +48,9 @@ class Activity(Base):
 
     # Audit
     created_at = Column("createdAt", DateTime, server_default=func.now())
-    updated_at = Column("updatedAt", DateTime, server_default=func.now(), onupdate=func.now())
+    updated_at = Column(
+        "updatedAt", DateTime, server_default=func.now(), onupdate=func.now()
+    )
 
     # Relationship
     user = relationship("User", back_populates="activities")

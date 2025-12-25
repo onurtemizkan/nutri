@@ -151,8 +151,17 @@ INGREDIENT_MICRONUTRIENT_PROFILES: Dict[str, Dict[str, float]] = {
     "yogurt": {"calcium": 250, "vitamin_b12": 0.9, "riboflavin": 0.3, "potassium": 350},
     "greek yogurt": {"calcium": 200, "vitamin_b12": 1.0, "riboflavin": 0.25},
     "quark": {"calcium": 90, "vitamin_b12": 0.8, "riboflavin": 0.2, "phosphorus": 150},
-    "fromage frais": {"calcium": 85, "vitamin_b12": 0.6, "riboflavin": 0.2},  # French quark
-    "skyr": {"calcium": 150, "vitamin_b12": 1.0, "riboflavin": 0.25, "phosphorus": 180},  # Icelandic
+    "fromage frais": {
+        "calcium": 85,
+        "vitamin_b12": 0.6,
+        "riboflavin": 0.2,
+    },  # French quark
+    "skyr": {
+        "calcium": 150,
+        "vitamin_b12": 1.0,
+        "riboflavin": 0.25,
+        "phosphorus": 180,
+    },  # Icelandic
     "protein yogurt": {"calcium": 180, "vitamin_b12": 1.0, "riboflavin": 0.25},
     "cottage cheese": {"calcium": 80, "vitamin_b12": 0.6, "riboflavin": 0.2},
     "kefir": {"calcium": 250, "vitamin_b12": 0.8, "vitamin_k": 30, "riboflavin": 0.3},
@@ -258,7 +267,12 @@ INGREDIENT_MICRONUTRIENT_PROFILES: Dict[str, Dict[str, float]] = {
     "blackberry": {"vitamin_c": 20, "vitamin_k": 20, "manganese": 0.9, "fiber": 5},
     "cranberry": {"vitamin_c": 15, "vitamin_e": 1},
     "pomegranate": {"vitamin_c": 10, "vitamin_k": 15, "folate": 40, "potassium": 200},
-    "pineapple": {"vitamin_c": 48, "manganese": 0.9, "vitamin_b6": 0.1, "thiamin": 0.08},
+    "pineapple": {
+        "vitamin_c": 48,
+        "manganese": 0.9,
+        "vitamin_b6": 0.1,
+        "thiamin": 0.08,
+    },
     "grape": {"vitamin_k": 15, "vitamin_c": 5, "potassium": 190},
     "grapes": {"vitamin_k": 15, "vitamin_c": 5, "potassium": 190},
     "pear": {"vitamin_c": 5, "vitamin_k": 5, "potassium": 120, "fiber": 4},
@@ -350,7 +364,6 @@ INGREDIENT_SYNONYMS: Dict[str, str] = {
     "soft cheese": "cheese",
     "hard cheese": "cheese",
     "aged cheese": "cheese",
-
     # Protein variations
     "chicken breast": "chicken",
     "chicken thigh": "chicken",
@@ -370,7 +383,6 @@ INGREDIENT_SYNONYMS: Dict[str, str] = {
     "lamb chop": "lamb",
     "ground lamb": "lamb",
     "lamb mince": "lamb",
-
     # Fish variations
     "wild salmon": "salmon",
     "atlantic salmon": "salmon",
@@ -386,7 +398,6 @@ INGREDIENT_SYNONYMS: Dict[str, str] = {
     "atlantic cod": "cod",
     "pacific cod": "cod",
     "fresh cod": "cod",
-
     # Egg variations
     "whole egg": "egg",
     "whole eggs": "eggs",
@@ -398,7 +409,6 @@ INGREDIENT_SYNONYMS: Dict[str, str] = {
     "liquid egg": "egg",
     "dried egg": "egg",
     "egg powder": "egg",
-
     # Grain variations
     "rolled oats": "oats",
     "quick oats": "oats",
@@ -415,7 +425,6 @@ INGREDIENT_SYNONYMS: Dict[str, str] = {
     "basmati rice": "brown rice",
     "jasmine rice": "brown rice",
     "white rice": "brown rice",  # Less nutrients but similar category
-
     # Nut variations
     "raw almonds": "almond",
     "roasted almonds": "almond",
@@ -437,7 +446,6 @@ INGREDIENT_SYNONYMS: Dict[str, str] = {
     "chia seeds": "chia",
     "hemp seeds": "hemp",
     "hemp hearts": "hemp",
-
     # Legume variations
     "dried lentils": "lentils",
     "red lentils": "lentils",
@@ -457,7 +465,6 @@ INGREDIENT_SYNONYMS: Dict[str, str] = {
     "silken tofu": "tofu",
     "extra firm tofu": "tofu",
     "pressed tofu": "tofu",
-
     # Vegetable variations
     "fresh spinach": "spinach",
     "baby spinach": "spinach",
@@ -481,7 +488,6 @@ INGREDIENT_SYNONYMS: Dict[str, str] = {
     "red bell pepper": "bell pepper",
     "green bell pepper": "bell pepper",
     "yellow bell pepper": "bell pepper",
-
     # Fruit variations
     "fresh strawberries": "strawberry",
     "frozen strawberries": "strawberry",
@@ -514,25 +520,50 @@ ADDITIONAL_INGREDIENT_PROFILES: Dict[str, Dict[str, float]] = {
     "paneer": {"calcium": 200, "vitamin_b12": 0.4, "phosphorus": 130},
     "ghee": {"vitamin_a": 400, "vitamin_e": 2.5, "vitamin_k": 8},
     "cream cheese": {"calcium": 80, "vitamin_a": 300, "vitamin_b12": 0.3},
-    "sour cream": {"calcium": 100, "vitamin_a": 120, "vitamin_b12": 0.3, "riboflavin": 0.1},
-    "buttermilk": {"calcium": 280, "vitamin_b12": 0.5, "riboflavin": 0.15, "potassium": 150},
+    "sour cream": {
+        "calcium": 100,
+        "vitamin_a": 120,
+        "vitamin_b12": 0.3,
+        "riboflavin": 0.1,
+    },
+    "buttermilk": {
+        "calcium": 280,
+        "vitamin_b12": 0.5,
+        "riboflavin": 0.15,
+        "potassium": 150,
+    },
     "evaporated milk": {"calcium": 260, "vitamin_d": 2.5, "vitamin_b12": 0.4},
     "condensed milk": {"calcium": 280, "vitamin_b12": 0.3, "riboflavin": 0.3},
     "whey protein": {"calcium": 150, "vitamin_b12": 0.5, "phosphorus": 100},
     "casein": {"calcium": 500, "phosphorus": 300},
-
     # More grains
     "spelt": {"magnesium": 45, "zinc": 2.5, "iron": 2.0, "thiamin": 0.25, "fiber": 5},
     "kamut": {"magnesium": 50, "zinc": 2.5, "iron": 2.5, "niacin": 3, "fiber": 4},
     "teff": {"calcium": 180, "iron": 7.5, "magnesium": 180, "zinc": 3.5, "fiber": 8},
-    "amaranth": {"calcium": 160, "iron": 7.5, "magnesium": 250, "phosphorus": 550, "fiber": 7},
+    "amaranth": {
+        "calcium": 160,
+        "iron": 7.5,
+        "magnesium": 250,
+        "phosphorus": 550,
+        "fiber": 7,
+    },
     "farro": {"magnesium": 40, "zinc": 2.5, "iron": 2.5, "niacin": 3, "fiber": 5},
-    "sorghum": {"magnesium": 35, "iron": 4.5, "phosphorus": 300, "thiamin": 0.25, "fiber": 6},
+    "sorghum": {
+        "magnesium": 35,
+        "iron": 4.5,
+        "phosphorus": 300,
+        "thiamin": 0.25,
+        "fiber": 6,
+    },
     "freekeh": {"magnesium": 35, "zinc": 2.0, "iron": 2.0, "fiber": 8},
-
     # More proteins
     "seitan": {"iron": 5.0, "zinc": 1.5, "niacin": 3, "vitamin_b6": 0.2},
-    "textured vegetable protein": {"iron": 5.0, "zinc": 2.0, "magnesium": 80, "folate": 150},
+    "textured vegetable protein": {
+        "iron": 5.0,
+        "zinc": 2.0,
+        "magnesium": 80,
+        "folate": 150,
+    },
     "tvp": {"iron": 5.0, "zinc": 2.0, "magnesium": 80, "folate": 150},
     "soy protein": {"iron": 5.0, "calcium": 100, "magnesium": 50, "zinc": 2.0},
     "pea protein": {"iron": 3.0, "zinc": 1.5, "magnesium": 40},
@@ -541,7 +572,6 @@ ADDITIONAL_INGREDIENT_PROFILES: Dict[str, Dict[str, float]] = {
     "venison": {"vitamin_b12": 4.0, "iron": 3.5, "zinc": 3.5, "niacin": 7},
     "bison": {"vitamin_b12": 2.5, "iron": 3.0, "zinc": 4.5, "niacin": 6},
     "rabbit": {"vitamin_b12": 7.0, "iron": 2.0, "zinc": 2.0, "niacin": 6},
-
     # More seafood
     "scallop": {"vitamin_b12": 1.5, "zinc": 1.0, "phosphorus": 200, "magnesium": 25},
     "lobster": {"vitamin_b12": 1.5, "zinc": 3.5, "phosphorus": 200, "copper": 1.5},
@@ -554,9 +584,14 @@ ADDITIONAL_INGREDIENT_PROFILES: Dict[str, Dict[str, float]] = {
     "flounder": {"vitamin_b12": 1.5, "vitamin_d": 3, "niacin": 2, "magnesium": 20},
     "anchovy": {"vitamin_b12": 6, "calcium": 230, "iron": 3, "niacin": 14},
     "herring": {"vitamin_b12": 13, "vitamin_d": 20, "niacin": 3, "omega3": 2000},
-
     # More vegetables
-    "artichoke": {"folate": 70, "vitamin_c": 12, "vitamin_k": 15, "magnesium": 60, "fiber": 5},
+    "artichoke": {
+        "folate": 70,
+        "vitamin_c": 12,
+        "vitamin_k": 15,
+        "magnesium": 60,
+        "fiber": 5,
+    },
     "fennel": {"vitamin_c": 12, "potassium": 400, "folate": 25, "fiber": 3},
     "kohlrabi": {"vitamin_c": 60, "potassium": 350, "vitamin_b6": 0.15, "fiber": 3.5},
     "turnip": {"vitamin_c": 20, "potassium": 230, "folate": 15, "fiber": 2},
@@ -566,28 +601,72 @@ ADDITIONAL_INGREDIENT_PROFILES: Dict[str, Dict[str, float]] = {
     "jicama": {"vitamin_c": 20, "potassium": 150, "fiber": 5},
     "water chestnut": {"potassium": 580, "vitamin_b6": 0.3, "copper": 0.3},
     "bamboo shoots": {"potassium": 530, "vitamin_b6": 0.2, "zinc": 1.0},
-
     # Regional/ethnic ingredients
-    "tahini": {"calcium": 430, "iron": 9, "magnesium": 95, "zinc": 5, "phosphorus": 750},
+    "tahini": {
+        "calcium": 430,
+        "iron": 9,
+        "magnesium": 95,
+        "zinc": 5,
+        "phosphorus": 750,
+    },
     "miso": {"vitamin_k": 30, "zinc": 2.5, "manganese": 0.9, "sodium": 3700},
     "natto": {"vitamin_k": 1000, "iron": 8, "zinc": 3, "manganese": 1.5},
     "kimchi": {"vitamin_k": 40, "vitamin_c": 18, "folate": 50, "vitamin_b6": 0.2},
     "sauerkraut": {"vitamin_c": 15, "vitamin_k": 13, "folate": 20, "iron": 1.5},
-    "nutritional yeast": {"vitamin_b12": 8, "folate": 300, "thiamin": 10, "riboflavin": 10, "niacin": 50},
-
+    "nutritional yeast": {
+        "vitamin_b12": 8,
+        "folate": 300,
+        "thiamin": 10,
+        "riboflavin": 10,
+        "niacin": 50,
+    },
     # Common processed ingredients (minimal but some nutrients)
-    "cocoa powder": {"iron": 13, "magnesium": 500, "zinc": 7, "phosphorus": 730, "potassium": 1500},
-    "dark chocolate": {"iron": 8, "magnesium": 175, "zinc": 3, "copper": 1.8, "fiber": 10},
+    "cocoa powder": {
+        "iron": 13,
+        "magnesium": 500,
+        "zinc": 7,
+        "phosphorus": 730,
+        "potassium": 1500,
+    },
+    "dark chocolate": {
+        "iron": 8,
+        "magnesium": 175,
+        "zinc": 3,
+        "copper": 1.8,
+        "fiber": 10,
+    },
     "honey": {"potassium": 50, "vitamin_c": 0.5},
     "maple syrup": {"manganese": 2.5, "zinc": 1.5, "potassium": 200, "calcium": 100},
-    "molasses": {"iron": 4.7, "calcium": 200, "magnesium": 240, "potassium": 1460, "vitamin_b6": 0.7},
-
+    "molasses": {
+        "iron": 4.7,
+        "calcium": 200,
+        "magnesium": 240,
+        "potassium": 1460,
+        "vitamin_b6": 0.7,
+    },
     # More seeds
-    "poppy seeds": {"calcium": 1440, "iron": 9.5, "magnesium": 330, "zinc": 8, "phosphorus": 870},
+    "poppy seeds": {
+        "calcium": 1440,
+        "iron": 9.5,
+        "magnesium": 330,
+        "zinc": 8,
+        "phosphorus": 870,
+    },
     "caraway seeds": {"calcium": 690, "iron": 16, "magnesium": 260, "zinc": 5.5},
     "fennel seeds": {"calcium": 1200, "iron": 18, "magnesium": 385, "manganese": 6.5},
-    "cumin seeds": {"iron": 66, "calcium": 930, "magnesium": 365, "zinc": 4.8, "potassium": 1790},
-    "coriander seeds": {"calcium": 710, "iron": 16, "magnesium": 330, "potassium": 1270},
+    "cumin seeds": {
+        "iron": 66,
+        "calcium": 930,
+        "magnesium": 365,
+        "zinc": 4.8,
+        "potassium": 1790,
+    },
+    "coriander seeds": {
+        "calcium": 710,
+        "iron": 16,
+        "magnesium": 330,
+        "potassium": 1270,
+    },
 }
 
 # Merge additional profiles into main dictionary
@@ -606,6 +685,7 @@ class EstimationSignal:
 @dataclass
 class ParsedIngredient:
     """A parsed ingredient with weight information"""
+
     name: str
     position_weight: float
     percentage: Optional[float] = None  # If percentage was specified
@@ -661,7 +741,9 @@ def parse_ingredients(ingredients_text: Optional[str]) -> List[Tuple[str, float]
         # Keep if it looks like an ingredient (not a percentage or note)
         if not re.match(r"^[\d.]+%?$", content) and len(content) < 30:
             # Check if it's a known ingredient
-            if any(ing in content for ing in ["milk", "wheat", "soy", "egg", "fish", "nut"]):
+            if any(
+                ing in content for ing in ["milk", "wheat", "soy", "egg", "fish", "nut"]
+            ):
                 parenthetical_additions.append(content)
 
     # Remove parenthetical notes but track what we removed
@@ -700,22 +782,26 @@ def parse_ingredients(ingredients_text: Optional[str]) -> List[Tuple[str, float]
             weight = 0.02
         else:
             # Position-based weight: 1.0, 0.85, 0.72, 0.61, 0.52, ...
-            weight = 0.85 ** i
+            weight = 0.85**i
 
-        parsed.append(ParsedIngredient(
-            name=ing,
-            position_weight=weight,
-            percentage=percentage,
-            is_minor=is_minor
-        ))
+        parsed.append(
+            ParsedIngredient(
+                name=ing,
+                position_weight=weight,
+                percentage=percentage,
+                is_minor=is_minor,
+            )
+        )
 
     # Add parenthetical ingredients with moderate weight
     for paren_ing in parenthetical_additions:
         if not any(p.name == paren_ing for p in parsed):
-            parsed.append(ParsedIngredient(
-                name=paren_ing,
-                position_weight=0.5,  # Moderate weight for parenthetical
-            ))
+            parsed.append(
+                ParsedIngredient(
+                    name=paren_ing,
+                    position_weight=0.5,  # Moderate weight for parenthetical
+                )
+            )
 
     # Convert to simple tuple format for backward compatibility
     return [(p.name, p.position_weight) for p in parsed]
@@ -731,14 +817,49 @@ def normalize_ingredient(ingredient: str) -> str:
     """
     # Common modifiers to remove
     modifiers = [
-        "organic", "fresh", "frozen", "dried", "raw", "cooked",
-        "roasted", "toasted", "blanched", "steamed", "grilled", "baked",
-        "low-fat", "lowfat", "low fat", "nonfat", "non-fat", "fat-free",
-        "reduced-fat", "light", "lite", "diet",
-        "unsweetened", "sweetened", "natural", "pure", "100%",
-        "whole", "sliced", "diced", "chopped", "minced", "ground", "crushed",
-        "canned", "jarred", "bottled", "packaged",
-        "premium", "gourmet", "artisan", "homemade", "homestyle",
+        "organic",
+        "fresh",
+        "frozen",
+        "dried",
+        "raw",
+        "cooked",
+        "roasted",
+        "toasted",
+        "blanched",
+        "steamed",
+        "grilled",
+        "baked",
+        "low-fat",
+        "lowfat",
+        "low fat",
+        "nonfat",
+        "non-fat",
+        "fat-free",
+        "reduced-fat",
+        "light",
+        "lite",
+        "diet",
+        "unsweetened",
+        "sweetened",
+        "natural",
+        "pure",
+        "100%",
+        "whole",
+        "sliced",
+        "diced",
+        "chopped",
+        "minced",
+        "ground",
+        "crushed",
+        "canned",
+        "jarred",
+        "bottled",
+        "packaged",
+        "premium",
+        "gourmet",
+        "artisan",
+        "homemade",
+        "homestyle",
     ]
 
     result = ingredient.lower()

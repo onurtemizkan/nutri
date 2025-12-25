@@ -12,7 +12,9 @@ class User(Base):
     password = Column(String, nullable=False)
     name = Column(String, nullable=False)
     created_at = Column("createdAt", DateTime, server_default=func.now())
-    updated_at = Column("updatedAt", DateTime, server_default=func.now(), onupdate=func.now())
+    updated_at = Column(
+        "updatedAt", DateTime, server_default=func.now(), onupdate=func.now()
+    )
 
     # Password reset
     reset_token = Column("resetToken", String, nullable=True, index=True)
@@ -35,13 +37,22 @@ class User(Base):
 
     # Sensitivity tracking relationships
     sensitivities = relationship(
-        "UserSensitivity", back_populates="user", lazy="select", cascade="all, delete-orphan"
+        "UserSensitivity",
+        back_populates="user",
+        lazy="select",
+        cascade="all, delete-orphan",
     )
     sensitivity_exposures = relationship(
-        "SensitivityExposure", back_populates="user", lazy="select", cascade="all, delete-orphan"
+        "SensitivityExposure",
+        back_populates="user",
+        lazy="select",
+        cascade="all, delete-orphan",
     )
     sensitivity_insights = relationship(
-        "SensitivityInsight", back_populates="user", lazy="select", cascade="all, delete-orphan"
+        "SensitivityInsight",
+        back_populates="user",
+        lazy="select",
+        cascade="all, delete-orphan",
     )
 
     def __repr__(self):

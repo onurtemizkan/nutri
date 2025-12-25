@@ -251,7 +251,9 @@ class MealIngredient(Base):
     created_at = Column("createdAt", DateTime, server_default=func.now())
 
     def __repr__(self):
-        return f"<MealIngredient(meal={self.meal_id}, ingredient={self.ingredient_name})>"
+        return (
+            f"<MealIngredient(meal={self.meal_id}, ingredient={self.ingredient_name})>"
+        )
 
 
 class UserSensitivity(Base):
