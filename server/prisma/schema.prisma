@@ -22,6 +22,9 @@ model User {
   // OAuth providers
   appleId   String?  @unique
 
+  // Account status
+  isActive  Boolean  @default(true)  // Can be set to false to disable account
+
   // Password reset
   resetToken          String?
   resetTokenExpiresAt DateTime?

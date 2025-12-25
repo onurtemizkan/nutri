@@ -1,5 +1,5 @@
 """User model matching Prisma schema"""
-from sqlalchemy import Column, String, Integer, Float, DateTime, func
+from sqlalchemy import Boolean, Column, String, Integer, Float, DateTime, func
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -15,6 +15,9 @@ class User(Base):
     updated_at = Column(
         "updatedAt", DateTime, server_default=func.now(), onupdate=func.now()
     )
+
+    # Account status
+    is_active = Column("isActive", Boolean, default=True, nullable=False)
 
     # Password reset
     reset_token = Column("resetToken", String, nullable=True, index=True)
