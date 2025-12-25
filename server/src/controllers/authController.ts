@@ -4,31 +4,28 @@ import { authService } from '../services/authService';
 import { AuthenticatedRequest, UpdateUserProfileInput } from '../types';
 import { requireAuth } from '../utils/authHelpers';
 import prisma from '../config/database';
-import { appleSignInSchema } from '../validation/schemas';
-import {
-  withErrorHandling,
-  ErrorHandlers,
-} from '../utils/controllerHelpers';
+import { appleSignInSchema, emailSchema, passwordSchema } from '../validation/schemas';
+import { withErrorHandling, ErrorHandlers } from '../utils/controllerHelpers';
 import { HTTP_STATUS, USER_PROFILE_SELECT_FIELDS } from '../config/constants';
 
 const registerSchema = z.object({
-  email: z.string().email('Invalid email format'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: emailSchema,
+  password: passwordSchema,
   name: z.string().min(1, 'Name is required'),
 });
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email format'),
+  email: emailSchema,
   password: z.string().min(1, 'Password is required'),
 });
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email('Invalid email format'),
+  email: emailSchema,
 });
 
 const resetPasswordSchema = z.object({
   token: z.string().min(1, 'Reset token is required'),
-  newPassword: z.string().min(6, 'Password must be at least 6 characters'),
+  newPassword: passwordSchema,
 });
 
 const verifyTokenSchema = z.object({
@@ -82,10 +79,7 @@ export class AuthController {
 
   resetPassword = withErrorHandling(async (req: Request, res: Response) => {
     const validatedData = resetPasswordSchema.parse(req.body);
-    const result = await authService.resetPassword(
-      validatedData.token,
-      validatedData.newPassword
-    );
+    const result = await authService.resetPassword(validatedData.token, validatedData.newPassword);
 
     res.status(HTTP_STATUS.OK).json(result);
   });

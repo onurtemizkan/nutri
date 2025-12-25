@@ -26,9 +26,22 @@ export const MONTH_IN_DAYS = 30;
 
 /**
  * Password requirements
+ * OWASP recommends minimum 12 characters for modern password policies
+ * @see https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html
  */
-export const MIN_PASSWORD_LENGTH = 6;
-export const MAX_PASSWORD_LENGTH = 100;
+export const MIN_PASSWORD_LENGTH = 12;
+export const MAX_PASSWORD_LENGTH = 128;
+
+/**
+ * Password validation error messages
+ */
+export const PASSWORD_ERRORS = {
+  TOO_SHORT: `Password must be at least ${MIN_PASSWORD_LENGTH} characters`,
+  TOO_LONG: `Password must be at most ${MAX_PASSWORD_LENGTH} characters`,
+  MISSING_UPPERCASE: 'Password must contain at least one uppercase letter',
+  MISSING_LOWERCASE: 'Password must contain at least one lowercase letter',
+  MISSING_NUMBER: 'Password must contain at least one number',
+} as const;
 
 /**
  * String length limits
