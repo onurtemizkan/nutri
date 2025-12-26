@@ -1086,3 +1086,69 @@ export type CreateWaterIntakeData = z.infer<typeof createWaterIntakeSchema>;
 export type UpdateWaterIntakeData = z.infer<typeof updateWaterIntakeSchema>;
 export type UpdateWaterGoalData = z.infer<typeof updateWaterGoalSchema>;
 export type QuickAddWaterData = z.infer<typeof quickAddWaterSchema>;
+
+// ============================================================================
+// WEIGHT TRACKING SCHEMAS
+// ============================================================================
+
+/**
+ * Weight limits - reasonable bounds for weight values
+ * Min: 20kg (small child weight)
+ * Max: 500kg (extreme upper limit)
+ */
+const MIN_WEIGHT_KG = 20;
+const MAX_WEIGHT_KG = 500;
+
+/**
+ * Weight Record Creation Schema
+ */
+export const createWeightRecordSchema = z.object({
+  weight: z
+    .number()
+    .min(MIN_WEIGHT_KG, `Weight must be at least ${MIN_WEIGHT_KG} kg`)
+    .max(MAX_WEIGHT_KG, `Weight cannot exceed ${MAX_WEIGHT_KG} kg`),
+  recordedAt: datetimeSchema.optional(),
+});
+
+/**
+ * Weight Record Update Schema
+ */
+export const updateWeightRecordSchema = z.object({
+  weight: z
+    .number()
+    .min(MIN_WEIGHT_KG, `Weight must be at least ${MIN_WEIGHT_KG} kg`)
+    .max(MAX_WEIGHT_KG, `Weight cannot exceed ${MAX_WEIGHT_KG} kg`)
+    .optional(),
+  recordedAt: datetimeSchema.optional(),
+});
+
+/**
+ * Weight Goal Update Schema
+ */
+export const updateWeightGoalSchema = z.object({
+  goalWeight: z
+    .number()
+    .min(MIN_WEIGHT_KG, `Goal weight must be at least ${MIN_WEIGHT_KG} kg`)
+    .max(MAX_WEIGHT_KG, `Goal weight cannot exceed ${MAX_WEIGHT_KG} kg`),
+});
+
+/**
+ * Weight Trends Query Schema
+ */
+export const weightTrendsQuerySchema = z.object({
+  days: z.coerce.number().int().min(7).max(365).default(30),
+});
+
+/**
+ * Weight Records Query Schema
+ */
+export const weightRecordsQuerySchema = z.object({
+  startDate: datetimeSchema.optional(),
+  endDate: datetimeSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(1000).default(100),
+});
+
+// Type exports for weight schemas
+export type CreateWeightRecordData = z.infer<typeof createWeightRecordSchema>;
+export type UpdateWeightRecordData = z.infer<typeof updateWeightRecordSchema>;
+export type UpdateWeightGoalData = z.infer<typeof updateWeightGoalSchema>;
