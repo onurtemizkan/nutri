@@ -3683,12 +3683,589 @@
         "dependencies": [],
         "priority": "low",
         "subtasks": []
+      },
+      {
+        "id": "62",
+        "title": "Create Shared Button Component",
+        "description": "Create a reusable Button component in lib/components/ui/Button.tsx that provides consistent button styling, accessibility, and interaction feedback across the entire application.",
+        "details": "## Current Problem\n- Each screen implements buttons differently with inconsistent styling\n- No shared pressed state visual feedback\n- Missing accessibility props on most buttons\n- Gradient FABs are implemented inline in multiple places\n\n## Requirements\n\n### Variants\n- `primary`: Gradient purple/pink background (uses gradients.primary from theme)\n- `secondary`: Outlined with border, transparent background\n- `ghost`: Transparent background, text only\n- `destructive`: Red background (colors.status.error)\n\n### Sizes (with responsive scaling via useResponsive)\n- `sm`: Height 36px, padding horizontal 12px, fontSize 14\n- `md`: Height 44px (Apple HIG minimum), padding horizontal 16px, fontSize 16\n- `lg`: Height 52px, padding horizontal 24px, fontSize 18\n\n### States\n- Default, Pressed (scale to 0.97 or opacity 0.8), Disabled (opacity 0.5), Loading (ActivityIndicator)\n\n### Accessibility (CRITICAL)\n- `accessibilityRole=\"button\"`\n- Required `accessibilityLabel` prop\n- `accessibilityState={{ disabled, busy }}` for loading/disabled states\n\n### Props Interface\n```typescript\ninterface ButtonProps {\n  variant?: 'primary' | 'secondary' | 'ghost' | 'destructive';\n  size?: 'sm' | 'md' | 'lg';\n  label: string;\n  accessibilityLabel: string;\n  onPress: () => void;\n  disabled?: boolean;\n  loading?: boolean;\n  leftIcon?: React.ReactNode;\n  rightIcon?: React.ReactNode;\n  fullWidth?: boolean;\n}\n```\n\n### Implementation Notes\n- Use Pressable with style function for dynamic press states\n- Use Animated.View for smooth scale animations on press\n- Import colors, gradients, shadows, spacing, borderRadius from '@/lib/theme/colors'\n- Use useResponsive hook for responsive sizing\n- Export both Button component and ButtonProps type\n\n### File Location\n`lib/components/ui/Button.tsx`",
+        "testStrategy": "1. Unit tests for all variants (primary, secondary, ghost, destructive)\n2. Test all sizes render correctly (sm, md, lg)\n3. Test loading state shows ActivityIndicator and prevents onPress\n4. Test disabled state has reduced opacity and prevents onPress\n5. Test pressed state visual feedback\n6. Test accessibility props are correctly set\n7. Snapshot tests for visual regression\n8. Test with screen reader (VoiceOver simulation)",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Button component base structure with variants",
+            "description": "Set up the Button.tsx file with TypeScript interfaces, variant styles, and base Pressable implementation.",
+            "dependencies": [],
+            "details": "Create lib/components/ui/Button.tsx with ButtonProps interface, variant style mappings (primary with LinearGradient, secondary with border, ghost, destructive), and base Pressable component.",
+            "status": "pending",
+            "parentId": "62"
+          },
+          {
+            "id": 2,
+            "title": "Add size variants with responsive scaling",
+            "description": "Implement sm, md, lg size variants using useResponsive hook for device-appropriate scaling.",
+            "dependencies": [
+              1
+            ],
+            "details": "Add size style mappings and integrate useResponsive hook to scale heights and padding based on device category (small/medium/large/tablet).",
+            "status": "pending",
+            "parentId": "62"
+          },
+          {
+            "id": 3,
+            "title": "Implement loading and disabled states",
+            "description": "Add loading state with ActivityIndicator and disabled state with reduced opacity.",
+            "dependencies": [
+              1
+            ],
+            "details": "Show ActivityIndicator centered in button when loading=true, apply opacity 0.5 when disabled=true, prevent onPress callback in both states.",
+            "status": "pending",
+            "parentId": "62"
+          },
+          {
+            "id": 4,
+            "title": "Add press animation and accessibility props",
+            "description": "Implement smooth press feedback animation and all required accessibility props.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use Animated API for scale animation (0.97) on press, add accessibilityRole='button', accessibilityLabel (required), accessibilityState for disabled/busy states.",
+            "status": "pending",
+            "parentId": "62"
+          },
+          {
+            "id": 5,
+            "title": "Write comprehensive unit tests for Button component",
+            "description": "Create test suite covering all variants, sizes, states, and accessibility.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Create __tests__/components/ui/Button.test.tsx with tests for all variants, sizes, loading/disabled states, press callbacks, and accessibility props.",
+            "status": "pending",
+            "parentId": "62"
+          }
+        ]
+      },
+      {
+        "id": "63",
+        "title": "Create Shared Input Component",
+        "description": "Create a reusable TextInput component with built-in label, error state, helper text, and accessibility support in lib/components/ui/Input.tsx.",
+        "details": "## Current Problem\n- TextInput fields lack accessibility labels (CRITICAL accessibility gap)\n- No visual error states on invalid inputs\n- No helper text for password requirements or input hints\n- Placeholder text is the only label (invisible to screen readers when focused)\n\n## Requirements\n\n### Visual Elements\n- Floating or static label above input\n- Input field with consistent border styling\n- Error message area below input (red text, colors.status.error)\n- Helper text area below input (gray text, colors.text.tertiary)\n- Optional left/right icons\n\n### States\n- Default: Gray border (colors.border.secondary)\n- Focused: Purple border (colors.primary.main)\n- Error: Red border with error message (colors.status.error)\n- Disabled: Reduced opacity, non-editable\n\n### Accessibility (CRITICAL)\n- `accessibilityLabel` connected to visible label\n- `accessibilityHint` for additional context\n- Error state announced via `accessibilityLiveRegion`\n\n### Props Interface\n```typescript\ninterface InputProps {\n  label: string;\n  value: string;\n  onChangeText: (text: string) => void;\n  placeholder?: string;\n  error?: string;\n  helperText?: string;\n  secureTextEntry?: boolean;\n  keyboardType?: KeyboardTypeOptions;\n  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';\n  disabled?: boolean;\n  leftIcon?: React.ReactNode;\n  rightIcon?: React.ReactNode;\n  maxLength?: number;\n  multiline?: boolean;\n  numberOfLines?: number;\n}\n```\n\n### Styling\n- Label: colors.text.secondary, fontSize: typography.fontSize.sm\n- Input: height 48px, backgroundColor: colors.background.tertiary, borderRadius: borderRadius.md\n- Error text: colors.status.error, fontSize: typography.fontSize.sm\n- Helper text: colors.text.tertiary, fontSize: typography.fontSize.xs\n\n### File Location\n`lib/components/ui/Input.tsx`",
+        "testStrategy": "1. Test label renders and is connected to input for accessibility\n2. Test error state shows red border and error message\n3. Test helper text renders when provided\n4. Test focus state changes border color\n5. Test disabled state prevents input\n6. Test all keyboard types work correctly\n7. Test secure text entry hides characters\n8. Test accessibility with screen reader simulation",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Input component with label and base styling",
+            "description": "Set up Input.tsx with TypeScript interfaces, label component, and styled TextInput.",
+            "dependencies": [],
+            "details": "Create lib/components/ui/Input.tsx with InputProps interface, label positioned above TextInput, consistent styling matching theme tokens.",
+            "status": "pending",
+            "parentId": "63"
+          },
+          {
+            "id": 2,
+            "title": "Add focus, error, and disabled states",
+            "description": "Implement visual state changes for focus (purple border), error (red border + message), and disabled states.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use useState for focus tracking, conditionally apply border colors, render error message below input when error prop provided.",
+            "status": "pending",
+            "parentId": "63"
+          },
+          {
+            "id": 3,
+            "title": "Add helper text and icon support",
+            "description": "Implement optional helper text below input and left/right icon slots.",
+            "dependencies": [
+              1
+            ],
+            "details": "Render helperText when provided (hidden if error shown), position leftIcon/rightIcon inside input container with proper spacing.",
+            "status": "pending",
+            "parentId": "63"
+          },
+          {
+            "id": 4,
+            "title": "Implement comprehensive accessibility props",
+            "description": "Add all required accessibility props including label connection and live regions for errors.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Set accessibilityLabel from label prop, accessibilityHint for context, accessibilityLiveRegion='polite' on error container for screen reader announcements.",
+            "status": "pending",
+            "parentId": "63"
+          },
+          {
+            "id": 5,
+            "title": "Write unit tests for Input component",
+            "description": "Create comprehensive test suite for all Input states and accessibility.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Create __tests__/components/ui/Input.test.tsx testing all states, text changes, accessibility, and icon rendering.",
+            "status": "pending",
+            "parentId": "63"
+          }
+        ]
+      },
+      {
+        "id": "64",
+        "title": "Create Shared Card Component",
+        "description": "Create a reusable Card component with consistent styling, shadows, and optional press handling in lib/components/ui/Card.tsx.",
+        "details": "## Current Problem\n- Each screen defines its own card styles with slightly different shadows, border radius, and padding\n- Inconsistent elevation/shadow values across screens\n- No shared pressable card pattern\n\n## Requirements\n\n### Variants\n- `elevated`: With shadow (default) - uses shadows.md\n- `outlined`: Border only, no shadow - uses colors.border.secondary\n- `filled`: Solid background, no border - uses colors.background.secondary\n\n### Props Interface\n```typescript\ninterface CardProps {\n  variant?: 'elevated' | 'outlined' | 'filled';\n  children: React.ReactNode;\n  onPress?: () => void;\n  style?: ViewStyle;\n  padding?: 'none' | 'sm' | 'md' | 'lg';\n  accessibilityLabel?: string;\n}\n```\n\n### Styling\n- Background: colors.background.card\n- Border radius: borderRadius.lg (16)\n- Shadows: Use shadows.md for elevated variant\n- Padding: spacing.sm (8), spacing.md (16), spacing.lg (24)\n\n### Behavior\n- If onPress provided, wrap in Pressable with opacity feedback\n- Pass through accessibility props when pressable\n\n### File Location\n`lib/components/ui/Card.tsx`",
+        "testStrategy": "1. Test all variants render correctly (elevated, outlined, filled)\n2. Test padding options (none, sm, md, lg)\n3. Test pressable behavior when onPress provided\n4. Test non-pressable behavior when onPress not provided\n5. Test accessibility props passed through\n6. Snapshot tests for visual consistency",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "65",
+        "title": "Create Shared ScreenHeader Component",
+        "description": "Create a consistent header component for all screens with back navigation, title, and optional right actions in lib/components/ui/ScreenHeader.tsx.",
+        "details": "## Current Problem\n- No consistent header pattern across screens\n- Back buttons implemented differently (sometimes Ionicons chevron, sometimes missing)\n- headerShown: false on all screens but no unified custom header\n\n## Requirements\n\n### Elements\n- Back button (chevron-left icon) - conditionally shown\n- Title (centered or left-aligned)\n- Optional right action buttons\n- Safe area handling for notch devices\n\n### Props Interface\n```typescript\ninterface ScreenHeaderProps {\n  title: string;\n  showBackButton?: boolean; // default true\n  onBackPress?: () => void; // defaults to router.back()\n  rightActions?: React.ReactNode;\n  transparent?: boolean;\n  titleAlign?: 'left' | 'center'; // default 'center'\n}\n```\n\n### Styling\n- Height: 56px (excluding safe area)\n- Background: colors.background.primary (or transparent if transparent=true)\n- Title: typography.fontSize.lg, fontWeight: '600'\n- Back icon: Ionicons chevron-back, size 24, colors.text.primary\n- SafeAreaView handling for top inset\n\n### Implementation\n- Use expo-router's useRouter for default back navigation\n- Use SafeAreaView from react-native-safe-area-context\n- Add accessibility labels to back button\n\n### File Location\n`lib/components/ui/ScreenHeader.tsx`",
+        "testStrategy": "1. Test back button renders when showBackButton=true\n2. Test back button hidden when showBackButton=false\n3. Test custom onBackPress callback\n4. Test title alignment (left, center)\n5. Test rightActions render correctly\n6. Test transparent variant\n7. Test accessibility on back button",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "66",
+        "title": "Create Shared EmptyState Component",
+        "description": "Create a reusable empty state component for screens/sections with no data in lib/components/ui/EmptyState.tsx.",
+        "details": "## Current Problem\n- Home screen has no empty state when no meals are logged\n- Activity list has no empty state\n- Supplements list has no empty state\n- Only Health screen has a proper empty state implementation\n\n## Requirements\n\n### Elements\n- Icon (customizable Ionicons name)\n- Title text\n- Description text\n- Optional CTA button (uses shared Button component)\n\n### Props Interface\n```typescript\ninterface EmptyStateProps {\n  icon: keyof typeof Ionicons.glyphMap;\n  title: string;\n  description: string;\n  actionLabel?: string;\n  onAction?: () => void;\n}\n```\n\n### Styling\n- Container: Centered, padding: spacing.xl\n- Icon: size 64, colors.text.disabled\n- Title: typography.fontSize.xl, colors.text.primary, fontWeight: '600', marginTop: spacing.md\n- Description: typography.fontSize.md, colors.text.tertiary, textAlign: 'center', marginTop: spacing.sm\n- Button: Primary variant, marginTop: spacing.lg\n\n### File Location\n`lib/components/ui/EmptyState.tsx`",
+        "testStrategy": "1. Test icon renders with correct name\n2. Test title and description render\n3. Test CTA button renders when actionLabel provided\n4. Test CTA button onPress triggers onAction\n5. Test no button when actionLabel not provided\n6. Snapshot test for layout",
+        "priority": "medium",
+        "dependencies": [
+          "62"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "67",
+        "title": "Add Accessibility Labels to Auth Screens",
+        "description": "Systematically add accessibility props to all interactive elements in auth screens (signin, signup, forgot-password, reset-password, welcome).",
+        "details": "## Current Problem\n- TextInput fields lack accessibilityLabel (CRITICAL for screen readers)\n- Buttons missing accessibilityRole\n- No accessibilityHint for actions\n\n## Screens to Update\n\n### app/auth/signin.tsx\n- Email TextInput: accessibilityLabel=\"Email address\"\n- Password TextInput: accessibilityLabel=\"Password\"\n- Sign In button: accessibilityRole=\"button\", accessibilityLabel=\"Sign in to your account\"\n- Forgot Password link: accessibilityRole=\"link\", accessibilityLabel=\"Forgot password\"\n- Sign Up link: accessibilityRole=\"link\", accessibilityLabel=\"Create a new account\"\n\n### app/auth/signup.tsx\n- Name TextInput: accessibilityLabel=\"Full name\"\n- Email TextInput: accessibilityLabel=\"Email address\"\n- Password TextInput: accessibilityLabel=\"Password\", accessibilityHint=\"Must be at least 8 characters\"\n- Confirm Password TextInput: accessibilityLabel=\"Confirm password\"\n- Sign Up button: accessibilityRole=\"button\", accessibilityLabel=\"Create account\"\n- Sign In link: accessibilityRole=\"link\", accessibilityLabel=\"Sign in to existing account\"\n\n### app/auth/forgot-password.tsx\n- Email TextInput: accessibilityLabel=\"Email address for password reset\"\n- Submit button: accessibilityRole=\"button\", accessibilityLabel=\"Send password reset email\"\n- Back link: accessibilityRole=\"link\", accessibilityLabel=\"Return to sign in\"\n\n### app/auth/reset-password.tsx\n- New Password TextInput: accessibilityLabel=\"New password\"\n- Confirm Password TextInput: accessibilityLabel=\"Confirm new password\"\n- Reset button: accessibilityRole=\"button\", accessibilityLabel=\"Reset password\"\n\n### app/auth/welcome.tsx\n- Get Started button: accessibilityRole=\"button\", accessibilityLabel=\"Get started with Nutri\"\n- Sign In button: accessibilityRole=\"button\", accessibilityLabel=\"Sign in to existing account\"",
+        "testStrategy": "1. Test each screen with accessibility inspector\n2. Verify all inputs have accessibilityLabel\n3. Verify all buttons have accessibilityRole\n4. Test with VoiceOver (iOS) or TalkBack (Android)\n5. Verify focus order is logical",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add accessibility props to signin.tsx",
+            "description": "Add accessibilityLabel to email/password inputs and accessibilityRole to buttons/links.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "67"
+          },
+          {
+            "id": 2,
+            "title": "Add accessibility props to signup.tsx",
+            "description": "Add accessibilityLabel to all form inputs and accessibilityRole to buttons/links.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "67"
+          },
+          {
+            "id": 3,
+            "title": "Add accessibility props to forgot-password.tsx",
+            "description": "Add accessibilityLabel to email input and accessibilityRole to buttons.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "67"
+          },
+          {
+            "id": 4,
+            "title": "Add accessibility props to reset-password.tsx",
+            "description": "Add accessibilityLabel to password inputs and accessibilityRole to reset button.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "67"
+          },
+          {
+            "id": 5,
+            "title": "Add accessibility props to welcome.tsx",
+            "description": "Add accessibilityRole and accessibilityLabel to CTA buttons.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "67"
+          }
+        ]
+      },
+      {
+        "id": "68",
+        "title": "Add Accessibility Labels to Main Tab Screens",
+        "description": "Add accessibility props to all interactive elements in main tab screens (index/home, health, profile).",
+        "details": "## Screens to Update\n\n### app/(tabs)/index.tsx (Home)\n- Date navigation arrows: accessibilityLabel=\"Previous day\"/\"Next day\", accessibilityRole=\"button\"\n- Each meal card: accessibilityLabel=\"[Meal name] meal, [calories] calories\", accessibilityRole=\"button\", accessibilityHint=\"Double tap to view details, swipe for options\"\n- Add meal FAB: accessibilityLabel=\"Add new meal\", accessibilityRole=\"button\"\n- Macros section: accessibilityLabel=\"Daily nutrition summary\"\n\n### app/(tabs)/health.tsx\n- Each metric card: accessibilityLabel=\"[Metric name]: [value] [unit]\", accessibilityRole=\"button\", accessibilityHint=\"Double tap to view history\"\n- Time range buttons: accessibilityRole=\"button\", accessibilityState={{ selected: isActive }}\n- Add metric FAB: accessibilityLabel=\"Add health metric\", accessibilityRole=\"button\"\n\n### app/(tabs)/profile.tsx\n- Profile image: accessibilityLabel=\"Profile picture\", accessibilityHint=\"Double tap to change\"\n- Edit button: accessibilityLabel=\"Edit profile\", accessibilityRole=\"button\"\n- Each form field when editing: accessibilityLabel with field name\n- Save button: accessibilityLabel=\"Save profile changes\", accessibilityRole=\"button\"\n- Logout button: accessibilityLabel=\"Sign out\", accessibilityRole=\"button\"\n- Settings items: accessibilityRole=\"button\" with descriptive labels",
+        "testStrategy": "1. Test each screen with accessibility inspector\n2. Verify logical focus order (tab navigation)\n3. Test with VoiceOver/TalkBack\n4. Verify dynamic content updates are announced\n5. Test swipe gestures have accessibility alternatives",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add accessibility props to Home screen (index.tsx)",
+            "description": "Add labels to date nav, meal cards, FAB, and macros section.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "68"
+          },
+          {
+            "id": 2,
+            "title": "Add accessibility props to Health screen (health.tsx)",
+            "description": "Add labels to metric cards, time range buttons, and add FAB.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "68"
+          },
+          {
+            "id": 3,
+            "title": "Add accessibility props to Profile screen (profile.tsx)",
+            "description": "Add labels to all interactive elements including edit mode fields.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "68"
+          }
+        ]
+      },
+      {
+        "id": "69",
+        "title": "Implement Form Validation UX with Inline Errors",
+        "description": "Replace Alert-based validation errors with inline error messages using the shared Input component.",
+        "details": "## Current Problem\n- Forms use Alert.alert() for validation errors (disruptive UX)\n- No visual indication of which field has an error\n- No real-time validation feedback\n- No helper text for input requirements\n\n## Screens to Update\n\n### app/auth/signin.tsx\n- Email: Validate format on blur, show \"Please enter a valid email address\"\n- Password: Validate required on blur, show \"Password is required\"\n\n### app/auth/signup.tsx\n- Name: Validate required, show \"Name is required\"\n- Email: Validate format, show \"Please enter a valid email address\"\n- Password: Validate strength, show \"Password must be at least 8 characters\"\n- Confirm Password: Validate match, show \"Passwords do not match\"\n\n### app/auth/forgot-password.tsx\n- Email: Validate format, show \"Please enter a valid email address\"\n\n### app/auth/reset-password.tsx\n- Password: Validate strength\n- Confirm: Validate match\n\n### app/add-meal.tsx\n- Name: Validate required\n- Calories: Validate numeric and required\n- Other fields: Validate numeric if provided\n\n### app/(tabs)/profile.tsx (edit mode)\n- Email: Validate format\n- Numeric fields (weight, height, goals): Validate numeric\n\n## Validation Pattern\n```typescript\n// Validate on blur first time, then on change after first error\nconst [touched, setTouched] = useState<Record<string, boolean>>({});\nconst [errors, setErrors] = useState<Record<string, string>>({});\n\nconst validateField = (name: string, value: string) => {\n  // validation logic\n  setErrors(prev => ({ ...prev, [name]: error || '' }));\n};\n\nconst handleBlur = (name: string, value: string) => {\n  setTouched(prev => ({ ...prev, [name]: true }));\n  validateField(name, value);\n};\n\nconst handleChange = (name: string, value: string) => {\n  if (touched[name]) validateField(name, value);\n  // update value\n};\n```\n\n## Implementation Notes\n- Use shared Input component with error prop\n- Keep submit button enabled but show all errors on submit attempt\n- Clear field error when user fixes the input\n- Replace Alert.alert() validation with inline errors",
+        "testStrategy": "1. Test error appears below field on blur\n2. Test error clears when input is corrected\n3. Test all errors shown on submit with invalid data\n4. Test successful submission when all valid\n5. Test real-time validation after first blur\n6. Test no Alert dialogs for validation",
+        "priority": "high",
+        "dependencies": [
+          "63"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Migrate signin.tsx to use Input component with inline validation",
+            "description": "Replace TextInputs with Input component and add inline error messages.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "69"
+          },
+          {
+            "id": 2,
+            "title": "Migrate signup.tsx to use Input component with inline validation",
+            "description": "Replace all form fields with Input component and add validation for all fields.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "69"
+          },
+          {
+            "id": 3,
+            "title": "Migrate forgot-password.tsx and reset-password.tsx",
+            "description": "Add inline validation to password reset flows.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "69"
+          },
+          {
+            "id": 4,
+            "title": "Migrate add-meal.tsx to use Input component",
+            "description": "Replace nutrition inputs with Input component and add numeric validation.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "69"
+          },
+          {
+            "id": 5,
+            "title": "Migrate profile.tsx edit mode to use Input component",
+            "description": "Add inline validation to profile editing fields.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "69"
+          }
+        ]
+      },
+      {
+        "id": "70",
+        "title": "Add Empty States to All Content Areas",
+        "description": "Implement proper empty states using the shared EmptyState component for screens that can have no data.",
+        "details": "## Screens Needing Empty States\n\n### app/(tabs)/index.tsx (Home Screen)\n- Condition: When no meals logged for selected date\n- Icon: \"restaurant-outline\"\n- Title: \"No meals logged yet\"\n- Description: \"Track your nutrition by logging your first meal for today.\"\n- CTA: \"Log a meal\" -> navigates to /add-meal\n\n### app/activity/index.tsx\n- Condition: When no activities exist\n- Icon: \"fitness-outline\"\n- Title: \"No activities tracked\"\n- Description: \"Start tracking your workouts and physical activities.\"\n- CTA: \"Add an activity\" -> navigates to /activity/add\n\n### app/supplements.tsx\n- Condition: When no supplements added\n- Icon: \"medical-outline\"\n- Title: \"No supplements tracked\"\n- Description: \"Keep track of your vitamins and supplements.\"\n- CTA: \"Add a supplement\" -> triggers add flow\n\n### app/health/[metricType].tsx\n- Condition: When no data for selected metric/date range\n- Icon: \"analytics-outline\"\n- Title: \"No data for this period\"\n- Description: \"Try selecting a different date range or add a new entry.\"\n- CTA: \"Add entry\" -> navigates to /health/add\n\n## Implementation\n- Import EmptyState from '@/lib/components/ui/EmptyState'\n- Conditionally render based on data.length === 0 (after loading)\n- Ensure loading state shows before empty state",
+        "testStrategy": "1. Test empty state renders when data array is empty\n2. Test empty state hidden when data exists\n3. Test CTA button navigates correctly\n4. Test empty state not shown during loading\n5. Test each screen individually",
+        "priority": "medium",
+        "dependencies": [
+          "66"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add empty state to Home screen for no meals",
+            "description": "Show EmptyState when no meals for selected date.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "70"
+          },
+          {
+            "id": 2,
+            "title": "Add empty state to Activity list",
+            "description": "Show EmptyState when no activities tracked.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "70"
+          },
+          {
+            "id": 3,
+            "title": "Add empty state to Supplements screen",
+            "description": "Show EmptyState when no supplements added.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "70"
+          },
+          {
+            "id": 4,
+            "title": "Add empty state to Health metric detail for no data",
+            "description": "Show EmptyState when no data for selected metric/range.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "70"
+          }
+        ]
+      },
+      {
+        "id": "71",
+        "title": "Create Loading Skeleton Components",
+        "description": "Create skeleton loading components to improve perceived performance during data fetching.",
+        "details": "## Current Problem\n- Screens show ActivityIndicator during loading\n- Content \"pops in\" suddenly when loaded\n- No visual hint of what content will appear\n\n## Components to Create\n\n### lib/components/ui/Skeleton.tsx (Base Component)\n```typescript\ninterface SkeletonProps {\n  width?: number | string;\n  height?: number;\n  borderRadius?: number;\n  style?: ViewStyle;\n}\n```\n- Animated shimmer effect using Animated API or react-native-reanimated\n- Gray background (colors.background.tertiary)\n- Shimmer highlight color (colors.background.secondary)\n\n### lib/components/ui/MealCardSkeleton.tsx\n- Matches MealCard dimensions and layout\n- Skeleton for: meal type badge, name text, calories, macros row\n- Used in Home screen during meal loading\n\n### lib/components/ui/MetricCardSkeleton.tsx\n- Matches health metric card dimensions\n- Skeleton for: icon area, label, value, trend\n- Used in Health screen during loading\n\n### lib/components/ui/ProfileSkeleton.tsx\n- Matches profile layout\n- Skeleton for: avatar, name, stats\n- Used during profile data loading\n\n## Shimmer Animation\n```typescript\nconst shimmerValue = useRef(new Animated.Value(0)).current;\n\nuseEffect(() => {\n  Animated.loop(\n    Animated.timing(shimmerValue, {\n      toValue: 1,\n      duration: 1500,\n      useNativeDriver: true,\n    })\n  ).start();\n}, []);\n\n// Use shimmerValue to animate gradient position\n```\n\n## Usage Pattern\n```typescript\n{isLoading ? (\n  <>\n    <MealCardSkeleton />\n    <MealCardSkeleton />\n    <MealCardSkeleton />\n  </>\n) : (\n  meals.map(meal => <MealCard key={meal.id} meal={meal} />)\n)}\n```",
+        "testStrategy": "1. Test base Skeleton renders with correct dimensions\n2. Test shimmer animation runs\n3. Test MealCardSkeleton matches meal card layout\n4. Test MetricCardSkeleton matches metric card layout\n5. Test skeletons shown during loading, content shown after\n6. Visual regression tests for skeleton layouts",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create base Skeleton component with shimmer animation",
+            "description": "Build reusable Skeleton with configurable dimensions and animated shimmer effect.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "71"
+          },
+          {
+            "id": 2,
+            "title": "Create MealCardSkeleton component",
+            "description": "Build skeleton matching MealCard layout for home screen loading.",
+            "dependencies": [
+              1
+            ],
+            "status": "pending",
+            "parentId": "71"
+          },
+          {
+            "id": 3,
+            "title": "Create MetricCardSkeleton component",
+            "description": "Build skeleton matching health metric card for health screen loading.",
+            "dependencies": [
+              1
+            ],
+            "status": "pending",
+            "parentId": "71"
+          },
+          {
+            "id": 4,
+            "title": "Integrate skeletons into Home and Health screens",
+            "description": "Replace ActivityIndicator with skeleton loaders during data fetching.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "status": "pending",
+            "parentId": "71"
+          }
+        ]
+      },
+      {
+        "id": "72",
+        "title": "Visual Consistency Audit and Fixes",
+        "description": "Audit and fix visual inconsistencies across the app to ensure strict adherence to design tokens.",
+        "details": "## Issues to Fix\n\n### Spacing Inconsistencies\n- Replace all hardcoded spacing values with design tokens\n- Audit: gap values in flex layouts (some use gap: 12, should use spacing.md)\n- Ensure consistent use of spacing scale (4, 8, 16, 24, 32, 40, 48, 64)\n\n### Border Radius Inconsistencies\n- Cards: standardize to borderRadius.lg (16)\n- Buttons: standardize to borderRadius.md (12)\n- Inputs: standardize to borderRadius.sm (8)\n- Remove any hardcoded borderRadius values\n\n### Shadow Inconsistencies\n- Use shadows.sm for subtle elevation\n- Use shadows.md for cards\n- Use shadows.lg for modals/overlays\n- Remove any inline shadow definitions\n\n### Typography Inconsistencies\n- Ensure all text uses typography presets from theme\n- Replace inline font sizes with responsive typography\n- Consistent use of font weights (400, 500, 600, 700)\n\n## Files to Audit\n- app/(tabs)/index.tsx\n- app/(tabs)/health.tsx\n- app/(tabs)/profile.tsx\n- app/auth/*.tsx (all auth screens)\n- app/add-meal.tsx\n- app/supplements.tsx\n- app/activity/*.tsx\n- lib/components/*.tsx\n\n## Audit Process\n1. Search for hardcoded numbers in StyleSheet.create()\n2. Replace with corresponding design token\n3. Verify visual appearance matches original\n4. Run on multiple device sizes to confirm responsive behavior",
+        "testStrategy": "1. Visual comparison before/after for each screen\n2. Verify no hardcoded values in StyleSheet definitions\n3. Test on different device sizes\n4. Snapshot tests for visual regression\n5. Lint rule to prevent hardcoded values (optional)",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Audit and fix spacing in tab screens",
+            "description": "Replace hardcoded spacing in index.tsx, health.tsx, profile.tsx with design tokens.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "72"
+          },
+          {
+            "id": 2,
+            "title": "Audit and fix spacing in auth screens",
+            "description": "Replace hardcoded spacing in all auth/*.tsx files.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "72"
+          },
+          {
+            "id": 3,
+            "title": "Standardize border radius across all components",
+            "description": "Replace all hardcoded borderRadius with design tokens.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "72"
+          },
+          {
+            "id": 4,
+            "title": "Standardize shadows across all components",
+            "description": "Replace inline shadow definitions with shadows tokens.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "72"
+          },
+          {
+            "id": 5,
+            "title": "Audit and fix typography usage",
+            "description": "Ensure all text uses typography presets, fix inline font sizes.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "72"
+          }
+        ]
+      },
+      {
+        "id": "73",
+        "title": "Add Haptic Feedback to Key Interactions",
+        "description": "Implement haptic feedback using expo-haptics for improved tactile response on user interactions.",
+        "details": "## Requirements\n\n### Install expo-haptics\n```bash\nnpx expo install expo-haptics\n```\n\n### Feedback Types\n```typescript\nimport * as Haptics from 'expo-haptics';\n\n// Light tap - for button presses\nHaptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);\n\n// Medium tap - for swipe actions\nHaptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);\n\n// Success - for successful actions\nHaptics.notificationAsync(Haptics.NotificationFeedbackType.Success);\n\n// Error - for failed actions\nHaptics.notificationAsync(Haptics.NotificationFeedbackType.Error);\n\n// Warning - for destructive action confirmations\nHaptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);\n```\n\n### Where to Add\n\n#### Button Component (lib/components/ui/Button.tsx)\n- Light impact on press for primary/secondary buttons\n- Add to onPressIn handler\n\n#### SwipeableMealCard (lib/components/SwipeableMealCard.tsx)\n- Medium impact when swipe threshold reached\n- Success notification on delete confirmation\n- Error notification on failed delete\n\n#### Form Submissions\n- Success notification on successful save (meals, health metrics, profile)\n- Error notification on validation/API errors\n\n#### Delete Confirmations\n- Warning notification when showing delete confirmation\n- Success notification after confirmed delete\n\n### Implementation Pattern\n```typescript\nconst handlePress = async () => {\n  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);\n  onPress?.();\n};\n```\n\n### Accessibility Note\nHaptic feedback should be optional for users who may find it distracting. Consider adding a setting to disable haptics.",
+        "testStrategy": "1. Test haptic triggers on physical device (not simulator)\n2. Verify correct haptic type for each interaction\n3. Test haptic intensity appropriate for action\n4. Verify no haptic on disabled buttons\n5. Test performance (no lag from haptic calls)",
+        "priority": "low",
+        "dependencies": [
+          "62"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Install expo-haptics and add to Button component",
+            "description": "Install package and add light impact feedback to Button onPress.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "73"
+          },
+          {
+            "id": 2,
+            "title": "Add haptic feedback to SwipeableMealCard",
+            "description": "Add medium impact on swipe threshold, success/error on actions.",
+            "dependencies": [
+              1
+            ],
+            "status": "pending",
+            "parentId": "73"
+          },
+          {
+            "id": 3,
+            "title": "Add haptic feedback to form submissions",
+            "description": "Add success/error notifications to all form save operations.",
+            "dependencies": [
+              1
+            ],
+            "status": "pending",
+            "parentId": "73"
+          },
+          {
+            "id": 4,
+            "title": "Add haptic feedback to delete confirmations",
+            "description": "Add warning notification on delete dialogs, success on confirm.",
+            "dependencies": [
+              1
+            ],
+            "status": "pending",
+            "parentId": "73"
+          }
+        ]
+      },
+      {
+        "id": "74",
+        "title": "Create Toast Notification System",
+        "description": "Create a toast notification system for non-critical feedback messages that don't interrupt user flow.",
+        "details": "## Current Problem\n- All feedback uses Alert.alert() which is disruptive\n- No way to show success messages without interrupting flow\n- Error messages require dismissal before continuing\n\n## Requirements\n\n### Toast Types\n- `success`: Green background (colors.status.success), checkmark icon\n- `error`: Red background (colors.status.error), X icon\n- `warning`: Yellow/amber background (colors.status.warning), warning icon\n- `info`: Blue background (colors.secondary.main), info icon\n\n### Behavior\n- Appears at top of screen below safe area\n- Auto-dismisses after 3 seconds (configurable)\n- Can be manually dismissed by swipe up or tap X\n- Queue system for multiple toasts (show one at a time)\n- Slide-in animation from top\n\n### Props/API\n```typescript\ninterface ToastOptions {\n  type: 'success' | 'error' | 'warning' | 'info';\n  message: string;\n  duration?: number; // ms, default 3000\n  action?: {\n    label: string;\n    onPress: () => void;\n  };\n}\n\n// Context API\ninterface ToastContextValue {\n  showToast: (options: ToastOptions) => void;\n  hideToast: () => void;\n}\n\n// Usage\nconst { showToast } = useToast();\nshowToast({ type: 'success', message: 'Meal saved successfully!' });\n```\n\n### File Structure\n- `lib/components/ui/Toast.tsx` - Toast component\n- `lib/context/ToastContext.tsx` - Toast provider and hook\n\n### Implementation\n1. Create ToastContext with queue state\n2. Create Toast component with animations\n3. Wrap app in ToastProvider in _layout.tsx\n4. Export useToast hook\n\n### Accessibility\n- Use accessibilityLiveRegion=\"polite\" for announcements\n- Provide close button with accessibilityLabel\n- Don't auto-dismiss for error toasts (give more time)",
+        "testStrategy": "1. Test toast renders for each type (success, error, warning, info)\n2. Test auto-dismiss after duration\n3. Test manual dismiss via swipe/tap\n4. Test queue system with multiple toasts\n5. Test action button works\n6. Test accessibility announcements\n7. Test animation smoothness",
+        "priority": "low",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create ToastContext with provider and useToast hook",
+            "description": "Build context for toast state management with queue system.",
+            "dependencies": [],
+            "status": "pending",
+            "parentId": "74"
+          },
+          {
+            "id": 2,
+            "title": "Create Toast component with variants and animations",
+            "description": "Build Toast UI with all type variants, icons, and slide animation.",
+            "dependencies": [
+              1
+            ],
+            "status": "pending",
+            "parentId": "74"
+          },
+          {
+            "id": 3,
+            "title": "Add auto-dismiss and manual dismiss functionality",
+            "description": "Implement timer-based dismiss and swipe/tap to dismiss.",
+            "dependencies": [
+              2
+            ],
+            "status": "pending",
+            "parentId": "74"
+          },
+          {
+            "id": 4,
+            "title": "Integrate ToastProvider into app layout",
+            "description": "Add ToastProvider to _layout.tsx and test with sample toasts.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "status": "pending",
+            "parentId": "74"
+          },
+          {
+            "id": 5,
+            "title": "Replace Alert.alert success messages with toast",
+            "description": "Update form submissions to use showToast for success feedback.",
+            "dependencies": [
+              4
+            ],
+            "status": "pending",
+            "parentId": "74"
+          }
+        ]
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-23T17:24:47.476Z",
-      "taskCount": 60,
+      "lastModified": "2025-12-26T10:04:46.085Z",
+      "taskCount": 73,
       "completedCount": 17,
       "tags": [
         "master"
