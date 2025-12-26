@@ -410,3 +410,55 @@ export interface WaterWeeklySummary {
     percentageComplete: number;
   }>;
 }
+
+// ============================================================================
+// WEIGHT TRACKING TYPES
+// ============================================================================
+
+export interface CreateWeightRecordInput {
+  weight: number; // in kg
+  recordedAt?: string; // ISO datetime string
+}
+
+export interface UpdateWeightRecordInput {
+  weight?: number; // in kg
+  recordedAt?: string; // ISO datetime string
+}
+
+export interface WeightTrendsResult {
+  records: Array<{
+    id: string;
+    weight: number;
+    recordedAt: string;
+  }>;
+  movingAverage7Day: Array<{ date: string; value: number }>;
+  movingAverage30Day: Array<{ date: string; value: number }>;
+  minWeight: number | null;
+  maxWeight: number | null;
+  averageWeight: number | null;
+  totalChange: number | null;
+  weeklyChange: number | null;
+}
+
+export interface WeightProgressResult {
+  startWeight: number | null;
+  currentWeight: number | null;
+  goalWeight: number | null;
+  progressPercentage: number | null;
+  remainingWeight: number | null;
+  isOnTrack: boolean | null;
+  bmi: number | null;
+  bmiCategory: string | null;
+  startDate: string | null;
+  latestRecordDate: string | null;
+}
+
+export interface WeightSummary {
+  currentWeight: number | null;
+  weeklyChange: number | null;
+  goalWeight: number | null;
+  progressPercentage: number | null;
+  bmi: number | null;
+  bmiCategory: string | null;
+  lastRecordDate: string | null;
+}

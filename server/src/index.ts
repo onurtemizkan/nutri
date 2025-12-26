@@ -17,6 +17,7 @@ import notificationRoutes from './routes/notificationRoutes';
 import adminRoutes from './routes/admin';
 import onboardingRoutes from './routes/onboardingRoutes';
 import waterRoutes from './routes/waterRoutes';
+import weightRoutes from './routes/weightRoutes';
 import prisma from './config/database';
 import { notificationScheduler } from './services/notificationScheduler';
 
@@ -359,6 +360,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/water', waterRoutes);
+app.use('/api/weight', weightRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);
