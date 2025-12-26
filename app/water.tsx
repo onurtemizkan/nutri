@@ -141,11 +141,21 @@ export default function WaterTrackingScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+        >
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Water Tracking</Text>
-        <TouchableOpacity onPress={handleGoalSettings} style={styles.settingsButton}>
+        <TouchableOpacity
+          onPress={handleGoalSettings}
+          style={styles.settingsButton}
+          accessibilityLabel="Water goal settings"
+          accessibilityRole="button"
+        >
           <Ionicons name="settings-outline" size={24} color={colors.text.primary} />
         </TouchableOpacity>
       </View>
@@ -219,6 +229,9 @@ export default function WaterTrackingScreen() {
                 onPress={() => handleQuickAdd('glass')}
                 disabled={isAdding !== null}
                 activeOpacity={0.7}
+                accessibilityLabel={`Add ${WATER_PRESETS.glass}ml glass of water`}
+                accessibilityRole="button"
+                accessibilityHint="Quickly log a glass of water"
               >
                 <LinearGradient
                   colors={WATER_GRADIENT}
@@ -243,6 +256,9 @@ export default function WaterTrackingScreen() {
                 onPress={() => handleQuickAdd('bottle')}
                 disabled={isAdding !== null}
                 activeOpacity={0.7}
+                accessibilityLabel={`Add ${WATER_PRESETS.bottle}ml bottle of water`}
+                accessibilityRole="button"
+                accessibilityHint="Quickly log a bottle of water"
               >
                 <LinearGradient
                   colors={WATER_GRADIENT}
@@ -267,6 +283,9 @@ export default function WaterTrackingScreen() {
                 onPress={() => handleQuickAdd('cup')}
                 disabled={isAdding !== null}
                 activeOpacity={0.7}
+                accessibilityLabel={`Add ${WATER_PRESETS.cup}ml cup of water`}
+                accessibilityRole="button"
+                accessibilityHint="Quickly log a cup of water"
               >
                 <LinearGradient
                   colors={WATER_GRADIENT}
@@ -291,6 +310,9 @@ export default function WaterTrackingScreen() {
                 onPress={handleCustomAdd}
                 disabled={isAdding !== null}
                 activeOpacity={0.7}
+                accessibilityLabel="Add custom water amount"
+                accessibilityRole="button"
+                accessibilityHint="Open screen to enter a custom water amount"
               >
                 <View style={styles.customAddButton}>
                   <Ionicons name="add-circle-outline" size={28} color={colors.secondary.main} />
@@ -371,6 +393,8 @@ export default function WaterTrackingScreen() {
                   style={styles.intakeCard}
                   onPress={() => handleDeleteIntake(intake.id, intake.amount)}
                   activeOpacity={0.7}
+                  accessibilityLabel={`${formatAmount(intake.amount)} water intake. Tap to delete`}
+                  accessibilityRole="button"
                 >
                   <View style={styles.intakeInfo}>
                     <Ionicons name="water" size={20} color={colors.secondary.main} />
