@@ -32,10 +32,30 @@ MOCK_USDA_SEARCH_RESPONSE = {
             "dataType": "Foundation",
             "publishedDate": "2019-04-01",
             "foodNutrients": [
-                {"nutrientId": 1008, "nutrientName": "Energy", "value": 52, "unitName": "kcal"},
-                {"nutrientId": 1003, "nutrientName": "Protein", "value": 0.26, "unitName": "g"},
-                {"nutrientId": 1005, "nutrientName": "Carbohydrate", "value": 13.81, "unitName": "g"},
-                {"nutrientId": 1004, "nutrientName": "Total lipid (fat)", "value": 0.17, "unitName": "g"},
+                {
+                    "nutrientId": 1008,
+                    "nutrientName": "Energy",
+                    "value": 52,
+                    "unitName": "kcal",
+                },
+                {
+                    "nutrientId": 1003,
+                    "nutrientName": "Protein",
+                    "value": 0.26,
+                    "unitName": "g",
+                },
+                {
+                    "nutrientId": 1005,
+                    "nutrientName": "Carbohydrate",
+                    "value": 13.81,
+                    "unitName": "g",
+                },
+                {
+                    "nutrientId": 1004,
+                    "nutrientName": "Total lipid (fat)",
+                    "value": 0.17,
+                    "unitName": "g",
+                },
             ],
         },
         {
@@ -43,7 +63,12 @@ MOCK_USDA_SEARCH_RESPONSE = {
             "description": "Apples, raw, without skin",
             "dataType": "Foundation",
             "foodNutrients": [
-                {"nutrientId": 1008, "nutrientName": "Energy", "value": 48, "unitName": "kcal"},
+                {
+                    "nutrientId": 1008,
+                    "nutrientName": "Energy",
+                    "value": 48,
+                    "unitName": "kcal",
+                },
             ],
         },
     ],
@@ -53,6 +78,7 @@ MOCK_USDA_SEARCH_RESPONSE = {
 # ============================================================================
 # CATEGORY TO DATA TYPE MAPPING TESTS
 # ============================================================================
+
 
 class TestCategoryDataTypeMapping:
     """Tests for category to USDA data type mapping."""
@@ -98,8 +124,9 @@ class TestCategoryDataTypeMapping:
         for cat in fresh_categories:
             datatypes = CATEGORY_TO_USDA_DATATYPES[cat]
             # Foundation should be first (highest priority)
-            assert "Foundation" in datatypes or "SR Legacy" in datatypes, \
-                f"Fresh category {cat} should include Foundation or SR Legacy"
+            assert (
+                "Foundation" in datatypes or "SR Legacy" in datatypes
+            ), f"Fresh category {cat} should include Foundation or SR Legacy"
 
     def test_branded_categories_include_branded(self):
         """Branded food categories should include Branded data type."""
@@ -118,8 +145,9 @@ class TestCategoryDataTypeMapping:
 
         for cat in branded_categories:
             datatypes = CATEGORY_TO_USDA_DATATYPES[cat]
-            assert "Branded" in datatypes, \
-                f"Branded category {cat} should include Branded data type"
+            assert (
+                "Branded" in datatypes
+            ), f"Branded category {cat} should include Branded data type"
 
     def test_mixed_dishes_prioritize_survey(self):
         """Mixed dishes should prioritize Survey (FNDDS) data."""
@@ -146,6 +174,7 @@ class TestCategoryDataTypeMapping:
 # QUERY ENHANCEMENT TESTS
 # ============================================================================
 
+
 class TestQueryEnhancement:
     """Tests for USDA search query enhancement."""
 
@@ -169,7 +198,9 @@ class TestQueryEnhancement:
         )
 
         classifier = CoarseFoodClassifier()
-        result = classifier._get_query_enhancement(FoodCategory.VEGETABLES_LEAFY, "spinach")
+        result = classifier._get_query_enhancement(
+            FoodCategory.VEGETABLES_LEAFY, "spinach"
+        )
 
         # Should have some enhancement or preserve original
         assert "spinach" in result.lower() or "leafy" in result.lower()
@@ -182,7 +213,9 @@ class TestQueryEnhancement:
         )
 
         classifier = CoarseFoodClassifier()
-        result = classifier._get_query_enhancement(FoodCategory.GRAINS_PASTA, "spaghetti")
+        result = classifier._get_query_enhancement(
+            FoodCategory.GRAINS_PASTA, "spaghetti"
+        )
 
         # Should include original query and enhancement
         assert "spaghetti" in result.lower()
@@ -218,6 +251,7 @@ class TestQueryEnhancement:
 # ============================================================================
 # CLASSIFICATION TO USDA CONTEXT TESTS
 # ============================================================================
+
 
 class TestClassifyWithUSDAContext:
     """Tests for classify_with_usda_context method."""
@@ -314,6 +348,7 @@ class TestClassifyWithUSDAContext:
 # SUBCATEGORY HINTS INTEGRATION TESTS
 # ============================================================================
 
+
 class TestSubcategoryHints:
     """Tests for subcategory hint generation and usage."""
 
@@ -368,6 +403,7 @@ class TestSubcategoryHints:
 # PERFORMANCE BENCHMARK TESTS
 # ============================================================================
 
+
 class TestUSDAIntegrationPerformance:
     """Performance benchmarks for USDA integration."""
 
@@ -419,6 +455,7 @@ class TestUSDAIntegrationPerformance:
 # ============================================================================
 # ERROR HANDLING TESTS
 # ============================================================================
+
 
 class TestUSDAIntegrationErrors:
     """Error handling tests for USDA integration."""
@@ -478,8 +515,7 @@ class TestUSDAIntegrationErrors:
         with patch.object(classifier, "_model", None):
             with patch.object(classifier, "_loaded", False):
                 with patch.object(
-                    classifier, "load_model",
-                    side_effect=Exception("Model load failed")
+                    classifier, "load_model", side_effect=Exception("Model load failed")
                 ):
                     test_image = Image.new("RGB", (224, 224))
                     result = classifier.classify(test_image)
@@ -491,6 +527,7 @@ class TestUSDAIntegrationErrors:
 # ============================================================================
 # DATA TYPE PRIORITY TESTS
 # ============================================================================
+
 
 class TestDataTypePriority:
     """Tests for data type priority in USDA searches."""
@@ -513,8 +550,10 @@ class TestDataTypePriority:
         for cat in whole_food_categories:
             datatypes = CATEGORY_TO_USDA_DATATYPES[cat]
             # First element should be highest priority
-            assert datatypes[0] in ["Foundation", "SR Legacy"], \
-                f"Expected Foundation/SR Legacy first for {cat}, got {datatypes[0]}"
+            assert datatypes[0] in [
+                "Foundation",
+                "SR Legacy",
+            ], f"Expected Foundation/SR Legacy first for {cat}, got {datatypes[0]}"
 
     def test_branded_first_for_packaged_foods(self):
         """Branded should be high priority for packaged foods."""
@@ -531,8 +570,7 @@ class TestDataTypePriority:
         for cat in packaged_categories:
             datatypes = CATEGORY_TO_USDA_DATATYPES[cat]
             # Branded should be first for these
-            assert "Branded" in datatypes[:2], \
-                f"Expected Branded in top 2 for {cat}"
+            assert "Branded" in datatypes[:2], f"Expected Branded in top 2 for {cat}"
 
     def test_survey_for_mixed_dishes(self):
         """Survey (FNDDS) should be priority for mixed dishes."""
@@ -548,13 +586,13 @@ class TestDataTypePriority:
 
         for cat in mixed_categories:
             datatypes = CATEGORY_TO_USDA_DATATYPES[cat]
-            assert "Survey (FNDDS)" in datatypes, \
-                f"Expected Survey (FNDDS) for {cat}"
+            assert "Survey (FNDDS)" in datatypes, f"Expected Survey (FNDDS) for {cat}"
 
 
 # ============================================================================
 # INTEGRATION FLOW TESTS
 # ============================================================================
+
 
 class TestFullIntegrationFlow:
     """Tests for complete classification to USDA search flow."""
@@ -649,9 +687,6 @@ class TestFullIntegrationFlow:
             for alt in result["alternatives"]:
                 cat_value = alt["category"]
                 # Should be able to find data types for alternatives
-                matching_cats = [
-                    cat for cat in FoodCategory
-                    if cat.value == cat_value
-                ]
+                matching_cats = [cat for cat in FoodCategory if cat.value == cat_value]
                 assert len(matching_cats) == 1
                 assert matching_cats[0] in CATEGORY_TO_USDA_DATATYPES
