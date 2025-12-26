@@ -19,11 +19,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import {
-  CameraView,
-  useCameraPermissions,
-  BarcodeScanningResult,
-} from 'expo-camera';
+import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -32,13 +28,7 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchProductByBarcode } from '@/lib/api/openfoodfacts';
 import { showAlert } from '@/lib/utils/alert';
-import {
-  colors,
-  gradients,
-  spacing,
-  borderRadius,
-  typography,
-} from '@/lib/theme/colors';
+import { colors, gradients, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import { useResponsive } from '@/hooks/useResponsive';
 import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 import type { BarcodeProduct, BarcodeScannerState } from '@/lib/types/barcode';
@@ -78,7 +68,7 @@ function parseSupplementServing(servingSize?: string): {
 
   let servingType = 'serving';
   for (const st of servingTypes) {
-    if (st.keywords.some(kw => lowerServing.includes(kw))) {
+    if (st.keywords.some((kw) => lowerServing.includes(kw))) {
       servingType = st.type;
       break;
     }
@@ -177,8 +167,10 @@ export default function ScanSupplementBarcodeScreen() {
   const scanLineAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    let animation: Animated.CompositeAnimation | null = null;
+
     if (state.isScanning && !state.isLoading && !result) {
-      Animated.loop(
+      animation = Animated.loop(
         Animated.sequence([
           Animated.timing(scanLineAnim, {
             toValue: 1,
@@ -191,10 +183,16 @@ export default function ScanSupplementBarcodeScreen() {
             useNativeDriver: true,
           }),
         ])
-      ).start();
+      );
+      animation.start();
     } else {
       scanLineAnim.setValue(0);
     }
+
+    // Cleanup: stop animation on unmount or when dependencies change
+    return () => {
+      animation?.stop();
+    };
   }, [state.isScanning, state.isLoading, result, scanLineAnim]);
 
   // Request permission on mount
@@ -234,9 +232,7 @@ export default function ScanSupplementBarcodeScreen() {
 
       const barcodeType = scanResult.type.toLowerCase();
       if (
-        !SUPPORTED_BARCODE_TYPES.includes(
-          barcodeType as (typeof SUPPORTED_BARCODE_TYPES)[number]
-        )
+        !SUPPORTED_BARCODE_TYPES.includes(barcodeType as (typeof SUPPORTED_BARCODE_TYPES)[number])
       ) {
         return;
       }
@@ -430,18 +426,12 @@ export default function ScanSupplementBarcodeScreen() {
               />
             ) : (
               <View style={styles.productImagePlaceholder}>
-                <Ionicons
-                  name="medical-outline"
-                  size={48}
-                  color={colors.text.tertiary}
-                />
+                <Ionicons name="medical-outline" size={48} color={colors.text.tertiary} />
               </View>
             )}
             <View style={styles.productInfo}>
               <Text style={styles.productName}>{result.name}</Text>
-              {result.brand && (
-                <Text style={styles.productBrand}>{result.brand}</Text>
-              )}
+              {result.brand && <Text style={styles.productBrand}>{result.brand}</Text>}
               <Text style={styles.barcodeText}>
                 <Ionicons name="barcode-outline" size={14} color={colors.text.tertiary} />{' '}
                 {result.barcode}
@@ -452,9 +442,7 @@ export default function ScanSupplementBarcodeScreen() {
           {/* Extracted supplement info */}
           <View style={styles.infoCard}>
             <Text style={styles.infoCardTitle}>Detected Supplement Info</Text>
-            <Text style={styles.infoCardSubtitle}>
-              Pre-filled for 1 {result.servingType}
-            </Text>
+            <Text style={styles.infoCardSubtitle}>Pre-filled for 1 {result.servingType}</Text>
 
             <View style={styles.infoRow}>
               <View style={styles.infoItem}>
@@ -473,7 +461,11 @@ export default function ScanSupplementBarcodeScreen() {
 
             {!result.dosageAmount && (
               <View style={styles.warningBox}>
-                <Ionicons name="information-circle-outline" size={18} color={colors.status.warning} />
+                <Ionicons
+                  name="information-circle-outline"
+                  size={18}
+                  color={colors.status.warning}
+                />
                 <Text style={styles.warningText}>
                   Dosage not detected. You can enter it manually on the next screen.
                 </Text>
@@ -485,8 +477,8 @@ export default function ScanSupplementBarcodeScreen() {
           <View style={styles.helpCard}>
             <Ionicons name="bulb-outline" size={20} color={colors.primary.main} />
             <Text style={styles.helpText}>
-              We've extracted the per-serving dosage, not the whole bottle.
-              You can adjust the values on the next screen.
+              We've extracted the per-serving dosage, not the whole bottle. You can adjust the
+              values on the next screen.
             </Text>
           </View>
         </ScrollView>
@@ -542,10 +534,7 @@ export default function ScanSupplementBarcodeScreen() {
 
           <Text style={styles.cameraTitle}>Scan Supplement</Text>
 
-          <TouchableOpacity
-            style={styles.manualButton}
-            onPress={() => setShowManualEntry(true)}
-          >
+          <TouchableOpacity style={styles.manualButton} onPress={() => setShowManualEntry(true)}>
             <Ionicons name="keypad-outline" size={24} color={colors.text.primary} />
           </TouchableOpacity>
         </SafeAreaView>
@@ -586,9 +575,7 @@ export default function ScanSupplementBarcodeScreen() {
             )}
           </View>
 
-          <Text style={styles.scannerHint}>
-            Scan the barcode on your supplement bottle
-          </Text>
+          <Text style={styles.scannerHint}>Scan the barcode on your supplement bottle</Text>
         </View>
       </CameraView>
 
@@ -599,9 +586,7 @@ export default function ScanSupplementBarcodeScreen() {
             <View style={styles.loadingCard}>
               <ActivityIndicator size="large" color={colors.primary.main} />
               <Text style={styles.loadingText}>Looking up supplement...</Text>
-              <Text style={styles.loadingBarcode}>
-                {state.lastScannedBarcode}
-              </Text>
+              <Text style={styles.loadingBarcode}>{state.lastScannedBarcode}</Text>
             </View>
           </BlurView>
         </View>
@@ -629,15 +614,15 @@ export default function ScanSupplementBarcodeScreen() {
                 {state.error.type === 'PRODUCT_NOT_FOUND'
                   ? 'Supplement Not Found'
                   : state.error.type === 'NETWORK_ERROR'
-                  ? 'Connection Error'
-                  : 'Something Went Wrong'}
+                    ? 'Connection Error'
+                    : 'Something Went Wrong'}
               </Text>
               <Text style={styles.errorMessage}>
                 {state.error.type === 'PRODUCT_NOT_FOUND'
                   ? "This supplement isn't in the database. You can add it manually."
                   : state.error.type === 'NETWORK_ERROR'
-                  ? 'Please check your internet connection and try again.'
-                  : state.error.message}
+                    ? 'Please check your internet connection and try again.'
+                    : state.error.message}
               </Text>
               <TouchableOpacity
                 style={styles.errorButton}
@@ -651,9 +636,7 @@ export default function ScanSupplementBarcodeScreen() {
                 onPress={() => router.back()}
                 activeOpacity={0.8}
               >
-                <Text style={styles.errorSecondaryButtonText}>
-                  Enter Manually Instead
-                </Text>
+                <Text style={styles.errorSecondaryButtonText}>Enter Manually Instead</Text>
               </TouchableOpacity>
             </View>
           </BlurView>
@@ -672,11 +655,7 @@ export default function ScanSupplementBarcodeScreen() {
                 <View style={styles.manualEntryHeader}>
                   <Text style={styles.manualEntryTitle}>Enter Barcode</Text>
                   <TouchableOpacity onPress={() => setShowManualEntry(false)}>
-                    <Ionicons
-                      name="close"
-                      size={24}
-                      color={colors.text.secondary}
-                    />
+                    <Ionicons name="close" size={24} color={colors.text.secondary} />
                   </TouchableOpacity>
                 </View>
 

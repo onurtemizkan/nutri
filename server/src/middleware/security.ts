@@ -67,12 +67,15 @@ export const httpsRedirect = (req: Request, res: Response, next: NextFunction): 
     const host = req.headers.host || req.hostname;
     const redirectUrl = `https://${host}${req.originalUrl}`;
 
-    logger.info({
-      action: 'https_redirect',
-      from: `http://${host}${req.originalUrl}`,
-      to: redirectUrl,
-      correlationId: req.id,
-    }, 'Redirecting HTTP to HTTPS');
+    logger.info(
+      {
+        action: 'https_redirect',
+        from: `http://${host}${req.originalUrl}`,
+        to: redirectUrl,
+        correlationId: req.id,
+      },
+      'Redirecting HTTP to HTTPS'
+    );
 
     // Use 301 for permanent redirect (cacheable by browsers)
     res.redirect(301, redirectUrl);
@@ -99,9 +102,7 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
   // HSTS - only set in production and when request came via HTTPS
   if (process.env.NODE_ENV === 'production') {
     const isHttps =
-      req.secure ||
-      req.protocol === 'https' ||
-      req.headers['x-forwarded-proto'] === 'https';
+      req.secure || req.protocol === 'https' || req.headers['x-forwarded-proto'] === 'https';
 
     if (isHttps) {
       let hstsValue = `max-age=${HSTS_MAX_AGE}`;
@@ -131,10 +132,7 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
   // Skip CSP for Bull Board admin routes which need scripts/styles to render
   if (!req.path.startsWith('/admin/queues')) {
     // Restrictive policy suitable for API-only endpoints
-    res.setHeader(
-      'Content-Security-Policy',
-      "default-src 'none'; frame-ancestors 'none'"
-    );
+    res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
   }
 
   next();

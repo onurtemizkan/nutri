@@ -77,14 +77,8 @@ class FoodFeedbackService {
     patternFlagged: boolean;
   }> {
     // Normalize the prediction string
-    const normalizedPrediction = data.originalPrediction
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, '_');
-    const normalizedFoodName = data.selectedFoodName
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, '_');
+    const normalizedPrediction = data.originalPrediction.toLowerCase().trim().replace(/\s+/g, '_');
+    const normalizedFoodName = data.selectedFoodName.toLowerCase().trim().replace(/\s+/g, '_');
 
     try {
       // Use transaction to ensure atomicity of feedback + aggregation operations
@@ -134,10 +128,7 @@ class FoodFeedbackService {
       };
     } catch (error) {
       // Check for unique constraint violation (duplicate)
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         return {
           feedbackId: '',
           isDuplicate: true,
@@ -171,8 +162,7 @@ class FoodFeedbackService {
       // Update existing aggregation
       const newCount = existing.correctionCount + 1;
       const newAvgConfidence =
-        (existing.avgConfidence * existing.correctionCount + confidence) /
-        newCount;
+        (existing.avgConfidence * existing.correctionCount + confidence) / newCount;
       const needsReview = newCount >= CORRECTION_THRESHOLD && !existing.needsReview;
 
       await tx.foodFeedbackAggregation.update({
@@ -209,9 +199,7 @@ class FoodFeedbackService {
    */
   async getStats(): Promise<FeedbackStats> {
     // Try cache first
-    const cached = await foodCacheService.getCachedValue<FeedbackStats>(
-      FEEDBACK_STATS_KEY
-    );
+    const cached = await foodCacheService.getCachedValue<FeedbackStats>(FEEDBACK_STATS_KEY);
     if (cached) {
       return cached;
     }
@@ -227,19 +215,14 @@ class FoodFeedbackService {
       countsByStatus[item.status] = item._count.id;
     }
 
-    const totalFeedback = Object.values(countsByStatus).reduce(
-      (sum, count) => sum + count,
-      0
-    );
+    const totalFeedback = Object.values(countsByStatus).reduce((sum, count) => sum + count, 0);
 
     // Get top misclassifications from aggregation table
-    const topMisclassifications = await prisma.foodFeedbackAggregation.findMany(
-      {
-        where: { correctionCount: { gt: 0 } },
-        orderBy: { correctionCount: 'desc' },
-        take: 10,
-      }
-    );
+    const topMisclassifications = await prisma.foodFeedbackAggregation.findMany({
+      where: { correctionCount: { gt: 0 } },
+      orderBy: { correctionCount: 'desc' },
+      take: 10,
+    });
 
     // Get problem foods (most corrections needed)
     const problemFoods = await prisma.foodFeedback.groupBy({
@@ -266,11 +249,17 @@ class FoodFeedbackService {
         corrected: item.correctedFood,
         count: item.correctionCount,
       })),
-      problemFoods: problemFoods.map((item: { originalPrediction: string; _count: { id: number }; _avg: { originalConfidence: number | null } }) => ({
-        food: item.originalPrediction,
-        correctionCount: item._count.id,
-        avgConfidence: Math.round((item._avg.originalConfidence || 0) * 100) / 100,
-      })),
+      problemFoods: problemFoods.map(
+        (item: {
+          originalPrediction: string;
+          _count: { id: number };
+          _avg: { originalConfidence: number | null };
+        }) => ({
+          food: item.originalPrediction,
+          correctionCount: item._count.id,
+          avgConfidence: Math.round((item._avg.originalConfidence || 0) * 100) / 100,
+        })
+      ),
       patternsNeedingReview,
     };
 
@@ -299,18 +288,12 @@ class FoodFeedbackService {
   /**
    * Get top misclassifications for a specific food
    */
-  async getMisclassificationsForFood(
-    foodKey: string,
-    limit = 5
-  ): Promise<AggregatedPattern[]> {
+  async getMisclassificationsForFood(foodKey: string, limit = 5): Promise<AggregatedPattern[]> {
     const normalizedKey = foodKey.toLowerCase().trim().replace(/\s+/g, '_');
 
     const patterns = await prisma.foodFeedbackAggregation.findMany({
       where: {
-        OR: [
-          { originalPrediction: normalizedKey },
-          { correctedFood: normalizedKey },
-        ],
+        OR: [{ originalPrediction: normalizedKey }, { correctedFood: normalizedKey }],
       },
       orderBy: { correctionCount: 'desc' },
       take: limit,
@@ -455,18 +438,24 @@ class FoodFeedbackService {
           synced++;
         } else {
           const errorBody = await response.text().catch(() => 'Unable to read response');
-          logger.warn({
-            feedbackId: feedback.id,
-            statusCode: response.status,
-            error: errorBody,
-          }, 'Failed to sync feedback to ML service: HTTP error');
+          logger.warn(
+            {
+              feedbackId: feedback.id,
+              statusCode: response.status,
+              error: errorBody,
+            },
+            'Failed to sync feedback to ML service: HTTP error'
+          );
           failed++;
         }
       } catch (error) {
-        logger.warn({
-          feedbackId: feedback.id,
-          error: error instanceof Error ? error.message : String(error),
-        }, 'Failed to sync feedback to ML service');
+        logger.warn(
+          {
+            feedbackId: feedback.id,
+            error: error instanceof Error ? error.message : String(error),
+          },
+          'Failed to sync feedback to ML service'
+        );
         failed++;
       }
     }

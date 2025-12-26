@@ -28,9 +28,7 @@ import { ClassificationResult } from '@/lib/components/ClassificationResult';
 import { useResponsive } from '@/hooks/useResponsive';
 import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 import LiDARModule from '@/lib/modules/LiDARModule';
-import {
-  formatDimensions,
-} from '@/lib/utils/portion-estimation';
+import { formatDimensions } from '@/lib/utils/portion-estimation';
 import type {
   FoodScanResult,
   ARMeasurement,
@@ -98,9 +96,11 @@ export default function ScanFoodScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    let animation: Animated.CompositeAnimation | null = null;
+
     if (isAnalyzing) {
       // Start pulsing animation
-      Animated.loop(
+      animation = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
             toValue: 1.2,
@@ -113,10 +113,16 @@ export default function ScanFoodScreen() {
             useNativeDriver: true,
           }),
         ])
-      ).start();
+      );
+      animation.start();
     } else {
       pulseAnim.setValue(1);
     }
+
+    // Cleanup: stop animation on unmount or when dependencies change
+    return () => {
+      animation?.stop();
+    };
   }, [isAnalyzing, pulseAnim]);
 
   // Hide guide after 3 seconds
@@ -150,7 +156,7 @@ export default function ScanFoodScreen() {
 
   // Adjust portion multiplier
   const handlePortionAdjust = (delta: number) => {
-    setEditedPortionMultiplier(prev => Math.max(0.25, Math.min(10, prev + delta)));
+    setEditedPortionMultiplier((prev) => Math.max(0.25, Math.min(10, prev + delta)));
   };
 
   const handleCapturePhoto = async () => {
@@ -207,10 +213,7 @@ export default function ScanFoodScreen() {
       if (useUSDASearch) {
         // Use USDA-enhanced classification and search
         try {
-          const usdaResponse = await foodAnalysisApi.classifyAndSearch(
-            capturedImage,
-            measurements
-          );
+          const usdaResponse = await foodAnalysisApi.classifyAndSearch(capturedImage, measurements);
           setUsdaResult(usdaResponse);
           // Also set basic scan result for compatibility
           setScanResult(null);
@@ -275,41 +278,48 @@ export default function ScanFoodScreen() {
   };
 
   // Handle USDA food confirmation from ClassificationResult
-  const handleUSDAConfirm = useCallback((food: USDAFood) => {
-    // Record the selection for recent foods
-    foodsApi.recordFoodSelection(food.fdcId).catch(() => {
-      // Ignore errors - this is a non-critical operation
-    });
+  const handleUSDAConfirm = useCallback(
+    (food: USDAFood) => {
+      // Record the selection for recent foods
+      foodsApi.recordFoodSelection(food.fdcId).catch(() => {
+        // Ignore errors - this is a non-critical operation
+      });
 
-    // Navigate to add meal with USDA nutrition data
-    router.push({
-      pathname: '/add-meal',
-      params: {
-        name: food.description,
-        calories: Math.round(food.calories).toString(),
-        protein: Math.round(food.protein).toString(),
-        carbs: Math.round(food.carbs).toString(),
-        fat: Math.round(food.fat).toString(),
-        fiber: food.fiber ? Math.round(food.fiber).toString() : '',
-        servingSize: food.servingSize && food.servingSizeUnit
-          ? `${food.servingSize} ${food.servingSizeUnit}`
-          : '100g',
-        fromScan: 'true',
-        fdcId: food.fdcId.toString(),
-      },
-    });
-  }, [router]);
+      // Navigate to add meal with USDA nutrition data
+      router.push({
+        pathname: '/add-meal',
+        params: {
+          name: food.description,
+          calories: Math.round(food.calories).toString(),
+          protein: Math.round(food.protein).toString(),
+          carbs: Math.round(food.carbs).toString(),
+          fat: Math.round(food.fat).toString(),
+          fiber: food.fiber ? Math.round(food.fiber).toString() : '',
+          servingSize:
+            food.servingSize && food.servingSizeUnit
+              ? `${food.servingSize} ${food.servingSizeUnit}`
+              : '100g',
+          fromScan: 'true',
+          fdcId: food.fdcId.toString(),
+        },
+      });
+    },
+    [router]
+  );
 
   // Handle search instead from ClassificationResult
-  const handleSearchInstead = useCallback((query: string) => {
-    router.push({
-      pathname: '/food-search' as any,
-      params: {
-        initialQuery: query,
-        fromClassification: 'true',
-      },
-    });
-  }, [router]);
+  const handleSearchInstead = useCallback(
+    (query: string) => {
+      router.push({
+        pathname: '/food-search' as any,
+        params: {
+          initialQuery: query,
+          fromClassification: 'true',
+        },
+      });
+    },
+    [router]
+  );
 
   // Handle report incorrect from ClassificationResult
   const handleReportIncorrect = useCallback(() => {
@@ -331,7 +341,9 @@ export default function ScanFoodScreen() {
     router.push({
       pathname: '/add-meal',
       params: {
-        name: displayName.replace(/_/g, ' ').split(' ')
+        name: displayName
+          .replace(/_/g, ' ')
+          .split(' ')
           .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
           .join(' '),
         calories: Math.round(primaryFood.nutrition.calories * multiplier).toString(),
@@ -341,9 +353,8 @@ export default function ScanFoodScreen() {
         fiber: primaryFood.nutrition.fiber
           ? Math.round(primaryFood.nutrition.fiber * multiplier).toString()
           : '',
-        servingSize: multiplier === 1
-          ? primaryFood.portionSize
-          : `${multiplier}x ${primaryFood.portionSize}`,
+        servingSize:
+          multiplier === 1 ? primaryFood.portionSize : `${multiplier}x ${primaryFood.portionSize}`,
         fromScan: 'true',
       },
     });
@@ -408,10 +419,7 @@ export default function ScanFoodScreen() {
         <View style={styles.previewContainer}>
           <Image
             source={{ uri: capturedImage }}
-            style={[
-              styles.previewImage,
-              (scanResult || usdaResult) && styles.previewImageSmall,
-            ]}
+            style={[styles.previewImage, (scanResult || usdaResult) && styles.previewImageSmall]}
           />
 
           {isAnalyzing && (
@@ -441,9 +449,7 @@ export default function ScanFoodScreen() {
 
                 <View style={styles.analyzingTextContainer}>
                   <Text style={styles.analyzingTitle}>Analyzing Food</Text>
-                  <Text style={styles.analyzingSubtext}>
-                    Using AI to identify nutrition...
-                  </Text>
+                  <Text style={styles.analyzingSubtext}>Using AI to identify nutrition...</Text>
                 </View>
               </View>
             </BlurView>
@@ -456,7 +462,7 @@ export default function ScanFoodScreen() {
               contentContainerStyle={[
                 styles.resultsContainer,
                 { paddingHorizontal: responsiveSpacing.horizontal },
-                isTablet && styles.resultsContainerTablet
+                isTablet && styles.resultsContainerTablet,
               ]}
               showsVerticalScrollIndicator={false}
             >
@@ -478,7 +484,7 @@ export default function ScanFoodScreen() {
               contentContainerStyle={[
                 styles.resultsContainer,
                 { paddingHorizontal: responsiveSpacing.horizontal },
-                isTablet && styles.resultsContainerTablet
+                isTablet && styles.resultsContainerTablet,
               ]}
               showsVerticalScrollIndicator={false}
             >
@@ -492,7 +498,9 @@ export default function ScanFoodScreen() {
                       <TextInput
                         style={styles.foodNameInput}
                         value={editedFoodName.replace(/_/g, ' ')}
-                        onChangeText={(text) => setEditedFoodName(text.toLowerCase().replace(/ /g, '_'))}
+                        onChangeText={(text) =>
+                          setEditedFoodName(text.toLowerCase().replace(/ /g, '_'))
+                        }
                         onBlur={() => setIsEditingName(false)}
                         autoFocus
                         selectTextOnFocus
@@ -504,13 +512,23 @@ export default function ScanFoodScreen() {
                       >
                         <Text style={styles.foodName}>
                           {index === 0
-                            ? (editedFoodName || item.name).replace(/_/g, ' ').split(' ')
-                                .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                            ? (editedFoodName || item.name)
+                                .replace(/_/g, ' ')
+                                .split(' ')
+                                .map(
+                                  (word: string) =>
+                                    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                                )
                                 .join(' ')
                             : item.name}
                         </Text>
                         {index === 0 && (
-                          <Ionicons name="pencil" size={14} color={colors.text.tertiary} style={{ marginLeft: 4 }} />
+                          <Ionicons
+                            name="pencil"
+                            size={14}
+                            color={colors.text.tertiary}
+                            style={{ marginLeft: 4 }}
+                          />
                         )}
                       </TouchableOpacity>
                     )}
@@ -525,7 +543,11 @@ export default function ScanFoodScreen() {
                   {index === 0 && item.alternatives && item.alternatives.length > 0 && (
                     <View style={styles.alternativesSection}>
                       <Text style={styles.alternativesLabel}>Or select:</Text>
-                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.alternativesScroll}>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={styles.alternativesScroll}
+                      >
                         {item.alternatives.slice(0, 5).map((alt: any, altIndex: number) => (
                           <TouchableOpacity
                             key={altIndex}
@@ -541,8 +563,13 @@ export default function ScanFoodScreen() {
                                 editedFoodName === alt.name && styles.alternativeChipTextSelected,
                               ]}
                             >
-                              {(alt.display_name || alt.name).replace(/_/g, ' ').split(' ')
-                                .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                              {(alt.display_name || alt.name)
+                                .replace(/_/g, ' ')
+                                .split(' ')
+                                .map(
+                                  (word: string) =>
+                                    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                                )
                                 .join(' ')}
                             </Text>
                             {editedFoodName === alt.name && (
@@ -586,25 +613,36 @@ export default function ScanFoodScreen() {
                   <View style={styles.nutritionGrid}>
                     <View style={styles.nutritionItem}>
                       <Text style={styles.nutritionValue}>
-                        {Math.round(item.nutrition.calories * (index === 0 ? editedPortionMultiplier : 1))}
+                        {Math.round(
+                          item.nutrition.calories * (index === 0 ? editedPortionMultiplier : 1)
+                        )}
                       </Text>
                       <Text style={styles.nutritionLabel}>cal</Text>
                     </View>
                     <View style={styles.nutritionItem}>
                       <Text style={styles.nutritionValue}>
-                        {Math.round(item.nutrition.protein * (index === 0 ? editedPortionMultiplier : 1))}g
+                        {Math.round(
+                          item.nutrition.protein * (index === 0 ? editedPortionMultiplier : 1)
+                        )}
+                        g
                       </Text>
                       <Text style={styles.nutritionLabel}>protein</Text>
                     </View>
                     <View style={styles.nutritionItem}>
                       <Text style={styles.nutritionValue}>
-                        {Math.round(item.nutrition.carbs * (index === 0 ? editedPortionMultiplier : 1))}g
+                        {Math.round(
+                          item.nutrition.carbs * (index === 0 ? editedPortionMultiplier : 1)
+                        )}
+                        g
                       </Text>
                       <Text style={styles.nutritionLabel}>carbs</Text>
                     </View>
                     <View style={styles.nutritionItem}>
                       <Text style={styles.nutritionValue}>
-                        {Math.round(item.nutrition.fat * (index === 0 ? editedPortionMultiplier : 1))}g
+                        {Math.round(
+                          item.nutrition.fat * (index === 0 ? editedPortionMultiplier : 1)
+                        )}
+                        g
                       </Text>
                       <Text style={styles.nutritionLabel}>fat</Text>
                     </View>
@@ -617,11 +655,7 @@ export default function ScanFoodScreen() {
                       onPress={() => setShowFeedbackModal(true)}
                       activeOpacity={0.7}
                     >
-                      <Ionicons
-                        name="help-circle-outline"
-                        size={18}
-                        color={colors.text.tertiary}
-                      />
+                      <Ionicons name="help-circle-outline" size={18} color={colors.text.tertiary} />
                       <Text style={styles.feedbackButtonText}>Report misclassification</Text>
                     </TouchableOpacity>
                   )}
@@ -642,30 +676,37 @@ export default function ScanFoodScreen() {
           )}
         </View>
 
-        <View style={[
-          styles.actionsContainer,
-          { paddingHorizontal: responsiveSpacing.horizontal },
-          isTablet && styles.actionsContainerTablet
-        ]}>
+        <View
+          style={[
+            styles.actionsContainer,
+            { paddingHorizontal: responsiveSpacing.horizontal },
+            isTablet && styles.actionsContainerTablet,
+          ]}
+        >
           {/* LiDAR Prompt Banner - Show when AR supported but measurement was skipped */}
-          {Platform.OS === 'ios' && hasARSupport && !arMeasurement && !scanResult && !usdaResult && !isAnalyzing && (
-            <TouchableOpacity
-              style={styles.lidarPromptBanner}
-              onPress={handleMeasurePortion}
-              activeOpacity={0.8}
-            >
-              <View style={styles.lidarPromptIcon}>
-                <Ionicons name="cube-outline" size={24} color={colors.status.warning} />
-              </View>
-              <View style={styles.lidarPromptContent}>
-                <Text style={styles.lidarPromptTitle}>LiDAR measurement skipped</Text>
-                <Text style={styles.lidarPromptSubtitle}>
-                  Tap to measure portion size for better accuracy
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.status.warning} />
-            </TouchableOpacity>
-          )}
+          {Platform.OS === 'ios' &&
+            hasARSupport &&
+            !arMeasurement &&
+            !scanResult &&
+            !usdaResult &&
+            !isAnalyzing && (
+              <TouchableOpacity
+                style={styles.lidarPromptBanner}
+                onPress={handleMeasurePortion}
+                activeOpacity={0.8}
+              >
+                <View style={styles.lidarPromptIcon}>
+                  <Ionicons name="cube-outline" size={24} color={colors.status.warning} />
+                </View>
+                <View style={styles.lidarPromptContent}>
+                  <Text style={styles.lidarPromptTitle}>LiDAR measurement skipped</Text>
+                  <Text style={styles.lidarPromptSubtitle}>
+                    Tap to measure portion size for better accuracy
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.status.warning} />
+              </TouchableOpacity>
+            )}
 
           {/* AR Measurement display */}
           {arMeasurement && !scanResult && !usdaResult && (
@@ -765,9 +806,7 @@ export default function ScanFoodScreen() {
             visible={showFeedbackModal}
             onClose={() => setShowFeedbackModal(false)}
             originalPrediction={
-              usdaResult
-                ? usdaResult.classification.category
-                : scanResult?.foodItems[0].name || ''
+              usdaResult ? usdaResult.classification.category : scanResult?.foodItems[0].name || ''
             }
             originalConfidence={
               usdaResult
@@ -812,21 +851,11 @@ export default function ScanFoodScreen() {
           </TouchableOpacity>
 
           <View style={styles.cameraControls}>
-            <TouchableOpacity
-              style={styles.controlButton}
-              onPress={toggleFlash}
-            >
-              <Ionicons
-                name={flash ? 'flash' : 'flash-off'}
-                size={24}
-                color="#fff"
-              />
+            <TouchableOpacity style={styles.controlButton} onPress={toggleFlash}>
+              <Ionicons name={flash ? 'flash' : 'flash-off'} size={24} color="#fff" />
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.controlButton}
-              onPress={toggleCameraFacing}
-            >
+            <TouchableOpacity style={styles.controlButton} onPress={toggleCameraFacing}>
               <Ionicons name="camera-reverse" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -836,12 +865,9 @@ export default function ScanFoodScreen() {
         {showGuide && (
           <View style={styles.guideOverlay}>
             <View style={styles.guideBox}>
-              <Text style={styles.guideText}>
-                📸 Center your food in the frame
-              </Text>
+              <Text style={styles.guideText}>📸 Center your food in the frame</Text>
               <Text style={styles.guideSubtext}>
-                Include a reference object like your hand or a coin for better
-                size estimation
+                Include a reference object like your hand or a coin for better size estimation
               </Text>
             </View>
           </View>

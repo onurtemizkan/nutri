@@ -70,12 +70,7 @@ const MealTypeSection = memo(function MealTypeSection({
       <Text style={styles.mealTypeTitle}>{capitalizedType}</Text>
       {meals.length > 0 ? (
         meals.map((meal) => (
-          <SwipeableMealCard
-            key={meal.id}
-            meal={meal}
-            onEdit={onEdit}
-            onDelete={onDelete}
-          />
+          <SwipeableMealCard key={meal.id} meal={meal} onEdit={onEdit} onDelete={onDelete} />
         ))
       ) : (
         <Text style={styles.noMeals}>No meals yet</Text>
@@ -94,31 +89,29 @@ interface TrendCardProps {
   onPress: () => void;
 }
 
-const TrendCard = memo(function TrendCard({
-  metricType,
-  data,
-  onPress,
-}: TrendCardProps) {
+const TrendCard = memo(function TrendCard({ metricType, data, onPress }: TrendCardProps) {
   if (!data?.latest) return null;
 
   const config = METRIC_CONFIG[metricType];
-  const trendIcon = data.stats?.trend === 'up'
-    ? 'trending-up'
-    : data.stats?.trend === 'down'
-      ? 'trending-down'
-      : 'remove';
-  const trendColor = data.stats?.trend === 'up'
-    ? (metricType === 'RESTING_HEART_RATE' ? colors.status.warning : colors.status.success)
-    : data.stats?.trend === 'down'
-      ? (metricType === 'RESTING_HEART_RATE' ? colors.status.success : colors.status.warning)
-      : colors.text.tertiary;
+  const trendIcon =
+    data.stats?.trend === 'up'
+      ? 'trending-up'
+      : data.stats?.trend === 'down'
+        ? 'trending-down'
+        : 'remove';
+  const trendColor =
+    data.stats?.trend === 'up'
+      ? metricType === 'RESTING_HEART_RATE'
+        ? colors.status.warning
+        : colors.status.success
+      : data.stats?.trend === 'down'
+        ? metricType === 'RESTING_HEART_RATE'
+          ? colors.status.success
+          : colors.status.warning
+        : colors.text.tertiary;
 
   return (
-    <TouchableOpacity
-      style={styles.trendCard}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
+    <TouchableOpacity style={styles.trendCard} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.trendCardHeader}>
         <Ionicons
           name={config.icon as keyof typeof Ionicons.glyphMap}
@@ -202,7 +195,7 @@ export default function HomeScreen() {
     setRefreshing(true);
     await loadSummary();
     // Refresh supplement tracker
-    setSupplementKey(k => k + 1);
+    setSupplementKey((k) => k + 1);
     setRefreshing(false);
   }, [loadSummary]);
 
@@ -212,7 +205,7 @@ export default function HomeScreen() {
     useCallback(() => {
       loadSummary();
       // Refresh supplement tracker by incrementing key
-      setSupplementKey(k => k + 1);
+      setSupplementKey((k) => k + 1);
     }, [loadSummary])
   );
 
@@ -244,14 +237,20 @@ export default function HomeScreen() {
   }, []);
 
   // Memoize handlers to prevent child re-renders
-  const handleEditMeal = useCallback((meal: Meal) => {
-    router.push(`/edit-meal/${meal.id}`);
-  }, [router]);
+  const handleEditMeal = useCallback(
+    (meal: Meal) => {
+      router.push(`/edit-meal/${meal.id}`);
+    },
+    [router]
+  );
 
   // Create stable references for trend card navigation
-  const handleTrendPress = useCallback((metricType: HealthMetricType) => {
-    router.push(`/health/${metricType}`);
-  }, [router]);
+  const handleTrendPress = useCallback(
+    (metricType: HealthMetricType) => {
+      router.push(`/health/${metricType}`);
+    },
+    [router]
+  );
 
   const handleViewAllTrends = useCallback(() => {
     router.push('/(tabs)/health');
@@ -261,11 +260,9 @@ export default function HomeScreen() {
     router.push('/add-meal');
   }, [router]);
 
-  const handleDeleteMeal = useCallback((meal: Meal) => {
-    showAlert(
-      'Delete Meal',
-      `Are you sure you want to delete "${meal.name}"?`,
-      [
+  const handleDeleteMeal = useCallback(
+    (meal: Meal) => {
+      showAlert('Delete Meal', `Are you sure you want to delete "${meal.name}"?`, [
         {
           text: 'Cancel',
           style: 'cancel',
@@ -283,9 +280,10 @@ export default function HomeScreen() {
             }
           },
         },
-      ]
-    );
-  }, [loadSummary]);
+      ]);
+    },
+    [loadSummary]
+  );
 
   if (isLoading) {
     return (
@@ -321,7 +319,10 @@ export default function HomeScreen() {
           </View>
 
           {/* Nutrition Summary - Macros + Calories */}
-          <View style={[styles.nutritionCard, isTablet && styles.nutritionCardTablet]} testID="home-calorie-summary">
+          <View
+            style={[styles.nutritionCard, isTablet && styles.nutritionCardTablet]}
+            testID="home-calorie-summary"
+          >
             {/* Macros - Left Side */}
             <View style={styles.macrosColumn} testID="home-macros-container">
               <View style={styles.macroRow}>
@@ -339,7 +340,7 @@ export default function HomeScreen() {
                         styles.macroProgressFill,
                         {
                           width: `${Math.min(((summary?.totalProtein || 0) / (summary?.goals?.goalProtein || 1)) * 100, 100)}%`,
-                        }
+                        },
                       ]}
                     />
                   </View>
@@ -361,7 +362,7 @@ export default function HomeScreen() {
                         styles.macroProgressFill,
                         {
                           width: `${Math.min(((summary?.totalCarbs || 0) / (summary?.goals?.goalCarbs || 1)) * 100, 100)}%`,
-                        }
+                        },
                       ]}
                     />
                   </View>
@@ -383,7 +384,7 @@ export default function HomeScreen() {
                         styles.macroProgressFill,
                         {
                           width: `${Math.min(((summary?.totalFat || 0) / (summary?.goals?.goalFat || 1)) * 100, 100)}%`,
-                        }
+                        },
                       ]}
                     />
                   </View>
@@ -445,10 +446,7 @@ export default function HomeScreen() {
             <View style={styles.trendsSection} testID="home-health-trends">
               <View style={styles.trendsSectionHeader}>
                 <Text style={styles.sectionTitle}>7-Day Trends</Text>
-                <TouchableOpacity
-                  onPress={handleViewAllTrends}
-                  style={styles.viewAllButton}
-                >
+                <TouchableOpacity onPress={handleViewAllTrends} style={styles.viewAllButton}>
                   <Text style={styles.viewAllText}>View All</Text>
                   <Ionicons name="chevron-forward" size={16} color={colors.primary.main} />
                 </TouchableOpacity>
@@ -487,17 +485,14 @@ export default function HomeScreen() {
           {/* Today's Supplements */}
           <SupplementTracker
             key={supplementKey}
-            onRefreshNeeded={() => setSupplementKey(k => k + 1)}
+            onRefreshNeeded={() => setSupplementKey((k) => k + 1)}
           />
         </View>
       </ScrollView>
 
       {/* Floating Add Button */}
       <TouchableOpacity
-        style={[
-          styles.fab,
-          { width: fabSize, height: fabSize, borderRadius: fabSize / 2 }
-        ]}
+        style={[styles.fab, { width: fabSize, height: fabSize, borderRadius: fabSize / 2 }]}
         onPress={handleAddMeal}
         activeOpacity={0.8}
         testID="home-add-meal-fab"

@@ -9,10 +9,7 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
 } from '../validation/schemas';
-import {
-  withErrorHandling,
-  ErrorHandlers,
-} from '../utils/controllerHelpers';
+import { withErrorHandling, ErrorHandlers } from '../utils/controllerHelpers';
 import { HTTP_STATUS } from '../config/constants';
 import { z } from 'zod';
 
@@ -62,10 +59,7 @@ export class AuthController {
 
   resetPassword = withErrorHandling(async (req: Request, res: Response) => {
     const validatedData = resetPasswordSchema.parse(req.body);
-    const result = await authService.resetPassword(
-      validatedData.token,
-      validatedData.newPassword
-    );
+    const result = await authService.resetPassword(validatedData.token, validatedData.newPassword);
 
     res.status(HTTP_STATUS.OK).json(result);
   });

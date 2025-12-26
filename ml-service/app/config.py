@@ -3,10 +3,18 @@ Configuration management for ML Service
 Uses pydantic-settings for type-safe environment variables
 """
 
+import warnings
 from typing import Optional, List
-from pydantic import ConfigDict
+from pydantic import ConfigDict, field_validator, model_validator
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+
+
+# Minimum secret key length for production security
+MIN_SECRET_KEY_LENGTH = 32
+
+# Default secret key (only allowed in development)
+DEFAULT_SECRET_KEY = "dev-secret-key-change-this-in-production"
 
 
 class Settings(BaseSettings):
@@ -73,9 +81,55 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     log_format: str = "json"  # "json" or "text"
 
-    # Security (for future JWT validation)
-    secret_key: str = "your-secret-key-change-this-in-production"
+    # Security (for JWT validation and API auth)
+    secret_key: str = DEFAULT_SECRET_KEY
     algorithm: str = "HS256"
+
+    @model_validator(mode="after")
+    def validate_secret_key_security(self) -> "Settings":
+        """
+        Validate secret_key meets security requirements.
+
+        Production requirements:
+        - Must not use default value
+        - Must be at least MIN_SECRET_KEY_LENGTH characters
+
+        Development:
+        - Warns if using default value
+        """
+        is_production = self.environment.lower() == "production"
+        is_default = self.secret_key == DEFAULT_SECRET_KEY
+        is_too_short = len(self.secret_key) < MIN_SECRET_KEY_LENGTH
+
+        if is_production:
+            if is_default:
+                raise ValueError(
+                    f"SECRET_KEY must be set in production. "
+                    f"Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+                )
+            if is_too_short:
+                raise ValueError(
+                    f"SECRET_KEY must be at least {MIN_SECRET_KEY_LENGTH} characters "
+                    f"in production. Current length: {len(self.secret_key)}"
+                )
+        else:
+            # Development/test environment warnings
+            if is_default:
+                warnings.warn(
+                    "Using default SECRET_KEY - this is insecure and should only "
+                    "be used in development. Set SECRET_KEY environment variable.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+            elif is_too_short:
+                warnings.warn(
+                    f"SECRET_KEY is shorter than recommended ({MIN_SECRET_KEY_LENGTH} chars). "
+                    f"Consider using a longer key for better security.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+
+        return self
 
     model_config = ConfigDict(
         env_file=".env",

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { User } from '../types';
 import { authApi } from '../api/auth';
 
@@ -30,40 +30,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
+  // Refs to prevent race conditions
+  const isMountedRef = useRef(true);
+  const isAuthOperationInProgressRef = useRef(false);
 
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = useCallback(async () => {
+    // Skip if another operation is in progress
+    if (isAuthOperationInProgressRef.current) {
+      return;
+    }
+
+    isAuthOperationInProgressRef.current = true;
+
     try {
       const token = await authApi.getToken();
-      if (token) {
+      if (token && isMountedRef.current) {
         const userProfile = await authApi.getProfile();
-        setUser(userProfile);
+        // Only update state if still mounted
+        if (isMountedRef.current) {
+          setUser(userProfile);
+        }
       }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      await authApi.logout();
+    } catch {
+      // Auth check failed - clear token but don't throw
+      // This is expected when token is expired/invalid
+      if (isMountedRef.current) {
+        await authApi.logout();
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
+      isAuthOperationInProgressRef.current = false;
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    checkAuthStatus();
+
+    // Cleanup: mark as unmounted to prevent state updates
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [checkAuthStatus]);
 
   const login = async (email: string, password: string) => {
-    try {
-      const response = await authApi.login(email, password);
+    const response = await authApi.login(email, password);
+    if (isMountedRef.current) {
       setUser(response.user);
-    } catch (error) {
-      throw error;
     }
   };
 
   const register = async (email: string, password: string, name: string) => {
-    try {
-      const response = await authApi.register(email, password, name);
+    const response = await authApi.register(email, password, name);
+    if (isMountedRef.current) {
       setUser(response.user);
-    } catch (error) {
-      throw error;
     }
   };
 
@@ -78,38 +100,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
     };
   }) => {
-    try {
-      const response = await authApi.appleSignIn(data);
+    const response = await authApi.appleSignIn(data);
+    if (isMountedRef.current) {
       setUser(response.user);
-    } catch (error) {
-      throw error;
     }
   };
 
   const logout = async () => {
     try {
       await authApi.logout();
-      setUser(null);
-    } catch (error) {
-      console.error('Logout failed:', error);
+      if (isMountedRef.current) {
+        setUser(null);
+      }
+    } catch {
+      // Logout failed - still clear local user state
+      // Token will be cleared anyway, user can log in again
+      if (isMountedRef.current) {
+        setUser(null);
+      }
     }
   };
 
   const updateUser = async (data: Partial<User>) => {
-    try {
-      const updatedUser = await authApi.updateProfile(data);
+    const updatedUser = await authApi.updateProfile(data);
+    if (isMountedRef.current) {
       setUser(updatedUser);
-    } catch (error) {
-      throw error;
     }
   };
 
   const deleteAccount = async () => {
-    try {
-      await authApi.deleteAccount();
+    await authApi.deleteAccount();
+    if (isMountedRef.current) {
       setUser(null);
-    } catch (error) {
-      throw error;
     }
   };
 

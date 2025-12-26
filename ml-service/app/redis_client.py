@@ -5,7 +5,7 @@ Uses async redis for non-blocking operations
 
 import json
 import logging
-from typing import Any, Optional
+from typing import Any, AsyncIterator, List, Optional
 import redis.asyncio as aioredis
 from redis.asyncio import Redis
 
@@ -111,6 +111,62 @@ class RedisClient:
         except Exception as e:
             logger.error(f"Redis EXISTS error for key '{key}': {str(e)}")
             return False
+
+    async def scan(self, pattern: str = "*", count: int = 100) -> AsyncIterator[str]:
+        """
+        Scan Redis keys matching pattern.
+        Uses SCAN command for memory-efficient iteration over large keyspaces.
+
+        Args:
+            pattern: Glob-style pattern to match keys (e.g., "user:*", "cache:123:*")
+            count: Hint for number of keys to return per iteration
+
+        Yields:
+            Matching key names
+
+        Example:
+            async for key in redis_client.scan("features:*"):
+                print(key)
+        """
+        if not self.redis:
+            logger.warning("Redis not connected, skipping scan")
+            return
+
+        try:
+            async for key in self.redis.scan_iter(match=pattern, count=count):
+                yield key
+        except Exception as e:
+            logger.error(f"Redis SCAN error for pattern '{pattern}': {str(e)}")
+
+    async def scan_keys(self, pattern: str = "*", limit: int = 1000) -> List[str]:
+        """
+        Get all keys matching pattern (up to limit).
+        For large keyspaces, prefer using scan() iterator directly.
+
+        Args:
+            pattern: Glob-style pattern to match keys
+            limit: Maximum number of keys to return (default 1000)
+
+        Returns:
+            List of matching key names
+        """
+        if not self.redis:
+            logger.warning("Redis not connected, skipping scan_keys")
+            return []
+
+        try:
+            keys = []
+            async for key in self.redis.scan_iter(match=pattern):
+                keys.append(key)
+                if len(keys) >= limit:
+                    logger.warning(
+                        f"Redis SCAN_KEYS hit limit ({limit}) for pattern '{pattern}'"
+                    )
+                    break
+            return keys
+        except Exception as e:
+            logger.error(f"Redis SCAN_KEYS error for pattern '{pattern}': {str(e)}")
+            return []
 
     async def delete_pattern(self, pattern: str) -> int:
         """
