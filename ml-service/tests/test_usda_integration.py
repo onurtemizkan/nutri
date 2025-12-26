@@ -18,6 +18,22 @@ from typing import Dict, List, Any
 
 
 # ============================================================================
+# TEST CONSTANTS
+# ============================================================================
+
+# Performance thresholds (in seconds)
+PERFORMANCE_THRESHOLD_FAST = 0.1  # 100ms - for batch operations (1000+ iterations)
+PERFORMANCE_THRESHOLD_SINGLE = 0.005  # 5ms - for single operation
+
+# Confidence thresholds
+MIN_HIGH_CONFIDENCE = 0.9  # Threshold for "high confidence" classification
+MIN_LOW_CONFIDENCE = 0.15  # Minimum acceptable confidence
+
+# Test batch sizes
+BATCH_SIZE_PERFORMANCE = 1000  # Iterations for performance tests
+
+
+# ============================================================================
 # MOCK DATA
 # ============================================================================
 
@@ -417,13 +433,15 @@ class TestUSDAIntegrationPerformance:
         categories = list(FoodCategory)
 
         start_time = time.time()
-        for _ in range(1000):
+        for _ in range(BATCH_SIZE_PERFORMANCE):
             for cat in categories:
                 _ = CATEGORY_TO_USDA_DATATYPES.get(cat, [])
         elapsed = time.time() - start_time
 
-        # 1000 iterations of all categories should be under 100ms
-        assert elapsed < 0.1, f"Mapping lookup took {elapsed*1000:.2f}ms"
+        # Batch iterations should complete within performance threshold
+        assert (
+            elapsed < PERFORMANCE_THRESHOLD_FAST
+        ), f"Mapping lookup took {elapsed*1000:.2f}ms"
 
     def test_query_enhancement_is_fast(self):
         """Query enhancement should be under 5ms per call."""
@@ -443,13 +461,16 @@ class TestUSDAIntegrationPerformance:
         queries = ["apple", "chicken", "spaghetti", "burger", "stir fry"]
 
         start_time = time.time()
-        for _ in range(100):
+        iterations = 100
+        for _ in range(iterations):
             for cat, query in zip(categories, queries):
                 _ = classifier._get_query_enhancement(cat, query)
         elapsed = time.time() - start_time
 
-        # 500 enhancements should be under 100ms
-        assert elapsed < 0.1, f"Query enhancement took {elapsed*1000:.2f}ms"
+        # Batch enhancements should complete within performance threshold
+        assert (
+            elapsed < PERFORMANCE_THRESHOLD_FAST
+        ), f"Query enhancement took {elapsed*1000:.2f}ms"
 
 
 # ============================================================================
@@ -622,7 +643,7 @@ class TestFullIntegrationFlow:
 
             # Verify search parameters
             assert result["category"] == "fruits_fresh"
-            assert result["confidence"] > 0.9
+            assert result["confidence"] > MIN_HIGH_CONFIDENCE
             assert "Foundation" in result["usda_datatypes"]
             # Query should be enhanced
             enhanced_query = result["search_hints"]["suggested_query_enhancement"]
