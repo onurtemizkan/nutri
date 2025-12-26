@@ -442,9 +442,19 @@ export class ReportService {
     let monthIndex: number;
 
     if (month) {
-      const [y, m] = month.split('-').map(Number);
-      year = y;
-      monthIndex = m - 1;
+      const parts = month.split('-');
+      const y = Number(parts[0]);
+      const m = Number(parts[1]);
+
+      // Validate parsed values - fallback to current month if invalid
+      if (isNaN(y) || isNaN(m) || m < 1 || m > 12 || y < 1900 || y > 2100) {
+        const now = new Date();
+        year = now.getFullYear();
+        monthIndex = now.getMonth();
+      } else {
+        year = y;
+        monthIndex = m - 1;
+      }
     } else {
       const now = new Date();
       year = now.getFullYear();
@@ -637,13 +647,15 @@ export class ReportService {
   }
 
   private calculateAverages(totals: NutritionTotals, days: number): NutritionTotals {
+    // Guard against division by zero
+    const divisor = days > 0 ? days : 1;
     return {
-      calories: Math.round((totals.calories / days) * 10) / 10,
-      protein: Math.round((totals.protein / days) * 10) / 10,
-      carbs: Math.round((totals.carbs / days) * 10) / 10,
-      fat: Math.round((totals.fat / days) * 10) / 10,
-      fiber: Math.round((totals.fiber / days) * 10) / 10,
-      sugar: Math.round((totals.sugar / days) * 10) / 10,
+      calories: Math.round((totals.calories / divisor) * 10) / 10,
+      protein: Math.round((totals.protein / divisor) * 10) / 10,
+      carbs: Math.round((totals.carbs / divisor) * 10) / 10,
+      fat: Math.round((totals.fat / divisor) * 10) / 10,
+      fiber: Math.round((totals.fiber / divisor) * 10) / 10,
+      sugar: Math.round((totals.sugar / divisor) * 10) / 10,
     };
   }
 
