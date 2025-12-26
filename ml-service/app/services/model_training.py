@@ -657,8 +657,9 @@ class ModelTrainingService:
 
         # Count health metric data days for the target metric
         health_result = await self.db.execute(
-            select(func.count(func.distinct(func.date(HealthMetric.recorded_at))))
-            .where(
+            select(
+                func.count(func.distinct(func.date(HealthMetric.recorded_at)))
+            ).where(
                 and_(
                     HealthMetric.user_id == user_id,
                     HealthMetric.metric_type == target_metric.value,
@@ -671,8 +672,7 @@ class ModelTrainingService:
 
         # Count nutrition data days (days with at least one meal)
         nutrition_result = await self.db.execute(
-            select(func.count(func.distinct(func.date(Meal.consumed_at))))
-            .where(
+            select(func.count(func.distinct(func.date(Meal.consumed_at)))).where(
                 and_(
                     Meal.user_id == user_id,
                     Meal.consumed_at >= start_date,
@@ -729,9 +729,7 @@ class ModelTrainingService:
     # Model Versioning and Management
     # ========================================================================
 
-    def _generate_model_version(
-        self, user_id: str, metric: PredictionMetric
-    ) -> str:
+    def _generate_model_version(self, user_id: str, metric: PredictionMetric) -> str:
         """
         Generate a semantic version for a new model.
 
@@ -806,10 +804,7 @@ class ModelTrainingService:
             List of model metadata dictionaries, sorted by date (newest first)
         """
         pattern = f"{user_id}_{metric.value}_*"
-        matching_models = [
-            d for d in self.models_dir.glob(pattern)
-            if d.is_dir()
-        ]
+        matching_models = [d for d in self.models_dir.glob(pattern) if d.is_dir()]
 
         models = []
         for model_dir in matching_models:
@@ -845,9 +840,7 @@ class ModelTrainingService:
 
         return active_model_id == model_id
 
-    def get_active_model_id(
-        self, user_id: str, metric: PredictionMetric
-    ) -> str | None:
+    def get_active_model_id(self, user_id: str, metric: PredictionMetric) -> str | None:
         """Get the currently active model ID for a user/metric."""
         active_marker_path = self.models_dir / f"{user_id}_{metric.value}_active.txt"
 
@@ -879,10 +872,7 @@ class ModelTrainingService:
         """
         # Find the model with the specified version
         pattern = f"{user_id}_{metric.value}_*"
-        matching_models = [
-            d for d in self.models_dir.glob(pattern)
-            if d.is_dir()
-        ]
+        matching_models = [d for d in self.models_dir.glob(pattern) if d.is_dir()]
 
         target_model = None
         for model_dir in matching_models:
@@ -946,10 +936,7 @@ class ModelTrainingService:
         import shutil
 
         pattern = f"{user_id}_{metric.value}_*"
-        matching_models = [
-            d for d in self.models_dir.glob(pattern)
-            if d.is_dir()
-        ]
+        matching_models = [d for d in self.models_dir.glob(pattern) if d.is_dir()]
 
         if len(matching_models) <= keep_count:
             return {

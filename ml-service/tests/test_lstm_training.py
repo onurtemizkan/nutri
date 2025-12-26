@@ -127,9 +127,7 @@ class TestDataValidationRequirements:
         nutrition_result = MagicMock()
         nutrition_result.scalar.return_value = 25
 
-        mock_db.execute = AsyncMock(
-            side_effect=[health_result, nutrition_result]
-        )
+        mock_db.execute = AsyncMock(side_effect=[health_result, nutrition_result])
 
         result = await training_service.validate_training_data_requirements(
             user_id="test_user",
@@ -154,9 +152,7 @@ class TestDataValidationRequirements:
         nutrition_result = MagicMock()
         nutrition_result.scalar.return_value = 25
 
-        mock_db.execute = AsyncMock(
-            side_effect=[health_result, nutrition_result]
-        )
+        mock_db.execute = AsyncMock(side_effect=[health_result, nutrition_result])
 
         with pytest.raises(ValueError) as exc_info:
             await training_service.validate_training_data_requirements(
@@ -183,9 +179,7 @@ class TestDataValidationRequirements:
         nutrition_result = MagicMock()
         nutrition_result.scalar.return_value = 5
 
-        mock_db.execute = AsyncMock(
-            side_effect=[health_result, nutrition_result]
-        )
+        mock_db.execute = AsyncMock(side_effect=[health_result, nutrition_result])
 
         with pytest.raises(ValueError) as exc_info:
             await training_service.validate_training_data_requirements(
@@ -210,9 +204,7 @@ class TestDataValidationRequirements:
         nutrition_result = MagicMock()
         nutrition_result.scalar.return_value = 3
 
-        mock_db.execute = AsyncMock(
-            side_effect=[health_result, nutrition_result]
-        )
+        mock_db.execute = AsyncMock(side_effect=[health_result, nutrition_result])
 
         with pytest.raises(ValueError) as exc_info:
             await training_service.validate_training_data_requirements(
@@ -348,7 +340,9 @@ class TestLSTMForwardPass:
 class TestTrainingLossDecreases:
     """Test that training actually reduces loss."""
 
-    def test_loss_decreases_during_training(self, small_lstm_config, sample_training_data):
+    def test_loss_decreases_during_training(
+        self, small_lstm_config, sample_training_data
+    ):
         """Test that loss decreases over multiple epochs."""
         X_train, y_train, X_val, y_val = sample_training_data
         model = HealthMetricLSTM(small_lstm_config)
@@ -389,7 +383,9 @@ class TestModelSaveLoadRoundtrip:
         """Test that model can be saved and loaded correctly."""
         # Create and train model slightly
         model = HealthMetricLSTM(small_lstm_config)
-        X = torch.randn(8, small_lstm_config.sequence_length, small_lstm_config.input_dim)
+        X = torch.randn(
+            8, small_lstm_config.sequence_length, small_lstm_config.input_dim
+        )
 
         # Get predictions before saving
         model.eval()
@@ -510,9 +506,13 @@ class TestEarlyStopping:
 
         # Create data that will cause quick plateau
         # Use very small random data that the model will quickly overfit
-        X_train = torch.randn(8, small_lstm_config.sequence_length, small_lstm_config.input_dim)
+        X_train = torch.randn(
+            8, small_lstm_config.sequence_length, small_lstm_config.input_dim
+        )
         y_train = torch.zeros(8, 1)  # All zeros - easy to fit
-        X_val = torch.randn(2, small_lstm_config.sequence_length, small_lstm_config.input_dim)
+        X_val = torch.randn(
+            2, small_lstm_config.sequence_length, small_lstm_config.input_dim
+        )
         y_val = torch.zeros(2, 1)
 
         # Train with enough epochs to trigger early stopping
@@ -673,9 +673,7 @@ class TestModelVersioning:
         )
 
         # Rollback to v1.0.0
-        result = await training_service.rollback_to_version(
-            user_id, metric, "v1.0.0"
-        )
+        result = await training_service.rollback_to_version(user_id, metric, "v1.0.0")
 
         assert result["success"] is True
         assert result["rolled_back_to"] == "v1.0.0"
@@ -698,9 +696,7 @@ class TestModelVersioning:
             pickle.dump(metadata, f)
 
         with pytest.raises(ValueError) as exc_info:
-            await training_service.rollback_to_version(
-                user_id, metric, "v9.9.9"
-            )
+            await training_service.rollback_to_version(user_id, metric, "v9.9.9")
 
         assert "v9.9.9 not found" in str(exc_info.value)
 
@@ -826,9 +822,7 @@ class TestAPITrainPredictFlow:
         nutrition_result = MagicMock()
         nutrition_result.scalar.return_value = 3  # Insufficient
 
-        mock_db.execute = AsyncMock(
-            side_effect=[health_result, nutrition_result]
-        )
+        mock_db.execute = AsyncMock(side_effect=[health_result, nutrition_result])
 
         service = ModelTrainingService(mock_db)
         service.models_dir = models_dir
