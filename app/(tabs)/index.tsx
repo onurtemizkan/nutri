@@ -31,6 +31,7 @@ import { useResponsive } from '@/hooks/useResponsive';
 import { SwipeableMealCard } from '@/lib/components/SwipeableMealCard';
 import { SupplementTracker } from '@/lib/components/SupplementTracker';
 import { DailyMicronutrientSummary } from '@/lib/components/DailyMicronutrientSummary';
+import { WeightWidget } from '@/lib/components/WeightWidget';
 import { showAlert } from '@/lib/utils/alert';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 
@@ -487,6 +488,12 @@ export default function HomeScreen() {
             key={supplementKey}
             onRefreshNeeded={() => setSupplementKey((k) => k + 1)}
           />
+
+          {/* Weight Tracking Widget */}
+          <View style={styles.weightSection} testID="home-weight-section">
+            <Text style={styles.sectionTitle}>Weight</Text>
+            <WeightWidget unit="kg" />
+          </View>
         </View>
       </ScrollView>
 
@@ -767,6 +774,11 @@ const styles = StyleSheet.create({
     color: colors.text.disabled,
     fontStyle: 'italic',
     paddingVertical: spacing.sm,
+  },
+
+  // Weight Section
+  weightSection: {
+    marginTop: spacing.xl,
   },
 
   // FAB
