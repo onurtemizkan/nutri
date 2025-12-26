@@ -437,3 +437,6 @@ export const WATER_PRESETS = {
   bottle: 500, // Standard bottle
   cup: 200, // Coffee cup
 } as const;
+
+// Re-export weight types
+export * from './weight';
