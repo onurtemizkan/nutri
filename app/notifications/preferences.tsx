@@ -21,7 +21,9 @@ import {
   Switch,
   Platform,
   Linking,
+  Modal,
 } from 'react-native';
+import { isAxiosError } from 'axios';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -125,14 +127,33 @@ interface TimePickerButtonProps {
 
 function TimePickerButton({ label, time, onTimeChange }: TimePickerButtonProps) {
   const [showPicker, setShowPicker] = useState(false);
+  const [tempTime, setTempTime] = useState(time);
 
   const handleChange = (_event: unknown, selectedDate?: Date) => {
     if (Platform.OS === 'android') {
       setShowPicker(false);
+      if (selectedDate) {
+        onTimeChange(formatDateToTime(selectedDate));
+      }
+    } else if (selectedDate) {
+      // iOS: just update temp value, wait for Done button
+      setTempTime(formatDateToTime(selectedDate));
     }
-    if (selectedDate) {
-      onTimeChange(formatDateToTime(selectedDate));
-    }
+  };
+
+  const handleDone = () => {
+    onTimeChange(tempTime);
+    setShowPicker(false);
+  };
+
+  const handleCancel = () => {
+    setTempTime(time); // Reset to original
+    setShowPicker(false);
+  };
+
+  const handleOpen = () => {
+    setTempTime(time); // Sync temp with current
+    setShowPicker(true);
   };
 
   return (
@@ -140,21 +161,51 @@ function TimePickerButton({ label, time, onTimeChange }: TimePickerButtonProps) 
       <Text style={styles.timePickerLabel}>{label}</Text>
       <TouchableOpacity
         style={styles.timePickerButton}
-        onPress={() => setShowPicker(true)}
+        onPress={handleOpen}
         accessibilityLabel={`Set ${label} reminder time`}
       >
         <Text style={styles.timePickerValue}>{formatTimeDisplay(time)}</Text>
         <Ionicons name="time-outline" size={18} color={colors.text.tertiary} />
       </TouchableOpacity>
-      {showPicker && (
+
+      {/* Android: inline picker */}
+      {showPicker && Platform.OS === 'android' && (
         <DateTimePicker
           value={parseTimeToDate(time)}
           mode="time"
           is24Hour={false}
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          display="default"
           onChange={handleChange}
           minuteInterval={5}
         />
+      )}
+
+      {/* iOS: modal with Done/Cancel */}
+      {Platform.OS === 'ios' && (
+        <Modal visible={showPicker} transparent animationType="slide">
+          <View style={styles.pickerModalOverlay}>
+            <View style={styles.pickerModalContent}>
+              <View style={styles.pickerModalHeader}>
+                <TouchableOpacity onPress={handleCancel} accessibilityLabel="Cancel">
+                  <Text style={styles.pickerCancelButton}>Cancel</Text>
+                </TouchableOpacity>
+                <Text style={styles.pickerModalTitle}>{label}</Text>
+                <TouchableOpacity onPress={handleDone} accessibilityLabel="Done">
+                  <Text style={styles.pickerDoneButton}>Done</Text>
+                </TouchableOpacity>
+              </View>
+              <DateTimePicker
+                value={parseTimeToDate(tempTime)}
+                mode="time"
+                is24Hour={false}
+                display="spinner"
+                onChange={handleChange}
+                minuteInterval={5}
+                style={styles.iosPicker}
+              />
+            </View>
+          </View>
+        </Modal>
       )}
     </View>
   );
@@ -179,14 +230,20 @@ export default function NotificationPreferencesScreen() {
       const prefs = await notificationsApi.getPreferences();
       setPreferences(prefs);
     } catch (error) {
-      console.error('Error loading preferences:', error);
-      // Initialize with defaults if no preferences exist
-      setPreferences({
-        enabled: true,
-        enabledCategories: ['MEAL_REMINDER', 'GOAL_PROGRESS', 'HEALTH_INSIGHT', 'STREAK_ALERT'],
-        quietHoursEnabled: false,
-        mealReminderTimes: DEFAULT_MEAL_TIMES,
-      });
+      // Check if it's a 404 (no preferences yet) vs other errors
+      if (isAxiosError(error) && error.response?.status === 404) {
+        // User has no preferences yet - initialize with defaults
+        setPreferences({
+          enabled: true,
+          enabledCategories: ['MEAL_REMINDER', 'GOAL_PROGRESS', 'HEALTH_INSIGHT', 'STREAK_ALERT'],
+          quietHoursEnabled: false,
+          mealReminderTimes: DEFAULT_MEAL_TIMES,
+        });
+      } else {
+        // Network error or other failure - show error to user
+        console.error('Error loading preferences:', error);
+        showAlert('Error', 'Failed to load notification preferences. Please check your connection and try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -797,5 +854,44 @@ const styles = StyleSheet.create({
   },
   statusDotWarning: {
     backgroundColor: colors.status.warning,
+  },
+
+  // iOS Time Picker Modal
+  pickerModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  pickerModalContent: {
+    backgroundColor: colors.surface.card,
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+    paddingBottom: spacing.xl,
+  },
+  pickerModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.secondary,
+  },
+  pickerModalTitle: {
+    ...typography.bodyBold,
+    color: colors.text.primary,
+  },
+  pickerCancelButton: {
+    ...typography.body,
+    color: colors.text.tertiary,
+    paddingHorizontal: spacing.sm,
+  },
+  pickerDoneButton: {
+    ...typography.bodyBold,
+    color: colors.primary.main,
+    paddingHorizontal: spacing.sm,
+  },
+  iosPicker: {
+    height: 200,
   },
 });

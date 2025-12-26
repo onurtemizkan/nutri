@@ -20,6 +20,7 @@ import {
   Animated,
   Dimensions,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -111,26 +112,36 @@ export default function NotificationPrimingScreen() {
   const params = useLocalSearchParams<{ returnTo?: string }>();
   const { requestPermission, permissionStatus } = useNotifications();
   const [isRequesting, setIsRequesting] = useState(false);
+  const [isCheckingPermission, setIsCheckingPermission] = useState(true);
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
 
+  // Check permission status before showing content
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 8,
-        tension: 40,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [fadeAnim, scaleAnim]);
+    if (permissionStatus !== 'loading') {
+      setIsCheckingPermission(false);
+    }
+  }, [permissionStatus]);
+
+  useEffect(() => {
+    if (!isCheckingPermission) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [fadeAnim, scaleAnim, isCheckingPermission]);
 
   const handleEnableNotifications = async () => {
     setIsRequesting(true);
@@ -168,14 +179,27 @@ export default function NotificationPrimingScreen() {
 
   // If permission is already granted, redirect
   useEffect(() => {
-    if (permissionStatus === 'granted') {
+    if (!isCheckingPermission && permissionStatus === 'granted') {
       if (params.returnTo) {
         router.replace(params.returnTo as `/${string}`);
       } else {
         router.back();
       }
     }
-  }, [permissionStatus, params.returnTo, router]);
+  }, [permissionStatus, params.returnTo, router, isCheckingPermission]);
+
+  // Show loading state while checking permission to prevent flash
+  if (isCheckingPermission) {
+    return (
+      <SafeAreaView style={styles.container} testID="notification-priming-screen">
+        <LinearGradient colors={gradients.dark} style={styles.gradient}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary.main} />
+          </View>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} testID="notification-priming-screen">
@@ -277,6 +301,11 @@ const styles = StyleSheet.create({
   },
   gradient: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   skipButton: {
     alignSelf: 'flex-end',
