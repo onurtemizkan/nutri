@@ -1,7 +1,7 @@
 import prisma from '../config/database';
 import { CreateHealthMetricInput, GetHealthMetricsQuery, HealthMetricType } from '../types';
 import { Prisma } from '@prisma/client';
-import { DEFAULT_PAGE_LIMIT, WEEK_IN_DAYS } from '../config/constants';
+import { DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT, WEEK_IN_DAYS } from '../config/constants';
 import { getDayBoundaries, getDaysAgo } from '../utils/dateHelpers';
 
 export class HealthMetricService {
@@ -27,9 +27,15 @@ export class HealthMetricService {
 
   /**
    * Bulk create health metrics (for wearable sync)
-   * Returns { created, updated, errors } format expected by frontend
+   * Returns { created, skipped, total, errors } format for transparency
+   *
+   * Note: Uses skipDuplicates to handle unique constraint violations gracefully.
+   * The 'skipped' count represents metrics that were not inserted due to
+   * duplicate detection (based on unique constraint).
    */
   async createBulkHealthMetrics(userId: string, metrics: CreateHealthMetricInput[]) {
+    const totalSubmitted = metrics.length;
+
     const result = await prisma.healthMetric.createMany({
       data: metrics.map((metric) => ({
         userId,
@@ -44,12 +50,15 @@ export class HealthMetricService {
       skipDuplicates: true, // Skip if exact same metric already exists (based on unique constraint)
     });
 
-    // Return format expected by frontend
-    // Note: Prisma createMany with skipDuplicates doesn't tell us how many were skipped vs created
-    // So we return count as "created" and 0 for "updated" (since createMany doesn't update)
+    // Calculate how many were skipped due to duplicates
+    const skippedCount = totalSubmitted - result.count;
+
+    // Return detailed response for transparency
     return {
       created: result.count,
-      updated: 0,
+      skipped: skippedCount,
+      total: totalSubmitted,
+      updated: 0, // createMany doesn't update, kept for API compatibility
       errors: [] as { index: number; error: string }[],
     };
   }
@@ -59,6 +68,9 @@ export class HealthMetricService {
    */
   async getHealthMetrics(userId: string, query: GetHealthMetricsQuery = {}) {
     const { metricType, startDate, endDate, source, limit = DEFAULT_PAGE_LIMIT } = query;
+
+    // Cap limit to MAX_PAGE_LIMIT to prevent excessive data retrieval
+    const cappedLimit = Math.min(limit, MAX_PAGE_LIMIT);
 
     const where: Prisma.HealthMetricWhereInput = { userId };
 
@@ -85,7 +97,7 @@ export class HealthMetricService {
       orderBy: {
         recordedAt: 'desc',
       },
-      take: limit,
+      take: cappedLimit,
     });
 
     return metrics;
@@ -281,7 +293,7 @@ export class HealthMetricService {
     const stdDev = Math.sqrt(variance);
 
     // Calculate trend by comparing first half vs second half of the period
-    const { trend, percentChange } = this.calculateTrend(metrics.map(m => m.value));
+    const { trend, percentChange } = this.calculateTrend(metrics.map((m) => m.value));
 
     return {
       metricType,
@@ -301,7 +313,10 @@ export class HealthMetricService {
    * Calculate trend direction by comparing first half vs second half of values
    * Returns trend direction ('up', 'down', 'stable') and percent change
    */
-  private calculateTrend(values: number[]): { trend: 'up' | 'down' | 'stable'; percentChange: number } {
+  private calculateTrend(values: number[]): {
+    trend: 'up' | 'down' | 'stable';
+    percentChange: number;
+  } {
     if (values.length < 2) {
       return { trend: 'stable', percentChange: 0 };
     }

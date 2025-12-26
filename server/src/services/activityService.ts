@@ -1,7 +1,12 @@
 import prisma from '../config/database';
-import { CreateActivityInput, UpdateActivityInput, GetActivitiesQuery, ActivityType } from '../types';
+import {
+  CreateActivityInput,
+  UpdateActivityInput,
+  GetActivitiesQuery,
+  ActivityType,
+} from '../types';
 import { Prisma } from '@prisma/client';
-import { DEFAULT_PAGE_LIMIT, WEEK_IN_DAYS } from '../config/constants';
+import { DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT, WEEK_IN_DAYS } from '../config/constants';
 import { getDayBoundaries, getDaysAgo } from '../utils/dateHelpers';
 
 export class ActivityService {
@@ -62,7 +67,17 @@ export class ActivityService {
    * Get activities with flexible filtering
    */
   async getActivities(userId: string, query: GetActivitiesQuery = {}) {
-    const { activityType, intensity, startDate, endDate, source, limit = DEFAULT_PAGE_LIMIT } = query;
+    const {
+      activityType,
+      intensity,
+      startDate,
+      endDate,
+      source,
+      limit = DEFAULT_PAGE_LIMIT,
+    } = query;
+
+    // Cap limit to MAX_PAGE_LIMIT to prevent excessive data retrieval
+    const cappedLimit = Math.min(limit, MAX_PAGE_LIMIT);
 
     const where: Prisma.ActivityWhereInput = { userId };
 
@@ -93,7 +108,7 @@ export class ActivityService {
       orderBy: {
         startedAt: 'desc',
       },
-      take: limit,
+      take: cappedLimit,
     });
 
     return activities;
@@ -208,14 +223,17 @@ export class ActivityService {
     });
 
     // Group by day
-    const dailyData: Record<string, {
-      date: string;
-      totalDuration: number;
-      totalCalories: number;
-      totalDistance: number;
-      totalSteps: number;
-      activityCount: number;
-    }> = {};
+    const dailyData: Record<
+      string,
+      {
+        date: string;
+        totalDuration: number;
+        totalCalories: number;
+        totalDistance: number;
+        totalSteps: number;
+        activityCount: number;
+      }
+    > = {};
 
     activities.forEach((activity) => {
       const dateKey = activity.startedAt.toISOString().split('T')[0];
@@ -322,7 +340,8 @@ export class ActivityService {
     }
 
     const now = new Date();
-    const hoursSinceActivity = (now.getTime() - lastHighIntensity.endedAt.getTime()) / (1000 * 60 * 60);
+    const hoursSinceActivity =
+      (now.getTime() - lastHighIntensity.endedAt.getTime()) / (1000 * 60 * 60);
 
     return {
       lastActivity: lastHighIntensity,

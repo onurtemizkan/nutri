@@ -1,32 +1,17 @@
 import { Request, Response } from 'express';
-import { z } from 'zod';
 import { authService } from '../services/authService';
 import { AuthenticatedRequest, UpdateUserProfileInput } from '../types';
 import { requireAuth } from '../utils/authHelpers';
-import prisma from '../config/database';
-import { appleSignInSchema, emailSchema, passwordSchema } from '../validation/schemas';
+import {
+  appleSignInSchema,
+  registerSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from '../validation/schemas';
 import { withErrorHandling, ErrorHandlers } from '../utils/controllerHelpers';
-import { HTTP_STATUS, USER_PROFILE_SELECT_FIELDS } from '../config/constants';
-
-const registerSchema = z.object({
-  email: emailSchema,
-  password: passwordSchema,
-  name: z.string().min(1, 'Name is required'),
-});
-
-const loginSchema = z.object({
-  email: emailSchema,
-  password: z.string().min(1, 'Password is required'),
-});
-
-const forgotPasswordSchema = z.object({
-  email: emailSchema,
-});
-
-const resetPasswordSchema = z.object({
-  token: z.string().min(1, 'Reset token is required'),
-  newPassword: passwordSchema,
-});
+import { HTTP_STATUS } from '../config/constants';
+import { z } from 'zod';
 
 const verifyTokenSchema = z.object({
   token: z.string().min(1, 'Reset token is required'),
@@ -60,12 +45,7 @@ export class AuthController {
     if (!userId) return;
 
     const data: UpdateUserProfileInput = req.body;
-
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data,
-      select: USER_PROFILE_SELECT_FIELDS,
-    });
+    const user = await authService.updateUserProfile(userId, data);
 
     res.status(HTTP_STATUS.OK).json(user);
   });
