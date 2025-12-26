@@ -270,7 +270,7 @@
         "id": "6",
         "title": "Train and Deploy LSTM Models for Health Predictions",
         "description": "Train LSTM models for RHR and HRV prediction using the existing HealthMetricLSTM architecture in ml-service/app/ml_models/lstm.py (with LSTMConfig params: hidden_dim, num_layers, dropout) and make them production-ready. Leverage existing ModelTrainingService skeleton in model_training.py and PredictionService in prediction.py.",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [
           "3",
           "5"
@@ -297,9 +297,10 @@
               1
             ],
             "details": "Create `ml-service/app/api/training.py` with endpoints:\n\n1. POST `/api/v1/models/train` - Accepts TrainModelRequest schema (from schemas/predictions.py), validates data requirements via subtask 1, submits training to background task, returns 202 Accepted with job_id. Use asyncio.create_task() for long-running training.\n\n2. GET `/api/v1/models/{model_id}` - Returns model metadata.pkl contents including training metrics, architecture, hyperparameters.\n\n3. GET `/api/v1/models/user/{user_id}` - Lists all model directories matching `{user_id}_*` pattern from models_dir, returns list with status and metrics.\n\nStore training status in Redis using existing redis_client pattern with keys like `training:{job_id}` and 1-hour TTL. Register router in main.py following existing API structure.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Integration test POST /api/v1/models/train with synthetic user data - verify 202 response with job_id. Test GET endpoints return correct model info. Test error responses for invalid user_id or missing data. Verify Redis status updates during training.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-26T10:22:13.219Z"
           },
           {
             "id": 3,
@@ -322,9 +323,10 @@
               3
             ],
             "details": "Create `ml-service/app/api/predictions_api.py` with endpoints:\n\n1. POST `/api/v1/predict` - Accepts PredictRequest (user_id, metric, target_date), calls PredictionService.predict(), returns PredictResponse with prediction, confidence interval, interpretation.\n\n2. POST `/api/v1/predict/batch` - Accepts BatchPredictRequest with list of metrics, calls predict() for each in parallel using asyncio.gather(), returns combined results.\n\n3. POST `/api/v1/predict/what-if` - Integrates with existing WhatIfService.test_what_if_scenarios() from what_if.py.\n\nAdd proper error handling:\n- 404 when no trained model exists\n- 400 for insufficient input data\n- 503 when circuit breaker is open (from inference queue)\n\nLeverage existing Redis caching in PredictionService (24h TTL). Register router in main.py.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Integration test with pre-trained model verifying prediction returns valid value with confidence interval. Test batch prediction returns all requested metrics. Test what-if endpoint correctly modifies predictions based on scenarios. Test error responses for missing model and insufficient data.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-26T10:22:13.308Z"
           },
           {
             "id": 5,
@@ -355,7 +357,8 @@
             "testStrategy": "Run full test suite with `pytest ml-service/tests/test_lstm_training.py -v`. All tests should pass with synthetic data. Verify coverage >80% for model_training.py and prediction.py. Include integration tests for API endpoints.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2025-12-26T10:22:13.308Z"
       },
       {
         "id": "7",
@@ -1041,10 +1044,10 @@
               3
             ],
             "details": "Enhance USDA API service for comprehensive data type support:\n\n1. Update usdaApiService.ts with dataType handling:\n   - Foundation Foods: Unprocessed, highest quality data → rank 1\n   - SR Legacy: Comprehensive standard reference → rank 2\n   - Survey (FNDDS): Mixed dishes from dietary studies → rank 3\n   - Branded: Commercial products with variable quality → rank 4\n\n2. Create server/src/utils/foodRanking.ts:\n   - rankSearchResults(results, hints?) - Apply ranking algorithm\n   - Score factors: dataType weight, name match, category match, data completeness\n   - Boost Foundation/SR Legacy for whole foods searches\n   - Boost Branded for barcode-style queries (product names)\n\n3. Add dataType filter to search endpoint:\n   - Support multiple: ?dataType=Foundation,SR%20Legacy\n   - Default to all types\n\n4. Display dataType in UI:\n   - Badge on FoodSearchCard: \"USDA\", \"Brand\", \"Recipe\"\n   - Different styling per type\n\n5. Handle data quality indicators:\n   - Flag incomplete nutrition data\n   - Prefer foods with more complete nutrient profiles",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Test ranking algorithm with mixed dataType results. Verify Foundation foods rank higher for whole food queries. Test branded ranking for product searches. Validate UI badges display correctly.",
             "parentId": "undefined",
-            "updatedAt": "2025-12-23T17:24:47.469Z"
+            "updatedAt": "2025-12-26T10:21:53.746Z"
           },
           {
             "id": 12,
@@ -1069,7 +1072,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-12-23T17:24:47.469Z"
+        "updatedAt": "2025-12-26T10:21:53.746Z"
       },
       {
         "id": "14",
@@ -1346,7 +1349,7 @@
           "18",
           "19"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1399,7 +1402,8 @@
         ],
         "complexity": 5,
         "recommendedSubtasks": 4,
-        "expansionPrompt": "Divide into: 1) Create docker-compose.prod.yml with backend service configuration including health checks and dependencies, 2) Add ML service with internal-only networking and proper resource limits, 3) Configure postgres and redis services with production volumes and health checks, 4) Create/update .env.example with all required environment variables and documentation. Test full stack startup and inter-service communication."
+        "expansionPrompt": "Divide into: 1) Create docker-compose.prod.yml with backend service configuration including health checks and dependencies, 2) Add ML service with internal-only networking and proper resource limits, 3) Configure postgres and redis services with production volumes and health checks, 4) Create/update .env.example with all required environment variables and documentation. Test full stack startup and inter-service communication.",
+        "updatedAt": "2025-12-26T10:19:35.073Z"
       },
       {
         "id": "21",
@@ -1409,7 +1413,7 @@
         "testStrategy": "1. Unit test health endpoint with mocked dependencies\n2. Integration test with real DB/Redis: verify response structure\n3. Test failure scenarios: stop postgres, verify status=unhealthy and 503\n4. Test degraded state: stop redis, verify status=degraded and 200\n5. Verify /health/live always returns 200\n6. Test response latency <100ms under normal conditions\n7. Verify version field matches package.json",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1470,7 +1474,8 @@
         ],
         "complexity": 6,
         "recommendedSubtasks": 5,
-        "expansionPrompt": "Break down into: 1) Enhance backend /health endpoint to check database connectivity with Prisma and measure latency, 2) Add Redis connectivity check with proper error handling for optional dependency, 3) Add ML service reachability check from backend, 4) Implement /health/live liveness probe endpoint, 5) Create similar comprehensive health checks for ML service in Python with database and redis checks. Write tests for all health check scenarios."
+        "expansionPrompt": "Break down into: 1) Enhance backend /health endpoint to check database connectivity with Prisma and measure latency, 2) Add Redis connectivity check with proper error handling for optional dependency, 3) Add ML service reachability check from backend, 4) Implement /health/live liveness probe endpoint, 5) Create similar comprehensive health checks for ML service in Python with database and redis checks. Write tests for all health check scenarios.",
+        "updatedAt": "2025-12-26T10:19:35.180Z"
       },
       {
         "id": "22",
@@ -1480,7 +1485,7 @@
         "testStrategy": "1. Create a PR and verify workflow runs\n2. Check security-scan job executes without blocking\n3. Verify caching works - second run should be faster\n4. Check Trivy reports in workflow output\n5. Verify npm audit runs for both root and server\n6. Confirm ci-success job still requires core jobs to pass",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1517,7 +1522,8 @@
         ],
         "complexity": 4,
         "recommendedSubtasks": 3,
-        "expansionPrompt": "Split into: 1) Add security-scan job with npm audit for both root and server, safety check for ML service, and Trivy filesystem scanner, 2) Add Prisma client caching to backend-tests job to improve performance, 3) Update ci-success job dependencies to include security-scan (informational only, don't fail build on security issues). Test that workflow runs successfully with all checks."
+        "expansionPrompt": "Split into: 1) Add security-scan job with npm audit for both root and server, safety check for ML service, and Trivy filesystem scanner, 2) Add Prisma client caching to backend-tests job to improve performance, 3) Update ci-success job dependencies to include security-scan (informational only, don't fail build on security issues). Test that workflow runs successfully with all checks.",
+        "updatedAt": "2025-12-26T10:19:35.261Z"
       },
       {
         "id": "23",
@@ -3687,9 +3693,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-23T17:24:47.476Z",
+      "lastModified": "2025-12-26T10:22:13.312Z",
       "taskCount": 60,
-      "completedCount": 17,
+      "completedCount": 20,
       "tags": [
         "master"
       ]
