@@ -169,18 +169,91 @@ export class GoalProgressService {
 
   /**
    * Get goal progress for a date range
+   * Optimized to fetch all meals in a single query to avoid N+1 problem
    */
   async getProgressHistory(
     userId: string,
     startDate: Date,
     endDate: Date
   ): Promise<DailyGoalProgress[]> {
+    // Fetch all meals in the date range with a single query
+    const [meals, user] = await Promise.all([
+      prisma.meal.findMany({
+        where: {
+          userId,
+          consumedAt: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+        select: {
+          calories: true,
+          protein: true,
+          carbs: true,
+          fat: true,
+          consumedAt: true,
+        },
+        orderBy: { consumedAt: 'asc' },
+      }),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: USER_GOALS_SELECT_FIELDS,
+      }),
+    ]);
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Group meals by day in memory
+    const mealsByDay = new Map<string, typeof meals>();
+    meals.forEach((meal) => {
+      const dateKey = getStartOfDay(meal.consumedAt).toISOString();
+      const existing = mealsByDay.get(dateKey) || [];
+      existing.push(meal);
+      mealsByDay.set(dateKey, existing);
+    });
+
+    // Calculate progress for each day in the range
     const results: DailyGoalProgress[] = [];
     const currentDate = new Date(startDate);
 
     while (currentDate <= endDate) {
-      const progress = await this.getDailyProgress(userId, new Date(currentDate));
-      results.push(progress);
+      const dateKey = getStartOfDay(currentDate).toISOString();
+      const dayMeals = mealsByDay.get(dateKey) || [];
+
+      // Calculate totals for the day
+      const totals = dayMeals.reduce(
+        (acc, meal) => ({
+          calories: acc.calories + meal.calories,
+          protein: acc.protein + meal.protein,
+          carbs: acc.carbs + meal.carbs,
+          fat: acc.fat + meal.fat,
+        }),
+        { calories: 0, protein: 0, carbs: 0, fat: 0 }
+      );
+
+      // Calculate progress for each macro
+      const caloriesProgress = this.calculateMacroProgress(totals.calories, user.goalCalories);
+      const proteinProgress = this.calculateMacroProgress(totals.protein, user.goalProtein);
+      const carbsProgress = this.calculateMacroProgress(totals.carbs, user.goalCarbs);
+      const fatProgress = this.calculateMacroProgress(totals.fat, user.goalFat);
+
+      // Count goals met
+      const goalsMetCount = [caloriesProgress, proteinProgress, carbsProgress, fatProgress].filter(
+        (p) => p.isMet
+      ).length;
+
+      results.push({
+        date: dateKey,
+        calories: caloriesProgress,
+        protein: proteinProgress,
+        carbs: carbsProgress,
+        fat: fatProgress,
+        goalsMetCount,
+        allGoalsMet: goalsMetCount === 4,
+      });
+
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
@@ -449,29 +522,21 @@ export class GoalProgressService {
 
   /**
    * Get full historical progress with all summaries
+   * Uses parallel execution for better performance
    */
   async getHistoricalProgress(userId: string, days: number = 30): Promise<HistoricalProgress> {
     const startDate = getDaysAgo(days);
     const endDate = getEndOfDay();
 
-    const [daily, streak] = await Promise.all([
+    // Execute all queries in parallel for optimal performance
+    const [daily, streak, weeklySummaries, monthlySummaries] = await Promise.all([
       this.getProgressHistory(userId, startDate, endDate),
       this.getStreak(userId),
+      // Calculate weekly summaries for the past 4 weeks in parallel
+      Promise.all(Array.from({ length: 4 }, (_, i) => this.getWeeklySummary(userId, i))),
+      // Calculate monthly summaries for the past 3 months in parallel
+      Promise.all(Array.from({ length: 3 }, (_, i) => this.getMonthlySummary(userId, i))),
     ]);
-
-    // Calculate weekly summaries for the past 4 weeks
-    const weeklySummaries: WeeklyGoalSummary[] = [];
-    for (let i = 0; i < 4; i++) {
-      const summary = await this.getWeeklySummary(userId, i);
-      weeklySummaries.push(summary);
-    }
-
-    // Calculate monthly summaries for the past 3 months
-    const monthlySummaries: MonthlyGoalSummary[] = [];
-    for (let i = 0; i < 3; i++) {
-      const summary = await this.getMonthlySummary(userId, i);
-      monthlySummaries.push(summary);
-    }
 
     return {
       daily,
