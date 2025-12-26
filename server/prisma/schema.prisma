@@ -37,6 +37,7 @@ model User {
   goalProtein     Float    @default(150)
   goalCarbs       Float    @default(200)
   goalFat         Float    @default(65)
+  goalWater       Int      @default(2000) // Daily water goal in ml (default 2L)
   currentWeight   Float?
   goalWeight      Float?
   height          Float?

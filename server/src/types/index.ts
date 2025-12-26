@@ -42,12 +42,7 @@ export interface LoginInput {
 
 // Enums for type safety
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
-export type ActivityLevel =
-  | 'sedentary'
-  | 'light'
-  | 'moderate'
-  | 'active'
-  | 'veryActive';
+export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'veryActive';
 
 export type SubscriptionTier = 'FREE' | 'PRO_TRIAL' | 'PRO';
 export type BillingCycle = 'MONTHLY' | 'ANNUAL';
@@ -298,7 +293,13 @@ export type NotificationCategory =
 
 export type NotificationStatus = 'PENDING' | 'SENT' | 'DELIVERED' | 'OPENED' | 'FAILED';
 
-export type CampaignStatus = 'DRAFT' | 'SCHEDULED' | 'SENDING' | 'COMPLETED' | 'CANCELLED' | 'FAILED';
+export type CampaignStatus =
+  | 'DRAFT'
+  | 'SCHEDULED'
+  | 'SENDING'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | 'FAILED';
 
 // iOS interruption levels (iOS 15+)
 export type InterruptionLevel = 'passive' | 'active' | 'timeSensitive' | 'critical';
@@ -366,4 +367,46 @@ export interface TrackNotificationInput {
   notificationLogId: string;
   action: 'delivered' | 'opened';
   actionTaken?: string;
+}
+
+// ============================================================================
+// WATER INTAKE TYPES
+// ============================================================================
+
+export interface CreateWaterIntakeInput {
+  amount: number; // in ml
+  recordedAt?: Date;
+}
+
+export interface UpdateWaterIntakeInput {
+  amount?: number;
+  recordedAt?: Date;
+}
+
+export interface WaterDailySummary {
+  date: string;
+  totalAmount: number; // in ml
+  goalAmount: number; // user's daily goal in ml
+  percentageComplete: number;
+  intakeCount: number;
+  intakes: Array<{
+    id: string;
+    amount: number;
+    recordedAt: string;
+  }>;
+}
+
+export interface WaterWeeklySummary {
+  startDate: string;
+  endDate: string;
+  dailyAverage: number;
+  totalAmount: number;
+  goalAmount: number; // weekly goal (daily goal * 7)
+  daysMetGoal: number;
+  dailySummaries: Array<{
+    date: string;
+    totalAmount: number;
+    goalAmount: number;
+    percentageComplete: number;
+  }>;
 }
