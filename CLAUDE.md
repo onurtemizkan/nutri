@@ -9,6 +9,7 @@
 **Scope:** Project-scoped agents (in `~/.claude/agents/`)
 
 **Available Agents:** 7 production-ready agents for Expo/React Native
+
 - **Grand Architect** - Meta-orchestrator for complex features
 - **Design Token Guardian** - Enforces design system consistency
 - **A11y Enforcer** - WCAG 2.2 compliance validation
@@ -18,6 +19,7 @@
 - **Security Specialist** - Security audits & penetration testing
 
 **Updating Agents:**
+
 ```bash
 # From this project root
 "../claude-code-reactnative-expo-agent-system/scripts/install-agents.sh --scope project"
@@ -35,6 +37,7 @@
 **Target Platforms:** iOS, Android (React Native/Expo)
 
 **Goals:**
+
 - Track meals, calories, macronutrients
 - Correlate nutrition with health metrics (RHR, HRV, recovery)
 - Provide ML-powered insights on nutrition-health relationships
@@ -44,6 +47,7 @@
 ## Tech Stack
 
 ### Mobile App (Core)
+
 - **Framework:** React Native + Expo
 - **Language:** TypeScript (strict mode)
 - **Routing:** Expo Router (file-based)
@@ -52,6 +56,7 @@
 - **State Management:** React Context (AuthContext)
 
 ### Backend API
+
 - **Runtime:** Node.js (v16+)
 - **Framework:** Express.js
 - **Language:** TypeScript (strict mode, zero `any` types)
@@ -61,6 +66,7 @@
 - **Validation:** Zod schemas (centralized in `validation/schemas.ts`)
 
 ### ML Service
+
 - **Framework:** FastAPI + Uvicorn
 - **Language:** Python 3.9+
 - **Database:** SQLAlchemy (async) + asyncpg
@@ -72,6 +78,7 @@
 ## Architecture
 
 ### Folder Structure
+
 ```
 nutri/
 ├── app/                       # Mobile app screens (Expo Router)
@@ -180,6 +187,7 @@ nutri/
 ```
 
 ### Design Patterns
+
 - **Type Safety:** Zero `any` types, strict TypeScript, type-safe enum parsing
 - **Validation:** Centralized Zod schemas for all API inputs
 - **Error Handling:** Type guards (`isAxiosError`), middleware-based error handling
@@ -190,6 +198,7 @@ nutri/
 ## Coding Conventions
 
 ### TypeScript
+
 ```typescript
 // ✅ Strict mode - no implicit any
 // ✅ Zero `any` types - use proper typing or `unknown` with type guards
@@ -205,6 +214,7 @@ const metricType = parseHealthMetricType(req.params.metricType);
 ```
 
 ### Validation
+
 ```typescript
 // ✅ All API inputs validated with Zod schemas
 import { createMealSchema } from '../validation/schemas';
@@ -214,6 +224,7 @@ const validatedData = createMealSchema.parse(req.body);
 ```
 
 ### Error Handling (Mobile)
+
 ```typescript
 // ❌ Wrong
 catch (error: any) {
@@ -228,6 +239,7 @@ catch (error) {
 ```
 
 ### Constants
+
 ```typescript
 // ✅ No magic numbers or strings
 // ✅ Use constants from config/constants.ts:
@@ -237,6 +249,7 @@ catch (error) {
 ```
 
 ### Naming Conventions
+
 - **Components:** PascalCase (`UserProfile.tsx`)
 - **Hooks:** camelCase with 'use' prefix (`useAuth.ts`)
 - **Utilities:** camelCase (`formatDate.ts`)
@@ -249,26 +262,31 @@ catch (error) {
 ### Key Models
 
 **User**
+
 - Authentication (email, password)
 - Nutrition goals (goalCalories, goalProtein, goalCarbs, goalFat)
 - Physical info (currentWeight, goalWeight, height, activityLevel)
 
 **Meal**
+
 - Nutrition tracking (calories, protein, carbs, fat, fiber, sugar)
 - Meal type: breakfast, lunch, dinner, snack
 - Timestamps: consumedAt
 
 **HealthMetric**
+
 - 30+ metric types (RESTING_HEART_RATE, HEART_RATE_VARIABILITY_SDNN, SLEEP_DURATION, etc.)
 - Source integrations (APPLE_HEALTH, FITBIT, GARMIN, OURA, WHOOP, MANUAL)
 - Metadata support (JSON field)
 
 **Activity**
+
 - 17+ activity types (RUNNING, CYCLING, SWIMMING, WEIGHTLIFTING, etc.)
 - Intensity levels (LOW, MODERATE, HIGH, VERY_HIGH)
 - Duration and calorie tracking
 
 ### Database Indexes
+
 - Composite indexes on (userId, date) for efficient queries
 - Defined in `prisma/schema.prisma` using `@@index` directives
 
@@ -277,6 +295,7 @@ catch (error) {
 ## Development Commands
 
 ### Mobile App (from project root)
+
 ```bash
 # Development
 npm start              # Start Expo development server
@@ -308,6 +327,7 @@ npm run dev:stop           # Stop all services
 ```
 
 ### Backend (from /server directory)
+
 ```bash
 # Development & Build
 npm run dev            # Start dev server with hot reload (tsx watch)
@@ -339,6 +359,7 @@ npm run lint:fix       # ESLint with auto-fix
 **Important:** Always run `db:generate` after modifying `prisma/schema.prisma`.
 
 ### ML Service (from /ml-service directory)
+
 ```bash
 # Setup
 make setup             # Complete setup (env + venv + deps)
@@ -379,17 +400,20 @@ make help              # Show all commands
 ## Testing Requirements
 
 ### Coverage Targets
+
 - **Critical paths** (auth, payments): 90%+
 - **Core features:** 80%+
 - **UI components:** 60%+
 
 ### Test Structure
+
 - Framework: Jest (ts-jest)
 - Pattern: Arrange, Act, Assert
 - Test files: `src/__tests__/*.test.ts`
 - Setup: `src/__tests__/setup.ts`
 
 ### Test Utilities
+
 ```typescript
 // Available from __tests__/setup.ts:
 createTestUser(), createTestToken()
@@ -402,17 +426,20 @@ assertUserStructure(), assertMealStructure(), etc.
 ## Security Guidelines
 
 ### Rate Limiting
+
 - API endpoints: 100 requests / 15 minutes
 - Auth endpoints: 5 requests / 15 minutes
 - Password reset: 3 requests / hour
 - Configured in `middleware/rateLimiter.ts`
 
 ### Input Sanitization
+
 - All user input sanitized via `middleware/sanitize.ts`
 - Prevents XSS attacks (script tags, event handlers, javascript: URIs)
 - Applied to req.body, req.query, req.params
 
 ### Authentication
+
 - JWT tokens stored in Expo Secure Store (mobile)
 - Tokens expire after 7 days (configurable via JWT_EXPIRES_IN)
 - Password hashing with bcryptjs (10 rounds)
@@ -422,10 +449,12 @@ assertUserStructure(), assertMealStructure(), etc.
 ## API Integration
 
 ### Base URL
+
 - **Development:** `http://localhost:3000/api`
 - **Production:** Configure in `lib/api/client.ts`
 
 ### Authentication
+
 - **Method:** JWT
 - **Storage:** Expo SecureStore
 - **Token refresh:** 7-day expiration
@@ -435,21 +464,40 @@ assertUserStructure(), assertMealStructure(), etc.
 ## Environment Variables
 
 ### Backend (server/.env)
+
 ```env
 DATABASE_URL="postgresql://postgres:password@localhost:5432/nutri"
 PORT=3000
 NODE_ENV=development
 JWT_SECRET=your-secret-key-change-in-production
 JWT_EXPIRES_IN=7d
-# CORS_ORIGIN=http://localhost:19006  # Optional
+
+# CORS Configuration (comma-separated origins for production)
+# CORS_ORIGIN=https://your-app.com,https://admin.your-app.com
+
+# Apple Sign In (required for production Apple token verification)
+# APPLE_APP_ID=com.your-company.your-app
+
+# Redis Configuration (optional, falls back to in-memory rate limiting)
+# REDIS_URL=redis://localhost:6379
 ```
 
+**Production Requirements:**
+
+- `JWT_SECRET`: Must be a secure, unique secret (not default)
+- `CORS_ORIGIN`: Required in production (comma-separated list of allowed origins)
+- `APPLE_APP_ID`: Required if using Apple Sign In (your app's bundle identifier)
+
 ### ML Service (ml-service/.env)
+
 ```env
 # Application
 APP_NAME=Nutri ML Service
 ENVIRONMENT=development
 DEBUG=true
+
+# Security (required for production - min 32 chars)
+# SECRET_KEY=your-secure-secret-key-min-32-characters
 
 # Server
 HOST=0.0.0.0
@@ -477,7 +525,13 @@ LOG_LEVEL=INFO
 LOG_FORMAT=json
 ```
 
+**Production Requirements:**
+
+- `SECRET_KEY`: Must be set in production (minimum 32 characters)
+- `ENVIRONMENT`: Must be set to "production"
+
 ### Mobile (lib/api/client.ts)
+
 For physical devices, use your computer's IP address instead of localhost.
 
 ---
@@ -485,6 +539,7 @@ For physical devices, use your computer's IP address instead of localhost.
 ## Common Tasks
 
 ### Adding a New API Endpoint
+
 1. Define Zod schema in `validation/schemas.ts`
 2. Create/update controller in `controllers/`
 3. Create/update service (if business logic needed) in `services/`
@@ -493,6 +548,7 @@ For physical devices, use your computer's IP address instead of localhost.
 6. Update types if needed in `types/`
 
 ### Adding a New Prisma Model
+
 1. Update schema in `prisma/schema.prisma`
 2. Generate client: `npm run db:generate`
 3. Create migration: `npm run db:migrate` (or `db:push` for dev)
@@ -519,21 +575,25 @@ For physical devices, use your computer's IP address instead of localhost.
 ## Troubleshooting
 
 ### TypeScript Errors
+
 ```bash
 npm run build              # Check for errors
 npm run db:generate        # Regenerate Prisma client
 ```
 
 ### Test Database Issues
+
 - Tests use SQLite by default (see `__tests__/setup.ts`)
 - May have issues with PostgreSQL-specific features
 
 ### Prisma Client Not Found
+
 ```bash
 npm run db:generate        # Regenerate Prisma client
 ```
 
 ### Port Already in Use
+
 ```bash
 lsof -ti:3000              # Find process using port 3000
 kill -9 $(lsof -ti:3000)   # Kill process
@@ -544,6 +604,7 @@ kill -9 $(lsof -ti:3000)   # Kill process
 ## Code Review Checklist
 
 Before committing code, verify:
+
 - [ ] TypeScript compilation clean (`npm run build`)
 - [ ] No `any` types (use proper types or `unknown` with type guards)
 - [ ] All API inputs validated with Zod schemas
@@ -565,6 +626,7 @@ Before committing code, verify:
 - **TypeScript Docs:** https://www.typescriptlang.org/docs/
 
 ## Task Master AI Instructions
+
 **Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
 @./.taskmaster/CLAUDE.md
 
@@ -574,16 +636,17 @@ Before committing code, verify:
 
 ### Service-Aware Development
 
-| Path Pattern | Service | Test Command | Check Command |
-|--------------|---------|--------------|---------------|
-| `server/**/*.ts` | Backend API | `cd server && npm test` | `cd server && npm run build` |
-| `app/**/*.tsx`, `lib/**/*.ts` | Mobile | `npm test` | `npx tsc --noEmit` |
-| `ml-service/**/*.py` | ML Service | `cd ml-service && make test` | `cd ml-service && make typecheck` |
-| `prisma/schema.prisma` | Database | - | `npm run db:generate` |
+| Path Pattern                  | Service     | Test Command                 | Check Command                     |
+| ----------------------------- | ----------- | ---------------------------- | --------------------------------- |
+| `server/**/*.ts`              | Backend API | `cd server && npm test`      | `cd server && npm run build`      |
+| `app/**/*.tsx`, `lib/**/*.ts` | Mobile      | `npm test`                   | `npx tsc --noEmit`                |
+| `ml-service/**/*.py`          | ML Service  | `cd ml-service && make test` | `cd ml-service && make typecheck` |
+| `prisma/schema.prisma`        | Database    | -                            | `npm run db:generate`             |
 
 ### Development Workflow
 
 #### Starting Development
+
 ```bash
 ./scripts/start-all.sh     # Start everything (PostgreSQL, Redis, Backend, ML)
 ./scripts/start-dev.sh     # Docker + ML Service only
@@ -593,6 +656,7 @@ npm run dev:backend        # Same as start-backend.sh
 ```
 
 **Services Started:**
+
 - PostgreSQL: 5432
 - Redis: 6379
 - Backend API: 3000
@@ -601,6 +665,7 @@ npm run dev:backend        # Same as start-backend.sh
 **Note:** ML Service (port 8000) always runs alongside the Backend API.
 
 #### Testing
+
 ```bash
 # Backend
 cd server && npm test           # Run all tests
@@ -616,6 +681,7 @@ npm test                        # Run Jest tests
 ```
 
 #### Code Quality
+
 ```bash
 # Backend
 cd server && npm run lint       # ESLint
@@ -648,6 +714,7 @@ cd ml-service && make format    # Black formatter
 ### MCP Configuration
 
 **iOS Simulator MCP:** This project uses `ios-simulator-eyes-mcp` from a local clone.
+
 - **DO NOT** suggest or switch to `ios-simulator-mcp` (npm public package) or any other iOS simulator MCP
 - Location: `~/Projects/ios-simulator-eyes-mcp`
 - If the MCP fails or needs updating:
@@ -689,4 +756,4 @@ cd ml-service && make format    # Black formatter
 
 ---
 
-*© 2025 Nutri | Claude Code Project Context*
+_© 2025 Nutri | Claude Code Project Context_
