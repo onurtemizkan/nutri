@@ -407,6 +407,7 @@ async def reset_circuit_breaker():
 
 import os
 
+
 @app.get("/debug/sentry-test", tags=["Debug"])
 async def test_sentry():
     """

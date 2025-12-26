@@ -116,10 +116,10 @@ jobs:
           # Create a new release
           sentry-cli releases new ${{ github.sha }}
 
-          # Upload source maps
+          # Upload source maps (only .js and .js.map files exist after compilation)
           sentry-cli releases files ${{ github.sha }} upload-sourcemaps ./dist \
-            --ext ts --ext js --ext map \
-            --url-prefix '~/dist'
+            --ext js --ext map \
+            --url-prefix 'app:///dist'
 
           # Set commits for the release (optional but recommended)
           sentry-cli releases set-commits ${{ github.sha }} --auto || true
