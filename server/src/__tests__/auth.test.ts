@@ -505,12 +505,12 @@ describe('Auth API Endpoints', () => {
           })
           .expect(200);
 
-        // Try to use token again
+        // Try to use token again (with valid password format to ensure we test token invalidation, not password validation)
         const response = await request(app)
           .post('/api/auth/reset-password')
           .send({
             token: resetToken,
-            newPassword: 'anotherpassword',
+            newPassword: 'AnotherPassword123',
           })
           .expect(400);
 
