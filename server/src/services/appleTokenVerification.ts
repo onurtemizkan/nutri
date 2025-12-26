@@ -137,20 +137,22 @@ export function decodeAppleTokenUnsafe(identityToken: string): { sub: string; em
     throw new Error('Invalid identity token format');
   }
 
+  let payload: Record<string, unknown>;
+
   try {
-    const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString('utf8'));
-
-    if (!payload.sub) {
-      throw new Error('Invalid identity token: missing user ID');
-    }
-
-    return {
-      sub: payload.sub,
-      email: payload.email,
-    };
+    payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString('utf8'));
   } catch {
     throw new Error('Failed to decode Apple identity token');
   }
+
+  if (!payload.sub) {
+    throw new Error('Invalid identity token: missing user ID');
+  }
+
+  return {
+    sub: payload.sub as string,
+    email: payload.email as string | undefined,
+  };
 }
 
 /**
