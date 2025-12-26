@@ -82,6 +82,9 @@ model User {
   lifestyle       UserLifestyle?
   permissions     UserPermissions?
 
+  // IAP Subscription
+  subscription    Subscription?
+
   @@index([email])
   @@index([appleId])
   @@index([resetToken])
@@ -1187,4 +1190,103 @@ enum CampaignStatus {
   COMPLETED
   CANCELLED
   FAILED
+}
+
+// ============================================================================
+// IN-APP PURCHASE / SUBSCRIPTION MODELS
+// ============================================================================
+
+// Subscription Status for Apple IAP
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  IN_GRACE_PERIOD
+  IN_BILLING_RETRY
+  REVOKED
+  REFUNDED
+}
+
+// Environment (sandbox or production)
+enum SubscriptionEnvironment {
+  SANDBOX
+  PRODUCTION
+}
+
+// Subscription - Main subscription record for IAP
+model Subscription {
+  id                    String                 @id @default(cuid())
+  userId                String                 @unique
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Apple IAP identifiers
+  productId             String                 // e.g., "nutri.pro.monthly", "nutri.pro.yearly"
+  originalTransactionId String                 @unique // Apple's original transaction ID
+
+  // Subscription status
+  status                SubscriptionStatus     @default(ACTIVE)
+  expiresAt             DateTime               // When the subscription expires
+  cancelledAt           DateTime?              // When user cancelled (still active until expiresAt)
+
+  // Trial and offer periods
+  isTrialPeriod         Boolean                @default(false)
+  isIntroOfferPeriod    Boolean                @default(false)
+  trialEndsAt           DateTime?              // When trial period ends
+
+  // Renewal info
+  autoRenewEnabled      Boolean                @default(true)
+  autoRenewProductId    String?                // Product they will renew to (for upgrades/downgrades)
+  gracePeriodExpiresAt  DateTime?              // Grace period expiration
+  billingRetryExpiresAt DateTime?              // Billing retry period expiration
+
+  // Pricing info
+  priceLocale           String?                // e.g., "en_US"
+  priceCurrency         String?                // e.g., "USD"
+  priceAmount           Decimal?               @db.Decimal(10, 2) // e.g., 9.99
+
+  // Environment
+  environment           SubscriptionEnvironment @default(PRODUCTION)
+
+  // Relations
+  events                SubscriptionEvent[]
+
+  // Audit
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  @@index([userId])
+  @@index([originalTransactionId])
+  @@index([status, expiresAt])
+  @@index([productId])
+}
+
+// SubscriptionEvent - Audit log for subscription changes
+model SubscriptionEvent {
+  id                    String       @id @default(cuid())
+  subscriptionId        String
+  subscription          Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  // Notification details
+  notificationType      String       // SUBSCRIBED, DID_RENEW, EXPIRED, REFUND, etc.
+  subtype               String?      // AUTO_RENEW_DISABLED, UPGRADE, etc.
+
+  // Transaction identifiers
+  transactionId         String?      // Current transaction ID
+  originalTransactionId String       // Original transaction ID
+
+  // Notification UUID for idempotency
+  notificationUUID      String?      @unique
+
+  // Full event data (for debugging and auditing)
+  eventData             Json?
+
+  // Processing metadata
+  processedAt           DateTime     @default(now())
+
+  // Audit
+  createdAt             DateTime     @default(now())
+
+  @@index([subscriptionId])
+  @@index([notificationType])
+  @@index([originalTransactionId])
+  @@index([createdAt])
 }
