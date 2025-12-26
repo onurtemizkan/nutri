@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { AdminRole } from '@prisma/client';
+import { AdminRole, Prisma } from '@prisma/client';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -461,4 +461,125 @@ export interface WeightSummary {
   bmi: number | null;
   bmiCategory: string | null;
   lastRecordDate: string | null;
+}
+
+// ============================================================================
+// CGM (CONTINUOUS GLUCOSE MONITOR) TYPES
+// ============================================================================
+
+export type GlucoseSource = 'DEXCOM' | 'LIBRE' | 'LEVELS' | 'MANUAL';
+
+export type GlucoseTrend =
+  | 'RISING_RAPIDLY'
+  | 'RISING'
+  | 'RISING_SLIGHTLY'
+  | 'STABLE'
+  | 'FALLING_SLIGHTLY'
+  | 'FALLING'
+  | 'FALLING_RAPIDLY'
+  | 'NOT_AVAILABLE';
+
+export type CGMProvider = 'DEXCOM' | 'LIBRE' | 'LEVELS';
+
+export interface CreateGlucoseReadingInput {
+  value: number; // mg/dL
+  unit?: string; // 'mg/dL' or 'mmol/L'
+  source: GlucoseSource;
+  sourceId?: string;
+  trendArrow?: GlucoseTrend;
+  trendRate?: number; // mg/dL per minute
+  recordedAt: Date;
+  metadata?: Record<string, unknown>;
+}
+
+export interface GetGlucoseReadingsQuery {
+  startDate?: Date;
+  endDate?: Date;
+  source?: GlucoseSource;
+  limit?: number;
+}
+
+export interface CGMConnectionInput {
+  provider: CGMProvider;
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt: Date;
+  scope?: string;
+  externalUserId?: string;
+  metadata?: Prisma.InputJsonValue;
+}
+
+export interface CGMConnectionStatus {
+  provider: CGMProvider;
+  isConnected: boolean;
+  lastSyncAt?: Date;
+  lastSyncStatus?: string;
+  connectedAt?: Date;
+  externalUserId?: string;
+}
+
+export interface MealGlucoseResponseResult {
+  mealId: string;
+  baselineGlucose: number;
+  peakGlucose: number;
+  peakTime: number; // minutes after meal
+  glucoseRise: number;
+  returnToBaseline?: number; // minutes
+  twoHourGlucose?: number;
+  areaUnderCurve: number;
+  glucoseScore: number; // 0-100
+  confidence: number; // 0-1
+  readingCount: number;
+  analyzedAt: Date;
+}
+
+export interface GlucoseDailySummary {
+  date: string;
+  averageGlucose: number;
+  minGlucose: number;
+  maxGlucose: number;
+  standardDeviation: number;
+  timeInRange: number; // percentage in 70-180 mg/dL
+  readingCount: number;
+  source: GlucoseSource;
+}
+
+export interface GlucoseTimeSeries {
+  readings: Array<{
+    value: number;
+    recordedAt: Date;
+    trendArrow?: GlucoseTrend;
+  }>;
+  period: {
+    start: Date;
+    end: Date;
+  };
+}
+
+// OAuth types for CGM integrations
+export interface CGMOAuthConfig {
+  clientId: string;
+  clientSecret: string;
+  authorizationUrl: string;
+  tokenUrl: string;
+  scopes: string[];
+  redirectUri: string;
+}
+
+export interface CGMOAuthTokenResponse {
+  accessToken: string;
+  refreshToken?: string;
+  expiresIn: number; // seconds
+  tokenType: string;
+  scope?: string;
+}
+
+export interface CGMSyncResult {
+  provider: CGMProvider;
+  success: boolean;
+  readingsCreated: number;
+  readingsSkipped: number;
+  startDate: Date;
+  endDate: Date;
+  error?: string;
 }

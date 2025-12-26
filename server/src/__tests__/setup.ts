@@ -10,6 +10,7 @@
 
 import {
   PrismaClient,
+  Prisma,
   Activity,
   HealthMetric,
   ActivityType,
@@ -17,6 +18,11 @@ import {
   HealthMetricType,
   AdminRole,
   AdminUser,
+  GlucoseReading,
+  GlucoseSource,
+  GlucoseTrend,
+  CGMConnection,
+  MealGlucoseResponse,
 } from '@prisma/client';
 
 // Set test environment variables before any imports
@@ -63,6 +69,10 @@ export async function cleanDatabase() {
       // Otherwise, retry immediately
     }
   }
+  // CGM Integration
+  await prisma.mealGlucoseResponse.deleteMany();
+  await prisma.glucoseReading.deleteMany();
+  await prisma.cGMConnection.deleteMany();
   // Supplement tracking
   await prisma.supplementLog.deleteMany();
   await prisma.supplement.deleteMany();
@@ -433,4 +443,195 @@ export function assertAdminUserStructure(admin: unknown): void {
   expect(admin).toHaveProperty('role');
   expect(admin).not.toHaveProperty('password');
   expect(admin).not.toHaveProperty('mfaSecret');
+}
+
+// ============================================================================
+// CGM (Continuous Glucose Monitor) Test Utilities
+// ============================================================================
+
+/**
+ * Create a test glucose reading
+ */
+export async function createTestGlucoseReading(
+  userId: string,
+  overrides?: Partial<{
+    value: number;
+    unit: string;
+    source: GlucoseSource;
+    sourceId: string;
+    trendArrow: GlucoseTrend;
+    trendRate: number;
+    recordedAt: Date;
+    metadata: Prisma.InputJsonValue;
+  }>
+): Promise<GlucoseReading> {
+  const defaultReading = {
+    userId,
+    value: 105.0, // Normal glucose in mg/dL
+    unit: 'mg/dL',
+    source: GlucoseSource.DEXCOM,
+    trendArrow: GlucoseTrend.STABLE,
+    recordedAt: new Date(),
+    ...overrides,
+  };
+
+  return prisma.glucoseReading.create({
+    data: defaultReading,
+  });
+}
+
+/**
+ * Create multiple test glucose readings (simulating CGM data)
+ */
+export async function createTestGlucoseReadings(
+  userId: string,
+  count: number,
+  options?: {
+    startTime?: Date;
+    intervalMinutes?: number;
+    baseValue?: number;
+    variance?: number;
+    source?: GlucoseSource;
+  }
+): Promise<GlucoseReading[]> {
+  const startTime = options?.startTime || new Date();
+  const intervalMinutes = options?.intervalMinutes || 5;
+  const baseValue = options?.baseValue || 100;
+  const variance = options?.variance || 20;
+  const source = options?.source || GlucoseSource.DEXCOM;
+
+  const readings: GlucoseReading[] = [];
+  for (let i = 0; i < count; i++) {
+    const recordedAt = new Date(startTime.getTime() + i * intervalMinutes * 60 * 1000);
+    const value = baseValue + (Math.random() - 0.5) * variance;
+    const reading = await prisma.glucoseReading.create({
+      data: {
+        userId,
+        value: Math.round(value * 10) / 10, // Round to 1 decimal
+        unit: 'mg/dL',
+        source,
+        trendArrow: GlucoseTrend.STABLE,
+        recordedAt,
+      },
+    });
+    readings.push(reading);
+  }
+
+  return readings;
+}
+
+/**
+ * Create a test CGM connection
+ */
+export async function createTestCGMConnection(
+  userId: string,
+  overrides?: Partial<{
+    provider: GlucoseSource;
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: Date;
+    scope: string;
+    isActive: boolean;
+    lastSyncAt: Date;
+    externalUserId: string;
+  }>
+): Promise<CGMConnection> {
+  const defaultConnection = {
+    userId,
+    provider: GlucoseSource.DEXCOM,
+    accessToken: 'test-encrypted-access-token',
+    refreshToken: 'test-encrypted-refresh-token',
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+    scope: 'offline_access egv.read',
+    isActive: true,
+    ...overrides,
+  };
+
+  return prisma.cGMConnection.create({
+    data: defaultConnection,
+  });
+}
+
+/**
+ * Create a test meal glucose response
+ */
+export async function createTestMealGlucoseResponse(
+  mealId: string,
+  overrides?: Partial<{
+    baselineGlucose: number;
+    baselineTime: Date;
+    peakGlucose: number;
+    peakTime: number;
+    glucoseRise: number;
+    returnToBaseline: number;
+    twoHourGlucose: number;
+    areaUnderCurve: number;
+    glucoseScore: number;
+    readingCount: number;
+    confidence: number;
+    windowStart: Date;
+    windowEnd: Date;
+  }>
+): Promise<MealGlucoseResponse> {
+  const now = new Date();
+  const defaultResponse = {
+    mealId,
+    baselineGlucose: 95.0,
+    baselineTime: new Date(now.getTime() - 30 * 60 * 1000), // 30 min before
+    peakGlucose: 140.0,
+    peakTime: 45, // 45 minutes after meal
+    glucoseRise: 45.0,
+    returnToBaseline: 120, // 2 hours
+    twoHourGlucose: 100.0,
+    areaUnderCurve: 2500.0, // mg/dL * minutes
+    glucoseScore: 75.0, // Good score
+    readingCount: 36, // 3 hours of 5-min readings
+    confidence: 0.95,
+    windowStart: new Date(now.getTime() - 30 * 60 * 1000),
+    windowEnd: new Date(now.getTime() + 150 * 60 * 1000),
+    ...overrides,
+  };
+
+  return prisma.mealGlucoseResponse.create({
+    data: defaultResponse,
+  });
+}
+
+/**
+ * Assert that response has glucose reading data structure
+ */
+export function assertGlucoseReadingStructure(reading: unknown): void {
+  expect(reading).toHaveProperty('id');
+  expect(reading).toHaveProperty('userId');
+  expect(reading).toHaveProperty('value');
+  expect(reading).toHaveProperty('unit');
+  expect(reading).toHaveProperty('source');
+  expect(reading).toHaveProperty('recordedAt');
+}
+
+/**
+ * Assert that response has CGM connection data structure
+ */
+export function assertCGMConnectionStructure(connection: unknown): void {
+  expect(connection).toHaveProperty('id');
+  expect(connection).toHaveProperty('userId');
+  expect(connection).toHaveProperty('provider');
+  expect(connection).toHaveProperty('isActive');
+  // Tokens should be encrypted and not directly exposed
+  expect(connection).not.toHaveProperty('accessToken');
+  expect(connection).not.toHaveProperty('refreshToken');
+}
+
+/**
+ * Assert that response has meal glucose response data structure
+ */
+export function assertMealGlucoseResponseStructure(response: unknown): void {
+  expect(response).toHaveProperty('mealId');
+  expect(response).toHaveProperty('baselineGlucose');
+  expect(response).toHaveProperty('peakGlucose');
+  expect(response).toHaveProperty('peakTime');
+  expect(response).toHaveProperty('glucoseRise');
+  expect(response).toHaveProperty('areaUnderCurve');
+  expect(response).toHaveProperty('glucoseScore');
+  expect(response).toHaveProperty('confidence');
 }

@@ -217,4 +217,38 @@ export const rateLimiters = {
       return adminUser?.id || req.ip || 'unknown';
     },
   }),
+
+  // CGM OAuth endpoints: 5 requests per 15 minutes per user (stricter for OAuth flows)
+  cgmOAuth: createRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 5,
+    keyPrefix: 'cgm-oauth',
+    keyGenerator: (req: Request) => {
+      // Use user ID from authenticated request if available, otherwise IP
+      const userId = (req as Request & { userId?: string }).userId;
+      return userId || req.ip || 'unknown';
+    },
+  }),
+
+  // CGM sync endpoints: 10 requests per 15 minutes per user
+  cgmSync: createRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 10,
+    keyPrefix: 'cgm-sync',
+    keyGenerator: (req: Request) => {
+      const userId = (req as Request & { userId?: string }).userId;
+      return userId || req.ip || 'unknown';
+    },
+  }),
+
+  // CGM data read endpoints: 100 requests per 15 minutes per user
+  cgmRead: createRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 100,
+    keyPrefix: 'cgm-read',
+    keyGenerator: (req: Request) => {
+      const userId = (req as Request & { userId?: string }).userId;
+      return userId || req.ip || 'unknown';
+    },
+  }),
 };

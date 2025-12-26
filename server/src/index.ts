@@ -20,6 +20,7 @@ import waterRoutes from './routes/waterRoutes';
 import weightRoutes from './routes/weightRoutes';
 import goalRoutes from './routes/goalRoutes';
 import webhookRoutes from './routes/webhookRoutes';
+import cgmRoutes from './routes/cgmRoutes';
 import prisma from './config/database';
 import { notificationScheduler } from './services/notificationScheduler';
 
@@ -365,6 +366,7 @@ app.use('/api/water', waterRoutes);
 app.use('/api/weight', weightRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/webhooks', webhookRoutes);
+app.use('/api/cgm', cgmRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

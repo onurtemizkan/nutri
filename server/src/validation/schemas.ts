@@ -1152,3 +1152,132 @@ export const weightRecordsQuerySchema = z.object({
 export type CreateWeightRecordData = z.infer<typeof createWeightRecordSchema>;
 export type UpdateWeightRecordData = z.infer<typeof updateWeightRecordSchema>;
 export type UpdateWeightGoalData = z.infer<typeof updateWeightGoalSchema>;
+
+// ============================================================================
+// CGM (CONTINUOUS GLUCOSE MONITOR) SCHEMAS
+// ============================================================================
+
+/**
+ * Glucose Source enum - matches Prisma GlucoseSource enum
+ */
+export const glucoseSourceSchema = z.enum(['DEXCOM', 'LIBRE', 'LEVELS', 'MANUAL']);
+
+/**
+ * Glucose Trend enum - matches Prisma GlucoseTrend enum
+ */
+export const glucoseTrendSchema = z.enum([
+  'RISING_RAPIDLY',
+  'RISING',
+  'RISING_SLIGHTLY',
+  'STABLE',
+  'FALLING_SLIGHTLY',
+  'FALLING',
+  'FALLING_RAPIDLY',
+  'NOT_AVAILABLE',
+]);
+
+/**
+ * Glucose Reading Creation Schema
+ * For manual glucose entry or CGM data sync
+ */
+export const createGlucoseReadingSchema = z.object({
+  value: z
+    .number()
+    .min(20, 'Glucose value must be at least 20 mg/dL')
+    .max(600, 'Glucose value cannot exceed 600 mg/dL'),
+  unit: z.enum(['mg/dL', 'mmol/L']).optional().default('mg/dL'),
+  source: glucoseSourceSchema,
+  sourceId: z.string().optional(),
+  trendArrow: glucoseTrendSchema.optional(),
+  trendRate: z.number().optional(),
+  recordedAt: datetimeSchema,
+  metadata: z.record(z.unknown()).optional(),
+});
+
+/**
+ * Bulk Glucose Readings Creation Schema
+ * For syncing multiple readings from CGM providers
+ */
+export const bulkCreateGlucoseReadingsSchema = z.object({
+  readings: z.array(createGlucoseReadingSchema).min(1, 'At least one reading is required'),
+});
+
+/**
+ * Glucose Readings Query Schema
+ */
+export const getGlucoseReadingsQuerySchema = z.object({
+  startDate: datetimeSchema.optional(),
+  endDate: datetimeSchema.optional(),
+  source: glucoseSourceSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(2000).default(288), // 24 hours of 5-min readings
+});
+
+/**
+ * CGM Provider enum for connection flows
+ */
+export const cgmProviderSchema = z.enum(['DEXCOM', 'LIBRE', 'LEVELS']);
+
+/**
+ * CGM Connection Initiation Schema
+ * For starting OAuth flow with CGM provider
+ */
+export const initiateCGMConnectionSchema = z.object({
+  provider: cgmProviderSchema,
+  redirectUri: z.string().url().optional(),
+});
+
+/**
+ * CGM OAuth Callback Schema
+ * For handling OAuth callback from CGM provider
+ */
+export const cgmOAuthCallbackSchema = z.object({
+  provider: cgmProviderSchema,
+  code: nonEmptyStringSchema.min(1, 'Authorization code is required'),
+  state: z.string().optional(),
+});
+
+/**
+ * CGM Connection Status Query Schema
+ */
+export const getCGMConnectionsQuerySchema = z.object({
+  provider: cgmProviderSchema.optional(),
+  includeInactive: z.coerce.boolean().optional().default(false),
+});
+
+/**
+ * CGM Sync Request Schema
+ */
+export const syncCGMDataSchema = z.object({
+  provider: cgmProviderSchema.optional(), // If not provided, sync all connected providers
+  startDate: datetimeSchema.optional(), // If not provided, sync from last sync time
+  endDate: datetimeSchema.optional(),
+});
+
+/**
+ * Meal Glucose Response Query Schema
+ */
+export const getMealGlucoseResponseQuerySchema = z.object({
+  mealId: nonEmptyStringSchema,
+});
+
+/**
+ * Analyze Meal Glucose Request Schema
+ */
+export const analyzeMealGlucoseSchema = z.object({
+  mealId: nonEmptyStringSchema,
+  windowHours: z.number().min(1).max(6).optional().default(3),
+  forceReanalysis: z.boolean().optional().default(false),
+});
+
+// Type exports for CGM schemas
+export type GlucoseSource = z.infer<typeof glucoseSourceSchema>;
+export type GlucoseTrend = z.infer<typeof glucoseTrendSchema>;
+export type CreateGlucoseReadingData = z.infer<typeof createGlucoseReadingSchema>;
+export type BulkCreateGlucoseReadingsData = z.infer<typeof bulkCreateGlucoseReadingsSchema>;
+export type GetGlucoseReadingsQuery = z.infer<typeof getGlucoseReadingsQuerySchema>;
+export type CGMProvider = z.infer<typeof cgmProviderSchema>;
+export type InitiateCGMConnectionData = z.infer<typeof initiateCGMConnectionSchema>;
+export type CGMOAuthCallbackData = z.infer<typeof cgmOAuthCallbackSchema>;
+export type GetCGMConnectionsQuery = z.infer<typeof getCGMConnectionsQuerySchema>;
+export type SyncCGMData = z.infer<typeof syncCGMDataSchema>;
+export type AnalyzeMealGlucoseData = z.infer<typeof analyzeMealGlucoseSchema>;
