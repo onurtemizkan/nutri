@@ -419,10 +419,13 @@ async def test_sentry():
 
     # Capture a test exception
     test_error = ValueError("Test Sentry integration - ML Service")
-    capture_exception(test_error, context={
-        "test_type": "manual-trigger",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-    })
+    capture_exception(
+        test_error,
+        context={
+            "test_type": "manual-trigger",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        },
+    )
 
     return {
         "success": True,
@@ -488,10 +491,13 @@ async def general_exception_handler(request, exc):
     Catches unhandled exceptions and returns a JSON error response.
     """
     # Capture exception with Sentry for server errors
-    capture_exception(exc, context={
-        "path": str(request.url.path),
-        "method": request.method,
-    })
+    capture_exception(
+        exc,
+        context={
+            "path": str(request.url.path),
+            "method": request.method,
+        },
+    )
 
     logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
     return JSONResponse(

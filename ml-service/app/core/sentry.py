@@ -33,23 +33,17 @@ def init_sentry() -> None:
         dsn=sentry_dsn,
         environment=settings.environment,
         release=os.environ.get("GITHUB_SHA", settings.app_version),
-
         # Integrations
         integrations=[
             FastApiIntegration(),
             SqlalchemyIntegration(),
             AsyncioIntegration(),
         ],
-
         # Performance Monitoring
         # Sample 10% of transactions in production, 100% in development
-        traces_sample_rate=(
-            0.1 if settings.environment == "production" else 1.0
-        ),
-
+        traces_sample_rate=(0.1 if settings.environment == "production" else 1.0),
         # Don't send PII by default
         send_default_pii=False,
-
         # Error filtering
         ignore_errors=[
             # Expected authentication errors
@@ -59,7 +53,6 @@ def init_sentry() -> None:
             # Rate limiting
             "Too many requests",
         ],
-
         # Sensitive data scrubbing
         before_send=scrub_sensitive_data,
     )
@@ -68,8 +61,7 @@ def init_sentry() -> None:
 
 
 def scrub_sensitive_data(
-    event: Dict[str, Any],
-    hint: Dict[str, Any]
+    event: Dict[str, Any], hint: Dict[str, Any]
 ) -> Optional[Dict[str, Any]]:
     """
     Scrub sensitive data from Sentry events before sending.
@@ -125,8 +117,7 @@ def scrub_sensitive_data(
 
 
 def capture_exception(
-    error: Exception,
-    context: Optional[Dict[str, Any]] = None
+    error: Exception, context: Optional[Dict[str, Any]] = None
 ) -> None:
     """
     Capture an exception with Sentry.
@@ -159,10 +150,12 @@ def set_user(user_id: str, email: Optional[str] = None) -> None:
     if not os.environ.get("SENTRY_DSN"):
         return
 
-    sentry_sdk.set_user({
-        "id": user_id,
-        **({"email": email} if email else {}),
-    })
+    sentry_sdk.set_user(
+        {
+            "id": user_id,
+            **({"email": email} if email else {}),
+        }
+    )
 
 
 def clear_user() -> None:
