@@ -260,6 +260,21 @@ function RootLayoutNav() {
           animation: 'slide_from_bottom',
         }}
       />
+      <Stack.Screen
+        name="notifications/priming"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="notifications/preferences"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      />
       <Stack.Screen name="+not-found" options={{ headerShown: false }} />
     </Stack>
   );
