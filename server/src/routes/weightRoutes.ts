@@ -14,8 +14,9 @@ router.get('/day', (req, res) => weightController.getWeightRecordsForDay(req, re
 router.get('/trends', (req, res) => weightController.getWeightTrends(req, res));
 router.get('/progress', (req, res) => weightController.getWeightProgress(req, res));
 router.get('/summary', (req, res) => weightController.getWeightSummary(req, res));
-router.get('/:id', (req, res) => weightController.getWeightRecordById(req, res));
+// Specific routes must come before parameterized routes
 router.put('/goal', (req, res) => weightController.updateGoalWeight(req, res));
+router.get('/:id', (req, res) => weightController.getWeightRecordById(req, res));
 router.put('/:id', (req, res) => weightController.updateWeightRecord(req, res));
 router.delete('/:id', (req, res) => weightController.deleteWeightRecord(req, res));
 

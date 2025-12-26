@@ -16,33 +16,37 @@ export class WeightService {
   /**
    * Create a new weight record
    * Also updates the user's currentWeight if this is the latest record
+   * Uses transaction to prevent race conditions
    */
   async createWeightRecord(userId: string, data: CreateWeightRecordInput) {
     const recordedAt = data.recordedAt ? new Date(data.recordedAt) : new Date();
 
-    // Create the weight record
-    const weightRecord = await prisma.weightRecord.create({
-      data: {
-        userId,
-        weight: data.weight,
-        recordedAt,
-      },
-    });
-
-    // Check if this is the latest record and update user's currentWeight if so
-    const latestRecord = await prisma.weightRecord.findFirst({
-      where: { userId },
-      orderBy: { recordedAt: 'desc' },
-    });
-
-    if (latestRecord && latestRecord.id === weightRecord.id) {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { currentWeight: data.weight },
+    // Use transaction to prevent race condition when checking latest record
+    return prisma.$transaction(async (tx) => {
+      // Create the weight record
+      const weightRecord = await tx.weightRecord.create({
+        data: {
+          userId,
+          weight: data.weight,
+          recordedAt,
+        },
       });
-    }
 
-    return weightRecord;
+      // Check if this is the latest record and update user's currentWeight if so
+      const latestRecord = await tx.weightRecord.findFirst({
+        where: { userId },
+        orderBy: { recordedAt: 'desc' },
+      });
+
+      if (latestRecord && latestRecord.id === weightRecord.id) {
+        await tx.user.update({
+          where: { id: userId },
+          data: { currentWeight: data.weight },
+        });
+      }
+
+      return weightRecord;
+    });
   }
 
   /**
