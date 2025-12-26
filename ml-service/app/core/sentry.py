@@ -54,7 +54,7 @@ def init_sentry() -> None:
             "Too many requests",
         ],
         # Sensitive data scrubbing
-        before_send=scrub_sensitive_data,
+        before_send=scrub_sensitive_data,  # type: ignore[arg-type]
     )
 
     print(f"Sentry initialized for environment: {settings.environment}")
