@@ -21,8 +21,10 @@ import weightRoutes from './routes/weightRoutes';
 import goalRoutes from './routes/goalRoutes';
 import webhookRoutes from './routes/webhookRoutes';
 import cgmRoutes from './routes/cgmRoutes';
+import debugRoutes from './routes/debugRoutes';
 import prisma from './config/database';
 import { notificationScheduler } from './services/notificationScheduler';
+import { initSentry, setupSentryErrorHandler } from './config/sentry';
 
 // Bull Board imports for queue monitoring
 import { createBullBoard } from '@bull-board/api';
@@ -33,6 +35,11 @@ import { ExpressAdapter } from '@bull-board/express';
 const packageJson = require('../package.json');
 
 const app = express();
+
+// =============================================================================
+// Sentry Error Tracking (must be initialized FIRST)
+// =============================================================================
+initSentry(app);
 
 // Trust proxy configuration for production (needed for X-Forwarded-* headers)
 app.set('trust proxy', getTrustProxyConfig());
@@ -367,8 +374,16 @@ app.use('/api/weight', weightRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/cgm', cgmRoutes);
+app.use('/api/debug', debugRoutes);
 
-// Error handler (must be last)
+// =============================================================================
+// Error Handlers
+// =============================================================================
+
+// Sentry error handler (must be before custom error handler)
+setupSentryErrorHandler(app);
+
+// Custom error handler (must be last)
 app.use(errorHandler);
 
 // Only start server if not in test mode

@@ -85,4 +85,17 @@ export const config = {
      */
     credentials: true,
   },
+  /**
+   * Sentry Configuration (optional)
+   * Set SENTRY_DSN to enable error tracking
+   */
+  sentry: {
+    dsn: process.env.SENTRY_DSN || '',
+    /**
+     * Sample rate for performance tracing
+     * 0.1 = 10% of transactions in production
+     * 1.0 = 100% in development
+     */
+    tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || '0.1'),
+  },
 };

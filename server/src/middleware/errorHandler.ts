@@ -1,10 +1,12 @@
 /**
  * Error Handler Middleware
- * Centralized error handling with structured logging and Prisma-specific handling
+ * Centralized error handling with structured logging, Sentry integration,
+ * and Prisma-specific handling
  */
 
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../config/logger';
+import { captureException } from '../config/sentry';
 import {
   PrismaClientKnownRequestError,
   PrismaClientValidationError,
@@ -96,6 +98,18 @@ export const errorHandler = (
   } else if (err instanceof PrismaClientInitializationError) {
     statusCode = 503;
     errorMessage = 'Database connection failed';
+  }
+
+  // Capture error with Sentry for 5xx errors (server errors)
+  // Skip 4xx errors as they are client errors, not server issues
+  if (statusCode >= 500) {
+    captureException(err, {
+      correlationId: req.id,
+      path: req.path,
+      method: req.method,
+      statusCode,
+      userId: (req as Express.Request & { userId?: string }).userId,
+    });
   }
 
   // Log the error with structured context

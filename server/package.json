@@ -35,6 +35,7 @@
     "@bull-board/api": "^6.15.0",
     "@bull-board/express": "^6.15.0",
     "@prisma/client": "^6.2.0",
+    "@sentry/node": "^10.32.1",
     "axios": "^1.13.2",
     "bcryptjs": "^2.4.3",
     "bull": "^4.16.5",
