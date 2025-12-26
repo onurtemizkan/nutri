@@ -38,7 +38,30 @@ export interface RateLimitOptions {
 }
 
 /**
- * Get rate limit entry from Redis
+ * Lua script for atomic rate limiting
+ *
+ * This script atomically:
+ * 1. Increments the counter
+ * 2. Sets expiry if the key is new (TTL = -1)
+ * 3. Returns both the count and remaining TTL
+ *
+ * This prevents the race condition where INCR succeeds but PEXPIRE fails,
+ * which would leave the key without a TTL (persisting forever).
+ */
+const RATE_LIMIT_LUA_SCRIPT = `
+  local key = KEYS[1]
+  local window_ms = tonumber(ARGV[1])
+  local count = redis.call('INCR', key)
+  local ttl = redis.call('PTTL', key)
+  if ttl == -1 then
+    redis.call('PEXPIRE', key, window_ms)
+    ttl = window_ms
+  end
+  return {count, ttl}
+`;
+
+/**
+ * Get rate limit entry from Redis using atomic Lua script
  */
 async function getRedisEntry(
   key: string,
@@ -51,39 +74,26 @@ async function getRedisEntry(
 
   try {
     const redisKey = `ratelimit:${key}`;
-    const multi = redis.multi();
 
-    // Increment counter and set expiry atomically
-    multi.incr(redisKey);
-    multi.pttl(redisKey);
-
-    const results = await multi.exec();
-    if (!results) {
-      return null;
-    }
-
-    const [[countErr, count], [ttlErr, ttl]] = results as [
-      [Error | null, number],
-      [Error | null, number],
+    // Execute Lua script atomically - INCR and conditional PEXPIRE happen together
+    const result = (await redis.eval(RATE_LIMIT_LUA_SCRIPT, 1, redisKey, windowMs.toString())) as [
+      number,
+      number,
     ];
 
-    if (countErr || ttlErr) {
-      logger.warn({ countErr, ttlErr }, 'Redis rate limit error');
+    if (!result || !Array.isArray(result) || result.length !== 2) {
+      logger.warn({ result }, 'Unexpected Redis rate limit script result');
       return null;
     }
 
-    // Set expiry if key is new (TTL will be -1)
-    if (ttl === -1) {
-      await redis.pexpire(redisKey, windowMs);
-    }
-
+    const [count, ttl] = result;
     const now = Date.now();
-    const resetAt = ttl > 0 ? now + ttl : now + windowMs;
+    const resetAt = now + ttl;
 
     return {
-      count: count as number,
+      count,
       resetAt,
-      remaining: Math.max(0, (count as number) - 1),
+      remaining: Math.max(0, count - 1),
     };
   } catch (error) {
     logger.warn({ error }, 'Redis rate limit operation failed, using in-memory fallback');
