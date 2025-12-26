@@ -86,7 +86,10 @@ export const reportsApi = {
   } {
     const dayOfWeek = date.getDay();
     const start = new Date(date);
-    start.setDate(date.getDate() - dayOfWeek);
+    // Set to Monday (ISO 8601 week start)
+    // Sunday (0) needs to go back 6 days, Monday (1) stays, Tuesday (2) goes back 1, etc.
+    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    start.setDate(date.getDate() - daysToSubtract);
     start.setHours(0, 0, 0, 0);
 
     const end = new Date(start);
