@@ -9,10 +9,13 @@ Handles:
 5. Model persistence and versioning
 """
 
+import logging
 import pickle
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
+
+logger = logging.getLogger(__name__)
 
 import torch
 import torch.nn as nn
@@ -74,9 +77,9 @@ class ModelTrainingService:
 
         training_start_time = time.time()
 
-        print(f"\n{'='*70}")
-        print(f"🚀 Starting model training for {request.metric.value}")
-        print(f"{'='*70}\n")
+        logger.info("=" * 70)
+        logger.info("Starting model training for %s", request.metric.value)
+        logger.info("=" * 70)
 
         # Record training start in Prometheus
         prometheus_metrics.record_training_start()
@@ -95,16 +98,16 @@ class ModelTrainingService:
         import time
 
         # Step 0: Validate data requirements
-        print("🔍 Step 0: Validating training data requirements...")
+        logger.info("Step 0: Validating training data requirements...")
         await self.validate_training_data_requirements(
             user_id=request.user_id,
             target_metric=request.metric,
             lookback_days=request.lookback_days,
         )
-        print("✅ Data requirements validated\n")
+        logger.info("Data requirements validated")
 
         # Step 1: Prepare training data
-        print("📊 Step 1: Preparing training data...")
+        logger.info("Step 1: Preparing training data...")
         training_data = await self.data_prep_service.prepare_training_data(
             user_id=request.user_id,
             target_metric=request.metric,
@@ -122,14 +125,16 @@ class ModelTrainingService:
         feature_names = training_data["feature_names"]
         num_features = training_data["num_features"]
 
-        print("✅ Data prepared:")
-        print(f"   - Training samples: {len(X_train)}")
-        print(f"   - Validation samples: {len(X_val)}")
-        print(f"   - Features: {num_features}")
-        print(f"   - Sequence length: {request.sequence_length}")
+        logger.info(
+            "Data prepared: training=%d, validation=%d, features=%d, seq_len=%d",
+            len(X_train),
+            len(X_val),
+            num_features,
+            request.sequence_length,
+        )
 
         # Step 2: Initialize LSTM model
-        print("\n🧠 Step 2: Initializing PyTorch LSTM model...")
+        logger.info("Step 2: Initializing PyTorch LSTM model...")
         config = LSTMConfig(
             input_dim=num_features,
             hidden_dim=request.hidden_dim,
@@ -143,15 +148,17 @@ class ModelTrainingService:
         device = torch.device(config.device)
         model = model.to(device)
 
-        print("✅ Model initialized:")
-        print(f"   - Architecture: {request.architecture.value}")
-        print(f"   - Hidden dim: {config.hidden_dim}")
-        print(f"   - Layers: {config.num_layers}")
-        print(f"   - Parameters: {model.count_parameters():,}")
-        print(f"   - Device: {device}")
+        logger.info(
+            "Model initialized: arch=%s, hidden=%d, layers=%d, params=%d, device=%s",
+            request.architecture.value,
+            config.hidden_dim,
+            config.num_layers,
+            model.count_parameters(),
+            device,
+        )
 
         # Step 3: Train the model
-        print(f"\n🏋️ Step 3: Training model ({request.epochs} epochs)...")
+        logger.info("Step 3: Training model (%d epochs)...", request.epochs)
         training_result = self._train_loop(
             model=model,
             X_train=X_train,
@@ -165,7 +172,7 @@ class ModelTrainingService:
         )
 
         # Step 4: Evaluate on validation set
-        print("\n📈 Step 4: Final evaluation...")
+        logger.info("Step 4: Final evaluation...")
         eval_metrics = self._evaluate_model(
             model=model,
             X_val=X_val,
@@ -174,14 +181,16 @@ class ModelTrainingService:
             device=device,
         )
 
-        print("✅ Evaluation complete:")
-        print(f"   - MAE: {eval_metrics['mae']:.4f}")
-        print(f"   - RMSE: {eval_metrics['rmse']:.4f}")
-        print(f"   - R² Score: {eval_metrics['r2_score']:.4f}")
-        print(f"   - MAPE: {eval_metrics['mape']:.2f}%")
+        logger.info(
+            "Evaluation complete: MAE=%.4f, RMSE=%.4f, R2=%.4f, MAPE=%.2f%%",
+            eval_metrics["mae"],
+            eval_metrics["rmse"],
+            eval_metrics["r2_score"],
+            eval_metrics["mape"],
+        )
 
         # Step 5: Save model artifacts
-        print("\n💾 Step 5: Saving model artifacts...")
+        logger.info("Step 5: Saving model artifacts...")
         model_id = f"{request.user_id}_{request.metric.value}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         model_version = self._generate_model_version(request.user_id, request.metric)
 
@@ -197,11 +206,13 @@ class ModelTrainingService:
             model_version=model_version,
         )
 
-        print("✅ Model saved:")
-        print(f"   - Model ID: {model_id}")
-        print(f"   - Version: {model_version}")
-        print(f"   - Path: {model_artifacts['model_path']}")
-        print(f"   - Size: {model_artifacts['model_size_mb']:.2f} MB")
+        logger.info(
+            "Model saved: id=%s, version=%s, path=%s, size=%.2fMB",
+            model_id,
+            model_version,
+            model_artifacts["model_path"],
+            model_artifacts["model_size_mb"],
+        )
 
         # Step 6: Quality assessment
         is_production_ready, quality_issues = self._assess_model_quality(eval_metrics)
@@ -211,11 +222,9 @@ class ModelTrainingService:
             self._set_active_model(request.user_id, request.metric, model_id)
 
         if is_production_ready:
-            print("\n✅ Model is production-ready!")
+            logger.info("Model is production-ready!")
         else:
-            print("\n⚠️ Model has quality issues:")
-            for issue in quality_issues:
-                print(f"   - {issue}")
+            logger.warning("Model has quality issues: %s", ", ".join(quality_issues))
 
         # Step 7: Create response
         training_metrics = TrainingMetrics(
@@ -262,9 +271,9 @@ class ModelTrainingService:
             is_production_ready=is_production_ready,
         )
 
-        print(f"\n{'='*70}")
-        print("✅ Training complete!")
-        print(f"{'='*70}\n")
+        logger.info("=" * 70)
+        logger.info("Training complete!")
+        logger.info("=" * 70)
 
         return response
 
@@ -365,20 +374,23 @@ class ModelTrainingService:
             else:
                 epochs_without_improvement += 1
 
-            # Print progress
+            # Log progress
             if (epoch + 1) % 10 == 0 or epoch == 0:
-                print(
-                    f"   Epoch {epoch + 1}/{epochs} | "
-                    f"Train Loss: {train_loss:.6f} | "
-                    f"Val Loss: {val_loss:.6f} | "
-                    f"Best Val: {best_val_loss:.6f}"
+                logger.info(
+                    "Epoch %d/%d | Train Loss: %.6f | Val Loss: %.6f | Best Val: %.6f",
+                    epoch + 1,
+                    epochs,
+                    train_loss,
+                    val_loss,
+                    best_val_loss,
                 )
 
             # Early stopping
             if epochs_without_improvement >= patience:
-                print(
-                    f"\n⏹️ Early stopping triggered at epoch {epoch + 1} "
-                    f"(no improvement for {patience} epochs)"
+                logger.info(
+                    "Early stopping triggered at epoch %d (no improvement for %d epochs)",
+                    epoch + 1,
+                    patience,
                 )
                 early_stopped = True
                 break
@@ -714,8 +726,12 @@ class ModelTrainingService:
             )
             raise ValueError(error_message)
 
-        print(f"   - Health metric days ({target_metric.value}): {health_days}")
-        print(f"   - Nutrition data days: {nutrition_days}")
+        logger.debug(
+            "Data validation passed: health_days(%s)=%d, nutrition_days=%d",
+            target_metric.value,
+            health_days,
+            nutrition_days,
+        )
 
         return {
             "health_days": health_days,
@@ -792,7 +808,7 @@ class ModelTrainingService:
         with open(active_marker_path, "w") as f:
             f.write(model_id)
 
-        print(f"   ✅ Set active model: {model_id}")
+        logger.info("Set active model: %s", model_id)
 
     async def get_model_history(
         self, user_id: str, metric: PredictionMetric
@@ -819,7 +835,7 @@ class ModelTrainingService:
                     )
                     models.append(metadata)
                 except Exception as e:
-                    print(f"⚠️ Error loading metadata from {model_dir}: {e}")
+                    logger.warning("Error loading metadata from %s: %s", model_dir, e)
 
         # Sort by trained_at (newest first)
         models.sort(key=lambda m: m.get("trained_at", ""), reverse=True)
@@ -975,9 +991,9 @@ class ModelTrainingService:
                 try:
                     shutil.rmtree(model_dir)
                     removed.append(model_dir.name)
-                    print(f"   🗑️ Removed old model: {model_dir.name}")
+                    logger.info("Removed old model: %s", model_dir.name)
                 except Exception as e:
-                    print(f"   ⚠️ Failed to remove {model_dir.name}: {e}")
+                    logger.warning("Failed to remove %s: %s", model_dir.name, e)
 
         return {
             "removed": len(removed),

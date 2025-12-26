@@ -35,6 +35,9 @@ class TrainingMetrics:
 
     config: TrainingMetricsConfig = field(default_factory=TrainingMetricsConfig)
 
+    # Internal counter to track active jobs without accessing Prometheus internals
+    _active_jobs_count: int = field(default=0, init=False)
+
     # Gauges (current values)
     active_training_jobs: Optional[Gauge] = field(default=None)
 
@@ -146,6 +149,7 @@ class TrainingMetrics:
         """Record that a training job has started."""
         if self.enabled and self.active_training_jobs:
             self.active_training_jobs.inc()
+            self._active_jobs_count += 1
 
     def record_training_end(
         self,
@@ -179,6 +183,7 @@ class TrainingMetrics:
         # Decrement active jobs
         if self.active_training_jobs:
             self.active_training_jobs.dec()
+            self._active_jobs_count = max(0, self._active_jobs_count - 1)
 
         # Increment job counter
         if self.training_jobs_total:
@@ -222,15 +227,14 @@ class TrainingMetrics:
 
         if self.active_training_jobs:
             self.active_training_jobs.dec()
+            self._active_jobs_count = max(0, self._active_jobs_count - 1)
 
         if self.training_jobs_total:
             self.training_jobs_total.labels(status=error_type).inc()
 
     def get_active_jobs(self) -> int:
         """Get the current number of active training jobs."""
-        if self.enabled and self.active_training_jobs:
-            return int(self.active_training_jobs._value.get())
-        return 0
+        return self._active_jobs_count if self.enabled else 0
 
 
 # Singleton instance
