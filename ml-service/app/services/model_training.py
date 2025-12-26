@@ -9,10 +9,13 @@ Handles:
 5. Model persistence and versioning
 """
 
+import logging
 import pickle
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 import torch
 import torch.nn as nn
@@ -24,8 +27,15 @@ from app.schemas.predictions import (
     TrainModelRequest,
     TrainModelResponse,
     TrainingMetrics,
+    PredictionMetric,
 )
 from app.services.data_preparation import DataPreparationService
+from app.core.training_metrics import training_metrics as prometheus_metrics
+
+
+# Minimum data requirements for training
+MIN_HEALTH_DATA_DAYS = 30  # At least 30 days of health metrics (RHR/HRV)
+MIN_NUTRITION_DATA_DAYS = 21  # At least 21 days of nutrition data
 
 
 class ModelTrainingService:
@@ -63,12 +73,41 @@ class ModelTrainingService:
         Returns:
             TrainModelResponse with model ID, metrics, and paths
         """
-        print(f"\n{'='*70}")
-        print(f"🚀 Starting model training for {request.metric.value}")
-        print(f"{'='*70}\n")
+        import time
+
+        training_start_time = time.time()
+
+        logger.info("=" * 70)
+        logger.info("Starting model training for %s", request.metric.value)
+        logger.info("=" * 70)
+
+        # Record training start in Prometheus
+        prometheus_metrics.record_training_start()
+
+        try:
+            return await self._do_train_model(request, training_start_time)
+        except Exception as e:
+            # Record training error in Prometheus
+            prometheus_metrics.record_training_error("error")
+            raise
+
+    async def _do_train_model(
+        self, request: TrainModelRequest, training_start_time: float
+    ) -> TrainModelResponse:
+        """Internal training implementation."""
+        import time
+
+        # Step 0: Validate data requirements
+        logger.info("Step 0: Validating training data requirements...")
+        await self.validate_training_data_requirements(
+            user_id=request.user_id,
+            target_metric=request.metric,
+            lookback_days=request.lookback_days,
+        )
+        logger.info("Data requirements validated")
 
         # Step 1: Prepare training data
-        print("📊 Step 1: Preparing training data...")
+        logger.info("Step 1: Preparing training data...")
         training_data = await self.data_prep_service.prepare_training_data(
             user_id=request.user_id,
             target_metric=request.metric,
@@ -86,14 +125,16 @@ class ModelTrainingService:
         feature_names = training_data["feature_names"]
         num_features = training_data["num_features"]
 
-        print("✅ Data prepared:")
-        print(f"   - Training samples: {len(X_train)}")
-        print(f"   - Validation samples: {len(X_val)}")
-        print(f"   - Features: {num_features}")
-        print(f"   - Sequence length: {request.sequence_length}")
+        logger.info(
+            "Data prepared: training=%d, validation=%d, features=%d, seq_len=%d",
+            len(X_train),
+            len(X_val),
+            num_features,
+            request.sequence_length,
+        )
 
         # Step 2: Initialize LSTM model
-        print("\n🧠 Step 2: Initializing PyTorch LSTM model...")
+        logger.info("Step 2: Initializing PyTorch LSTM model...")
         config = LSTMConfig(
             input_dim=num_features,
             hidden_dim=request.hidden_dim,
@@ -107,15 +148,17 @@ class ModelTrainingService:
         device = torch.device(config.device)
         model = model.to(device)
 
-        print("✅ Model initialized:")
-        print(f"   - Architecture: {request.architecture.value}")
-        print(f"   - Hidden dim: {config.hidden_dim}")
-        print(f"   - Layers: {config.num_layers}")
-        print(f"   - Parameters: {model.count_parameters():,}")
-        print(f"   - Device: {device}")
+        logger.info(
+            "Model initialized: arch=%s, hidden=%d, layers=%d, params=%d, device=%s",
+            request.architecture.value,
+            config.hidden_dim,
+            config.num_layers,
+            model.count_parameters(),
+            device,
+        )
 
         # Step 3: Train the model
-        print(f"\n🏋️ Step 3: Training model ({request.epochs} epochs)...")
+        logger.info("Step 3: Training model (%d epochs)...", request.epochs)
         training_result = self._train_loop(
             model=model,
             X_train=X_train,
@@ -129,7 +172,7 @@ class ModelTrainingService:
         )
 
         # Step 4: Evaluate on validation set
-        print("\n📈 Step 4: Final evaluation...")
+        logger.info("Step 4: Final evaluation...")
         eval_metrics = self._evaluate_model(
             model=model,
             X_val=X_val,
@@ -138,16 +181,18 @@ class ModelTrainingService:
             device=device,
         )
 
-        print("✅ Evaluation complete:")
-        print(f"   - MAE: {eval_metrics['mae']:.4f}")
-        print(f"   - RMSE: {eval_metrics['rmse']:.4f}")
-        print(f"   - R² Score: {eval_metrics['r2_score']:.4f}")
-        print(f"   - MAPE: {eval_metrics['mape']:.2f}%")
+        logger.info(
+            "Evaluation complete: MAE=%.4f, RMSE=%.4f, R2=%.4f, MAPE=%.2f%%",
+            eval_metrics["mae"],
+            eval_metrics["rmse"],
+            eval_metrics["r2_score"],
+            eval_metrics["mape"],
+        )
 
         # Step 5: Save model artifacts
-        print("\n💾 Step 5: Saving model artifacts...")
+        logger.info("Step 5: Saving model artifacts...")
         model_id = f"{request.user_id}_{request.metric.value}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        model_version = "v1.0.0"
+        model_version = self._generate_model_version(request.user_id, request.metric)
 
         model_artifacts = self._save_model_artifacts(
             model_id=model_id,
@@ -158,22 +203,28 @@ class ModelTrainingService:
             feature_names=feature_names,
             request=request,
             eval_metrics=eval_metrics,
+            model_version=model_version,
         )
 
-        print("✅ Model saved:")
-        print(f"   - Model ID: {model_id}")
-        print(f"   - Path: {model_artifacts['model_path']}")
-        print(f"   - Size: {model_artifacts['model_size_mb']:.2f} MB")
+        logger.info(
+            "Model saved: id=%s, version=%s, path=%s, size=%.2fMB",
+            model_id,
+            model_version,
+            model_artifacts["model_path"],
+            model_artifacts["model_size_mb"],
+        )
 
         # Step 6: Quality assessment
         is_production_ready, quality_issues = self._assess_model_quality(eval_metrics)
 
+        # Set this model as active if production-ready
         if is_production_ready:
-            print("\n✅ Model is production-ready!")
+            self._set_active_model(request.user_id, request.metric, model_id)
+
+        if is_production_ready:
+            logger.info("Model is production-ready!")
         else:
-            print("\n⚠️ Model has quality issues:")
-            for issue in quality_issues:
-                print(f"   - {issue}")
+            logger.warning("Model has quality issues: %s", ", ".join(quality_issues))
 
         # Step 7: Create response
         training_metrics = TrainingMetrics(
@@ -206,9 +257,23 @@ class ModelTrainingService:
             quality_issues=quality_issues,
         )
 
-        print(f"\n{'='*70}")
-        print("✅ Training complete!")
-        print(f"{'='*70}\n")
+        # Record training completion in Prometheus
+        training_duration = time.time() - training_start_time
+        prometheus_metrics.record_training_end(
+            duration_seconds=training_duration,
+            status="success",
+            metric=request.metric.value,
+            r2_score=eval_metrics["r2_score"],
+            mape=eval_metrics["mape"],
+            epochs_trained=training_result["epochs_trained"],
+            total_samples=len(X_train) + len(X_val),
+            model_size_mb=model_artifacts["model_size_mb"],
+            is_production_ready=is_production_ready,
+        )
+
+        logger.info("=" * 70)
+        logger.info("Training complete!")
+        logger.info("=" * 70)
 
         return response
 
@@ -309,20 +374,23 @@ class ModelTrainingService:
             else:
                 epochs_without_improvement += 1
 
-            # Print progress
+            # Log progress
             if (epoch + 1) % 10 == 0 or epoch == 0:
-                print(
-                    f"   Epoch {epoch + 1}/{epochs} | "
-                    f"Train Loss: {train_loss:.6f} | "
-                    f"Val Loss: {val_loss:.6f} | "
-                    f"Best Val: {best_val_loss:.6f}"
+                logger.info(
+                    "Epoch %d/%d | Train Loss: %.6f | Val Loss: %.6f | Best Val: %.6f",
+                    epoch + 1,
+                    epochs,
+                    train_loss,
+                    val_loss,
+                    best_val_loss,
                 )
 
             # Early stopping
             if epochs_without_improvement >= patience:
-                print(
-                    f"\n⏹️ Early stopping triggered at epoch {epoch + 1} "
-                    f"(no improvement for {patience} epochs)"
+                logger.info(
+                    "Early stopping triggered at epoch %d (no improvement for %d epochs)",
+                    epoch + 1,
+                    patience,
                 )
                 early_stopped = True
                 break
@@ -441,6 +509,7 @@ class ModelTrainingService:
         feature_names: List[str],
         request: TrainModelRequest,
         eval_metrics: Dict,
+        model_version: str = "v1.0.0",
     ) -> Dict:
         """
         Save model and all artifacts needed for inference.
@@ -482,6 +551,7 @@ class ModelTrainingService:
         # Save metadata
         metadata = {
             "model_id": model_id,
+            "model_version": model_version,
             "user_id": request.user_id,
             "metric": request.metric.value,
             "architecture": request.architecture.value,
@@ -558,3 +628,379 @@ class ModelTrainingService:
         is_production_ready = len(issues) == 0
 
         return is_production_ready, issues
+
+    # ========================================================================
+    # Data Validation
+    # ========================================================================
+
+    async def validate_training_data_requirements(
+        self,
+        user_id: str,
+        target_metric: PredictionMetric,
+        lookback_days: int,
+    ) -> Dict:
+        """
+        Validate that minimum data requirements are met for training.
+
+        Requirements:
+        - At least 30 days of health data (target metric: RHR/HRV)
+        - At least 21 days of nutrition data
+
+        Args:
+            user_id: User ID
+            target_metric: Health metric to predict
+            lookback_days: Days of historical data to use
+
+        Returns:
+            Dictionary with data counts if validation passes
+
+        Raises:
+            ValueError: If minimum requirements are not met with descriptive message
+        """
+        from datetime import date, timedelta
+        from sqlalchemy import select, func, and_
+
+        from app.models.health_metric import HealthMetric
+        from app.models.meal import Meal
+
+        # Calculate date range
+        end_date = date.today()
+        start_date = end_date - timedelta(days=lookback_days)
+
+        # Count health metric data days for the target metric
+        health_result = await self.db.execute(
+            select(
+                func.count(func.distinct(func.date(HealthMetric.recorded_at)))
+            ).where(
+                and_(
+                    HealthMetric.user_id == user_id,
+                    HealthMetric.metric_type == target_metric.value,
+                    HealthMetric.recorded_at >= start_date,
+                    HealthMetric.recorded_at <= end_date,
+                )
+            )
+        )
+        health_days = health_result.scalar() or 0
+
+        # Count nutrition data days (days with at least one meal)
+        nutrition_result = await self.db.execute(
+            select(func.count(func.distinct(func.date(Meal.consumed_at)))).where(
+                and_(
+                    Meal.user_id == user_id,
+                    Meal.consumed_at >= start_date,
+                    Meal.consumed_at <= end_date,
+                )
+            )
+        )
+        nutrition_days = nutrition_result.scalar() or 0
+
+        # Validate minimum requirements
+        issues = []
+
+        if health_days < MIN_HEALTH_DATA_DAYS:
+            issues.append(
+                f"Insufficient health data: {health_days} days of "
+                f"{target_metric.value} data found, minimum required is "
+                f"{MIN_HEALTH_DATA_DAYS} days. Please track your health metrics "
+                f"for at least {MIN_HEALTH_DATA_DAYS - health_days} more days."
+            )
+
+        if nutrition_days < MIN_NUTRITION_DATA_DAYS:
+            issues.append(
+                f"Insufficient nutrition data: {nutrition_days} days of meal data "
+                f"found, minimum required is {MIN_NUTRITION_DATA_DAYS} days. "
+                f"Please log your meals for at least "
+                f"{MIN_NUTRITION_DATA_DAYS - nutrition_days} more days."
+            )
+
+        if issues:
+            # Create a descriptive error message
+            error_message = (
+                f"Cannot train model for user {user_id}: Data requirements not met.\n\n"
+                + "\n".join(f"• {issue}" for issue in issues)
+                + f"\n\nData summary:\n"
+                f"  - Health metric days ({target_metric.value}): {health_days}/{MIN_HEALTH_DATA_DAYS}\n"
+                f"  - Nutrition data days: {nutrition_days}/{MIN_NUTRITION_DATA_DAYS}\n"
+                f"  - Lookback period: {lookback_days} days\n"
+                f"  - Date range: {start_date} to {end_date}"
+            )
+            raise ValueError(error_message)
+
+        logger.debug(
+            "Data validation passed: health_days(%s)=%d, nutrition_days=%d",
+            target_metric.value,
+            health_days,
+            nutrition_days,
+        )
+
+        return {
+            "health_days": health_days,
+            "nutrition_days": nutrition_days,
+            "lookback_days": lookback_days,
+            "start_date": start_date,
+            "end_date": end_date,
+        }
+
+    # ========================================================================
+    # Model Versioning and Management
+    # ========================================================================
+
+    def _generate_model_version(self, user_id: str, metric: PredictionMetric) -> str:
+        """
+        Generate a semantic version for a new model.
+
+        Version format: v{major}.{minor}.{patch}
+        - Major: Architecture changes
+        - Minor: Feature set changes
+        - Patch: Retrained with same features (auto-incremented)
+
+        Returns:
+            New version string (e.g., "v1.0.0", "v1.0.1")
+        """
+        # Find existing versions for this user/metric
+        pattern = f"{user_id}_{metric.value}_*"
+        matching_models = list(self.models_dir.glob(pattern))
+
+        if not matching_models:
+            return "v1.0.0"
+
+        # Load metadata from existing models to find latest version
+        versions = []
+        for model_dir in matching_models:
+            metadata_path = model_dir / "metadata.pkl"
+            if metadata_path.exists():
+                try:
+                    with open(metadata_path, "rb") as f:
+                        metadata = pickle.load(f)
+                    version_str = metadata.get("model_version", "v1.0.0")
+                    # Parse version string (e.g., "v1.0.2" -> (1, 0, 2))
+                    if version_str.startswith("v"):
+                        parts = version_str[1:].split(".")
+                        if len(parts) == 3:
+                            versions.append(tuple(int(p) for p in parts))
+                except Exception:
+                    pass
+
+        if not versions:
+            return "v1.0.0"
+
+        # Get the highest version and increment patch
+        versions.sort(reverse=True)
+        major, minor, patch = versions[0]
+        return f"v{major}.{minor}.{patch + 1}"
+
+    def _set_active_model(
+        self, user_id: str, metric: PredictionMetric, model_id: str
+    ) -> None:
+        """
+        Mark a model as the active (latest) model for predictions.
+
+        Creates/updates an 'active' symlink or marker file.
+
+        Args:
+            user_id: User ID
+            metric: Health metric
+            model_id: Model ID to set as active
+        """
+        active_marker_path = self.models_dir / f"{user_id}_{metric.value}_active.txt"
+
+        # Write the active model ID
+        with open(active_marker_path, "w") as f:
+            f.write(model_id)
+
+        logger.info("Set active model: %s", model_id)
+
+    async def get_model_history(
+        self, user_id: str, metric: PredictionMetric
+    ) -> List[Dict]:
+        """
+        Get the history of all trained models for a user/metric.
+
+        Returns:
+            List of model metadata dictionaries, sorted by date (newest first)
+        """
+        pattern = f"{user_id}_{metric.value}_*"
+        matching_models = [d for d in self.models_dir.glob(pattern) if d.is_dir()]
+
+        models = []
+        for model_dir in matching_models:
+            metadata_path = model_dir / "metadata.pkl"
+            if metadata_path.exists():
+                try:
+                    with open(metadata_path, "rb") as f:
+                        metadata = pickle.load(f)
+                    metadata["model_dir"] = str(model_dir)
+                    metadata["is_active"] = self._is_active_model(
+                        user_id, metric, model_dir.name
+                    )
+                    models.append(metadata)
+                except Exception as e:
+                    logger.warning("Error loading metadata from %s: %s", model_dir, e)
+
+        # Sort by trained_at (newest first)
+        models.sort(key=lambda m: m.get("trained_at", ""), reverse=True)
+
+        return models
+
+    def _is_active_model(
+        self, user_id: str, metric: PredictionMetric, model_id: str
+    ) -> bool:
+        """Check if a model is the currently active model."""
+        active_marker_path = self.models_dir / f"{user_id}_{metric.value}_active.txt"
+
+        if not active_marker_path.exists():
+            return False
+
+        with open(active_marker_path, "r") as f:
+            active_model_id = f.read().strip()
+
+        return active_model_id == model_id
+
+    def get_active_model_id(
+        self, user_id: str, metric: PredictionMetric
+    ) -> Optional[str]:
+        """Get the currently active model ID for a user/metric."""
+        active_marker_path = self.models_dir / f"{user_id}_{metric.value}_active.txt"
+
+        if not active_marker_path.exists():
+            return None
+
+        with open(active_marker_path, "r") as f:
+            return f.read().strip()
+
+    async def rollback_to_version(
+        self,
+        user_id: str,
+        metric: PredictionMetric,
+        version: str,
+    ) -> Dict:
+        """
+        Rollback to a previous model version.
+
+        Args:
+            user_id: User ID
+            metric: Health metric
+            version: Version string to rollback to (e.g., "v1.0.0")
+
+        Returns:
+            Dictionary with rollback result
+
+        Raises:
+            ValueError: If version not found
+        """
+        # Find the model with the specified version
+        pattern = f"{user_id}_{metric.value}_*"
+        matching_models = [d for d in self.models_dir.glob(pattern) if d.is_dir()]
+
+        target_model = None
+        for model_dir in matching_models:
+            metadata_path = model_dir / "metadata.pkl"
+            if metadata_path.exists():
+                try:
+                    with open(metadata_path, "rb") as f:
+                        metadata = pickle.load(f)
+                    if metadata.get("model_version") == version:
+                        target_model = model_dir.name
+                        break
+                except Exception:
+                    pass
+
+        if not target_model:
+            available_versions = []
+            for model_dir in matching_models:
+                metadata_path = model_dir / "metadata.pkl"
+                if metadata_path.exists():
+                    try:
+                        with open(metadata_path, "rb") as f:
+                            metadata = pickle.load(f)
+                        v = metadata.get("model_version", "unknown")
+                        available_versions.append(v)
+                    except Exception:
+                        pass
+
+            raise ValueError(
+                f"Model version {version} not found for user {user_id} "
+                f"and metric {metric.value}. Available versions: "
+                f"{sorted(available_versions) if available_versions else 'none'}"
+            )
+
+        # Set the target model as active
+        self._set_active_model(user_id, metric, target_model)
+
+        return {
+            "success": True,
+            "rolled_back_to": version,
+            "model_id": target_model,
+            "message": f"Successfully rolled back to version {version}",
+        }
+
+    def cleanup_old_models(
+        self,
+        user_id: str,
+        metric: PredictionMetric,
+        keep_count: int = 5,
+    ) -> Dict:
+        """
+        Remove old model versions, keeping the most recent ones.
+
+        Args:
+            user_id: User ID
+            metric: Health metric
+            keep_count: Number of most recent models to keep (default: 5)
+
+        Returns:
+            Dictionary with cleanup results
+        """
+        import shutil
+
+        pattern = f"{user_id}_{metric.value}_*"
+        matching_models = [d for d in self.models_dir.glob(pattern) if d.is_dir()]
+
+        if len(matching_models) <= keep_count:
+            return {
+                "removed": 0,
+                "kept": len(matching_models),
+                "message": f"No cleanup needed. Only {len(matching_models)} model(s) exist.",
+            }
+
+        # Load metadata and sort by date
+        models_with_date = []
+        for model_dir in matching_models:
+            metadata_path = model_dir / "metadata.pkl"
+            trained_at = ""
+            if metadata_path.exists():
+                try:
+                    with open(metadata_path, "rb") as f:
+                        metadata = pickle.load(f)
+                    trained_at = metadata.get("trained_at", "")
+                except Exception:
+                    pass
+            models_with_date.append((model_dir, trained_at))
+
+        # Sort by date (newest first)
+        models_with_date.sort(key=lambda x: x[1], reverse=True)
+
+        # Get active model to protect it
+        active_model_id = self.get_active_model_id(user_id, metric)
+
+        # Remove old models (beyond keep_count), but never remove the active model
+        removed = []
+        kept = []
+        for i, (model_dir, _) in enumerate(models_with_date):
+            if i < keep_count or model_dir.name == active_model_id:
+                kept.append(model_dir.name)
+            else:
+                try:
+                    shutil.rmtree(model_dir)
+                    removed.append(model_dir.name)
+                    logger.info("Removed old model: %s", model_dir.name)
+                except Exception as e:
+                    logger.warning("Failed to remove %s: %s", model_dir.name, e)
+
+        return {
+            "removed": len(removed),
+            "removed_models": removed,
+            "kept": len(kept),
+            "kept_models": kept,
+            "message": f"Removed {len(removed)} old model(s), kept {len(kept)}.",
+        }
