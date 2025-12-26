@@ -1,11 +1,6 @@
 // Shared types between client and server
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
-export type ActivityLevel =
-  | 'sedentary'
-  | 'light'
-  | 'moderate'
-  | 'active'
-  | 'veryActive';
+export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'veryActive';
 
 export type SubscriptionTier = 'FREE' | 'PRO_TRIAL' | 'PRO';
 export type BillingCycle = 'MONTHLY' | 'ANNUAL';
@@ -376,3 +371,69 @@ export interface TodaySupplementStatus {
 
 // Re-export notification types
 export * from './notifications';
+
+// ============================================================================
+// WATER INTAKE TYPES
+// ============================================================================
+
+export interface WaterIntake {
+  id: string;
+  userId: string;
+  amount: number; // in ml
+  recordedAt: string;
+  createdAt: string;
+}
+
+export interface CreateWaterIntakeInput {
+  amount: number;
+  recordedAt?: string;
+}
+
+export interface UpdateWaterIntakeInput {
+  amount?: number;
+  recordedAt?: string;
+}
+
+export interface QuickAddWaterInput {
+  preset: 'glass' | 'bottle' | 'cup' | 'custom';
+  customAmount?: number;
+}
+
+export interface WaterDailySummary {
+  date: string;
+  totalAmount: number;
+  goalAmount: number;
+  percentageComplete: number;
+  intakeCount: number;
+  intakes: {
+    id: string;
+    amount: number;
+    recordedAt: string;
+  }[];
+}
+
+export interface WaterWeeklySummary {
+  startDate: string;
+  endDate: string;
+  dailyAverage: number;
+  totalAmount: number;
+  goalAmount: number;
+  daysMetGoal: number;
+  dailySummaries: {
+    date: string;
+    totalAmount: number;
+    goalAmount: number;
+    percentageComplete: number;
+  }[];
+}
+
+export interface WaterGoal {
+  goalWater: number;
+}
+
+// Water preset amounts in ml
+export const WATER_PRESETS = {
+  glass: 250, // Standard glass
+  bottle: 500, // Standard bottle
+  cup: 200, // Coffee cup
+} as const;

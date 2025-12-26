@@ -1034,3 +1034,55 @@ export type NicotineUseLevel = z.infer<typeof nicotineUseLevelSchema>;
 export type AlcoholUseLevel = z.infer<typeof alcoholUseLevelSchema>;
 export type ActivityLevel = z.infer<typeof activityLevelSchema>;
 export type DietaryPreference = z.infer<typeof dietaryPreferencesSchema>[number];
+
+// ============================================================================
+// WATER INTAKE SCHEMAS
+// ============================================================================
+
+/**
+ * Water Intake Creation Schema
+ */
+export const createWaterIntakeSchema = z.object({
+  amount: z
+    .number()
+    .min(1, 'Amount must be at least 1 ml')
+    .max(5000, 'Amount cannot exceed 5000 ml'),
+  recordedAt: datetimeSchema.optional(),
+});
+
+/**
+ * Water Intake Update Schema
+ */
+export const updateWaterIntakeSchema = z.object({
+  amount: z
+    .number()
+    .min(1, 'Amount must be at least 1 ml')
+    .max(5000, 'Amount cannot exceed 5000 ml')
+    .optional(),
+  recordedAt: datetimeSchema.optional(),
+});
+
+/**
+ * Water Goal Update Schema
+ */
+export const updateWaterGoalSchema = z.object({
+  goalWater: z
+    .number()
+    .int()
+    .min(500, 'Goal must be at least 500 ml')
+    .max(10000, 'Goal cannot exceed 10000 ml'),
+});
+
+/**
+ * Quick Add Water Schema (for preset amounts)
+ */
+export const quickAddWaterSchema = z.object({
+  preset: z.enum(['glass', 'bottle', 'cup', 'custom']),
+  customAmount: z.number().min(1).max(5000).optional(),
+});
+
+// Water intake type exports
+export type CreateWaterIntakeData = z.infer<typeof createWaterIntakeSchema>;
+export type UpdateWaterIntakeData = z.infer<typeof updateWaterIntakeSchema>;
+export type UpdateWaterGoalData = z.infer<typeof updateWaterGoalSchema>;
+export type QuickAddWaterData = z.infer<typeof quickAddWaterSchema>;
