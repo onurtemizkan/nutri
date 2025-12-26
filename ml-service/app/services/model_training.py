@@ -13,7 +13,7 @@ import logging
 import pickle
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -856,7 +856,9 @@ class ModelTrainingService:
 
         return active_model_id == model_id
 
-    def get_active_model_id(self, user_id: str, metric: PredictionMetric) -> str | None:
+    def get_active_model_id(
+        self, user_id: str, metric: PredictionMetric
+    ) -> Optional[str]:
         """Get the currently active model ID for a user/metric."""
         active_marker_path = self.models_dir / f"{user_id}_{metric.value}_active.txt"
 
