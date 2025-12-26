@@ -14,6 +14,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/lib/context/AuthContext';
 import { NotificationProvider } from '@/lib/context/NotificationContext';
 import { AlertProvider } from '@/lib/components/CustomAlert';
+import { ErrorBoundary } from '@/lib/components/ErrorBoundary';
 import { healthKitService } from '@/lib/services/healthkit';
 import { onboardingApi } from '@/lib/onboarding/api';
 
@@ -351,19 +352,28 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <PortalProvider>
-        <AlertProvider>
-          <AuthProvider>
-            <NotificationProvider>
-              <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                <RootLayoutNav />
-                <StatusBar style="light" />
-              </ThemeProvider>
-            </NotificationProvider>
-          </AuthProvider>
-        </AlertProvider>
-        <PortalHost name="alert-portal" />
-      </PortalProvider>
+      <ErrorBoundary
+        onError={(error, errorInfo) => {
+          // Log to console for development
+          console.error('[App Error]', error.message);
+          console.error('[App Error] Stack:', errorInfo.componentStack);
+          // TODO: Send to error reporting service (Sentry, etc.)
+        }}
+      >
+        <PortalProvider>
+          <AlertProvider>
+            <AuthProvider>
+              <NotificationProvider>
+                <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                  <RootLayoutNav />
+                  <StatusBar style="light" />
+                </ThemeProvider>
+              </NotificationProvider>
+            </AuthProvider>
+          </AlertProvider>
+          <PortalHost name="alert-portal" />
+        </PortalProvider>
+      </ErrorBoundary>
     </GestureHandlerRootView>
   );
 }

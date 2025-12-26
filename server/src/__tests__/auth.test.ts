@@ -29,7 +29,7 @@ describe('Auth API Endpoints', () => {
         .post('/api/auth/register')
         .send({
           email: 'newuser@example.com',
-          password: 'password123',
+          password: 'securepassword123',
           name: 'New User',
         })
         .expect(201);
@@ -47,7 +47,7 @@ describe('Auth API Endpoints', () => {
         .post('/api/auth/register')
         .send({
           email: 'invalid-email',
-          password: 'password123',
+          password: 'securepassword123',
           name: 'Test User',
         })
         .expect(400);
@@ -61,13 +61,13 @@ describe('Auth API Endpoints', () => {
         .post('/api/auth/register')
         .send({
           email: 'test@example.com',
-          password: '123',
+          password: 'short123',
           name: 'Test User',
         })
         .expect(400);
 
       expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toContain('6 characters');
+      expect(response.body.error).toContain('12 characters');
     });
 
     it('should reject registration with empty name', async () => {
@@ -75,7 +75,7 @@ describe('Auth API Endpoints', () => {
         .post('/api/auth/register')
         .send({
           email: 'test@example.com',
-          password: 'password123',
+          password: 'securepassword123',
           name: '',
         })
         .expect(400);
@@ -93,7 +93,7 @@ describe('Auth API Endpoints', () => {
         .post('/api/auth/register')
         .send({
           email: 'duplicate@example.com',
-          password: 'password123',
+          password: 'securepassword123',
           name: 'Test User',
         })
         .expect(400);
@@ -113,14 +113,14 @@ describe('Auth API Endpoints', () => {
       const bcrypt = require('bcryptjs');
       await createTestUser({
         email: 'login@example.com',
-        password: await bcrypt.hash('password123', 10),
+        password: await bcrypt.hash('securepassword123', 10),
       });
 
       const response = await request(app)
         .post('/api/auth/login')
         .send({
           email: 'login@example.com',
-          password: 'password123',
+          password: 'securepassword123',
         })
         .expect(200);
 
@@ -136,7 +136,7 @@ describe('Auth API Endpoints', () => {
         .post('/api/auth/login')
         .send({
           email: 'nonexistent@example.com',
-          password: 'password123',
+          password: 'securepassword123',
         })
         .expect(401);
 
@@ -152,7 +152,7 @@ describe('Auth API Endpoints', () => {
         .post('/api/auth/login')
         .send({
           email: 'test@example.com',
-          password: 'wrongpassword',
+          password: 'wrongpassword123',
         })
         .expect(401);
 
@@ -165,7 +165,7 @@ describe('Auth API Endpoints', () => {
         .post('/api/auth/login')
         .send({
           email: 'invalid-email',
-          password: 'password123',
+          password: 'securepassword123',
         })
         .expect(400);
 
@@ -439,7 +439,7 @@ describe('Auth API Endpoints', () => {
           .post('/api/auth/reset-password')
           .send({
             token: resetToken,
-            newPassword: 'newpassword123',
+            newPassword: 'newsecurepassword123',
           })
           .expect(200);
 
@@ -451,7 +451,7 @@ describe('Auth API Endpoints', () => {
           .post('/api/auth/login')
           .send({
             email: 'resetpw@example.com',
-            password: 'newpassword123',
+            password: 'newsecurepassword123',
           })
           .expect(200);
 
@@ -463,7 +463,7 @@ describe('Auth API Endpoints', () => {
           .post('/api/auth/reset-password')
           .send({
             token: 'invalid-token',
-            newPassword: 'newpassword123',
+            newPassword: 'newsecurepassword123',
           })
           .expect(400);
 
@@ -485,12 +485,12 @@ describe('Auth API Endpoints', () => {
           .post('/api/auth/reset-password')
           .send({
             token: resetToken,
-            newPassword: '123',
+            newPassword: 'short123',
           })
           .expect(400);
 
         expect(response.body).toHaveProperty('error');
-        expect(response.body.error).toContain('6 characters');
+        expect(response.body.error).toContain('12 characters');
       });
 
       it('should invalidate token after successful reset', async () => {
@@ -508,7 +508,7 @@ describe('Auth API Endpoints', () => {
           .post('/api/auth/reset-password')
           .send({
             token: resetToken,
-            newPassword: 'newpassword123',
+            newPassword: 'newsecurepassword123',
           })
           .expect(200);
 
@@ -517,7 +517,7 @@ describe('Auth API Endpoints', () => {
           .post('/api/auth/reset-password')
           .send({
             token: resetToken,
-            newPassword: 'anotherpassword',
+            newPassword: 'anothersecurepass123',
           })
           .expect(400);
 
@@ -529,8 +529,8 @@ describe('Auth API Endpoints', () => {
     describe('Complete Password Reset Flow', () => {
       it('should complete full password reset flow successfully', async () => {
         const testEmail = 'fullflow@example.com';
-        const oldPassword = 'oldpassword123';
-        const newPassword = 'newpassword123';
+        const oldPassword = 'oldsecurepassword123';
+        const newPassword = 'newsecurepassword123';
 
         // 1. Create user
         const bcrypt = require('bcryptjs');

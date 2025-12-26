@@ -26,8 +26,10 @@ export const MONTH_IN_DAYS = 30;
 
 /**
  * Password requirements
+ * OWASP recommends minimum 12 characters for strong passwords
+ * @see https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html
  */
-export const MIN_PASSWORD_LENGTH = 6;
+export const MIN_PASSWORD_LENGTH = 12;
 export const MAX_PASSWORD_LENGTH = 100;
 
 /**

@@ -11,9 +11,13 @@
 import prisma from '../config/database';
 import { foodCacheService } from './foodCacheService';
 import { Prisma, FoodFeedbackAggregation } from '@prisma/client';
+import { logger } from '../config/logger';
 
 // Threshold for flagging patterns that need model review
 const CORRECTION_THRESHOLD = 10;
+
+// Batch size for syncing feedback to ML service
+const FEEDBACK_SYNC_BATCH_SIZE = 100;
 
 // Redis cache keys
 const FEEDBACK_STATS_KEY = 'food:feedback:stats';
@@ -65,6 +69,7 @@ export interface AggregatedPattern {
 class FoodFeedbackService {
   /**
    * Submit feedback when a food classification is incorrect
+   * Uses a transaction to ensure feedback creation and aggregation update are atomic
    */
   async submitFeedback(data: FeedbackSubmission): Promise<{
     feedbackId: string;
@@ -82,41 +87,50 @@ class FoodFeedbackService {
       .replace(/\s+/g, '_');
 
     try {
-      // Create feedback record
-      const feedback = await prisma.foodFeedback.create({
-        data: {
-          userId: data.userId,
-          imageHash: data.imageHash,
-          classificationId: data.classificationId,
-          originalPrediction: normalizedPrediction,
-          originalConfidence: data.originalConfidence,
-          originalCategory: data.originalCategory,
-          selectedFdcId: data.selectedFdcId,
-          selectedFoodName: normalizedFoodName,
-          wasCorrect: data.wasCorrect,
-          classificationHints: data.classificationHints as Prisma.InputJsonValue,
-          userDescription: data.userDescription,
-          status: 'pending',
-        },
+      // Use transaction to ensure atomicity of feedback + aggregation operations
+      const result = await prisma.$transaction(async (tx) => {
+        // Create feedback record
+        const feedback = await tx.foodFeedback.create({
+          data: {
+            userId: data.userId,
+            imageHash: data.imageHash,
+            classificationId: data.classificationId,
+            originalPrediction: normalizedPrediction,
+            originalConfidence: data.originalConfidence,
+            originalCategory: data.originalCategory,
+            selectedFdcId: data.selectedFdcId,
+            selectedFoodName: normalizedFoodName,
+            wasCorrect: data.wasCorrect,
+            classificationHints: data.classificationHints as Prisma.InputJsonValue,
+            userDescription: data.userDescription,
+            status: 'pending',
+          },
+        });
+
+        // Update aggregation only if it was a correction (not a confirmation)
+        let patternFlagged = false;
+        if (!data.wasCorrect) {
+          patternFlagged = await this.updateAggregationWithTx(
+            tx,
+            normalizedPrediction,
+            normalizedFoodName,
+            data.originalConfidence
+          );
+        }
+
+        return {
+          feedbackId: feedback.id,
+          patternFlagged,
+        };
       });
 
-      // Update aggregation only if it was a correction (not a confirmation)
-      let patternFlagged = false;
-      if (!data.wasCorrect) {
-        patternFlagged = await this.updateAggregation(
-          normalizedPrediction,
-          normalizedFoodName,
-          data.originalConfidence
-        );
-      }
-
-      // Invalidate stats cache
+      // Invalidate stats cache (outside transaction - cache invalidation is non-critical)
       await this.invalidateStatsCache();
 
       return {
-        feedbackId: feedback.id,
+        feedbackId: result.feedbackId,
         isDuplicate: false,
-        patternFlagged,
+        patternFlagged: result.patternFlagged,
       };
     } catch (error) {
       // Check for unique constraint violation (duplicate)
@@ -135,14 +149,16 @@ class FoodFeedbackService {
   }
 
   /**
-   * Update aggregation record for a correction pattern
+   * Update aggregation record for a correction pattern (uses transaction client)
+   * Uses upsert to handle race conditions safely
    */
-  private async updateAggregation(
+  private async updateAggregationWithTx(
+    tx: Prisma.TransactionClient,
     originalPrediction: string,
     correctedFood: string,
     confidence: number
   ): Promise<boolean> {
-    const existing = await prisma.foodFeedbackAggregation.findUnique({
+    const existing = await tx.foodFeedbackAggregation.findUnique({
       where: {
         originalPrediction_correctedFood: {
           originalPrediction,
@@ -159,7 +175,7 @@ class FoodFeedbackService {
         newCount;
       const needsReview = newCount >= CORRECTION_THRESHOLD && !existing.needsReview;
 
-      await prisma.foodFeedbackAggregation.update({
+      await tx.foodFeedbackAggregation.update({
         where: { id: existing.id },
         data: {
           correctionCount: newCount,
@@ -172,7 +188,7 @@ class FoodFeedbackService {
       return needsReview;
     } else {
       // Create new aggregation
-      await prisma.foodFeedbackAggregation.create({
+      await tx.foodFeedbackAggregation.create({
         data: {
           originalPrediction,
           correctedFood,
@@ -408,7 +424,7 @@ class FoodFeedbackService {
       where: {
         status: 'approved',
       },
-      take: 100, // Batch size
+      take: FEEDBACK_SYNC_BATCH_SIZE,
     });
 
     let synced = 0;
@@ -438,9 +454,19 @@ class FoodFeedbackService {
           await this.updateFeedbackStatus(feedback.id, 'applied');
           synced++;
         } else {
+          const errorBody = await response.text().catch(() => 'Unable to read response');
+          logger.warn({
+            feedbackId: feedback.id,
+            statusCode: response.status,
+            error: errorBody,
+          }, 'Failed to sync feedback to ML service: HTTP error');
           failed++;
         }
-      } catch {
+      } catch (error) {
+        logger.warn({
+          feedbackId: feedback.id,
+          error: error instanceof Error ? error.message : String(error),
+        }, 'Failed to sync feedback to ML service');
         failed++;
       }
     }

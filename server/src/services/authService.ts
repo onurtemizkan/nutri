@@ -3,7 +3,8 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import prisma from '../config/database';
 import { config } from '../config/env';
-import { RegisterInput, LoginInput } from '../types';
+import { RegisterInput, LoginInput, UpdateUserProfileInput } from '../types';
+import { USER_PROFILE_SELECT_FIELDS } from '../config/constants';
 
 export class AuthService {
   async register(data: RegisterInput) {
@@ -121,6 +122,27 @@ export class AuthService {
     if (!user) {
       throw new Error('User not found');
     }
+
+    return user;
+  }
+
+  async updateUserProfile(userId: string, data: UpdateUserProfileInput) {
+    // Verify user exists first
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+
+    if (!existingUser) {
+      throw new Error('User not found');
+    }
+
+    // Update user profile
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data,
+      select: USER_PROFILE_SELECT_FIELDS,
+    });
 
     return user;
   }
