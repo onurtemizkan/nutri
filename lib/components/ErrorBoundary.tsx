@@ -17,6 +17,10 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { colors, spacing, borderRadius, typography } from '@/lib/theme/colors';
+
+/** Maximum number of retry attempts before showing permanent error */
+const MAX_RETRY_COUNT = 3;
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -38,6 +42,7 @@ interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
+  retryCount: number;
 }
 
 /**
@@ -62,6 +67,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       hasError: false,
       error: null,
       errorInfo: null,
+      retryCount: 0,
     };
   }
 
@@ -94,17 +100,24 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   /**
    * Reset error state and retry rendering children
+   * Limited to MAX_RETRY_COUNT attempts to prevent infinite loops
    */
   handleRetry = (): void => {
-    this.setState({
+    if (this.state.retryCount >= MAX_RETRY_COUNT) {
+      // Max retries reached - don't reset, keep showing error
+      return;
+    }
+
+    this.setState((prevState) => ({
       hasError: false,
       error: null,
       errorInfo: null,
-    });
+      retryCount: prevState.retryCount + 1,
+    }));
   };
 
   render(): ReactNode {
-    const { hasError, error, errorInfo } = this.state;
+    const { hasError, error, errorInfo, retryCount } = this.state;
     const { children, fallback, showDetails = __DEV__ } = this.props;
 
     if (hasError) {
@@ -113,28 +126,57 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         return fallback;
       }
 
+      const maxRetriesReached = retryCount >= MAX_RETRY_COUNT;
+
       // Default error UI
       return (
-        <View style={styles.container}>
+        <View
+          style={styles.container}
+          accessibilityRole="alert"
+          accessibilityLiveRegion="assertive"
+          accessibilityLabel="An error occurred in the application"
+        >
           <View style={styles.content}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="warning" size={64} color="#FF6B6B" />
+            <View
+              style={styles.iconContainer}
+              accessibilityLabel="Error warning icon"
+              accessible={true}
+            >
+              <Ionicons name="warning" size={64} color={colors.semantic.error} />
             </View>
 
-            <Text style={styles.title}>Something went wrong</Text>
+            <Text
+              style={styles.title}
+              accessibilityRole="header"
+            >
+              Something went wrong
+            </Text>
             <Text style={styles.message}>
-              We're sorry, but an unexpected error occurred. Please try again or restart the app.
+              {maxRetriesReached
+                ? "We're sorry, but this error persists. Please restart the app."
+                : "We're sorry, but an unexpected error occurred. Please try again or restart the app."}
             </Text>
 
-            <TouchableOpacity
-              style={styles.retryButton}
-              onPress={this.handleRetry}
-              accessibilityLabel="Try again"
-              accessibilityRole="button"
-            >
-              <Ionicons name="refresh" size={20} color="#FFFFFF" />
-              <Text style={styles.retryButtonText}>Try Again</Text>
-            </TouchableOpacity>
+            {!maxRetriesReached && (
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={this.handleRetry}
+                accessibilityLabel={`Try again. Attempt ${retryCount + 1} of ${MAX_RETRY_COUNT}`}
+                accessibilityRole="button"
+                accessibilityHint="Attempts to recover from the error"
+              >
+                <Ionicons name="refresh" size={20} color={colors.text.primary} />
+                <Text style={styles.retryButtonText}>Try Again</Text>
+              </TouchableOpacity>
+            )}
+
+            {maxRetriesReached && (
+              <View style={styles.maxRetriesContainer}>
+                <Text style={styles.maxRetriesText}>
+                  Maximum retry attempts reached ({MAX_RETRY_COUNT})
+                </Text>
+              </View>
+            )}
 
             {showDetails && error && (
               <ScrollView style={styles.detailsContainer}>
@@ -163,10 +205,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.background.secondary,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: spacing.lg,
   },
   content: {
     width: '100%',
@@ -174,65 +216,72 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconContainer: {
-    marginBottom: 24,
+    marginBottom: spacing.lg,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 12,
+    ...typography.h2,
+    color: colors.text.primary,
+    marginBottom: spacing.md,
     textAlign: 'center',
   },
   message: {
-    fontSize: 16,
-    color: '#8E8E93',
+    ...typography.body,
+    color: colors.text.tertiary,
     textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 24,
+    marginBottom: spacing.xl,
   },
   retryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 12,
-    gap: 8,
+    backgroundColor: colors.semantic.success,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    gap: spacing.sm,
   },
   retryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    ...typography.button,
+    color: colors.text.primary,
+  },
+  maxRetriesContainer: {
+    padding: spacing.md,
+    backgroundColor: colors.special.errorLight,
+    borderRadius: borderRadius.sm,
+  },
+  maxRetriesText: {
+    ...typography.bodySmall,
+    color: colors.semantic.error,
+    textAlign: 'center',
   },
   detailsContainer: {
-    marginTop: 32,
+    marginTop: spacing.xl,
     maxHeight: 200,
     width: '100%',
-    backgroundColor: '#2C2C2E',
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: colors.surface.elevated,
+    borderRadius: borderRadius.sm,
+    padding: spacing.md,
   },
   detailsTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#FF9500',
-    marginBottom: 8,
-    marginTop: 8,
+    ...typography.caption,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.semantic.warning,
+    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
   },
   errorName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FF6B6B',
-    marginBottom: 4,
+    ...typography.bodySmall,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.semantic.error,
+    marginBottom: spacing.xs,
   },
   errorMessage: {
-    fontSize: 13,
-    color: '#E5E5EA',
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   stackTrace: {
-    fontSize: 11,
-    color: '#8E8E93',
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
 });

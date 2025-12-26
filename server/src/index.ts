@@ -102,20 +102,33 @@ app.use(
     }
 
     const credentials = Buffer.from(auth.slice(6), 'base64').toString();
-    const [providedUser, providedPass] = credentials.split(':');
+    const colonIndex = credentials.indexOf(':');
+    const providedUser = colonIndex > -1 ? credentials.slice(0, colonIndex) : credentials;
+    const providedPass = colonIndex > -1 ? credentials.slice(colonIndex + 1) : '';
 
     // Use constant-time comparison to prevent timing attacks
-    const userMatch = providedUser.length === adminUser.length &&
-      require('crypto').timingSafeEqual(
+    // timingSafeEqual throws if lengths differ, so we wrap in try-catch
+    // to avoid leaking length information through timing
+    let userMatch = false;
+    let passMatch = false;
+
+    try {
+      userMatch = require('crypto').timingSafeEqual(
         Buffer.from(providedUser),
         Buffer.from(adminUser)
       );
+    } catch {
+      // Length mismatch - userMatch stays false
+    }
 
-    const passMatch = providedPass && providedPass.length === adminPass.length &&
-      require('crypto').timingSafeEqual(
+    try {
+      passMatch = require('crypto').timingSafeEqual(
         Buffer.from(providedPass),
         Buffer.from(adminPass)
       );
+    } catch {
+      // Length mismatch - passMatch stays false
+    }
 
     if (!userMatch || !passMatch) {
       logger.warn({

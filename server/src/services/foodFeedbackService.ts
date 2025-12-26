@@ -11,9 +11,13 @@
 import prisma from '../config/database';
 import { foodCacheService } from './foodCacheService';
 import { Prisma, FoodFeedbackAggregation } from '@prisma/client';
+import { logger } from '../config/logger';
 
 // Threshold for flagging patterns that need model review
 const CORRECTION_THRESHOLD = 10;
+
+// Batch size for syncing feedback to ML service
+const FEEDBACK_SYNC_BATCH_SIZE = 100;
 
 // Redis cache keys
 const FEEDBACK_STATS_KEY = 'food:feedback:stats';
@@ -420,7 +424,7 @@ class FoodFeedbackService {
       where: {
         status: 'approved',
       },
-      take: 100, // Batch size
+      take: FEEDBACK_SYNC_BATCH_SIZE,
     });
 
     let synced = 0;
@@ -450,9 +454,19 @@ class FoodFeedbackService {
           await this.updateFeedbackStatus(feedback.id, 'applied');
           synced++;
         } else {
+          const errorBody = await response.text().catch(() => 'Unable to read response');
+          logger.warn({
+            feedbackId: feedback.id,
+            statusCode: response.status,
+            error: errorBody,
+          }, 'Failed to sync feedback to ML service: HTTP error');
           failed++;
         }
-      } catch {
+      } catch (error) {
+        logger.warn({
+          feedbackId: feedback.id,
+          error: error instanceof Error ? error.message : String(error),
+        }, 'Failed to sync feedback to ML service');
         failed++;
       }
     }

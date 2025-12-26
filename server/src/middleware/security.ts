@@ -128,11 +128,14 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
 
   // Basic CSP for API (no inline scripts, restrict sources)
-  // This is a restrictive policy suitable for API-only servers
-  res.setHeader(
-    'Content-Security-Policy',
-    "default-src 'none'; frame-ancestors 'none'"
-  );
+  // Skip CSP for Bull Board admin routes which need scripts/styles to render
+  if (!req.path.startsWith('/admin/queues')) {
+    // Restrictive policy suitable for API-only endpoints
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'none'; frame-ancestors 'none'"
+    );
+  }
 
   next();
 };
@@ -154,7 +157,13 @@ export const getTrustProxyConfig = (): boolean | string | number => {
     const trustProxy = process.env.TRUST_PROXY;
     if (trustProxy === 'true') return true;
     if (trustProxy === 'false') return false;
-    if (trustProxy && !isNaN(Number(trustProxy))) return Number(trustProxy);
+    if (trustProxy) {
+      const num = Number(trustProxy);
+      // Only accept positive integers for proxy hop count
+      if (!isNaN(num) && num > 0 && Number.isInteger(num)) {
+        return num;
+      }
+    }
     // Default: trust first hop (common for cloud deployments)
     return 1;
   }

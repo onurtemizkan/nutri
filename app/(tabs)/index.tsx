@@ -40,11 +40,18 @@ type HealthTrendsData = Record<
 >;
 
 /**
+ * Valid meal types for the application
+ * Using a type and constant array ensures compile-time type safety
+ */
+type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+const MEAL_TYPES: readonly MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
+
+/**
  * Memoized meal type section component
  * Prevents re-renders when other parts of the screen update
  */
 interface MealTypeSectionProps {
-  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  mealType: MealType;
   meals: Meal[];
   onEdit: (meal: Meal) => void;
   onDelete: (meal: Meal) => void;
@@ -217,7 +224,7 @@ export default function HomeScreen() {
   }, [summary?.totalCalories, summary?.goals?.goalCalories]);
 
   // Memoize meals grouped by type to prevent re-filtering on every render
-  const mealsByType = useMemo(() => {
+  const mealsByType = useMemo((): Record<MealType, Meal[]> => {
     if (!summary?.meals) return { breakfast: [], lunch: [], dinner: [], snack: [] };
     return {
       breakfast: summary.meals.filter((meal) => meal.mealType === 'breakfast'),
@@ -463,7 +470,7 @@ export default function HomeScreen() {
           <View style={styles.mealsSection} testID="home-meals-section">
             <Text style={styles.sectionTitle}>Today's Meals</Text>
 
-            {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((mealType) => {
+            {MEAL_TYPES.map((mealType) => {
               const meals = mealsByType[mealType];
               return (
                 <MealTypeSection
