@@ -269,7 +269,7 @@ export const updateMealSchema = createMealSchema.partial();
  * User Registration Schema
  */
 export const registerSchema = z.object({
-  name: nonEmptyStringSchema,
+  name: z.string().min(1, 'Name is required'),
   email: emailSchema,
   password: passwordSchema,
 });
