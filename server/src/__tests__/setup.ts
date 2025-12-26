@@ -8,7 +8,16 @@
  * - Configures global test lifecycle hooks
  */
 
-import { PrismaClient, Activity, HealthMetric, ActivityType, ActivityIntensity, HealthMetricType, AdminRole, AdminUser } from '@prisma/client';
+import {
+  PrismaClient,
+  Activity,
+  HealthMetric,
+  ActivityType,
+  ActivityIntensity,
+  HealthMetricType,
+  AdminRole,
+  AdminUser,
+} from '@prisma/client';
 
 // Set test environment variables before any imports
 (process.env as { NODE_ENV: string }).NODE_ENV = 'test';
@@ -47,7 +56,7 @@ export async function cleanDatabase() {
     } catch (error) {
       if (attempt === maxRetries) {
         // On final attempt, try with a small delay
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise((resolve) => setTimeout(resolve, 50));
         await prisma.adminAuditLog.deleteMany();
         await prisma.adminUser.deleteMany();
       }
@@ -167,20 +176,22 @@ afterAll(async () => {
 /**
  * Create a test user with default values
  */
-export async function createTestUser(overrides?: Partial<{
-  email: string;
-  password: string;
-  name: string;
-  goalCalories: number;
-  goalProtein: number;
-  goalCarbs: number;
-  goalFat: number;
-}>) {
+export async function createTestUser(
+  overrides?: Partial<{
+    email: string;
+    password: string;
+    name: string;
+    goalCalories: number;
+    goalProtein: number;
+    goalCarbs: number;
+    goalFat: number;
+  }>
+) {
   const bcrypt = require('bcryptjs');
 
   const defaultUser = {
     email: 'test@example.com',
-    password: await bcrypt.hash('password123', 10),
+    password: await bcrypt.hash('TestPassword123', 10),
     name: 'Test User',
     goalCalories: 2000,
     goalProtein: 150,
@@ -199,25 +210,24 @@ export async function createTestUser(overrides?: Partial<{
  */
 export function createTestToken(userId: string): string {
   const jwt = require('jsonwebtoken');
-  return jwt.sign(
-    { userId },
-    process.env.JWT_SECRET,
-    { expiresIn: '1h' }
-  );
+  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
 }
 
 /**
  * Create a test meal
  */
-export async function createTestMeal(userId: string, overrides?: Partial<{
-  name: string;
-  mealType: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  consumedAt: Date;
-}>) {
+export async function createTestMeal(
+  userId: string,
+  overrides?: Partial<{
+    name: string;
+    mealType: string;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    consumedAt: Date;
+  }>
+) {
   const defaultMeal = {
     userId,
     name: 'Test Meal',
@@ -238,15 +248,18 @@ export async function createTestMeal(userId: string, overrides?: Partial<{
 /**
  * Create a test activity
  */
-export async function createTestActivity(userId: string, overrides?: Partial<{
-  startedAt: Date;
-  endedAt: Date;
-  duration: number;
-  activityType: ActivityType;
-  intensity: ActivityIntensity;
-  caloriesBurned: number;
-  source: string;
-}>): Promise<Activity> {
+export async function createTestActivity(
+  userId: string,
+  overrides?: Partial<{
+    startedAt: Date;
+    endedAt: Date;
+    duration: number;
+    activityType: ActivityType;
+    intensity: ActivityIntensity;
+    caloriesBurned: number;
+    source: string;
+  }>
+): Promise<Activity> {
   const now = new Date();
   const defaultActivity = {
     userId,
@@ -268,13 +281,16 @@ export async function createTestActivity(userId: string, overrides?: Partial<{
 /**
  * Create a test health metric
  */
-export async function createTestHealthMetric(userId: string, overrides?: Partial<{
-  recordedAt: Date;
-  metricType: HealthMetricType;
-  value: number;
-  unit: string;
-  source: string;
-}>): Promise<HealthMetric> {
+export async function createTestHealthMetric(
+  userId: string,
+  overrides?: Partial<{
+    recordedAt: Date;
+    metricType: HealthMetricType;
+    value: number;
+    unit: string;
+    source: string;
+  }>
+): Promise<HealthMetric> {
   const defaultMetric = {
     userId,
     recordedAt: new Date(),
@@ -359,13 +375,15 @@ export function assertHealthMetricStructure(metric: unknown): void {
 /**
  * Create a test admin user
  */
-export async function createTestAdminUser(overrides?: Partial<{
-  email: string;
-  passwordHash: string;
-  name: string;
-  role: AdminRole;
-  mfaEnabled: boolean;
-}>): Promise<AdminUser> {
+export async function createTestAdminUser(
+  overrides?: Partial<{
+    email: string;
+    passwordHash: string;
+    name: string;
+    role: AdminRole;
+    mfaEnabled: boolean;
+  }>
+): Promise<AdminUser> {
   const bcrypt = require('bcryptjs');
 
   const defaultPasswordHash = await bcrypt.hash('AdminPass123!', 10);
@@ -387,7 +405,10 @@ export async function createTestAdminUser(overrides?: Partial<{
 /**
  * Create a test admin JWT token
  */
-export function createTestAdminToken(adminId: string, options?: { email?: string; role?: AdminRole }): string {
+export function createTestAdminToken(
+  adminId: string,
+  options?: { email?: string; role?: AdminRole }
+): string {
   const jwt = require('jsonwebtoken');
   return jwt.sign(
     {
@@ -395,7 +416,7 @@ export function createTestAdminToken(adminId: string, options?: { email?: string
       email: options?.email || 'admin@test.com',
       role: options?.role || 'SUPER_ADMIN',
       sessionId: 'test-session-id',
-      type: 'admin'
+      type: 'admin',
     },
     process.env.JWT_SECRET,
     { expiresIn: '8h' }

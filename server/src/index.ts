@@ -33,11 +33,52 @@ const app = express();
 app.set('trust proxy', getTrustProxyConfig());
 
 // Security middleware (must be early in the chain)
-app.use(httpsRedirect);  // Redirect HTTP to HTTPS in production
+app.use(httpsRedirect); // Redirect HTTP to HTTPS in production
 app.use(securityHeaders); // Set security headers including HSTS
 
 // Middleware
-app.use(cors());
+
+// CORS configuration with explicit origins
+// In production: requires CORS_ORIGIN env var
+// In development: allows localhost origins for mobile development
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      // Check if origin is in allowed list
+      if (config.cors.origins.length === 0) {
+        // No origins configured - reject in production, warn in development
+        if (config.nodeEnv === 'production') {
+          callback(new Error('CORS_ORIGIN not configured for production'));
+          return;
+        }
+        // In development without config, allow the request but log warning
+        logger.warn({ origin }, 'CORS: Allowing request from unconfigured origin in development');
+        callback(null, true);
+        return;
+      }
+
+      if (config.cors.origins.includes(origin)) {
+        callback(null, true);
+      } else {
+        logger.warn(
+          { origin, allowedOrigins: config.cors.origins },
+          'CORS: Blocked request from unauthorized origin'
+        );
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: config.cors.credentials,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID'],
+    exposedHeaders: ['X-Correlation-ID'],
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -75,7 +116,9 @@ app.use(
 
     // Validate that credentials are configured
     if (!adminUser || !adminPass) {
-      logger.error('Bull Board credentials not configured. Set BULL_BOARD_USERNAME and BULL_BOARD_PASSWORD');
+      logger.error(
+        'Bull Board credentials not configured. Set BULL_BOARD_USERNAME and BULL_BOARD_PASSWORD'
+      );
       res.status(503).json({
         error: 'Queue dashboard not configured',
         message: 'Administrator credentials must be set in environment variables',
@@ -131,11 +174,14 @@ app.use(
     }
 
     if (!userMatch || !passMatch) {
-      logger.warn({
-        ip: req.ip,
-        path: req.path,
-        correlationId: req.id,
-      }, 'Failed Bull Board authentication attempt');
+      logger.warn(
+        {
+          ip: req.ip,
+          path: req.path,
+          correlationId: req.id,
+        },
+        'Failed Bull Board authentication attempt'
+      );
 
       res.setHeader('WWW-Authenticate', 'Basic realm="Queue Dashboard"');
       res.status(401).send('Invalid credentials');
@@ -143,11 +189,14 @@ app.use(
     }
 
     // Log successful access
-    logger.info({
-      ip: req.ip,
-      path: req.path,
-      correlationId: req.id,
-    }, 'Bull Board access granted');
+    logger.info(
+      {
+        ip: req.ip,
+        path: req.path,
+        correlationId: req.id,
+      },
+      'Bull Board access granted'
+    );
 
     next();
   },
@@ -262,10 +311,10 @@ app.get('/health', async (_req, res) => {
         setTimeout(() => reject(new Error('Queue health check timeout')), QUEUE_CHECK_TIMEOUT)
       );
 
-      const [waiting, active, completed, failed] = await Promise.race([
+      const [waiting, active, completed, failed] = (await Promise.race([
         queueCheckPromise,
         timeoutPromise,
-      ]) as [number, number, number, number];
+      ])) as [number, number, number, number];
 
       checks.notification_queue = {
         status: 'healthy',
@@ -318,13 +367,16 @@ if (process.env.NODE_ENV !== 'test') {
   const PORT = config.port;
 
   app.listen(PORT, async () => {
-    logger.info({
-      port: PORT,
-      env: config.nodeEnv,
-      version: packageJson.version,
-      healthCheck: `http://localhost:${PORT}/health`,
-      queueDashboard: `http://localhost:${PORT}/admin/queues`,
-    }, 'Server started');
+    logger.info(
+      {
+        port: PORT,
+        env: config.nodeEnv,
+        version: packageJson.version,
+        healthCheck: `http://localhost:${PORT}/health`,
+        queueDashboard: `http://localhost:${PORT}/admin/queues`,
+      },
+      'Server started'
+    );
 
     // Initialize notification scheduler maintenance jobs
     try {

@@ -127,7 +127,15 @@ function RootLayoutNav() {
         router.replace('/(tabs)');
       }
     }
-  }, [isAuthenticated, segments, isLoading, router, onboardingChecked, needsOnboarding, inOnboardingGroup]);
+  }, [
+    isAuthenticated,
+    segments,
+    isLoading,
+    router,
+    onboardingChecked,
+    needsOnboarding,
+    inOnboardingGroup,
+  ]);
 
   return (
     <Stack>
@@ -142,56 +150,56 @@ function RootLayoutNav() {
         name="add-meal"
         options={{
           headerShown: false,
-          animation: 'slide_from_bottom'
+          animation: 'slide_from_bottom',
         }}
       />
       <Stack.Screen
         name="edit-meal/[id]"
         options={{
           headerShown: false,
-          animation: 'slide_from_right'
+          animation: 'slide_from_right',
         }}
       />
       <Stack.Screen
         name="edit-health-metric/[id]"
         options={{
           headerShown: false,
-          animation: 'slide_from_right'
+          animation: 'slide_from_right',
         }}
       />
       <Stack.Screen
         name="scan-food"
         options={{
           headerShown: false,
-          animation: 'slide_from_bottom'
+          animation: 'slide_from_bottom',
         }}
       />
       <Stack.Screen
         name="scan-barcode"
         options={{
           headerShown: false,
-          animation: 'slide_from_bottom'
+          animation: 'slide_from_bottom',
         }}
       />
       <Stack.Screen
         name="scan-supplement-barcode"
         options={{
           headerShown: false,
-          animation: 'slide_from_bottom'
+          animation: 'slide_from_bottom',
         }}
       />
       <Stack.Screen
         name="health-settings"
         options={{
           headerShown: false,
-          animation: 'slide_from_right'
+          animation: 'slide_from_right',
         }}
       />
       <Stack.Screen
         name="notification-settings"
         options={{
           headerShown: false,
-          animation: 'slide_from_right'
+          animation: 'slide_from_right',
         }}
       />
       <Stack.Screen
@@ -199,21 +207,21 @@ function RootLayoutNav() {
         options={{
           headerShown: false,
           animation: 'slide_from_bottom',
-          presentation: 'modal'
+          presentation: 'modal',
         }}
       />
       <Stack.Screen
         name="health/[metricType]"
         options={{
           headerShown: false,
-          animation: 'slide_from_right'
+          animation: 'slide_from_right',
         }}
       />
       <Stack.Screen
         name="health/add"
         options={{
           headerShown: false,
-          animation: 'slide_from_bottom'
+          animation: 'slide_from_bottom',
         }}
       />
       <Stack.Screen
@@ -221,35 +229,35 @@ function RootLayoutNav() {
         options={{
           headerShown: false,
           animation: 'slide_from_bottom',
-          presentation: 'modal'
+          presentation: 'modal',
         }}
       />
       <Stack.Screen
         name="terms"
         options={{
           headerShown: false,
-          animation: 'slide_from_right'
+          animation: 'slide_from_right',
         }}
       />
       <Stack.Screen
         name="privacy"
         options={{
           headerShown: false,
-          animation: 'slide_from_right'
+          animation: 'slide_from_right',
         }}
       />
       <Stack.Screen
         name="supplements"
         options={{
           headerShown: false,
-          animation: 'slide_from_right'
+          animation: 'slide_from_right',
         }}
       />
       <Stack.Screen
         name="food-search"
         options={{
           headerShown: false,
-          animation: 'slide_from_bottom'
+          animation: 'slide_from_bottom',
         }}
       />
       <Stack.Screen name="+not-found" options={{ headerShown: false }} />
@@ -282,9 +290,7 @@ export default function RootLayout() {
           await ScreenOrientation.unlockAsync();
         } else {
           // iPhone/Android: Lock to portrait only
-          await ScreenOrientation.lockAsync(
-            ScreenOrientation.OrientationLock.PORTRAIT_UP
-          );
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
         }
       } catch (error) {
         // Fallback: silently ignore if native module fails

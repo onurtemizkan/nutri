@@ -99,24 +99,27 @@ export const errorHandler = (
   }
 
   // Log the error with structured context
-  logger.error({
-    err: {
-      message: err.message,
-      name: err.name,
-      stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined,
-      ...(err instanceof PrismaClientKnownRequestError && {
-        prismaCode: err.code,
-        prismaMeta: err.meta,
-      }),
+  logger.error(
+    {
+      err: {
+        message: err.message,
+        name: err.name,
+        stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined,
+        ...(err instanceof PrismaClientKnownRequestError && {
+          prismaCode: err.code,
+          prismaMeta: err.meta,
+        }),
+      },
+      correlationId: req.id,
+      statusCode,
+      path: req.path,
+      method: req.method,
+      query: Object.keys(req.query || {}).length > 0 ? req.query : undefined,
+      params: Object.keys(req.params || {}).length > 0 ? req.params : undefined,
+      userId: (req as Express.Request & { userId?: string }).userId,
     },
-    correlationId: req.id,
-    statusCode,
-    path: req.path,
-    method: req.method,
-    query: Object.keys(req.query || {}).length > 0 ? req.query : undefined,
-    params: Object.keys(req.params || {}).length > 0 ? req.params : undefined,
-    userId: (req as Express.Request & { userId?: string }).userId,
-  }, `Request error: ${err.message}`);
+    `Request error: ${err.message}`
+  );
 
   // Send error response
   res.status(statusCode).json({

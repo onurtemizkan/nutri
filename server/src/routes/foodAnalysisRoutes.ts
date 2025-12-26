@@ -6,6 +6,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import axios, { AxiosError } from 'axios';
 import FormData from 'form-data';
 import multer from 'multer';
+import { logger } from '../config/logger';
 
 const router = Router();
 
@@ -32,13 +33,19 @@ router.post(
   '/analyze',
   upload.single('image'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    console.log('📸 Food analysis request received');
-    console.log('  - File:', req.file ? `${req.file.originalname} (${req.file.size} bytes)` : 'NO FILE');
-    console.log('  - Body keys:', Object.keys(req.body));
+    logger.debug(
+      {
+        hasFile: !!req.file,
+        fileSize: req.file?.size,
+        mimeType: req.file?.mimetype,
+        bodyKeys: Object.keys(req.body),
+      },
+      'Food analysis request received'
+    );
 
     try {
       if (!req.file) {
-        console.log('❌ No image file provided');
+        logger.warn('Food analysis request missing image file');
         res.status(400).json({ error: 'No image file provided' });
         return;
       }
@@ -59,16 +66,12 @@ router.post(
       }
 
       // Forward request to ML service
-      const response = await axios.post(
-        `${ML_SERVICE_URL}/api/food/analyze`,
-        formData,
-        {
-          headers: {
-            ...formData.getHeaders(),
-          },
-          timeout: 30000, // 30 second timeout
-        }
-      );
+      const response = await axios.post(`${ML_SERVICE_URL}/api/food/analyze`, formData, {
+        headers: {
+          ...formData.getHeaders(),
+        },
+        timeout: 30000, // 30 second timeout
+      });
 
       res.json(response.data);
     } catch (error) {
@@ -76,9 +79,7 @@ router.post(
         const axiosError = error as AxiosError;
         if (axiosError.response) {
           // ML service returned an error
-          res
-            .status(axiosError.response.status)
-            .json(axiosError.response.data);
+          res.status(axiosError.response.status).json(axiosError.response.data);
           return;
         }
         if (axiosError.code === 'ECONNREFUSED') {
@@ -143,13 +144,10 @@ router.get(
         return;
       }
 
-      const response = await axios.get(
-        `${ML_SERVICE_URL}/api/food/nutrition-db/search`,
-        {
-          params: { q },
-          timeout: 10000,
-        }
-      );
+      const response = await axios.get(`${ML_SERVICE_URL}/api/food/nutrition-db/search`, {
+        params: { q },
+        timeout: 10000,
+      });
       res.json(response.data);
     } catch (error) {
       if (axios.isAxiosError(error) && error.code === 'ECONNREFUSED') {
@@ -172,12 +170,9 @@ router.get(
   '/cooking-methods',
   async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const response = await axios.get(
-        `${ML_SERVICE_URL}/api/food/cooking-methods`,
-        {
-          timeout: 5000,
-        }
-      );
+      const response = await axios.get(`${ML_SERVICE_URL}/api/food/cooking-methods`, {
+        timeout: 5000,
+      });
       res.json(response.data);
     } catch (error) {
       if (axios.isAxiosError(error) && error.code === 'ECONNREFUSED') {
@@ -196,37 +191,34 @@ router.get(
  * GET /api/food/health
  * Health check for food analysis service
  */
-router.get(
-  '/health',
-  async (_req: Request, res: Response): Promise<void> => {
-    try {
-      const response = await axios.get(`${ML_SERVICE_URL}/api/food/health`, {
-        timeout: 5000,
-      });
-      res.json(response.data);
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        if (error.code === 'ECONNREFUSED') {
-          res.status(503).json({
-            status: 'unhealthy',
-            service: 'food-analysis',
-            error: 'ML service not reachable',
-          });
-          return;
-        }
-        if (error.response) {
-          res.status(error.response.status).json(error.response.data);
-          return;
-        }
+router.get('/health', async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const response = await axios.get(`${ML_SERVICE_URL}/api/food/health`, {
+      timeout: 5000,
+    });
+    res.json(response.data);
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.code === 'ECONNREFUSED') {
+        res.status(503).json({
+          status: 'unhealthy',
+          service: 'food-analysis',
+          error: 'ML service not reachable',
+        });
+        return;
       }
-      res.status(503).json({
-        status: 'unhealthy',
-        service: 'food-analysis',
-        error: 'Unknown error',
-      });
+      if (error.response) {
+        res.status(error.response.status).json(error.response.data);
+        return;
+      }
     }
+    res.status(503).json({
+      status: 'unhealthy',
+      service: 'food-analysis',
+      error: 'Unknown error',
+    });
   }
-);
+});
 
 // ============================================================================
 // FEEDBACK ROUTES - Proxy to ML service
@@ -236,34 +228,29 @@ router.get(
  * POST /api/food/feedback
  * Submit feedback when food classification is incorrect
  */
-router.post(
-  '/feedback',
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const response = await axios.post(
-        `${ML_SERVICE_URL}/api/food/feedback`,
-        req.body,
-        { timeout: 10000 }
-      );
-      res.json(response.data);
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        if (error.code === 'ECONNREFUSED') {
-          res.status(503).json({
-            error: 'ML service unavailable',
-            message: 'The feedback service is temporarily unavailable',
-          });
-          return;
-        }
-        if (error.response) {
-          res.status(error.response.status).json(error.response.data);
-          return;
-        }
+router.post('/feedback', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const response = await axios.post(`${ML_SERVICE_URL}/api/food/feedback`, req.body, {
+      timeout: 10000,
+    });
+    res.json(response.data);
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.code === 'ECONNREFUSED') {
+        res.status(503).json({
+          error: 'ML service unavailable',
+          message: 'The feedback service is temporarily unavailable',
+        });
+        return;
       }
-      next(error);
+      if (error.response) {
+        res.status(error.response.status).json(error.response.data);
+        return;
+      }
     }
+    next(error);
   }
-);
+});
 
 /**
  * GET /api/food/feedback/stats
@@ -273,10 +260,9 @@ router.get(
   '/feedback/stats',
   async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const response = await axios.get(
-        `${ML_SERVICE_URL}/api/food/feedback/stats`,
-        { timeout: 10000 }
-      );
+      const response = await axios.get(`${ML_SERVICE_URL}/api/food/feedback/stats`, {
+        timeout: 10000,
+      });
       res.json(response.data);
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -346,7 +332,7 @@ router.post(
   '/classify-and-search',
   upload.single('image'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    console.log('🔍 Classify-and-search request received');
+    logger.debug('Classify-and-search request received');
 
     try {
       if (!req.file) {
@@ -383,10 +369,10 @@ router.post(
         if (axios.isAxiosError(classifyError)) {
           if (classifyError.code === 'ECONNREFUSED') {
             // ML service unavailable - return search-only results
-            console.warn('ML service unavailable, falling back to search-only');
+            logger.warn('ML service unavailable, falling back to search-only');
             classification = null;
           } else if (classifyError.response) {
-            console.warn('Classification failed:', classifyError.response.data);
+            logger.warn({ responseData: classifyError.response.data }, 'Classification failed');
             classification = null;
           } else {
             classification = null;
@@ -422,7 +408,7 @@ router.post(
             limit: 10,
           });
         } catch (searchError) {
-          console.error('USDA search failed:', searchError);
+          logger.error({ err: searchError }, 'USDA search failed');
           // Continue without search results
         }
       }
@@ -471,7 +457,6 @@ router.post(
         portionEstimate,
         query: searchQuery,
       });
-
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError;
@@ -500,10 +485,9 @@ router.get(
   '/coarse-classify/categories',
   async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const response = await axios.get(
-        `${ML_SERVICE_URL}/api/food/coarse-classify/categories`,
-        { timeout: 5000 }
-      );
+      const response = await axios.get(`${ML_SERVICE_URL}/api/food/coarse-classify/categories`, {
+        timeout: 5000,
+      });
       res.json(response.data);
     } catch (error) {
       if (axios.isAxiosError(error)) {

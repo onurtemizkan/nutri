@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { MIN_PASSWORD_LENGTH } from '../config/constants';
+import { MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH, PASSWORD_ERRORS } from '../config/constants';
 
 /**
  * Centralized Zod validation schemas
@@ -131,12 +131,26 @@ export const nonEmptyStringSchema = z.string().min(1);
 export const emailSchema = z.string().email();
 
 /**
- * Password (minimum 12 characters per OWASP guidelines)
+ * Password schema with complexity requirements
+ * - Minimum 12 characters (OWASP recommendation)
+ * - Maximum 128 characters
+ * - At least one uppercase letter
+ * - At least one lowercase letter
+ * - At least one number
  */
-export const passwordSchema = z.string().min(
-  MIN_PASSWORD_LENGTH,
-  `Password must be at least ${MIN_PASSWORD_LENGTH} characters`
-);
+export const passwordSchema = z
+  .string()
+  .min(MIN_PASSWORD_LENGTH, PASSWORD_ERRORS.TOO_SHORT)
+  .max(MAX_PASSWORD_LENGTH, PASSWORD_ERRORS.TOO_LONG)
+  .refine((val) => /[A-Z]/.test(val), {
+    message: PASSWORD_ERRORS.MISSING_UPPERCASE,
+  })
+  .refine((val) => /[a-z]/.test(val), {
+    message: PASSWORD_ERRORS.MISSING_LOWERCASE,
+  })
+  .refine((val) => /[0-9]/.test(val), {
+    message: PASSWORD_ERRORS.MISSING_NUMBER,
+  });
 
 /**
  * Non-negative number schema (for micronutrients that can be 0)
@@ -238,17 +252,17 @@ export const createMealSchema = z.object({
   phosphorus: nonNegativeNumberSchema.optional(),
 
   // Vitamins (optional) - various units
-  vitaminA: nonNegativeNumberSchema.optional(),    // mcg RAE
-  vitaminC: nonNegativeNumberSchema.optional(),    // mg
-  vitaminD: nonNegativeNumberSchema.optional(),    // mcg
-  vitaminE: nonNegativeNumberSchema.optional(),    // mg
-  vitaminK: nonNegativeNumberSchema.optional(),    // mcg
-  vitaminB6: nonNegativeNumberSchema.optional(),   // mg
-  vitaminB12: nonNegativeNumberSchema.optional(),  // mcg
-  folate: nonNegativeNumberSchema.optional(),      // mcg DFE
-  thiamin: nonNegativeNumberSchema.optional(),     // mg (B1)
-  riboflavin: nonNegativeNumberSchema.optional(),  // mg (B2)
-  niacin: nonNegativeNumberSchema.optional(),      // mg (B3)
+  vitaminA: nonNegativeNumberSchema.optional(), // mcg RAE
+  vitaminC: nonNegativeNumberSchema.optional(), // mg
+  vitaminD: nonNegativeNumberSchema.optional(), // mcg
+  vitaminE: nonNegativeNumberSchema.optional(), // mg
+  vitaminK: nonNegativeNumberSchema.optional(), // mcg
+  vitaminB6: nonNegativeNumberSchema.optional(), // mg
+  vitaminB12: nonNegativeNumberSchema.optional(), // mcg
+  folate: nonNegativeNumberSchema.optional(), // mcg DFE
+  thiamin: nonNegativeNumberSchema.optional(), // mg (B1)
+  riboflavin: nonNegativeNumberSchema.optional(), // mg (B2)
+  niacin: nonNegativeNumberSchema.optional(), // mg (B3)
 
   servingSize: z.string().optional(),
   notes: z.string().optional(),
@@ -364,7 +378,10 @@ export const createSupplementSchema = z.object({
   startDate: datetimeSchema.optional(),
   endDate: datetimeSchema.optional().nullable(),
   notes: z.string().max(500).optional(),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color').optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color')
+    .optional(),
 
   // Micronutrient content (estimated or from barcode)
   // Vitamins (optional) - values with reasonable max limits
@@ -438,10 +455,13 @@ export const foodSearchQuerySchema = z.object({
   q: nonEmptyStringSchema.min(1, 'Search query is required').max(200),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(25),
-  dataType: z.string().optional().transform((val) => {
-    if (!val) return undefined;
-    return val.split(',').filter(Boolean);
-  }),
+  dataType: z
+    .string()
+    .optional()
+    .transform((val) => {
+      if (!val) return undefined;
+      return val.split(',').filter(Boolean);
+    }),
   sortBy: z.enum(['dataType.keyword', 'description', 'fdcId', 'publishedDate']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
   brandOwner: z.string().max(100).optional(),
@@ -480,11 +500,13 @@ export const classificationHintsSchema = z.object({
  */
 export const classifyAndSearchSchema = z.object({
   image: z.string().min(1, 'Image data is required'),
-  dimensions: z.object({
-    width: z.number().positive(),
-    height: z.number().positive(),
-    depth: z.number().positive().optional(),
-  }).optional(),
+  dimensions: z
+    .object({
+      width: z.number().positive(),
+      height: z.number().positive(),
+      depth: z.number().positive().optional(),
+    })
+    .optional(),
 });
 
 // ============================================================================
@@ -578,7 +600,9 @@ export const notificationStatusSchema = z.enum([
 /**
  * Time format schema (HH:mm)
  */
-const timeFormatSchema = z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:mm format');
+const timeFormatSchema = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:mm format');
 
 /**
  * Register Device Schema
@@ -687,7 +711,13 @@ export const alcoholUseLevelSchema = z.enum(['NONE', 'OCCASIONAL', 'MODERATE', '
 /**
  * Activity Level (string-based for user model)
  */
-export const activityLevelSchema = z.enum(['sedentary', 'light', 'moderate', 'active', 'veryActive']);
+export const activityLevelSchema = z.enum([
+  'sedentary',
+  'light',
+  'moderate',
+  'active',
+  'veryActive',
+]);
 
 /**
  * Dietary Preferences

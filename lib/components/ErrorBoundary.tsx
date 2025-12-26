@@ -8,14 +8,7 @@
  */
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, typography } from '@/lib/theme/colors';
 
@@ -145,10 +138,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               <Ionicons name="warning" size={64} color={colors.semantic.error} />
             </View>
 
-            <Text
-              style={styles.title}
-              accessibilityRole="header"
-            >
+            <Text style={styles.title} accessibilityRole="header">
               Something went wrong
             </Text>
             <Text style={styles.message}>
@@ -186,9 +176,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 {errorInfo?.componentStack && (
                   <>
                     <Text style={styles.detailsTitle}>Component Stack</Text>
-                    <Text style={styles.stackTrace}>
-                      {errorInfo.componentStack}
-                    </Text>
+                    <Text style={styles.stackTrace}>{errorInfo.componentStack}</Text>
                   </>
                 )}
               </ScrollView>
