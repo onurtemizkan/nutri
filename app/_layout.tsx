@@ -296,6 +296,34 @@ function RootLayoutNav() {
           animation: 'slide_from_bottom',
         }}
       />
+      <Stack.Screen
+        name="weight/index"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="weight/add"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen
+        name="weight/edit/[id]"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="weight/goal"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_bottom',
+        }}
+      />
       <Stack.Screen name="+not-found" options={{ headerShown: false }} />
     </Stack>
   );
