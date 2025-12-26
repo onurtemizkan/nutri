@@ -32,6 +32,7 @@ import { SwipeableMealCard } from '@/lib/components/SwipeableMealCard';
 import { SupplementTracker } from '@/lib/components/SupplementTracker';
 import { DailyMicronutrientSummary } from '@/lib/components/DailyMicronutrientSummary';
 import { WeightWidget } from '@/lib/components/WeightWidget';
+import { GoalProgressSection } from '@/lib/components/GoalProgressSection';
 import { showAlert } from '@/lib/utils/alert';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 
@@ -441,6 +442,9 @@ export default function HomeScreen() {
             meals={summary?.meals || []}
             supplements={supplementStatus?.supplements}
           />
+
+          {/* Goal Progress Section */}
+          <GoalProgressSection />
 
           {/* 7-Day Health Trends */}
           {healthTrends && Object.keys(healthTrends).length > 0 && (
