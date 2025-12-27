@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
@@ -19,24 +18,56 @@ import { getErrorMessage } from '@/lib/utils/errorHandling';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import { useResponsive } from '@/hooks/useResponsive';
 import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
+import { Input } from '@/lib/components/ui/Input';
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [touched, setTouched] = useState(false);
+  const [error, setError] = useState('');
+
   const router = useRouter();
   const { isTablet, getSpacing } = useResponsive();
   const responsiveSpacing = getSpacing();
 
-  const handleForgotPassword = async () => {
-    if (!email) {
-      Alert.alert('Error', 'Please enter your email address');
-      return;
+  // Validation
+  const validateEmail = useCallback((value: string): string => {
+    if (!value.trim()) {
+      return 'Email is required';
     }
+    if (!EMAIL_REGEX.test(value)) {
+      return 'Please enter a valid email address';
+    }
+    return '';
+  }, []);
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
+  const handleBlur = useCallback(() => {
+    setTouched(true);
+    const emailError = validateEmail(email);
+    setError(emailError);
+  }, [email, validateEmail]);
+
+  const handleChange = useCallback(
+    (value: string) => {
+      setEmail(value);
+      if (touched) {
+        const emailError = validateEmail(value);
+        setError(emailError);
+      }
+    },
+    [touched, validateEmail]
+  );
+
+  const handleForgotPassword = async () => {
+    // Validate on submit
+    setTouched(true);
+    const emailError = validateEmail(email);
+    setError(emailError);
+
+    if (emailError) {
       return;
     }
 
@@ -64,8 +95,9 @@ export default function ForgotPasswordScreen() {
           ]
         );
       }
-    } catch (error) {
-      Alert.alert('Error', getErrorMessage(error, 'Failed to send reset email'));
+    } catch (err) {
+      // Server-side errors still use Alert
+      Alert.alert('Error', getErrorMessage(err, 'Failed to send reset email'));
     } finally {
       setIsLoading(false);
     }
@@ -100,6 +132,9 @@ export default function ForgotPasswordScreen() {
                 onPress={() => router.push('/auth/signin')}
                 activeOpacity={0.8}
                 testID="forgot-password-back-to-signin-button"
+                accessibilityRole="button"
+                accessibilityLabel="Back to sign in"
+                accessibilityHint="Navigate to sign in screen"
               >
                 <LinearGradient
                   colors={gradients.primary}
@@ -116,6 +151,9 @@ export default function ForgotPasswordScreen() {
                 onPress={() => setEmailSent(false)}
                 activeOpacity={0.8}
                 testID="forgot-password-try-another-email-button"
+                accessibilityRole="button"
+                accessibilityLabel="Try another email"
+                accessibilityHint="Go back to enter a different email address"
               >
                 <Text style={styles.secondaryButtonText}>Try Another Email</Text>
               </TouchableOpacity>
@@ -153,26 +191,22 @@ export default function ForgotPasswordScreen() {
 
           {/* Form */}
           <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="your@email.com"
-                  placeholderTextColor={colors.text.disabled}
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  editable={!isLoading}
-                  autoFocus
-                  autoComplete="email"
-                  returnKeyType="done"
-                  onSubmitEditing={handleForgotPassword}
-                  testID="forgot-password-email-input"
-                />
-              </View>
-            </View>
+            <Input
+              label="Email"
+              value={email}
+              onChangeText={handleChange}
+              onBlur={handleBlur}
+              placeholder="your@email.com"
+              error={touched ? error : undefined}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              returnKeyType="done"
+              onSubmitEditing={handleForgotPassword}
+              disabled={isLoading}
+              autoFocus
+              testID="forgot-password-email-input"
+            />
 
             <TouchableOpacity
               style={[styles.button, isLoading && styles.buttonDisabled]}
@@ -180,6 +214,10 @@ export default function ForgotPasswordScreen() {
               disabled={isLoading}
               activeOpacity={0.8}
               testID="forgot-password-submit-button"
+              accessibilityRole="button"
+              accessibilityLabel={isLoading ? 'Sending reset link' : 'Send reset link'}
+              accessibilityHint="Double tap to send password reset link to your email"
+              accessibilityState={{ disabled: isLoading, busy: isLoading }}
             >
               <LinearGradient
                 colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
@@ -198,7 +236,13 @@ export default function ForgotPasswordScreen() {
             <View style={styles.footer}>
               <Text style={styles.footerText}>Remember your password? </Text>
               <Link href="/auth/signin" asChild>
-                <TouchableOpacity disabled={isLoading} testID="forgot-password-signin-link">
+                <TouchableOpacity
+                  disabled={isLoading}
+                  testID="forgot-password-signin-link"
+                  accessibilityRole="link"
+                  accessibilityLabel="Sign in"
+                  accessibilityHint="Navigate to sign in to your account"
+                >
                   <Text style={styles.link}>Sign In</Text>
                 </TouchableOpacity>
               </Link>
@@ -253,40 +297,14 @@ const styles = StyleSheet.create({
 
   // Form
   form: {
-    gap: spacing.lg,
-  },
-
-  // Input
-  inputContainer: {
-    gap: spacing.sm,
-  },
-  label: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.secondary,
-    letterSpacing: 0.3,
-  },
-  inputWrapper: {
-    backgroundColor: colors.background.tertiary,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border.secondary,
-    overflow: 'hidden',
-  },
-  input: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    fontSize: typography.fontSize.md,
-    color: colors.text.primary,
-    height: 52,
-    textAlignVertical: 'center',
+    gap: spacing.xs,
   },
 
   // Button
   button: {
     borderRadius: borderRadius.md,
     overflow: 'hidden',
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
     ...shadows.md,
   },
   buttonDisabled: {
@@ -326,7 +344,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
   },
   footerText: {
     color: colors.text.tertiary,

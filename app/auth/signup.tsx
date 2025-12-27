@@ -1,8 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
@@ -10,7 +9,6 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
-  type TextInput as TextInputType,
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,6 +18,12 @@ import { getErrorMessage } from '@/lib/utils/errorHandling';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import { useResponsive } from '@/hooks/useResponsive';
 import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
+import { Input, type InputRef } from '@/lib/components/ui/Input';
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 6;
+
+type FieldName = 'name' | 'email' | 'password' | 'confirmPassword';
 
 export default function SignUpScreen() {
   const [name, setName] = useState('');
@@ -27,42 +31,149 @@ export default function SignUpScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [touched, setTouched] = useState<Record<FieldName, boolean>>({
+    name: false,
+    email: false,
+    password: false,
+    confirmPassword: false,
+  });
+  const [errors, setErrors] = useState<Record<FieldName, string>>({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+
   const { register } = useAuth();
   const router = useRouter();
   const { isTablet, getSpacing } = useResponsive();
   const responsiveSpacing = getSpacing();
 
-  const emailInputRef = useRef<TextInputType>(null);
-  const passwordInputRef = useRef<TextInputType>(null);
-  const confirmPasswordInputRef = useRef<TextInputType>(null);
+  const emailInputRef = useRef<InputRef>(null);
+  const passwordInputRef = useRef<InputRef>(null);
+  const confirmPasswordInputRef = useRef<InputRef>(null);
+
+  // Validation functions
+  const validateName = useCallback((value: string): string => {
+    if (!value.trim()) {
+      return 'Name is required';
+    }
+    return '';
+  }, []);
+
+  const validateEmail = useCallback((value: string): string => {
+    if (!value.trim()) {
+      return 'Email is required';
+    }
+    if (!EMAIL_REGEX.test(value)) {
+      return 'Please enter a valid email address';
+    }
+    return '';
+  }, []);
+
+  const validatePassword = useCallback((value: string): string => {
+    if (!value) {
+      return 'Password is required';
+    }
+    if (value.length < MIN_PASSWORD_LENGTH) {
+      return `Password must be at least ${MIN_PASSWORD_LENGTH} characters`;
+    }
+    if (!/[A-Za-z]/.test(value) || !/[0-9]/.test(value)) {
+      return 'Password must contain both letters and numbers';
+    }
+    return '';
+  }, []);
+
+  const validateConfirmPassword = useCallback(
+    (value: string, currentPassword: string): string => {
+      if (!value) {
+        return 'Please confirm your password';
+      }
+      if (value !== currentPassword) {
+        return 'Passwords do not match';
+      }
+      return '';
+    },
+    []
+  );
+
+  const validateField = useCallback(
+    (name: FieldName, value: string): string => {
+      switch (name) {
+        case 'name':
+          return validateName(value);
+        case 'email':
+          return validateEmail(value);
+        case 'password':
+          return validatePassword(value);
+        case 'confirmPassword':
+          return validateConfirmPassword(value, password);
+        default:
+          return '';
+      }
+    },
+    [validateName, validateEmail, validatePassword, validateConfirmPassword, password]
+  );
+
+  const handleBlur = useCallback(
+    (name: FieldName, value: string) => {
+      setTouched((prev) => ({ ...prev, [name]: true }));
+      const error = validateField(name, value);
+      setErrors((prev) => ({ ...prev, [name]: error }));
+
+      // If password changed and confirmPassword is touched, re-validate confirmPassword
+      if (name === 'password' && touched.confirmPassword) {
+        const confirmError = validateConfirmPassword(confirmPassword, value);
+        setErrors((prev) => ({ ...prev, confirmPassword: confirmError }));
+      }
+    },
+    [validateField, touched.confirmPassword, confirmPassword, validateConfirmPassword]
+  );
+
+  const handleChange = useCallback(
+    (name: FieldName, value: string, setter: (v: string) => void) => {
+      setter(value);
+      // Only validate on change if the field has been touched
+      if (touched[name]) {
+        const error = validateField(name, value);
+        setErrors((prev) => ({ ...prev, [name]: error }));
+      }
+
+      // If password changes and confirmPassword has been touched, re-validate confirmPassword
+      if (name === 'password' && touched.confirmPassword) {
+        const confirmError = validateConfirmPassword(confirmPassword, value);
+        setErrors((prev) => ({ ...prev, confirmPassword: confirmError }));
+      }
+    },
+    [touched, validateField, confirmPassword, validateConfirmPassword]
+  );
+
+  const validateAllFields = useCallback((): boolean => {
+    const nameError = validateField('name', name);
+    const emailError = validateField('email', email);
+    const passwordError = validateField('password', password);
+    const confirmPasswordError = validateConfirmPassword(confirmPassword, password);
+
+    setErrors({
+      name: nameError,
+      email: emailError,
+      password: passwordError,
+      confirmPassword: confirmPasswordError,
+    });
+
+    setTouched({
+      name: true,
+      email: true,
+      password: true,
+      confirmPassword: true,
+    });
+
+    return !nameError && !emailError && !passwordError && !confirmPasswordError;
+  }, [name, email, password, confirmPassword, validateField, validateConfirmPassword]);
 
   const handleSignUp = async () => {
-    if (!name || !email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
-
-    if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
-      return;
-    }
-
-    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-      Alert.alert(
-        'Weak Password',
-        'Password should contain both letters and numbers for better security.'
-      );
+    // Validate all fields on submit
+    if (!validateAllFields()) {
       return;
     }
 
@@ -71,6 +182,7 @@ export default function SignUpScreen() {
       await register(email, password, name);
       router.replace('/(tabs)');
     } catch (error) {
+      // Server-side errors still use Alert
       Alert.alert('Sign Up Failed', getErrorMessage(error, 'Failed to create account'));
     } finally {
       setIsLoading(false);
@@ -88,7 +200,7 @@ export default function SignUpScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             { paddingHorizontal: responsiveSpacing.horizontal },
-            isTablet && styles.tabletContent
+            isTablet && styles.tabletContent,
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -103,91 +215,72 @@ export default function SignUpScreen() {
           {/* Form */}
           <View style={styles.form}>
             {/* Name Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Name</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Your name"
-                  placeholderTextColor={colors.text.disabled}
-                  value={name}
-                  onChangeText={setName}
-                  editable={!isLoading}
-                  autoComplete="name"
-                  returnKeyType="next"
-                  onSubmitEditing={() => emailInputRef.current?.focus()}
-                  blurOnSubmit={false}
-                  testID="signup-name-input"
-                />
-              </View>
-            </View>
+            <Input
+              label="Name"
+              value={name}
+              onChangeText={(value) => handleChange('name', value, setName)}
+              onBlur={() => handleBlur('name', name)}
+              placeholder="Your name"
+              error={touched.name ? errors.name : undefined}
+              autoComplete="name"
+              returnKeyType="next"
+              onSubmitEditing={() => emailInputRef.current?.focus()}
+              disabled={isLoading}
+              testID="signup-name-input"
+            />
 
             {/* Email Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  ref={emailInputRef}
-                  style={styles.input}
-                  placeholder="your@email.com"
-                  placeholderTextColor={colors.text.disabled}
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  editable={!isLoading}
-                  autoComplete="email"
-                  returnKeyType="next"
-                  onSubmitEditing={() => passwordInputRef.current?.focus()}
-                  blurOnSubmit={false}
-                  testID="signup-email-input"
-                />
-              </View>
-            </View>
+            <Input
+              ref={emailInputRef}
+              label="Email"
+              value={email}
+              onChangeText={(value) => handleChange('email', value, setEmail)}
+              onBlur={() => handleBlur('email', email)}
+              placeholder="your@email.com"
+              error={touched.email ? errors.email : undefined}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              returnKeyType="next"
+              onSubmitEditing={() => passwordInputRef.current?.focus()}
+              disabled={isLoading}
+              testID="signup-email-input"
+            />
 
             {/* Password Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  ref={passwordInputRef}
-                  style={styles.input}
-                  placeholder="At least 6 characters"
-                  placeholderTextColor={colors.text.disabled}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  editable={!isLoading}
-                  autoComplete="password-new"
-                  returnKeyType="next"
-                  onSubmitEditing={() => confirmPasswordInputRef.current?.focus()}
-                  blurOnSubmit={false}
-                  testID="signup-password-input"
-                />
-              </View>
-              <Text style={styles.hint}>Use letters and numbers for stronger security</Text>
-            </View>
+            <Input
+              ref={passwordInputRef}
+              label="Password"
+              value={password}
+              onChangeText={(value) => handleChange('password', value, setPassword)}
+              onBlur={() => handleBlur('password', password)}
+              placeholder="At least 6 characters"
+              error={touched.password ? errors.password : undefined}
+              helperText={!touched.password || !errors.password ? 'Use letters and numbers for stronger security' : undefined}
+              secureTextEntry
+              autoComplete="password-new"
+              returnKeyType="next"
+              onSubmitEditing={() => confirmPasswordInputRef.current?.focus()}
+              disabled={isLoading}
+              testID="signup-password-input"
+            />
 
             {/* Confirm Password Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Confirm Password</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  ref={confirmPasswordInputRef}
-                  style={styles.input}
-                  placeholder="Re-enter password"
-                  placeholderTextColor={colors.text.disabled}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry
-                  editable={!isLoading}
-                  autoComplete="password-new"
-                  returnKeyType="done"
-                  onSubmitEditing={handleSignUp}
-                  testID="signup-confirm-password-input"
-                />
-              </View>
-            </View>
+            <Input
+              ref={confirmPasswordInputRef}
+              label="Confirm Password"
+              value={confirmPassword}
+              onChangeText={(value) => handleChange('confirmPassword', value, setConfirmPassword)}
+              onBlur={() => handleBlur('confirmPassword', confirmPassword)}
+              placeholder="Re-enter password"
+              error={touched.confirmPassword ? errors.confirmPassword : undefined}
+              secureTextEntry
+              autoComplete="password-new"
+              returnKeyType="done"
+              onSubmitEditing={handleSignUp}
+              disabled={isLoading}
+              testID="signup-confirm-password-input"
+            />
 
             {/* Sign Up Button */}
             <TouchableOpacity
@@ -196,6 +289,10 @@ export default function SignUpScreen() {
               disabled={isLoading}
               activeOpacity={0.8}
               testID="signup-submit-button"
+              accessibilityRole="button"
+              accessibilityLabel={isLoading ? 'Creating account' : 'Create account'}
+              accessibilityHint="Double tap to create your account"
+              accessibilityState={{ disabled: isLoading, busy: isLoading }}
             >
               <LinearGradient
                 colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
@@ -215,7 +312,13 @@ export default function SignUpScreen() {
             <View style={styles.footer}>
               <Text style={styles.footerText}>Already have an account? </Text>
               <Link href="/auth/signin" asChild>
-                <TouchableOpacity disabled={isLoading} testID="signup-signin-link">
+                <TouchableOpacity
+                  disabled={isLoading}
+                  testID="signup-signin-link"
+                  accessibilityRole="link"
+                  accessibilityLabel="Sign in"
+                  accessibilityHint="Navigate to sign in to your existing account"
+                >
                   <Text style={styles.link}>Sign In</Text>
                 </TouchableOpacity>
               </Link>
@@ -269,45 +372,14 @@ const styles = StyleSheet.create({
 
   // Form
   form: {
-    gap: spacing.lg,
-  },
-
-  // Input
-  inputContainer: {
-    gap: spacing.sm,
-  },
-  label: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.secondary,
-    letterSpacing: 0.3,
-  },
-  inputWrapper: {
-    backgroundColor: colors.background.tertiary,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border.secondary,
-    overflow: 'hidden',
-  },
-  input: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    fontSize: typography.fontSize.md,
-    color: colors.text.primary,
-    height: 52,
-    textAlignVertical: 'center',
-  },
-  hint: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.disabled,
-    marginTop: -spacing.xs,
+    gap: spacing.xs,
   },
 
   // Button
   button: {
     borderRadius: borderRadius.md,
     overflow: 'hidden',
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
     ...shadows.md,
   },
   buttonDisabled: {
@@ -330,7 +402,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
   },
   footerText: {
     color: colors.text.tertiary,
