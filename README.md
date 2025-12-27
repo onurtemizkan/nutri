@@ -16,6 +16,7 @@ A full-stack nutrition tracking mobile application built with React Native (Expo
 ### Architecture Highlights
 
 **Type-Safe Backend**: The Node.js backend has been thoroughly refactored with TypeScript strict mode:
+
 - Zero `any` types - all code is fully typed
 - Type-safe enum validation for Prisma enums (HealthMetricType, ActivityType, etc.)
 - Centralized Zod validation schemas
@@ -23,6 +24,7 @@ A full-stack nutrition tracking mobile application built with React Native (Expo
 - Rate limiting middleware with configurable windows
 
 **Security First**: Production-ready security features:
+
 - JWT authentication with secure token handling
 - Input sanitization preventing XSS attacks
 - Rate limiting (API: 100/15min, Auth: 5/15min, Password Reset: 3/hour)
@@ -30,6 +32,7 @@ A full-stack nutrition tracking mobile application built with React Native (Expo
 - Content-Type validation
 
 **Performance Optimized**: Database and API optimizations:
+
 - Composite indexes for common query patterns
 - Pagination utilities with configurable limits
 - Efficient query filtering by user, date, and type
@@ -39,6 +42,7 @@ A full-stack nutrition tracking mobile application built with React Native (Expo
 ## Features
 
 ### Mobile App (React Native)
+
 - **Authentication**: Secure sign up/sign in with JWT tokens, Apple Sign-In, password reset
 - **Daily Dashboard**: View calorie and macronutrient progress at a glance
 - **Meal Tracking**: Log breakfast, lunch, dinner, and snacks
@@ -55,6 +59,7 @@ A full-stack nutrition tracking mobile application built with React Native (Expo
 - **ML Insights** (Coming Soon): View how your nutrition affects your health metrics
 
 ### Backend API (Node.js)
+
 - **RESTful API**: Built with Express.js and TypeScript
 - **PostgreSQL Database**: Robust data storage with Prisma ORM
 - **JWT Authentication**: Secure token-based authentication with Apple Sign-In support
@@ -66,6 +71,7 @@ A full-stack nutrition tracking mobile application built with React Native (Expo
 - **Daily/Weekly Summaries**: Get nutrition insights over time
 
 ### ML Service (Python) - FULLY OPERATIONAL
+
 - **Food Image Analysis**: CLIP + Food-101 ensemble classifier for food recognition
 - **Multi-Food Detection**: OWL-ViT for detecting multiple foods in one image
 - **Barcode Integration**: OpenFoodFacts lookup for packaged foods
@@ -78,6 +84,7 @@ A full-stack nutrition tracking mobile application built with React Native (Expo
 ## Tech Stack
 
 ### Mobile App (React Native)
+
 - React Native + Expo
 - TypeScript
 - Expo Router (file-based routing)
@@ -86,6 +93,7 @@ A full-stack nutrition tracking mobile application built with React Native (Expo
 - Victory Native or React Native Charts (data visualization)
 
 ### Backend (Node.js)
+
 - Node.js + TypeScript
 - Express.js
 - Prisma ORM
@@ -95,6 +103,7 @@ A full-stack nutrition tracking mobile application built with React Native (Expo
 - Zod for validation
 
 ### ML Service (Python) - IN-HOUSE ONLY
+
 - **Framework**: FastAPI + Uvicorn
 - **Database**: SQLAlchemy (async) + asyncpg
 - **Cache**: Redis (aioredis)
@@ -108,6 +117,7 @@ A full-stack nutrition tracking mobile application built with React Native (Expo
   - pandas, numpy (data manipulation)
 
 ### Infrastructure
+
 - PostgreSQL 16 (shared database)
 - Redis 7 (ML caching layer)
 - Docker + docker-compose (local development)
@@ -117,30 +127,36 @@ A full-stack nutrition tracking mobile application built with React Native (Expo
 The codebase has undergone comprehensive refactoring with focus on type safety, security, and maintainability:
 
 ### Phase 1: Type Safety Enhancement
+
 - **Eliminated all `any` types**: Removed 20+ `as any` assertions and 15+ `: any` annotations
 - **Type-safe enum validation**: Created utilities for parsing Prisma enums (HealthMetricType, ActivityType, ActivityIntensity)
 - **Proper error handling**: Type-safe error handling in React Native with `isAxiosError` type guards
 - **Strict TypeScript**: All controllers, services, and tests use proper Prisma types
 
 ### Phase 2: Code Organization & Consistency
+
 - **Centralized validation**: Consolidated 9 duplicate Zod schemas into `validation/schemas.ts`
 - **Constants extraction**: Removed magic numbers/strings from 20+ locations into `config/constants.ts`
 - **Reduced codebase**: Net reduction of ~13,600 lines through deduplication and cleanup
 
 ### Phase 3: Testing Infrastructure
+
 - **Comprehensive test coverage**: Added tests for health metrics and activities
 - **Test utilities**: Created type-safe test fixtures and assertion helpers
 - **Jest configuration**: Proper TypeScript integration with ts-jest
 
 ### Phase 4: API Enhancement
+
 - **Pagination utilities**: Reusable pagination types and helper functions
 - **Consistent response format**: Standardized API responses with metadata
 
 ### Phase 5: Performance Optimization
+
 - **Database indexes**: Documented composite indexes for common query patterns
 - **Optimized queries**: Efficient filtering by user, date, and type
 
 ### Phase 6: Security Hardening
+
 - **Rate limiting**: Configurable rate limiters (API: 100/15min, Auth: 5/15min)
 - **Input sanitization**: XSS prevention middleware
 - **Parameter pollution prevention**: Array size limits
@@ -248,17 +264,20 @@ nutri/
 ### Backend Setup
 
 1. **Navigate to the server directory**:
+
    ```bash
    cd server
    ```
 
 2. **Install dependencies**:
+
    ```bash
    npm install
    ```
 
 3. **Set up environment variables**:
    Create a `.env` file in the `server` directory:
+
    ```env
    DATABASE_URL="postgresql://postgres:password@localhost:5432/nutri_db"
    PORT=3000
@@ -268,6 +287,7 @@ nutri/
    ```
 
 4. **Create PostgreSQL database**:
+
    ```bash
    # Using psql
    createdb nutri_db
@@ -279,12 +299,14 @@ nutri/
    ```
 
 5. **Generate Prisma client and push schema**:
+
    ```bash
    npm run db:generate
    npm run db:push
    ```
 
 6. **Start the development server**:
+
    ```bash
    npm run dev
    ```
@@ -294,11 +316,13 @@ nutri/
 ### Mobile App Setup
 
 1. **Navigate to the project root**:
+
    ```bash
    cd ..
    ```
 
 2. **Install dependencies**:
+
    ```bash
    npm install
    ```
@@ -306,19 +330,22 @@ nutri/
 3. **Update API URL** (if needed):
 
    For physical devices, update the API URL in `lib/api/client.ts`:
+
    ```typescript
    // Change localhost to your computer's IP address
    const API_BASE_URL = __DEV__
-     ? 'http://192.168.1.XXX:3000/api'  // Replace with your IP
+     ? 'http://192.168.1.XXX:3000/api' // Replace with your IP
      : 'https://your-production-api.com/api';
    ```
 
 4. **Start the Expo development server**:
+
    ```bash
    npm start
    ```
 
 5. **Run on iOS/Android**:
+
    ```bash
    # iOS Simulator (Mac only)
    npm run ios
@@ -352,11 +379,13 @@ This starts:
 | Prisma Studio | 5555 | http://localhost:5555 |
 
 Stop all services:
+
 ```bash
 docker compose -f docker-compose.dev.yml down
 ```
 
 View logs:
+
 ```bash
 # All services
 docker compose -f docker-compose.dev.yml logs -f
@@ -379,25 +408,27 @@ cd server && npm run dev
 ```
 
 Or use the all-in-one script:
+
 ```bash
 ./scripts/start-all.sh
 ```
 
 Stop all services:
+
 ```bash
 ./scripts/stop-all.sh
 ```
 
 ### Shell Scripts Reference
 
-| Script | Description |
-|--------|-------------|
-| `./scripts/start-dev.sh` | Start Docker services + ML Service |
-| `./scripts/start-all.sh` | Start everything (Docker + Backend + ML) |
+| Script                       | Description                              |
+| ---------------------------- | ---------------------------------------- |
+| `./scripts/start-dev.sh`     | Start Docker services + ML Service       |
+| `./scripts/start-all.sh`     | Start everything (Docker + Backend + ML) |
 | `./scripts/start-backend.sh` | Start Backend + ML (when Docker running) |
-| `./scripts/stop-dev.sh` | Stop Docker and local services |
-| `./scripts/stop-all.sh` | Stop all services |
-| `./scripts/docker-dev.sh` | Docker helper (start/stop/logs/build) |
+| `./scripts/stop-dev.sh`      | Stop Docker and local services           |
+| `./scripts/stop-all.sh`      | Stop all services                        |
+| `./scripts/docker-dev.sh`    | Docker helper (start/stop/logs/build)    |
 
 ### Health Checks
 
@@ -424,6 +455,7 @@ curl http://localhost:8000/health
 ### Common Docker Issues
 
 **Port Already in Use:**
+
 ```bash
 # Find process using port
 lsof -ti:3000
@@ -434,15 +466,19 @@ kill -9 $(lsof -ti:3000)
 
 **ML Service Database Error:**
 If you see "psycopg2 is not async", ensure DATABASE_URL uses:
+
 ```
 postgresql+asyncpg://...
 ```
+
 NOT:
+
 ```
 postgresql://...
 ```
 
 **Network Issues (containers can't communicate):**
+
 ```bash
 # Clean up and restart
 docker compose -f docker-compose.dev.yml down
@@ -455,6 +491,7 @@ docker compose -f docker-compose.dev.yml up -d
 ## API Documentation
 
 ### Base URL
+
 ```
 http://localhost:3000/api
 ```
@@ -462,6 +499,7 @@ http://localhost:3000/api
 ### Authentication Endpoints
 
 #### Register
+
 ```http
 POST /api/auth/register
 Content-Type: application/json
@@ -474,6 +512,7 @@ Content-Type: application/json
 ```
 
 #### Login
+
 ```http
 POST /api/auth/login
 Content-Type: application/json
@@ -485,6 +524,7 @@ Content-Type: application/json
 ```
 
 #### Apple Sign-In
+
 ```http
 POST /api/auth/apple-signin
 Content-Type: application/json
@@ -498,6 +538,7 @@ Content-Type: application/json
 ```
 
 #### Forgot Password
+
 ```http
 POST /api/auth/forgot-password
 Content-Type: application/json
@@ -508,6 +549,7 @@ Content-Type: application/json
 ```
 
 #### Verify Reset Token
+
 ```http
 POST /api/auth/verify-reset-token
 Content-Type: application/json
@@ -518,6 +560,7 @@ Content-Type: application/json
 ```
 
 #### Reset Password
+
 ```http
 POST /api/auth/reset-password
 Content-Type: application/json
@@ -529,12 +572,14 @@ Content-Type: application/json
 ```
 
 #### Get Profile (Protected)
+
 ```http
 GET /api/auth/profile
 Authorization: Bearer {token}
 ```
 
 #### Update Profile (Protected)
+
 ```http
 PUT /api/auth/profile
 Authorization: Bearer {token}
@@ -549,6 +594,7 @@ Content-Type: application/json
 ```
 
 #### Delete Account (Protected)
+
 ```http
 DELETE /api/auth/account
 Authorization: Bearer {token}
@@ -557,6 +603,7 @@ Authorization: Bearer {token}
 ### Meal Endpoints (All Protected)
 
 #### Create Meal
+
 ```http
 POST /api/meals
 Authorization: Bearer {token}
@@ -575,30 +622,35 @@ Content-Type: application/json
 ```
 
 #### Get Today's Meals
+
 ```http
 GET /api/meals
 Authorization: Bearer {token}
 ```
 
 #### Get Meals by Date
+
 ```http
 GET /api/meals?date=2025-01-25T00:00:00.000Z
 Authorization: Bearer {token}
 ```
 
 #### Get Daily Summary
+
 ```http
 GET /api/meals/summary/daily
 Authorization: Bearer {token}
 ```
 
 #### Get Weekly Summary
+
 ```http
 GET /api/meals/summary/weekly
 Authorization: Bearer {token}
 ```
 
 #### Update Meal
+
 ```http
 PUT /api/meals/{mealId}
 Authorization: Bearer {token}
@@ -611,6 +663,7 @@ Content-Type: application/json
 ```
 
 #### Delete Meal
+
 ```http
 DELETE /api/meals/{mealId}
 Authorization: Bearer {token}
@@ -619,6 +672,7 @@ Authorization: Bearer {token}
 ### Health Metrics Endpoints (All Protected)
 
 #### Create Health Metric
+
 ```http
 POST /api/health-metrics
 Authorization: Bearer {token}
@@ -636,6 +690,7 @@ Content-Type: application/json
 ```
 
 #### Get Health Metrics
+
 ```http
 GET /api/health-metrics
 Authorization: Bearer {token}
@@ -650,12 +705,14 @@ Authorization: Bearer {token}
 ```
 
 #### Get Health Metric by ID
+
 ```http
 GET /api/health-metrics/{metricId}
 Authorization: Bearer {token}
 ```
 
 #### Update Health Metric
+
 ```http
 PUT /api/health-metrics/{metricId}
 Authorization: Bearer {token}
@@ -668,6 +725,7 @@ Content-Type: application/json
 ```
 
 #### Delete Health Metric
+
 ```http
 DELETE /api/health-metrics/{metricId}
 Authorization: Bearer {token}
@@ -676,6 +734,7 @@ Authorization: Bearer {token}
 ### Activity Endpoints (All Protected)
 
 #### Create Activity
+
 ```http
 POST /api/activities
 Authorization: Bearer {token}
@@ -693,6 +752,7 @@ Content-Type: application/json
 ```
 
 #### Get Activities
+
 ```http
 GET /api/activities
 Authorization: Bearer {token}
@@ -707,12 +767,14 @@ Authorization: Bearer {token}
 ```
 
 #### Get Activity by ID
+
 ```http
 GET /api/activities/{activityId}
 Authorization: Bearer {token}
 ```
 
 #### Update Activity
+
 ```http
 PUT /api/activities/{activityId}
 Authorization: Bearer {token}
@@ -725,6 +787,7 @@ Content-Type: application/json
 ```
 
 #### Delete Activity
+
 ```http
 DELETE /api/activities/{activityId}
 Authorization: Bearer {token}
@@ -733,6 +796,7 @@ Authorization: Bearer {token}
 ## Database Schema
 
 ### User
+
 - id (String, Primary Key)
 - email (String, Unique)
 - password (String, Hashed)
@@ -747,6 +811,7 @@ Authorization: Bearer {token}
 - activityLevel (String, Default: "moderate")
 
 ### Meal
+
 - id (String, Primary Key)
 - userId (String, Foreign Key → User)
 - name (String)
@@ -762,18 +827,21 @@ Authorization: Bearer {token}
 - consumedAt (DateTime)
 
 ### WaterIntake
+
 - id (String, Primary Key)
 - userId (String, Foreign Key → User)
 - amount (Float, in ml)
 - recordedAt (DateTime)
 
 ### WeightRecord
+
 - id (String, Primary Key)
 - userId (String, Foreign Key → User)
 - weight (Float, in kg)
 - recordedAt (DateTime)
 
 ### HealthMetric
+
 - id (String, Primary Key)
 - userId (String, Foreign Key → User)
 - metricType (Enum: 30+ types including RESTING_HEART_RATE, HEART_RATE_VARIABILITY_SDNN, SLEEP_DURATION, etc.)
@@ -785,6 +853,7 @@ Authorization: Bearer {token}
 - metadata (JSON, Optional)
 
 ### Activity
+
 - id (String, Primary Key)
 - userId (String, Foreign Key → User)
 - activityType (Enum: 17+ types including RUNNING, CYCLING, SWIMMING, WEIGHTLIFTING, etc.)
@@ -798,6 +867,7 @@ Authorization: Bearer {token}
 ## Development Scripts
 
 ### Mobile App
+
 ```bash
 npm start          # Start Expo development server
 npm run ios        # Run on iOS simulator
@@ -810,6 +880,7 @@ npm test          # Run tests
 ### Backend
 
 #### Development & Build
+
 ```bash
 npm run dev        # Start development server with hot reload (ts-node-dev)
 npm run build      # Build TypeScript to JavaScript
@@ -817,6 +888,7 @@ npm start          # Run production server (requires npm run build first)
 ```
 
 #### Database Management
+
 ```bash
 npm run db:generate    # Generate Prisma client from schema
 npm run db:push        # Push schema changes to database (dev only)
@@ -825,6 +897,7 @@ npm run db:studio      # Open Prisma Studio GUI (http://localhost:5555)
 ```
 
 #### Testing
+
 ```bash
 npm test              # Run all tests once
 npm run test:watch    # Run tests in watch mode (auto-rerun on changes)
@@ -833,6 +906,7 @@ npm run test:verbose  # Run tests with verbose output
 ```
 
 #### Code Quality
+
 ```bash
 npm run lint       # Run ESLint for code quality checks
 ```
@@ -840,6 +914,7 @@ npm run lint       # Run ESLint for code quality checks
 ## Environment Variables
 
 ### Backend (.env)
+
 ```env
 DATABASE_URL="postgresql://user:password@localhost:5432/nutri_db"
 PORT=3000
@@ -851,6 +926,7 @@ JWT_EXPIRES_IN=7d
 ## Design Philosophy
 
 The app follows modern iOS/Android design patterns with:
+
 - **Minimal UI**: Clean, uncluttered interface
 - **Visual Progress**: Circular gauges and progress bars
 - **Card-based Layout**: Information grouped in digestible cards
@@ -861,6 +937,7 @@ The app follows modern iOS/Android design patterns with:
 ## Feature Status
 
 ### Implemented
+
 - [x] Barcode scanning (OpenFoodFacts integration)
 - [x] Food photo analysis (ML-powered with CLIP + Food-101)
 - [x] AR portion measurement with LiDAR
@@ -871,10 +948,12 @@ The app follows modern iOS/Android design patterns with:
 - [x] Daily/weekly nutrition summaries
 
 ### In Progress
+
 - [ ] ML insights on nutrition-health correlations
 - [ ] Predictive analytics for health metrics
 
 ### Planned
+
 - [ ] Recipe creation and sharing
 - [ ] Meal plans and suggestions
 - [ ] Dark mode support

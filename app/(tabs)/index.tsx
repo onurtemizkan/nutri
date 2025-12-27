@@ -33,6 +33,7 @@ import { SupplementTracker } from '@/lib/components/SupplementTracker';
 import { DailyMicronutrientSummary } from '@/lib/components/DailyMicronutrientSummary';
 import { WeightWidget } from '@/lib/components/WeightWidget';
 import { GoalProgressSection } from '@/lib/components/GoalProgressSection';
+import { ReportSection } from '@/lib/components/ReportSection';
 import { showAlert } from '@/lib/utils/alert';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 
@@ -445,6 +446,9 @@ export default function HomeScreen() {
 
           {/* Goal Progress Section */}
           <GoalProgressSection />
+
+          {/* Reports Section */}
+          <ReportSection />
 
           {/* 7-Day Health Trends */}
           {healthTrends && Object.keys(healthTrends).length > 0 && (
