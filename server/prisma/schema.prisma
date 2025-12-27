@@ -95,6 +95,9 @@ model User {
   dataDeletionRequests DataDeletionRequest[]
   privacySettings      PrivacySettings?
 
+  // Email Marketing
+  emailPreference      EmailPreference?
+
   @@index([email])
   @@index([appleId])
   @@index([resetToken])
@@ -2624,4 +2627,312 @@ enum DataAccessAction {
   DELETE              // Data was deleted
   SHARE               // Data was shared
   ADMIN_ACCESS        // Admin accessed data
+}
+
+// ============================================================================
+// EMAIL MARKETING MODELS
+// ============================================================================
+
+// EmailTemplate - Reusable email templates with MJML support
+model EmailTemplate {
+  id              String          @id @default(cuid())
+  name            String          // Internal name for admin
+  slug            String          @unique // Unique identifier for programmatic access
+  category        EmailCategory   // TRANSACTIONAL or MARKETING
+
+  // Content
+  subject         String          // Email subject line (supports variables)
+  mjmlContent     String          @db.Text // MJML source
+  htmlContent     String?         @db.Text // Compiled HTML (cached)
+  plainTextContent String?        @db.Text // Plain text version
+
+  // Variable definitions
+  variables       Json?           // Array of variable names
+
+  // Versioning
+  version         Int             @default(1)
+  isActive        Boolean         @default(true)
+
+  // Audit
+  createdByAdminId String?
+  updatedByAdminId String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  campaigns       EmailCampaign[]
+  versions        EmailTemplateVersion[]
+
+  @@index([slug])
+  @@index([category, isActive])
+}
+
+// EmailTemplateVersion - Historical versions of email templates
+model EmailTemplateVersion {
+  id              String        @id @default(cuid())
+  templateId      String
+  template        EmailTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  // Snapshot of template at this version
+  version         Int           // Version number
+  subject         String
+  mjmlContent     String        @db.Text
+  htmlContent     String?       @db.Text
+  plainTextContent String?      @db.Text
+  variables       Json?
+
+  // Metadata
+  changeNotes     String?       // Optional notes about what changed
+  createdByAdminId String?
+  createdAt       DateTime      @default(now())
+
+  @@unique([templateId, version])
+  @@index([templateId, version])
+}
+
+// EmailCampaign - Marketing email campaigns
+model EmailCampaign {
+  id              String              @id @default(cuid())
+  name            String              // Internal campaign name
+  description     String?             // Internal description
+
+  // Template
+  templateId      String
+  template        EmailTemplate       @relation(fields: [templateId], references: [id])
+
+  // Targeting
+  segmentCriteria Json               // Targeting rules (JSON)
+
+  // A/B Testing
+  abTestConfig    Json?               // { variants: [{subject: "..."}], splitPercentage: 50 }
+
+  // Scheduling
+  scheduledAt     DateTime?           // When to send (null = manual trigger)
+  sentAt          DateTime?           // When actually started sending
+  completedAt     DateTime?           // When finished sending
+
+  // Status
+  status          EmailCampaignStatus @default(DRAFT)
+
+  // Analytics (aggregated)
+  estimatedAudience Int?              // Estimated recipients
+  actualSent      Int                 @default(0)
+  deliveredCount  Int                 @default(0)
+  openedCount     Int                 @default(0)
+  clickedCount    Int                 @default(0)
+  bouncedCount    Int                 @default(0)
+  complainedCount Int                 @default(0)
+  unsubscribedCount Int               @default(0)
+
+  // Audit
+  createdByAdminId String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  // Relations
+  emailLogs       EmailLog[]
+
+  @@index([status, scheduledAt])
+  @@index([createdByAdminId])
+}
+
+// EmailLog - Individual email send records
+model EmailLog {
+  id                  String          @id @default(cuid())
+  userId              String?
+  email               String          // Recipient email
+
+  // Reference
+  templateSlug        String          // Template used
+  campaignId          String?         // If sent via campaign
+  campaign            EmailCampaign?  @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  sequenceEnrollmentId String?        // If sent via sequence
+  sequenceEnrollment  EmailSequenceEnrollment? @relation(fields: [sequenceEnrollmentId], references: [id], onDelete: SetNull)
+
+  // Status tracking
+  status              EmailLogStatus  @default(QUEUED)
+
+  // Timestamps
+  sentAt              DateTime?
+  deliveredAt         DateTime?
+  openedAt            DateTime?
+  clickedAt           DateTime?
+  bouncedAt           DateTime?
+  unsubscribedAt      DateTime?
+
+  // Additional data
+  bounceType          String?         // "hard" or "soft"
+  isAppleProxyOpen    Boolean         @default(false)
+  clickData           Json?           // Array of clicked URLs
+
+  // Provider info
+  providerId          String?         // Resend message ID
+  providerError       String?         // Error from provider
+
+  // Metadata
+  metadata            Json?           // Additional tracking data
+
+  // Audit
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([campaignId, status])
+  @@index([templateSlug])
+  @@index([email])
+  @@unique([userId, templateSlug, campaignId, sentAt])
+}
+
+// EmailPreference - User email preferences
+model EmailPreference {
+  id                      String          @id @default(cuid())
+  userId                  String          @unique
+  user                    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Category preferences
+  categories              Json            @default("{}")
+
+  // Frequency
+  frequency               EmailFrequency  @default(REALTIME)
+
+  // Marketing consent
+  marketingOptIn          Boolean         @default(false)
+  doubleOptInConfirmedAt  DateTime?       // When they confirmed double opt-in
+
+  // Unsubscribe tracking
+  globalUnsubscribedAt    DateTime?       // When they unsubscribed from all marketing
+
+  // One-click unsubscribe token
+  unsubscribeToken        String          @unique @default(cuid())
+
+  // Audit
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([unsubscribeToken])
+}
+
+// EmailSequence - Automated drip campaigns / email sequences
+model EmailSequence {
+  id                  String                  @id @default(cuid())
+  name                String                  // Internal name
+  description         String?                 // Description
+
+  // Trigger
+  triggerEvent        EmailSequenceTrigger
+
+  // Status
+  isActive            Boolean                 @default(true)
+
+  // Steps
+  steps               Json
+
+  // Entry/exit criteria
+  enrollmentCriteria  Json?                   // Who can enter this sequence
+  exitCriteria        Json?                   // When to stop sequence
+
+  // Analytics
+  totalEnrollments    Int                     @default(0)
+  activeEnrollments   Int                     @default(0)
+  completedEnrollments Int                    @default(0)
+
+  // Audit
+  createdByAdminId    String?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  // Relations
+  enrollments         EmailSequenceEnrollment[]
+
+  @@index([triggerEvent, isActive])
+}
+
+// EmailSequenceEnrollment - User enrollment in email sequences
+model EmailSequenceEnrollment {
+  id                  String                  @id @default(cuid())
+  userId              String
+  sequenceId          String
+  sequence            EmailSequence           @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+
+  // Progress
+  currentStep         Int                     @default(0)
+  status              EmailSequenceStatus     @default(ACTIVE)
+
+  // Timestamps
+  startedAt           DateTime                @default(now())
+  pausedAt            DateTime?
+  completedAt         DateTime?
+  exitedAt            DateTime?
+  nextStepScheduledAt DateTime?               // When to process next step
+
+  // Exit tracking
+  exitReason          String?                 // Why they exited early
+
+  // Metadata
+  metadata            Json?                   // Tracking data
+
+  // Audit
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  // Relations
+  emailLogs           EmailLog[]
+
+  @@unique([userId, sequenceId])
+  @@index([userId, status])
+  @@index([sequenceId, status])
+  @@index([nextStepScheduledAt])
+}
+
+// ============================================================================
+// EMAIL ENUMS
+// ============================================================================
+
+enum EmailCategory {
+  TRANSACTIONAL
+  MARKETING
+}
+
+enum EmailCampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  CANCELLED
+}
+
+enum EmailLogStatus {
+  QUEUED
+  SENDING
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  COMPLAINED
+  UNSUBSCRIBED
+}
+
+enum EmailFrequency {
+  REALTIME
+  DAILY_DIGEST
+  WEEKLY_DIGEST
+}
+
+enum EmailSequenceTrigger {
+  SIGNUP
+  FIRST_MEAL
+  GOAL_ACHIEVED
+  SUBSCRIPTION_CHANGED
+  INACTIVITY_7D
+  INACTIVITY_14D
+  INACTIVITY_30D
+}
+
+enum EmailSequenceStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  EXITED
 }
