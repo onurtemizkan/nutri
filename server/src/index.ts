@@ -32,6 +32,10 @@ import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { ExpressAdapter } from '@bull-board/express';
 
+// Swagger/OpenAPI documentation
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
+
 // Import version from package.json
 const packageJson = require('../package.json');
 
@@ -357,6 +361,18 @@ app.get('/health', async (_req, res) => {
     checks,
   });
 });
+
+// =============================================================================
+// API Documentation (Swagger UI)
+// =============================================================================
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Nutri API Documentation',
+  })
+);
 
 // Routes
 app.use('/api/auth', authRoutes);
