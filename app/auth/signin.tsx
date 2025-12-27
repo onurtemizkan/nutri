@@ -1,8 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
@@ -10,7 +9,6 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
-  type TextInput as TextInputType,
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,27 +18,105 @@ import { getErrorMessage } from '@/lib/utils/errorHandling';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import { useResponsive } from '@/hooks/useResponsive';
 import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
+import { Input, type InputRef } from '@/lib/components/ui/Input';
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+type FieldName = 'email' | 'password';
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [touched, setTouched] = useState<Record<FieldName, boolean>>({
+    email: false,
+    password: false,
+  });
+  const [errors, setErrors] = useState<Record<FieldName, string>>({
+    email: '',
+    password: '',
+  });
+
   const { login } = useAuth();
   const router = useRouter();
   const { isTablet, getSpacing } = useResponsive();
   const responsiveSpacing = getSpacing();
 
-  const passwordInputRef = useRef<TextInputType>(null);
+  const passwordInputRef = useRef<InputRef>(null);
+
+  // Validation functions
+  const validateEmail = useCallback((value: string): string => {
+    if (!value.trim()) {
+      return 'Email is required';
+    }
+    if (!EMAIL_REGEX.test(value)) {
+      return 'Please enter a valid email address';
+    }
+    return '';
+  }, []);
+
+  const validatePassword = useCallback((value: string): string => {
+    if (!value) {
+      return 'Password is required';
+    }
+    return '';
+  }, []);
+
+  const validateField = useCallback(
+    (name: FieldName, value: string): string => {
+      switch (name) {
+        case 'email':
+          return validateEmail(value);
+        case 'password':
+          return validatePassword(value);
+        default:
+          return '';
+      }
+    },
+    [validateEmail, validatePassword]
+  );
+
+  const handleBlur = useCallback(
+    (name: FieldName, value: string) => {
+      setTouched((prev) => ({ ...prev, [name]: true }));
+      const error = validateField(name, value);
+      setErrors((prev) => ({ ...prev, [name]: error }));
+    },
+    [validateField]
+  );
+
+  const handleChange = useCallback(
+    (name: FieldName, value: string, setter: (v: string) => void) => {
+      setter(value);
+      // Only validate on change if the field has been touched
+      if (touched[name]) {
+        const error = validateField(name, value);
+        setErrors((prev) => ({ ...prev, [name]: error }));
+      }
+    },
+    [touched, validateField]
+  );
+
+  const validateAllFields = useCallback((): boolean => {
+    const emailError = validateField('email', email);
+    const passwordError = validateField('password', password);
+
+    setErrors({
+      email: emailError,
+      password: passwordError,
+    });
+
+    setTouched({
+      email: true,
+      password: true,
+    });
+
+    return !emailError && !passwordError;
+  }, [email, password, validateField]);
 
   const handleSignIn = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
+    // Validate all fields on submit
+    if (!validateAllFields()) {
       return;
     }
 
@@ -49,6 +125,7 @@ export default function SignInScreen() {
       await login(email, password);
       router.replace('/(tabs)');
     } catch (error) {
+      // Server-side errors still use Alert (not validation errors)
       Alert.alert('Sign In Failed', getErrorMessage(error, 'Invalid email or password'));
     } finally {
       setIsLoading(false);
@@ -66,7 +143,7 @@ export default function SignInScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             { paddingHorizontal: responsiveSpacing.horizontal },
-            isTablet && styles.tabletContent
+            isTablet && styles.tabletContent,
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -81,53 +158,56 @@ export default function SignInScreen() {
           {/* Form */}
           <View style={styles.form}>
             {/* Email Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="your@email.com"
-                  placeholderTextColor={colors.text.disabled}
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  editable={!isLoading}
-                  autoComplete="email"
-                  returnKeyType="next"
-                  onSubmitEditing={() => passwordInputRef.current?.focus()}
-                  blurOnSubmit={false}
-                  testID="signin-email-input"
-                />
-              </View>
-            </View>
+            <Input
+              label="Email"
+              value={email}
+              onChangeText={(value) => handleChange('email', value, setEmail)}
+              onBlur={() => handleBlur('email', email)}
+              placeholder="your@email.com"
+              error={touched.email ? errors.email : undefined}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              returnKeyType="next"
+              onSubmitEditing={() => passwordInputRef.current?.focus()}
+              disabled={isLoading}
+              testID="signin-email-input"
+            />
 
-            {/* Password Input */}
-            <View style={styles.inputContainer}>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>Password</Text>
+            {/* Password Row with Forgot Password Link */}
+            <View style={styles.passwordSection}>
+              <View style={styles.passwordHeader}>
+                <Text style={[styles.label, touched.password && errors.password && styles.labelError]}>
+                  Password
+                </Text>
                 <Link href="/auth/forgot-password" asChild>
-                  <TouchableOpacity disabled={isLoading} testID="signin-forgot-password-link">
+                  <TouchableOpacity
+                    disabled={isLoading}
+                    testID="signin-forgot-password-link"
+                    accessibilityRole="link"
+                    accessibilityLabel="Forgot password"
+                    accessibilityHint="Navigate to reset your password"
+                  >
                     <Text style={styles.forgotPasswordLink}>Forgot?</Text>
                   </TouchableOpacity>
                 </Link>
               </View>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  ref={passwordInputRef}
-                  style={styles.input}
-                  placeholder="Enter your password"
-                  placeholderTextColor={colors.text.disabled}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  editable={!isLoading}
-                  autoComplete="password"
-                  returnKeyType="done"
-                  onSubmitEditing={handleSignIn}
-                  testID="signin-password-input"
-                />
-              </View>
+              <Input
+                ref={passwordInputRef}
+                label=""
+                value={password}
+                onChangeText={(value) => handleChange('password', value, setPassword)}
+                onBlur={() => handleBlur('password', password)}
+                placeholder="Enter your password"
+                error={touched.password ? errors.password : undefined}
+                secureTextEntry
+                autoComplete="password"
+                returnKeyType="done"
+                onSubmitEditing={handleSignIn}
+                disabled={isLoading}
+                testID="signin-password-input"
+                containerStyle={styles.passwordInputContainer}
+              />
             </View>
 
             {/* Sign In Button */}
@@ -137,6 +217,10 @@ export default function SignInScreen() {
               disabled={isLoading}
               activeOpacity={0.8}
               testID="signin-submit-button"
+              accessibilityRole="button"
+              accessibilityLabel={isLoading ? 'Signing in' : 'Sign in'}
+              accessibilityHint="Double tap to sign in to your account"
+              accessibilityState={{ disabled: isLoading, busy: isLoading }}
             >
               <LinearGradient
                 colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
@@ -156,7 +240,13 @@ export default function SignInScreen() {
             <View style={styles.footer}>
               <Text style={styles.footerText}>Don't have an account? </Text>
               <Link href="/auth/signup" asChild>
-                <TouchableOpacity disabled={isLoading} testID="signin-signup-link">
+                <TouchableOpacity
+                  disabled={isLoading}
+                  testID="signin-signup-link"
+                  accessibilityRole="link"
+                  accessibilityLabel="Sign up"
+                  accessibilityHint="Navigate to create a new account"
+                >
                   <Text style={styles.link}>Sign Up</Text>
                 </TouchableOpacity>
               </Link>
@@ -210,17 +300,18 @@ const styles = StyleSheet.create({
 
   // Form
   form: {
-    gap: spacing.lg,
-  },
-
-  // Input
-  inputContainer: {
     gap: spacing.sm,
   },
-  labelRow: {
+
+  // Password section (custom layout with forgot link)
+  passwordSection: {
+    marginBottom: spacing.sm,
+  },
+  passwordHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: spacing.sm,
   },
   label: {
     fontSize: typography.fontSize.sm,
@@ -228,32 +319,23 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     letterSpacing: 0.3,
   },
+  labelError: {
+    color: colors.status.error,
+  },
   forgotPasswordLink: {
     fontSize: typography.fontSize.sm,
     color: colors.primary.main,
     fontWeight: typography.fontWeight.semibold,
   },
-  inputWrapper: {
-    backgroundColor: colors.background.tertiary,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border.secondary,
-    overflow: 'hidden',
-  },
-  input: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    fontSize: typography.fontSize.md,
-    color: colors.text.primary,
-    height: 52,
-    textAlignVertical: 'center',
+  passwordInputContainer: {
+    marginBottom: 0,
   },
 
   // Button
   button: {
     borderRadius: borderRadius.md,
     overflow: 'hidden',
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
     ...shadows.md,
   },
   buttonDisabled: {
@@ -276,7 +358,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
   },
   footerText: {
     color: colors.text.tertiary,
