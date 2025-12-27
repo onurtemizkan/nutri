@@ -203,6 +203,13 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
+        name="email-settings"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
         name="ar-measure"
         options={{
           headerShown: false,

@@ -6,12 +6,7 @@ import {
   getMe,
   setupInitialAdmin,
 } from '../controllers/adminAuthController';
-import {
-  listUsers,
-  getUser,
-  exportUser,
-  deleteUser,
-} from '../controllers/adminUserController';
+import { listUsers, getUser, exportUser, deleteUser } from '../controllers/adminUserController';
 import {
   listSubscriptions,
   getSubscription,
@@ -46,6 +41,32 @@ import {
   sendTestNotification,
   getNotificationTemplates,
 } from '../controllers/adminNotificationController';
+import {
+  listTemplates as listEmailTemplates,
+  getTemplate as getEmailTemplate,
+  createTemplate as createEmailTemplate,
+  updateTemplate as updateEmailTemplate,
+  deleteTemplate as deleteEmailTemplate,
+  previewTemplate,
+  sendTestEmail,
+  listTemplateVersions,
+  getTemplateVersion,
+  restoreTemplateVersion,
+  listCampaigns as listEmailCampaigns,
+  getCampaign as getEmailCampaign,
+  createCampaign as createEmailCampaign,
+  updateCampaign as updateEmailCampaign,
+  deleteCampaign as deleteEmailCampaign,
+  sendCampaignNow,
+  cancelCampaign as cancelEmailCampaign,
+  listSequences,
+  getSequence,
+  createSequence,
+  updateSequence,
+  deleteSequence,
+  getEmailAnalytics,
+  getSubscriberStats,
+} from '../controllers/adminEmailController';
 import { requireAnyAdmin, requireSuperAdmin } from '../middleware/adminAuth';
 import { auditLog, AuditActions } from '../middleware/adminAudit';
 import { rateLimiters } from '../middleware/rateLimiter';
@@ -80,7 +101,13 @@ router.post('/auth/mfa/verify', rateLimiters.adminAuth, verifyMFACode);
  * POST /api/admin/auth/logout
  * Admin logout (client-side token invalidation)
  */
-router.post('/auth/logout', rateLimiters.adminApi, requireAnyAdmin, auditLog(AuditActions.ADMIN_LOGOUT), logout);
+router.post(
+  '/auth/logout',
+  rateLimiters.adminApi,
+  requireAnyAdmin,
+  auditLog(AuditActions.ADMIN_LOGOUT),
+  logout
+);
 
 /**
  * GET /api/admin/auth/me
@@ -251,12 +278,7 @@ router.get(
  * GET /api/admin/webhooks/stats
  * Get webhook event statistics
  */
-router.get(
-  '/webhooks/stats',
-  rateLimiters.adminApi,
-  requireAnyAdmin,
-  getWebhookStatistics
-);
+router.get('/webhooks/stats', rateLimiters.adminApi, requireAnyAdmin, getWebhookStatistics);
 
 /**
  * GET /api/admin/webhooks/search
@@ -348,45 +370,25 @@ router.get(
  * GET /api/admin/notifications/campaigns
  * List all notification campaigns
  */
-router.get(
-  '/notifications/campaigns',
-  rateLimiters.adminApi,
-  requireAnyAdmin,
-  listCampaigns
-);
+router.get('/notifications/campaigns', rateLimiters.adminApi, requireAnyAdmin, listCampaigns);
 
 /**
  * POST /api/admin/notifications/campaigns
  * Create a new notification campaign
  */
-router.post(
-  '/notifications/campaigns',
-  rateLimiters.adminApi,
-  requireAnyAdmin,
-  createCampaign
-);
+router.post('/notifications/campaigns', rateLimiters.adminApi, requireAnyAdmin, createCampaign);
 
 /**
  * GET /api/admin/notifications/campaigns/:id
  * Get a specific campaign with detailed stats
  */
-router.get(
-  '/notifications/campaigns/:id',
-  rateLimiters.adminApi,
-  requireAnyAdmin,
-  getCampaign
-);
+router.get('/notifications/campaigns/:id', rateLimiters.adminApi, requireAnyAdmin, getCampaign);
 
 /**
  * PUT /api/admin/notifications/campaigns/:id
  * Update a campaign
  */
-router.put(
-  '/notifications/campaigns/:id',
-  rateLimiters.adminApi,
-  requireAnyAdmin,
-  updateCampaign
-);
+router.put('/notifications/campaigns/:id', rateLimiters.adminApi, requireAnyAdmin, updateCampaign);
 
 /**
  * DELETE /api/admin/notifications/campaigns/:id
@@ -440,12 +442,7 @@ router.get(
  * GET /api/admin/notifications/devices
  * Get device registration statistics
  */
-router.get(
-  '/notifications/devices',
-  rateLimiters.adminApi,
-  requireAnyAdmin,
-  getDeviceStats
-);
+router.get('/notifications/devices', rateLimiters.adminApi, requireAnyAdmin, getDeviceStats);
 
 // ============================================================================
 // USER NOTIFICATION MANAGEMENT ROUTES
@@ -483,5 +480,198 @@ router.get(
   requireAnyAdmin,
   getNotificationTemplates
 );
+
+// ============================================================================
+// EMAIL MARKETING ROUTES
+// ============================================================================
+
+// --- Email Templates ---
+
+/**
+ * GET /api/admin/email/templates
+ * List all email templates
+ */
+router.get('/email/templates', rateLimiters.adminApi, requireAnyAdmin, listEmailTemplates);
+
+/**
+ * POST /api/admin/email/templates
+ * Create a new email template
+ */
+router.post('/email/templates', rateLimiters.adminApi, requireAnyAdmin, createEmailTemplate);
+
+/**
+ * GET /api/admin/email/templates/:id
+ * Get a specific email template
+ */
+router.get('/email/templates/:id', rateLimiters.adminApi, requireAnyAdmin, getEmailTemplate);
+
+/**
+ * PUT /api/admin/email/templates/:id
+ * Update an email template
+ */
+router.put('/email/templates/:id', rateLimiters.adminApi, requireAnyAdmin, updateEmailTemplate);
+
+/**
+ * DELETE /api/admin/email/templates/:id
+ * Delete an email template
+ */
+router.delete(
+  '/email/templates/:id',
+  rateLimiters.adminApi,
+  requireSuperAdmin,
+  deleteEmailTemplate
+);
+
+/**
+ * POST /api/admin/email/templates/:id/preview
+ * Preview a template with test data
+ */
+router.post(
+  '/email/templates/:id/preview',
+  rateLimiters.adminApi,
+  requireAnyAdmin,
+  previewTemplate
+);
+
+/**
+ * POST /api/admin/email/templates/:id/test
+ * Send a test email
+ */
+router.post('/email/templates/:id/test', rateLimiters.adminApi, requireAnyAdmin, sendTestEmail);
+
+// --- Template Versions ---
+
+/**
+ * GET /api/admin/email/templates/:id/versions
+ * List all versions of a template
+ */
+router.get(
+  '/email/templates/:id/versions',
+  rateLimiters.adminApi,
+  requireAnyAdmin,
+  listTemplateVersions
+);
+
+/**
+ * GET /api/admin/email/templates/:id/versions/:version
+ * Get a specific template version
+ */
+router.get(
+  '/email/templates/:id/versions/:version',
+  rateLimiters.adminApi,
+  requireAnyAdmin,
+  getTemplateVersion
+);
+
+/**
+ * POST /api/admin/email/templates/:id/versions/:version/restore
+ * Restore a template to a specific version
+ */
+router.post(
+  '/email/templates/:id/versions/:version/restore',
+  rateLimiters.adminApi,
+  requireAnyAdmin,
+  restoreTemplateVersion
+);
+
+// --- Email Campaigns ---
+
+/**
+ * GET /api/admin/email/campaigns
+ * List all email campaigns
+ */
+router.get('/email/campaigns', rateLimiters.adminApi, requireAnyAdmin, listEmailCampaigns);
+
+/**
+ * POST /api/admin/email/campaigns
+ * Create a new email campaign
+ */
+router.post('/email/campaigns', rateLimiters.adminApi, requireAnyAdmin, createEmailCampaign);
+
+/**
+ * GET /api/admin/email/campaigns/:id
+ * Get a specific email campaign with stats
+ */
+router.get('/email/campaigns/:id', rateLimiters.adminApi, requireAnyAdmin, getEmailCampaign);
+
+/**
+ * PUT /api/admin/email/campaigns/:id
+ * Update an email campaign
+ */
+router.put('/email/campaigns/:id', rateLimiters.adminApi, requireAnyAdmin, updateEmailCampaign);
+
+/**
+ * DELETE /api/admin/email/campaigns/:id
+ * Delete a draft email campaign
+ */
+router.delete(
+  '/email/campaigns/:id',
+  rateLimiters.adminApi,
+  requireSuperAdmin,
+  deleteEmailCampaign
+);
+
+/**
+ * POST /api/admin/email/campaigns/:id/send
+ * Send a campaign immediately
+ */
+router.post('/email/campaigns/:id/send', rateLimiters.adminApi, requireSuperAdmin, sendCampaignNow);
+
+/**
+ * POST /api/admin/email/campaigns/:id/cancel
+ * Cancel a scheduled or sending campaign
+ */
+router.post(
+  '/email/campaigns/:id/cancel',
+  rateLimiters.adminApi,
+  requireAnyAdmin,
+  cancelEmailCampaign
+);
+
+// --- Email Sequences (Drip Campaigns) ---
+
+/**
+ * GET /api/admin/email/sequences
+ * List all email sequences
+ */
+router.get('/email/sequences', rateLimiters.adminApi, requireAnyAdmin, listSequences);
+
+/**
+ * POST /api/admin/email/sequences
+ * Create a new email sequence
+ */
+router.post('/email/sequences', rateLimiters.adminApi, requireAnyAdmin, createSequence);
+
+/**
+ * GET /api/admin/email/sequences/:id
+ * Get a specific email sequence with enrollments
+ */
+router.get('/email/sequences/:id', rateLimiters.adminApi, requireAnyAdmin, getSequence);
+
+/**
+ * PUT /api/admin/email/sequences/:id
+ * Update an email sequence
+ */
+router.put('/email/sequences/:id', rateLimiters.adminApi, requireAnyAdmin, updateSequence);
+
+/**
+ * DELETE /api/admin/email/sequences/:id
+ * Delete an email sequence (no active enrollments)
+ */
+router.delete('/email/sequences/:id', rateLimiters.adminApi, requireSuperAdmin, deleteSequence);
+
+// --- Email Analytics ---
+
+/**
+ * GET /api/admin/email/analytics
+ * Get email analytics overview
+ */
+router.get('/email/analytics', rateLimiters.adminApi, requireAnyAdmin, getEmailAnalytics);
+
+/**
+ * GET /api/admin/email/subscribers
+ * Get subscriber statistics
+ */
+router.get('/email/subscribers', rateLimiters.adminApi, requireAnyAdmin, getSubscriberStats);
 
 export default router;
