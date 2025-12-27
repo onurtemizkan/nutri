@@ -23,6 +23,7 @@ import webhookRoutes from './routes/webhookRoutes';
 import cgmRoutes from './routes/cgmRoutes';
 import debugRoutes from './routes/debugRoutes';
 import reportRoutes from './routes/reportRoutes';
+import subscriptionRoutes from './routes/subscriptionRoutes';
 import prisma from './config/database';
 import { notificationScheduler } from './services/notificationScheduler';
 import { initSentry, setupSentryErrorHandler } from './config/sentry';
@@ -377,6 +378,7 @@ app.use('/api/webhooks', webhookRoutes);
 app.use('/api/cgm', cgmRoutes);
 app.use('/api/debug', debugRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/subscription', subscriptionRoutes);
 
 // =============================================================================
 // Error Handlers

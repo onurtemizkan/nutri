@@ -9,6 +9,7 @@ import { Request, Response } from 'express';
 import { logger } from '../config/logger';
 import { decodeSignedData } from '../middleware/webhookAuth';
 import { HTTP_STATUS } from '../config/constants';
+import * as subscriptionService from '../services/subscriptionService';
 
 // In-memory set for idempotency (in production, use Redis or database)
 const processedNotifications = new Set<string>();
@@ -113,11 +114,13 @@ function markNotificationProcessed(notificationUUID: string): void {
 
 /**
  * Handle SUBSCRIBED notification (new subscription)
+ * Note: This requires the user ID from the app_account_token in the transaction.
+ * For webhooks, we may need to look up the user by originalTransactionId from a previous purchase.
  */
 async function handleSubscribed(
   payload: NotificationPayload,
   transactionInfo: TransactionInfo,
-  _renewalInfo: RenewalInfo | null
+  renewalInfo: RenewalInfo | null
 ): Promise<void> {
   logger.info(
     {
@@ -129,16 +132,33 @@ async function handleSubscribed(
     'Processing new subscription'
   );
 
-  // TODO: Create or update Subscription record in database
-  // await subscriptionService.createOrUpdate({
-  //   originalTransactionId: transactionInfo.originalTransactionId,
-  //   productId: transactionInfo.productId,
-  //   status: 'active',
-  //   purchaseDate: new Date(transactionInfo.purchaseDate),
-  //   expiresDate: transactionInfo.expiresDate ? new Date(transactionInfo.expiresDate) : null,
-  //   environment: transactionInfo.environment,
-  //   autoRenewEnabled: renewalInfo?.autoRenewStatus === 1,
-  // });
+  // Look up existing subscription by transaction ID to get user ID
+  const existingSubscription = await subscriptionService.findByTransactionId(
+    transactionInfo.originalTransactionId
+  );
+
+  if (existingSubscription) {
+    // Update existing subscription (renewal from webhook)
+    await subscriptionService.createOrUpdateSubscription({
+      userId: existingSubscription.userId,
+      originalTransactionId: transactionInfo.originalTransactionId,
+      productId: transactionInfo.productId,
+      purchaseDate: new Date(transactionInfo.purchaseDate),
+      expiresDate: transactionInfo.expiresDate ? new Date(transactionInfo.expiresDate) : null,
+      environment: payload.data.environment,
+      autoRenewEnabled: renewalInfo?.autoRenewStatus === 1,
+      autoRenewProductId: renewalInfo?.autoRenewProductId,
+    });
+  } else {
+    // New subscription from webhook - log warning as we need app-side verification first
+    logger.warn(
+      {
+        originalTransactionId: transactionInfo.originalTransactionId,
+        productId: transactionInfo.productId,
+      },
+      'Received SUBSCRIBED webhook for unknown transaction - subscription should be created via app verification first'
+    );
+  }
 }
 
 /**
@@ -158,11 +178,15 @@ async function handleDidRenew(
     'Processing subscription renewal'
   );
 
-  // TODO: Update Subscription record with new expiry date
-  // await subscriptionService.update(transactionInfo.originalTransactionId, {
-  //   status: 'active',
-  //   expiresDate: transactionInfo.expiresDate ? new Date(transactionInfo.expiresDate) : null,
-  // });
+  // Update subscription with new expiry date
+  const newExpiresDate = transactionInfo.expiresDate ? new Date(transactionInfo.expiresDate) : null;
+
+  if (newExpiresDate) {
+    await subscriptionService.renewSubscription(
+      transactionInfo.originalTransactionId,
+      newExpiresDate
+    );
+  }
 }
 
 /**
@@ -185,10 +209,12 @@ async function handleDidChangeRenewalStatus(
     'Processing renewal status change'
   );
 
-  // TODO: Update auto-renew status in database
-  // await subscriptionService.update(transactionInfo.originalTransactionId, {
-  //   autoRenewEnabled,
-  // });
+  // Update auto-renew status in database
+  await subscriptionService.updateSubscription(transactionInfo.originalTransactionId, {
+    autoRenewEnabled,
+    // If user turned off auto-renew, record cancellation intent
+    cancelledAt: !autoRenewEnabled ? new Date() : undefined,
+  });
 }
 
 /**
@@ -209,14 +235,17 @@ async function handleDidFailToRenew(
     'Processing renewal failure'
   );
 
-  // TODO: Update subscription status
-  // const status = renewalInfo?.gracePeriodExpiresDate ? 'billing_grace_period' : 'billing_retry';
-  // await subscriptionService.update(transactionInfo.originalTransactionId, {
-  //   status,
-  //   gracePeriodExpiresDate: renewalInfo?.gracePeriodExpiresDate
-  //     ? new Date(renewalInfo.gracePeriodExpiresDate)
-  //     : null,
-  // });
+  // Check if in grace period or billing retry
+  if (renewalInfo?.gracePeriodExpiresDate) {
+    // User is in grace period - still has access
+    await subscriptionService.enterGracePeriod(
+      transactionInfo.originalTransactionId,
+      new Date(renewalInfo.gracePeriodExpiresDate)
+    );
+  } else {
+    // User is in billing retry period
+    await subscriptionService.enterBillingRetry(transactionInfo.originalTransactionId);
+  }
 }
 
 /**
@@ -235,10 +264,8 @@ async function handleExpired(
     'Processing subscription expiration'
   );
 
-  // TODO: Mark subscription as expired
-  // await subscriptionService.update(transactionInfo.originalTransactionId, {
-  //   status: 'expired',
-  // });
+  // Mark subscription as expired
+  await subscriptionService.expireSubscription(transactionInfo.originalTransactionId);
 }
 
 /**
@@ -257,11 +284,11 @@ async function handleGracePeriodExpired(
     'Processing grace period expiration'
   );
 
-  // TODO: Mark subscription as expired after grace period
-  // await subscriptionService.update(transactionInfo.originalTransactionId, {
-  //   status: 'expired',
-  //   gracePeriodExpiresDate: null,
-  // });
+  // Mark subscription as expired after grace period
+  await subscriptionService.updateSubscription(transactionInfo.originalTransactionId, {
+    status: 'EXPIRED',
+    gracePeriodExpiresAt: null,
+  });
 }
 
 /**
@@ -280,11 +307,8 @@ async function handleRefund(
     'Processing refund'
   );
 
-  // TODO: Mark subscription as revoked due to refund
-  // await subscriptionService.update(transactionInfo.originalTransactionId, {
-  //   status: 'revoked',
-  //   cancellationDate: new Date(),
-  // });
+  // Mark subscription as revoked due to refund
+  await subscriptionService.revokeSubscription(transactionInfo.originalTransactionId, 'REFUND');
 }
 
 /**
@@ -303,20 +327,15 @@ async function handleRevoke(
     'Processing revocation'
   );
 
-  // TODO: Mark subscription as revoked
-  // await subscriptionService.update(transactionInfo.originalTransactionId, {
-  //   status: 'revoked',
-  //   cancellationDate: transactionInfo.revocationDate
-  //     ? new Date(transactionInfo.revocationDate)
-  //     : new Date(),
-  // });
+  // Mark subscription as revoked
+  await subscriptionService.revokeSubscription(transactionInfo.originalTransactionId, 'OTHER');
 }
 
 /**
  * Handle OFFER_REDEEMED notification
  */
 async function handleOfferRedeemed(
-  _payload: NotificationPayload,
+  payload: NotificationPayload,
   transactionInfo: TransactionInfo
 ): Promise<void> {
   logger.info(
@@ -329,20 +348,30 @@ async function handleOfferRedeemed(
     'Processing offer redemption'
   );
 
-  // TODO: Log offer redemption event
-  // await subscriptionEventService.create({
-  //   originalTransactionId: transactionInfo.originalTransactionId,
-  //   eventType: 'OFFER_REDEEMED',
-  //   offerType: transactionInfo.offerType,
-  //   offerIdentifier: transactionInfo.offerIdentifier,
-  // });
+  // Find subscription to log the event
+  const subscription = await subscriptionService.findByTransactionId(
+    transactionInfo.originalTransactionId
+  );
+
+  if (subscription) {
+    await subscriptionService.createSubscriptionEvent({
+      subscriptionId: subscription.id,
+      notificationType: 'OFFER_REDEEMED',
+      originalTransactionId: transactionInfo.originalTransactionId,
+      notificationUUID: payload.notificationUUID,
+      eventData: {
+        offerType: transactionInfo.offerType,
+        offerIdentifier: transactionInfo.offerIdentifier,
+      },
+    });
+  }
 }
 
 /**
  * Handle DID_CHANGE_RENEWAL_PREF notification
  */
 async function handleDidChangeRenewalPref(
-  _payload: NotificationPayload,
+  payload: NotificationPayload,
   transactionInfo: TransactionInfo,
   renewalInfo: RenewalInfo | null
 ): Promise<void> {
@@ -355,12 +384,29 @@ async function handleDidChangeRenewalPref(
     'Processing renewal preference change'
   );
 
-  // TODO: Log the plan change (upgrade/downgrade takes effect at next renewal)
-  // await subscriptionEventService.create({
-  //   originalTransactionId: transactionInfo.originalTransactionId,
-  //   eventType: 'RENEWAL_PREF_CHANGED',
-  //   newProductId: renewalInfo?.autoRenewProductId,
-  // });
+  // Update the auto-renew product ID (plan change takes effect at next renewal)
+  if (renewalInfo?.autoRenewProductId) {
+    await subscriptionService.updateSubscription(transactionInfo.originalTransactionId, {
+      autoRenewProductId: renewalInfo.autoRenewProductId,
+    });
+  }
+
+  // Log the plan change event
+  const subscription = await subscriptionService.findByTransactionId(
+    transactionInfo.originalTransactionId
+  );
+
+  if (subscription) {
+    await subscriptionService.createSubscriptionEvent({
+      subscriptionId: subscription.id,
+      notificationType: 'DID_CHANGE_RENEWAL_PREF',
+      originalTransactionId: transactionInfo.originalTransactionId,
+      notificationUUID: payload.notificationUUID,
+      eventData: {
+        newProductId: renewalInfo?.autoRenewProductId,
+      },
+    });
+  }
 }
 
 /**
@@ -380,18 +426,36 @@ async function createAuditLog(
     'Creating subscription event audit log'
   );
 
-  // TODO: Create SubscriptionEvent audit record
-  // await prisma.subscriptionEvent.create({
-  //   data: {
-  //     notificationUUID: payload.notificationUUID,
-  //     notificationType: payload.notificationType,
-  //     subtype: payload.subtype,
-  //     originalTransactionId: transactionInfo?.originalTransactionId,
-  //     environment: payload.data.environment,
-  //     rawPayload: JSON.stringify(payload),
-  //     processedAt: new Date(),
-  //   },
-  // });
+  // Find subscription to create audit log
+  if (transactionInfo?.originalTransactionId) {
+    const subscription = await subscriptionService.findByTransactionId(
+      transactionInfo.originalTransactionId
+    );
+
+    if (subscription) {
+      await subscriptionService.createSubscriptionEvent({
+        subscriptionId: subscription.id,
+        notificationType: payload.notificationType,
+        subtype: payload.subtype,
+        transactionId: transactionInfo.transactionId,
+        originalTransactionId: transactionInfo.originalTransactionId,
+        notificationUUID: payload.notificationUUID,
+        eventData: {
+          environment: payload.data.environment,
+          bundleId: payload.data.bundleId,
+          productId: transactionInfo.productId,
+        },
+      });
+    } else {
+      logger.warn(
+        {
+          originalTransactionId: transactionInfo.originalTransactionId,
+          notificationType: payload.notificationType,
+        },
+        'Cannot create audit log - subscription not found'
+      );
+    }
+  }
 }
 
 /**
