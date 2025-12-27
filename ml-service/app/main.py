@@ -19,6 +19,9 @@ from app.middleware.logging import LoggingMiddleware
 # Import inference queue
 from app.core.queue import inference_queue
 
+# Import Sentry integration
+from app.core.sentry import init_sentry, capture_exception
+
 configure_logging(environment=settings.environment, log_level=settings.log_level)
 logger = get_logger(__name__)
 
@@ -113,6 +116,9 @@ async def lifespan(app: FastAPI):
     Application lifespan events.
     Runs on startup and shutdown.
     """
+    # Initialize Sentry FIRST (before any other initialization)
+    init_sentry()
+
     # Startup
     logger.info(
         "ml_service_starting",
@@ -396,6 +402,72 @@ async def reset_circuit_breaker():
 
 
 # ============================================================================
+# DEBUG ENDPOINTS (Non-Production Only)
+# ============================================================================
+
+import os
+
+
+@app.get("/debug/sentry-test", tags=["Debug"])
+async def test_sentry():
+    """
+    Trigger a test error to verify Sentry integration.
+    Only available in non-production environments.
+    """
+    if settings.environment == "production":
+        return JSONResponse(status_code=404, content={"error": "Not found"})
+
+    # Capture a test exception
+    test_error = ValueError("Test Sentry integration - ML Service")
+    capture_exception(
+        test_error,
+        context={
+            "test_type": "manual-trigger",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+
+    return {
+        "success": True,
+        "message": "Test error sent to Sentry",
+        "environment": settings.environment,
+        "sentry_enabled": bool(os.environ.get("SENTRY_DSN")),
+    }
+
+
+@app.get("/debug/sentry-throw", tags=["Debug"])
+async def test_sentry_throw():
+    """
+    Throw an unhandled error to verify automatic Sentry capture.
+    Only available in non-production environments.
+    """
+    if settings.environment == "production":
+        return JSONResponse(status_code=404, content={"error": "Not found"})
+
+    # This will be caught by the global error handler and sent to Sentry
+    raise ValueError("Test unhandled error for Sentry - ML Service")
+
+
+@app.get("/debug/sentry-status", tags=["Debug"])
+async def sentry_status():
+    """
+    Check Sentry configuration status.
+    Only available in non-production environments.
+    """
+    if settings.environment == "production":
+        return JSONResponse(status_code=404, content={"error": "Not found"})
+
+    import sentry_sdk
+
+    return {
+        "enabled": bool(os.environ.get("SENTRY_DSN")),
+        "environment": settings.environment,
+        "client_initialized": sentry_sdk.is_initialized(),
+        "dsn": "[CONFIGURED]" if os.environ.get("SENTRY_DSN") else "[NOT SET]",
+    }
+
+
+# ============================================================================
 # API ROUTES
 # ============================================================================
 
@@ -418,6 +490,15 @@ async def general_exception_handler(request, exc):
     Global exception handler.
     Catches unhandled exceptions and returns a JSON error response.
     """
+    # Capture exception with Sentry for server errors
+    capture_exception(
+        exc,
+        context={
+            "path": str(request.url.path),
+            "method": request.method,
+        },
+    )
+
     logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
     return JSONResponse(
         status_code=500,

@@ -81,6 +81,10 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     log_format: str = "json"  # "json" or "text"
 
+    # Sentry Error Tracking (optional)
+    sentry_dsn: Optional[str] = None
+    sentry_traces_sample_rate: float = 0.1  # 10% of transactions in production
+
     # Security (for JWT validation and API auth)
     secret_key: str = DEFAULT_SECRET_KEY
     algorithm: str = "HS256"
