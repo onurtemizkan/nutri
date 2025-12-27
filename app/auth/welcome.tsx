@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform, Alert, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Platform,
+  Alert,
+  ScrollView,
+} from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -65,7 +73,7 @@ export default function WelcomeScreen() {
           contentContainerStyle={[
             styles.content,
             { paddingHorizontal: responsiveSpacing.horizontal },
-            isTablet && styles.tabletContent
+            isTablet && styles.tabletContent,
           ]}
           showsVerticalScrollIndicator={false}
           bounces={false}
@@ -106,7 +114,10 @@ export default function WelcomeScreen() {
             {/* Apple Sign In Button */}
             {Platform.OS === 'ios' && (
               <>
-                <View pointerEvents={isLoading ? 'none' : 'auto'} style={{ opacity: isLoading ? 0.6 : 1 }}>
+                <View
+                  pointerEvents={isLoading ? 'none' : 'auto'}
+                  style={{ opacity: isLoading ? 0.6 : 1 }}
+                >
                   <AppleAuthentication.AppleAuthenticationButton
                     buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
                     buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
@@ -126,7 +137,14 @@ export default function WelcomeScreen() {
 
             {/* Sign In Button */}
             <Link href="/auth/signin" asChild>
-              <TouchableOpacity style={styles.primaryButton} disabled={isLoading} testID="welcome-signin-button">
+              <TouchableOpacity
+                style={styles.primaryButton}
+                disabled={isLoading}
+                testID="welcome-signin-button"
+                accessibilityRole="button"
+                accessibilityLabel="Sign in"
+                accessibilityHint="Navigate to sign in with your email and password"
+              >
                 <LinearGradient
                   colors={gradients.primary}
                   start={{ x: 0, y: 0 }}
@@ -140,7 +158,14 @@ export default function WelcomeScreen() {
 
             {/* Create Account Button */}
             <Link href="/auth/signup" asChild>
-              <TouchableOpacity style={styles.secondaryButton} disabled={isLoading} testID="welcome-signup-button">
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                disabled={isLoading}
+                testID="welcome-signup-button"
+                accessibilityRole="button"
+                accessibilityLabel="Create account"
+                accessibilityHint="Navigate to create a new account"
+              >
                 <Text style={styles.secondaryButtonText}>Create Account</Text>
               </TouchableOpacity>
             </Link>

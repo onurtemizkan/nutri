@@ -88,7 +88,7 @@ export default function SignUpScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             { paddingHorizontal: responsiveSpacing.horizontal },
-            isTablet && styles.tabletContent
+            isTablet && styles.tabletContent,
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -118,6 +118,8 @@ export default function SignUpScreen() {
                   onSubmitEditing={() => emailInputRef.current?.focus()}
                   blurOnSubmit={false}
                   testID="signup-name-input"
+                  accessibilityLabel="Full name"
+                  accessibilityHint="Enter your full name for your account"
                 />
               </View>
             </View>
@@ -141,6 +143,8 @@ export default function SignUpScreen() {
                   onSubmitEditing={() => passwordInputRef.current?.focus()}
                   blurOnSubmit={false}
                   testID="signup-email-input"
+                  accessibilityLabel="Email address"
+                  accessibilityHint="Enter your email address for your account"
                 />
               </View>
             </View>
@@ -163,6 +167,8 @@ export default function SignUpScreen() {
                   onSubmitEditing={() => confirmPasswordInputRef.current?.focus()}
                   blurOnSubmit={false}
                   testID="signup-password-input"
+                  accessibilityLabel="Password"
+                  accessibilityHint="Create a password with at least 6 characters including letters and numbers"
                 />
               </View>
               <Text style={styles.hint}>Use letters and numbers for stronger security</Text>
@@ -185,6 +191,8 @@ export default function SignUpScreen() {
                   returnKeyType="done"
                   onSubmitEditing={handleSignUp}
                   testID="signup-confirm-password-input"
+                  accessibilityLabel="Confirm password"
+                  accessibilityHint="Re-enter your password to confirm"
                 />
               </View>
             </View>
@@ -196,9 +204,15 @@ export default function SignUpScreen() {
               disabled={isLoading}
               activeOpacity={0.8}
               testID="signup-submit-button"
+              accessibilityRole="button"
+              accessibilityLabel={isLoading ? 'Creating account' : 'Create account'}
+              accessibilityHint="Double tap to create your account"
+              accessibilityState={{ disabled: isLoading, busy: isLoading }}
             >
               <LinearGradient
-                colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
+                colors={
+                  isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary
+                }
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.buttonGradient}
@@ -215,7 +229,13 @@ export default function SignUpScreen() {
             <View style={styles.footer}>
               <Text style={styles.footerText}>Already have an account? </Text>
               <Link href="/auth/signin" asChild>
-                <TouchableOpacity disabled={isLoading} testID="signup-signin-link">
+                <TouchableOpacity
+                  disabled={isLoading}
+                  testID="signup-signin-link"
+                  accessibilityRole="link"
+                  accessibilityLabel="Sign in"
+                  accessibilityHint="Navigate to sign in to your existing account"
+                >
                   <Text style={styles.link}>Sign In</Text>
                 </TouchableOpacity>
               </Link>
