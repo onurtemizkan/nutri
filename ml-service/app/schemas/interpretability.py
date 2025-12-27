@@ -396,3 +396,122 @@ class GlobalImportanceResponse(BaseModel):
         ..., description="Overall activity importance (0-1)"
     )
     health_importance: float = Field(..., description="Overall health importance (0-1)")
+
+
+# ============================================================================
+# Multi-Day Trajectory Simulation
+# ============================================================================
+
+
+class SimulationDuration(int, Enum):
+    """Supported simulation durations in days."""
+
+    WEEK = 7
+    TWO_WEEKS = 14
+    MONTH = 30
+
+
+class NutritionChange(BaseModel):
+    """A nutrition change to apply during simulation."""
+
+    feature_name: str = Field(
+        ..., description="Feature to modify (e.g., 'nutrition_protein_daily')"
+    )
+    delta: float = Field(
+        ..., description="Change amount (absolute, e.g., +30 for 30g more protein)"
+    )
+    change_description: str = Field(
+        ..., description="Human-readable change (e.g., '+30g protein')"
+    )
+
+
+class TrajectoryPoint(BaseModel):
+    """A single point in the trajectory."""
+
+    day: int = Field(..., description="Day number in the simulation (0 = baseline)")
+    timestamp: date = Field(..., description="Actual date of this prediction")
+    predicted_value: float = Field(..., description="Predicted metric value")
+    confidence_lower: float = Field(
+        ..., description="Lower bound of confidence interval"
+    )
+    confidence_upper: float = Field(
+        ..., description="Upper bound of confidence interval"
+    )
+
+
+class SimulationTrajectory(BaseModel):
+    """Multi-day trajectory projection for a single metric."""
+
+    metric: PredictionMetric = Field(..., description="Health metric being projected")
+    baseline_value: float = Field(..., description="Starting value (day 0 prediction)")
+    projected_final_value: float = Field(
+        ..., description="Final value at end of simulation"
+    )
+    change_from_baseline: float = Field(
+        ..., description="Difference from baseline to final"
+    )
+    percent_change: float = Field(..., description="Percentage change from baseline")
+    trajectory: List[TrajectoryPoint] = Field(
+        ..., description="Day-by-day trajectory points"
+    )
+    min_value: float = Field(..., description="Minimum value in trajectory")
+    max_value: float = Field(..., description="Maximum value in trajectory")
+    average_value: float = Field(..., description="Average value across trajectory")
+    optimal_lag_hours: Optional[int] = Field(
+        None, description="Detected optimal lag from nutrition to effect"
+    )
+    lag_description: Optional[str] = Field(
+        None, description="Human-readable lag description"
+    )
+
+
+class TrajectoryRequest(BaseModel):
+    """Request to generate a multi-day trajectory simulation."""
+
+    user_id: str = Field(..., description="User ID")
+    nutrition_changes: List[NutritionChange] = Field(
+        ..., description="Nutrition changes to simulate"
+    )
+    duration_days: SimulationDuration = Field(
+        default=SimulationDuration.WEEK,
+        description="Simulation duration (7, 14, or 30 days)",
+    )
+    metrics_to_predict: List[PredictionMetric] = Field(
+        ..., description="Metrics to project (1-3)"
+    )
+    start_date: Optional[date] = Field(
+        None, description="Start date (defaults to today)"
+    )
+    include_no_change_baseline: bool = Field(
+        default=True, description="Include trajectory without changes for comparison"
+    )
+
+
+class TrajectoryResponse(BaseModel):
+    """Response with multi-day trajectory simulations."""
+
+    user_id: str
+    start_date: date
+    end_date: date
+    duration_days: int
+
+    nutrition_changes: List[NutritionChange] = Field(
+        ..., description="Applied nutrition changes"
+    )
+    trajectories: List[SimulationTrajectory] = Field(
+        ..., description="Trajectory projections for each metric"
+    )
+    baseline_trajectories: Optional[List[SimulationTrajectory]] = Field(
+        None, description="Trajectories without any changes for comparison"
+    )
+
+    model_confidence: float = Field(
+        ..., ge=0, le=1, description="Overall model confidence (0-1)"
+    )
+    data_quality_warning: Optional[str] = Field(
+        None, description="Warning about data quality if applicable"
+    )
+    summary: str = Field(..., description="Natural language summary of projections")
+    recommendation: str = Field(
+        ..., description="Recommendation based on trajectory outcomes"
+    )
