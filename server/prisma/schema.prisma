@@ -85,6 +85,10 @@ model User {
   // IAP Subscription
   subscription    Subscription?
 
+  // CGM Integration
+  glucoseReadings GlucoseReading[]
+  cgmConnections  CGMConnection[]
+
   @@index([email])
   @@index([appleId])
   @@index([resetToken])
@@ -138,6 +142,9 @@ model Meal {
   consumedAt  DateTime @default(now())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  // CGM Integration
+  glucoseResponse MealGlucoseResponse?
 
   @@index([userId, consumedAt])
   @@index([userId, mealType])
@@ -1289,4 +1296,156 @@ model SubscriptionEvent {
   @@index([notificationType])
   @@index([originalTransactionId])
   @@index([createdAt])
+}
+
+// ============================================================================
+// CONTINUOUS GLUCOSE MONITOR (CGM) INTEGRATION
+// ============================================================================
+
+/**
+ * CGM data source providers
+ * Tracks the origin of glucose readings for data provenance
+ */
+enum GlucoseSource {
+  DEXCOM       // Dexcom G6/G7 CGM devices via Dexcom API
+  LIBRE        // Abbott FreeStyle Libre via LibreView API
+  LEVELS       // Levels Health API (enriched CGM data)
+  MANUAL       // Manually entered glucose readings
+}
+
+/**
+ * CGM trend arrow direction
+ * Indicates the direction and rate of glucose change
+ */
+enum GlucoseTrend {
+  RISING_RAPIDLY      // ↑↑ Rising more than 3 mg/dL per minute
+  RISING              // ↑ Rising between 2-3 mg/dL per minute
+  RISING_SLIGHTLY     // ↗ Rising between 1-2 mg/dL per minute
+  STABLE              // → Stable, changing less than 1 mg/dL per minute
+  FALLING_SLIGHTLY    // ↘ Falling between 1-2 mg/dL per minute
+  FALLING             // ↓ Falling between 2-3 mg/dL per minute
+  FALLING_RAPIDLY     // ↓↓ Falling more than 3 mg/dL per minute
+  NOT_AVAILABLE       // Unknown or unavailable trend
+}
+
+/**
+ * GlucoseReading - Individual glucose measurements from CGM devices
+ * Stores raw glucose values with 5-minute intervals (typical CGM frequency)
+ */
+model GlucoseReading {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Glucose value
+  value           Float         // Glucose value in mg/dL
+  unit            String        @default("mg/dL")  // mg/dL or mmol/L
+
+  // Source and provenance
+  source          GlucoseSource
+  sourceId        String?       // Original reading ID from CGM provider
+
+  // Trend information
+  trendArrow      GlucoseTrend?
+  trendRate       Float?        // Rate of change in mg/dL per minute
+
+  // Timing
+  recordedAt      DateTime      // When the reading was taken
+
+  // Additional metadata
+  metadata        Json?         // {quality: "good", transmitterId: "...", sessionId: "..."}
+
+  // Audit
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Indexes for efficient queries
+  @@index([userId, recordedAt])
+  @@index([userId, source, recordedAt])
+  @@unique([userId, source, recordedAt]) // Prevent duplicate readings
+}
+
+/**
+ * MealGlucoseResponse - Analyzed glucose response metrics for each meal
+ * Links meals to their postprandial glucose curves and metabolic scores
+ */
+model MealGlucoseResponse {
+  id                  String    @id @default(cuid())
+  mealId              String    @unique
+  meal                Meal      @relation(fields: [mealId], references: [id], onDelete: Cascade)
+
+  // Baseline measurement (pre-meal glucose)
+  baselineGlucose     Float     // Average glucose 30 min before meal (mg/dL)
+  baselineTime        DateTime  // When baseline was measured
+
+  // Peak response
+  peakGlucose         Float     // Maximum glucose after meal (mg/dL)
+  peakTime            Int       // Minutes after meal to reach peak
+  glucoseRise         Float     // Difference: peak - baseline (mg/dL)
+
+  // Recovery metrics
+  returnToBaseline    Int?      // Minutes to return within 10% of baseline
+  twoHourGlucose      Float?    // Glucose value 2 hours after meal
+
+  // Integrated metrics
+  areaUnderCurve      Float     // AUC above baseline (mg/dL * minutes)
+  glucoseScore        Float     // Metabolic response score (0-100, higher = better)
+
+  // Analysis quality
+  readingCount        Int       // Number of glucose readings in analysis window
+  confidence          Float     // Confidence score (0-1) based on data quality
+
+  // Timing
+  analyzedAt          DateTime  @default(now())
+  windowStart         DateTime  // Start of analysis window
+  windowEnd           DateTime  // End of analysis window
+
+  // Audit
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([mealId])
+}
+
+/**
+ * CGMConnection - OAuth credentials for CGM platform integrations
+ * Stores encrypted tokens for secure API access to CGM providers
+ */
+model CGMConnection {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Provider info
+  provider        GlucoseSource
+
+  // OAuth tokens (should be encrypted at application level)
+  accessToken     String        @db.Text  // Encrypted access token
+  refreshToken    String?       @db.Text  // Encrypted refresh token
+  tokenType       String        @default("Bearer")
+  expiresAt       DateTime      // Token expiration time
+  scope           String?       // OAuth scopes granted
+
+  // Sync status
+  lastSyncAt      DateTime?     // Last successful data sync
+  lastSyncStatus  String?       // "success", "error", "partial"
+  lastSyncError   String?       // Error message if sync failed
+
+  // Connection status
+  isActive        Boolean       @default(true)
+  connectedAt     DateTime      @default(now())
+  disconnectedAt  DateTime?     // When user disconnected
+
+  // Provider-specific data
+  externalUserId  String?       // User ID from the CGM provider
+  metadata        Json?         // Provider-specific configuration
+
+  // Audit
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // One connection per provider per user
+  @@unique([userId, provider])
+  @@index([userId, isActive])
+  @@index([provider, isActive])
 }
