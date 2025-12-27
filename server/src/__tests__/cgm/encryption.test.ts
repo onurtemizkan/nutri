@@ -5,7 +5,13 @@
  * and other sensitive CGM data.
  */
 
-import { encrypt, decrypt, generateEncryptionKey, hashValue, isValidEncryptionKey } from '../../utils/encryption';
+import {
+  encrypt,
+  decrypt,
+  generateEncryptionKey,
+  hashValue,
+  isValidEncryptionKey,
+} from '../../utils/encryption';
 
 describe('Encryption Utility', () => {
   // Store original env values
@@ -38,7 +44,8 @@ describe('Encryption Utility', () => {
     });
 
     it('should encrypt and decrypt a long OAuth token', () => {
-      const token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.POstGetfAytaZS82wHcjoTyoqhMyxXiWdR7Nn7A29DNSl0EiXLdwJ6xC6AfgZWF1bOsS_TuYI3OG85AmiExREkrS6tDfTQ2B3WXlrr-wp5AokiRbz3_oB4OxG-W9KcEEbDRcZc0nH3L7LzYptiy1PtAylQGxHTWZXtGz4ht0bAecBgmpdgXMguEIcoqPJ1n3pIWk_dUZegpqx0Lka21H6XxUTxiy8OcaarA8zdnPUnV6AmNP3ecFawIFYdvJB_cm-GvpCSbr8G8y_Mllj8f4x9nBH8pQux89_6gUY618iYv7tuPWBFfEbLxtF2pZS6YC1aSfLQxeNe8djT9YjpvRZA';
+      const token =
+        'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.POstGetfAytaZS82wHcjoTyoqhMyxXiWdR7Nn7A29DNSl0EiXLdwJ6xC6AfgZWF1bOsS_TuYI3OG85AmiExREkrS6tDfTQ2B3WXlrr-wp5AokiRbz3_oB4OxG-W9KcEEbDRcZc0nH3L7LzYptiy1PtAylQGxHTWZXtGz4ht0bAecBgmpdgXMguEIcoqPJ1n3pIWk_dUZegpqx0Lka21H6XxUTxiy8OcaarA8zdnPUnV6AmNP3ecFawIFYdvJB_cm-GvpCSbr8G8y_Mllj8f4x9nBH8pQux89_6gUY618iYv7tuPWBFfEbLxtF2pZS6YC1aSfLQxeNe8djT9YjpvRZA';
 
       const encrypted = encrypt(token);
       const decrypted = decrypt(encrypted);
@@ -92,8 +99,9 @@ describe('Encryption Utility', () => {
 
     it('should throw error when decrypting corrupted data', () => {
       const encrypted = encrypt('test-value');
-      // Corrupt the encrypted data by modifying a character
-      const corrupted = encrypted.slice(0, 10) + 'X' + encrypted.slice(11);
+      // Corrupt the auth tag area (bytes 16-32 after base64 decode, which is roughly chars 21-42 in base64)
+      // We corrupt multiple characters to ensure the auth tag is definitely invalid
+      const corrupted = encrypted.slice(0, 25) + 'XXXX' + encrypted.slice(29);
 
       expect(() => decrypt(corrupted)).toThrow('Failed to decrypt');
     });

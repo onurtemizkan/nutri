@@ -1281,3 +1281,75 @@ export type CGMOAuthCallbackData = z.infer<typeof cgmOAuthCallbackSchema>;
 export type GetCGMConnectionsQuery = z.infer<typeof getCGMConnectionsQuerySchema>;
 export type SyncCGMData = z.infer<typeof syncCGMDataSchema>;
 export type AnalyzeMealGlucoseData = z.infer<typeof analyzeMealGlucoseSchema>;
+
+// ============================================================================
+// NUTRITION REPORTS SCHEMAS
+// ============================================================================
+
+/**
+ * ISO Date format (YYYY-MM-DD) - used for weekly report date parameter
+ */
+const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format');
+
+/**
+ * Month format (YYYY-MM) - used for monthly report parameter
+ */
+const monthFormatSchema = z.string().regex(/^\d{4}-\d{2}$/, 'Month must be in YYYY-MM format');
+
+/**
+ * Report export format
+ */
+export const reportExportFormatSchema = z.enum(['pdf', 'image', 'json']);
+
+/**
+ * Weekly Report Query Parameters
+ * - date: Optional. Any date within the desired week (YYYY-MM-DD format).
+ *         If not provided, defaults to current week.
+ */
+export const weeklyReportQuerySchema = z.object({
+  date: isoDateSchema.optional(),
+});
+
+/**
+ * Monthly Report Query Parameters
+ * - month: Optional. The desired month in YYYY-MM format.
+ *          If not provided, defaults to current month.
+ */
+export const monthlyReportQuerySchema = z.object({
+  month: monthFormatSchema.optional(),
+});
+
+/**
+ * Weekly Report Export Query Parameters
+ */
+export const weeklyReportExportQuerySchema = z.object({
+  date: isoDateSchema.optional(),
+  format: reportExportFormatSchema,
+});
+
+/**
+ * Monthly Report Export Query Parameters
+ */
+export const monthlyReportExportQuerySchema = z.object({
+  month: monthFormatSchema.optional(),
+  format: reportExportFormatSchema,
+});
+
+/**
+ * Report Generation Options (internal use)
+ */
+export const reportGenerationOptionsSchema = z.object({
+  includeHealthMetrics: z.boolean().optional().default(true),
+  includeActivities: z.boolean().optional().default(true),
+  includeInsights: z.boolean().optional().default(true),
+  includeAchievements: z.boolean().optional().default(true),
+  topFoodsLimit: z.number().int().min(1).max(50).optional().default(10),
+});
+
+// Type exports for report schemas
+export type WeeklyReportQuery = z.infer<typeof weeklyReportQuerySchema>;
+export type MonthlyReportQuery = z.infer<typeof monthlyReportQuerySchema>;
+export type WeeklyReportExportQuery = z.infer<typeof weeklyReportExportQuerySchema>;
+export type MonthlyReportExportQuery = z.infer<typeof monthlyReportExportQuerySchema>;
+export type ReportExportFormat = z.infer<typeof reportExportFormatSchema>;
+export type ReportGenerationOptions = z.infer<typeof reportGenerationOptionsSchema>;
