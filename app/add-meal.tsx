@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,7 @@ import { showAlert } from '@/lib/utils/alert';
 import { useResponsive } from '@/hooks/useResponsive';
 import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
 import { TimePicker } from '@/lib/components/TimePicker';
+import { Input, type InputRef } from '@/lib/components/ui/Input';
 import {
   NotificationPrimingModal,
   useNotificationPriming,
@@ -90,6 +91,8 @@ type MealSearchParams = {
   barcode?: string;
 } & MicronutrientParams;
 
+type FieldName = 'name' | 'calories' | 'protein' | 'carbs' | 'fat';
+
 export default function AddMealScreen() {
   const params = useLocalSearchParams() as MealSearchParams;
 
@@ -105,6 +108,22 @@ export default function AddMealScreen() {
   const [consumedAt, setConsumedAt] = useState(new Date());
   const [isLoading, setIsLoading] = useState(false);
 
+  // Validation state
+  const [touched, setTouched] = useState<Record<FieldName, boolean>>({
+    name: false,
+    calories: false,
+    protein: false,
+    carbs: false,
+    fat: false,
+  });
+  const [errors, setErrors] = useState<Record<FieldName, string>>({
+    name: '',
+    calories: '',
+    protein: '',
+    carbs: '',
+    fat: '',
+  });
+
   // Store micronutrients from scan (hidden state, passed through to API)
   const [micronutrients, setMicronutrients] = useState<Partial<MicronutrientParams>>({});
 
@@ -112,8 +131,99 @@ export default function AddMealScreen() {
   const { isTablet, getSpacing } = useResponsive();
   const responsiveSpacing = getSpacing();
 
+  // Refs for keyboard navigation
+  const caloriesRef = useRef<InputRef>(null);
+  const proteinRef = useRef<InputRef>(null);
+  const carbsRef = useRef<InputRef>(null);
+  const fatRef = useRef<InputRef>(null);
+
   // Notification priming hook
   const { shouldShowPriming, triggerPriming, dismissPriming } = useNotificationPriming();
+
+  // Validation functions
+  const validateName = useCallback((value: string): string => {
+    if (!value.trim()) {
+      return 'Meal name is required';
+    }
+    return '';
+  }, []);
+
+  const validateNumericField = useCallback((value: string, fieldLabel: string): string => {
+    if (!value.trim()) {
+      return `${fieldLabel} is required`;
+    }
+    const num = parseFloat(value);
+    if (isNaN(num) || num < 0) {
+      return `Please enter a valid ${fieldLabel.toLowerCase()}`;
+    }
+    return '';
+  }, []);
+
+  const validateField = useCallback(
+    (fieldName: FieldName, value: string): string => {
+      switch (fieldName) {
+        case 'name':
+          return validateName(value);
+        case 'calories':
+          return validateNumericField(value, 'Calories');
+        case 'protein':
+          return validateNumericField(value, 'Protein');
+        case 'carbs':
+          return validateNumericField(value, 'Carbs');
+        case 'fat':
+          return validateNumericField(value, 'Fat');
+        default:
+          return '';
+      }
+    },
+    [validateName, validateNumericField]
+  );
+
+  const handleBlur = useCallback(
+    (fieldName: FieldName, value: string) => {
+      setTouched((prev) => ({ ...prev, [fieldName]: true }));
+      const error = validateField(fieldName, value);
+      setErrors((prev) => ({ ...prev, [fieldName]: error }));
+    },
+    [validateField]
+  );
+
+  const handleChange = useCallback(
+    (fieldName: FieldName, value: string, setter: (v: string) => void) => {
+      setter(value);
+      if (touched[fieldName]) {
+        const error = validateField(fieldName, value);
+        setErrors((prev) => ({ ...prev, [fieldName]: error }));
+      }
+    },
+    [touched, validateField]
+  );
+
+  const validateAllFields = useCallback((): boolean => {
+    const nameError = validateField('name', name);
+    const caloriesError = validateField('calories', calories);
+    const proteinError = validateField('protein', protein);
+    const carbsError = validateField('carbs', carbs);
+    const fatError = validateField('fat', fat);
+
+    setErrors({
+      name: nameError,
+      calories: caloriesError,
+      protein: proteinError,
+      carbs: carbsError,
+      fat: fatError,
+    });
+
+    setTouched({
+      name: true,
+      calories: true,
+      protein: true,
+      carbs: true,
+      fat: true,
+    });
+
+    return !nameError && !caloriesError && !proteinError && !carbsError && !fatError;
+  }, [name, calories, protein, carbs, fat, validateField]);
 
   // Pre-fill form if coming from food scanner
   useEffect(() => {
@@ -178,8 +288,8 @@ export default function AddMealScreen() {
   }, [triggerPriming]);
 
   const handleSaveMeal = async () => {
-    if (!name || !calories || !protein || !carbs || !fat) {
-      showAlert('Error', 'Please fill in all required fields');
+    // Validate all fields on submit
+    if (!validateAllFields()) {
       return;
     }
 
@@ -240,6 +350,7 @@ export default function AddMealScreen() {
         router.replace('/');
       }
     } catch (error) {
+      // Server-side errors still use Alert
       showAlert('Error', getErrorMessage(error, 'Failed to add meal'));
       setIsLoading(false);
     }
@@ -273,6 +384,10 @@ export default function AddMealScreen() {
             onPress={handleSaveMeal}
             disabled={isLoading}
             testID="add-meal-save-button"
+            accessibilityRole="button"
+            accessibilityLabel={isLoading ? 'Saving meal' : 'Save meal'}
+            accessibilityHint="Double tap to save your meal"
+            accessibilityState={{ disabled: isLoading, busy: isLoading }}
           >
             {isLoading ? (
               <ActivityIndicator color={colors.primary.main} />
@@ -290,18 +405,26 @@ export default function AddMealScreen() {
             { paddingHorizontal: responsiveSpacing.horizontal },
             isTablet && styles.tabletContent
           ]}
+          keyboardShouldPersistTaps="handled"
         >
           <View style={styles.content}>
             {/* Meal Type Selector */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Meal Type</Text>
-              <View style={styles.mealTypeContainer}>
+              <View
+                style={styles.mealTypeContainer}
+                accessibilityRole="tablist"
+                accessibilityLabel="Meal type selector"
+              >
                 {mealTypes.map((type) => (
                   <TouchableOpacity
                     key={type}
                     style={styles.mealTypeButton}
                     onPress={() => setMealType(type)}
                     activeOpacity={0.8}
+                    accessibilityRole="tab"
+                    accessibilityLabel={type}
+                    accessibilityState={{ selected: mealType === type }}
                   >
                     {mealType === type ? (
                       <LinearGradient
@@ -352,6 +475,9 @@ export default function AddMealScreen() {
               disabled={isLoading}
               activeOpacity={0.8}
               testID="add-meal-scan-food-button"
+              accessibilityRole="button"
+              accessibilityLabel="Scan food with camera"
+              accessibilityHint="Opens camera to automatically estimate nutrition using AI"
             >
               <Ionicons name="camera" size={24} color={colors.primary.main} />
               <View style={styles.scanButtonText}>
@@ -370,6 +496,9 @@ export default function AddMealScreen() {
               disabled={isLoading}
               activeOpacity={0.8}
               testID="add-meal-scan-barcode-button"
+              accessibilityRole="button"
+              accessibilityLabel="Scan product barcode"
+              accessibilityHint="Opens camera to look up nutrition from over 2 million products"
             >
               <Ionicons name="barcode-outline" size={24} color={colors.primary.main} />
               <View style={styles.scanButtonText}>
@@ -392,18 +521,18 @@ export default function AddMealScreen() {
 
             {/* Meal Name */}
             <View style={styles.section}>
-              <Text style={styles.label}>Meal Name *</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g., Grilled Chicken Salad"
-                  placeholderTextColor={colors.text.disabled}
-                  value={name}
-                  onChangeText={setName}
-                  editable={!isLoading}
-                  testID="add-meal-name-input"
-                />
-              </View>
+              <Input
+                label="Meal Name *"
+                value={name}
+                onChangeText={(value) => handleChange('name', value, setName)}
+                onBlur={() => handleBlur('name', name)}
+                placeholder="e.g., Grilled Chicken Salad"
+                error={touched.name ? errors.name : undefined}
+                disabled={isLoading}
+                returnKeyType="next"
+                onSubmitEditing={() => caloriesRef.current?.focus()}
+                testID="add-meal-name-input"
+              />
             </View>
 
             {/* Nutrition Info */}
@@ -412,72 +541,76 @@ export default function AddMealScreen() {
 
               <View style={styles.row}>
                 <View style={styles.halfInput}>
-                  <Text style={styles.label}>Calories *</Text>
-                  <View style={styles.inputWrapper}>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="0"
-                      placeholderTextColor={colors.text.disabled}
-                      value={calories}
-                      onChangeText={setCalories}
-                      keyboardType="numeric"
-                      editable={!isLoading}
-                      testID="add-meal-calories-input"
-                    />
-                  </View>
+                  <Input
+                    ref={caloriesRef}
+                    label="Calories *"
+                    value={calories}
+                    onChangeText={(value) => handleChange('calories', value, setCalories)}
+                    onBlur={() => handleBlur('calories', calories)}
+                    placeholder="0"
+                    error={touched.calories ? errors.calories : undefined}
+                    keyboardType="numeric"
+                    disabled={isLoading}
+                    returnKeyType="next"
+                    onSubmitEditing={() => proteinRef.current?.focus()}
+                    testID="add-meal-calories-input"
+                  />
                 </View>
 
                 <View style={styles.halfInput}>
-                  <Text style={styles.label}>Protein (g) *</Text>
-                  <View style={styles.inputWrapper}>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="0"
-                      placeholderTextColor={colors.text.disabled}
-                      value={protein}
-                      onChangeText={setProtein}
-                      keyboardType="numeric"
-                      editable={!isLoading}
-                      testID="add-meal-protein-input"
-                    />
-                  </View>
+                  <Input
+                    ref={proteinRef}
+                    label="Protein (g) *"
+                    value={protein}
+                    onChangeText={(value) => handleChange('protein', value, setProtein)}
+                    onBlur={() => handleBlur('protein', protein)}
+                    placeholder="0"
+                    error={touched.protein ? errors.protein : undefined}
+                    keyboardType="numeric"
+                    disabled={isLoading}
+                    returnKeyType="next"
+                    onSubmitEditing={() => carbsRef.current?.focus()}
+                    testID="add-meal-protein-input"
+                  />
                 </View>
               </View>
 
               <View style={styles.row}>
                 <View style={styles.halfInput}>
-                  <Text style={styles.label}>Carbs (g) *</Text>
-                  <View style={styles.inputWrapper}>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="0"
-                      placeholderTextColor={colors.text.disabled}
-                      value={carbs}
-                      onChangeText={setCarbs}
-                      keyboardType="numeric"
-                      editable={!isLoading}
-                      testID="add-meal-carbs-input"
-                    />
-                  </View>
+                  <Input
+                    ref={carbsRef}
+                    label="Carbs (g) *"
+                    value={carbs}
+                    onChangeText={(value) => handleChange('carbs', value, setCarbs)}
+                    onBlur={() => handleBlur('carbs', carbs)}
+                    placeholder="0"
+                    error={touched.carbs ? errors.carbs : undefined}
+                    keyboardType="numeric"
+                    disabled={isLoading}
+                    returnKeyType="next"
+                    onSubmitEditing={() => fatRef.current?.focus()}
+                    testID="add-meal-carbs-input"
+                  />
                 </View>
 
                 <View style={styles.halfInput}>
-                  <Text style={styles.label}>Fat (g) *</Text>
-                  <View style={styles.inputWrapper}>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="0"
-                      placeholderTextColor={colors.text.disabled}
-                      value={fat}
-                      onChangeText={setFat}
-                      keyboardType="numeric"
-                      editable={!isLoading}
-                      testID="add-meal-fat-input"
-                    />
-                  </View>
+                  <Input
+                    ref={fatRef}
+                    label="Fat (g) *"
+                    value={fat}
+                    onChangeText={(value) => handleChange('fat', value, setFat)}
+                    onBlur={() => handleBlur('fat', fat)}
+                    placeholder="0"
+                    error={touched.fat ? errors.fat : undefined}
+                    keyboardType="numeric"
+                    disabled={isLoading}
+                    returnKeyType="done"
+                    testID="add-meal-fat-input"
+                  />
                 </View>
               </View>
 
+              {/* Optional fields - keep original styling */}
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Fiber (g)</Text>
                 <View style={styles.inputWrapper}>
@@ -489,6 +622,7 @@ export default function AddMealScreen() {
                     onChangeText={setFiber}
                     keyboardType="numeric"
                     editable={!isLoading}
+                    accessibilityLabel="Fiber in grams"
                   />
                 </View>
               </View>
@@ -503,6 +637,7 @@ export default function AddMealScreen() {
                     value={servingSize}
                     onChangeText={setServingSize}
                     editable={!isLoading}
+                    accessibilityLabel="Serving size"
                   />
                 </View>
               </View>
@@ -522,6 +657,8 @@ export default function AddMealScreen() {
                   numberOfLines={4}
                   textAlignVertical="top"
                   editable={!isLoading}
+                  accessibilityLabel="Notes"
+                  accessibilityHint="Add any additional notes about this meal"
                 />
               </View>
             </View>
@@ -600,7 +737,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing['3xl'],
   },
   section: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
     fontSize: typography.fontSize.lg,
@@ -646,7 +783,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
 
-  // Input
+  // Input (for optional fields that don't need validation)
   label: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
@@ -676,7 +813,6 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: spacing.md,
-    marginBottom: spacing.md,
   },
   halfInput: {
     flex: 1,
