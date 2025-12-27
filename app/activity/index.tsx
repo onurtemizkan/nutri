@@ -36,6 +36,7 @@ import {
 import { useAuth } from '@/lib/context/AuthContext';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import { useResponsive } from '@/hooks/useResponsive';
+import { EmptyState } from '@/lib/components/ui/EmptyState';
 
 type FilterCategory = ActivityCategory | 'all';
 
@@ -168,13 +169,19 @@ export default function ActivityListScreen() {
         testID={`activity-item-${activity.id}`}
       >
         <View style={[styles.activityIconContainer, { backgroundColor: typeConfig.color + '20' }]}>
-          <Ionicons name={typeConfig.icon as keyof typeof Ionicons.glyphMap} size={24} color={typeConfig.color} />
+          <Ionicons
+            name={typeConfig.icon as keyof typeof Ionicons.glyphMap}
+            size={24}
+            color={typeConfig.color}
+          />
         </View>
         <View style={styles.activityInfo}>
           <Text style={styles.activityName}>{typeConfig.displayName}</Text>
           <View style={styles.activityMeta}>
             <Text style={styles.activityTime}>{startTime}</Text>
-            <View style={[styles.intensityBadge, { backgroundColor: intensityConfig.color + '20' }]}>
+            <View
+              style={[styles.intensityBadge, { backgroundColor: intensityConfig.color + '20' }]}
+            >
               <Text style={[styles.intensityText, { color: intensityConfig.color }]}>
                 {intensityConfig.shortName}
               </Text>
@@ -243,12 +250,16 @@ export default function ActivityListScreen() {
                 </View>
                 <View style={styles.summaryDivider} />
                 <View style={styles.summaryStat}>
-                  <Text style={styles.summaryValue}>{formatDuration(weeklySummary.totalMinutes)}</Text>
+                  <Text style={styles.summaryValue}>
+                    {formatDuration(weeklySummary.totalMinutes)}
+                  </Text>
                   <Text style={styles.summaryLabel}>Duration</Text>
                 </View>
                 <View style={styles.summaryDivider} />
                 <View style={styles.summaryStat}>
-                  <Text style={styles.summaryValue}>{weeklySummary.totalCalories.toLocaleString()}</Text>
+                  <Text style={styles.summaryValue}>
+                    {weeklySummary.totalCalories.toLocaleString()}
+                  </Text>
                   <Text style={styles.summaryLabel}>Calories</Text>
                 </View>
               </View>
@@ -283,13 +294,14 @@ export default function ActivityListScreen() {
 
         {/* Empty State */}
         {!error && filteredActivities.length === 0 && (
-          <View style={styles.emptyContainer} testID="activity-empty-state">
-            <Ionicons name="fitness-outline" size={64} color={colors.text.disabled} />
-            <Text style={styles.emptyTitle}>No activities yet</Text>
-            <Text style={styles.emptySubtitle}>
-              Start tracking your workouts by tapping the + button
-            </Text>
-          </View>
+          <EmptyState
+            icon="fitness-outline"
+            title="No activities logged yet"
+            description="Track your first workout to start monitoring your exercise."
+            actionLabel="Log an activity"
+            onAction={() => router.push('/activity/add')}
+            testID="activity-empty-state"
+          />
         )}
 
         {/* Activities List by Date */}
@@ -449,25 +461,6 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.semibold as '600',
     color: colors.text.primary,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: spacing['3xl'],
-  },
-  emptyTitle: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.semibold as '600',
-    color: colors.text.primary,
-    marginTop: spacing.lg,
-  },
-  emptySubtitle: {
-    fontSize: typography.fontSize.md,
-    color: colors.text.secondary,
-    marginTop: spacing.sm,
-    textAlign: 'center',
-    paddingHorizontal: spacing.xl,
   },
   dateGroup: {
     marginBottom: spacing.lg,

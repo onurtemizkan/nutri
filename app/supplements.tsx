@@ -26,6 +26,7 @@ import {
   sanitizeSupplementNutrients,
   hasSupplementMicronutrients,
 } from '@/lib/utils/supplementMicronutrients';
+import { EmptyState } from '@/lib/components/ui/EmptyState';
 import type {
   Supplement,
   TodaySupplementStatus,
@@ -101,7 +102,7 @@ function parseServingSize(servingSize?: string): {
 
   let servingType = 'serving';
   for (const st of servingTypes) {
-    if (st.keywords.some(kw => lowerServing.includes(kw))) {
+    if (st.keywords.some((kw) => lowerServing.includes(kw))) {
       servingType = st.type;
       break;
     }
@@ -167,9 +168,18 @@ function extractSupplementDosage(
 }
 
 const SUPPLEMENT_COLORS = [
-  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4',
-  '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F',
-  '#BB8FCE', '#85C1E9', '#F8B500', '#00CED1',
+  '#FF6B6B',
+  '#4ECDC4',
+  '#45B7D1',
+  '#96CEB4',
+  '#FFEAA7',
+  '#DDA0DD',
+  '#98D8C8',
+  '#F7DC6F',
+  '#BB8FCE',
+  '#85C1E9',
+  '#F8B500',
+  '#00CED1',
 ];
 
 export default function SupplementsScreen() {
@@ -255,7 +265,7 @@ export default function SupplementsScreen() {
         // Normalize unit to match our options
         const unit = params.dosageUnit.toLowerCase();
         const matchedUnit = DOSAGE_UNIT_OPTIONS.find(
-          opt => opt.value.toLowerCase() === unit || opt.label.toLowerCase().includes(unit)
+          (opt) => opt.value.toLowerCase() === unit || opt.label.toLowerCase().includes(unit)
         );
         setFormDosageUnit(matchedUnit?.value || params.dosageUnit);
       }
@@ -393,7 +403,7 @@ export default function SupplementsScreen() {
   const toggleTimeOfDay = (time: SupplementTimeOfDay) => {
     if (formTimeOfDay.includes(time)) {
       if (formTimeOfDay.length > 1) {
-        setFormTimeOfDay(formTimeOfDay.filter(t => t !== time));
+        setFormTimeOfDay(formTimeOfDay.filter((t) => t !== time));
       }
     } else {
       setFormTimeOfDay([...formTimeOfDay, time]);
@@ -458,9 +468,7 @@ export default function SupplementsScreen() {
                   style={styles.takeButtonGradient}
                 >
                   <Ionicons name="checkmark" size={18} color={colors.text.primary} />
-                  {remaining > 1 && (
-                    <Text style={styles.takeButtonText}>{remaining}</Text>
-                  )}
+                  {remaining > 1 && <Text style={styles.takeButtonText}>{remaining}</Text>}
                 </LinearGradient>
               </TouchableOpacity>
             </>
@@ -471,9 +479,11 @@ export default function SupplementsScreen() {
   };
 
   const renderSupplementCard = (supplement: Supplement) => {
-    const frequencyLabel = FREQUENCY_OPTIONS.find(f => f.value === supplement.frequency)?.label || supplement.frequency;
+    const frequencyLabel =
+      FREQUENCY_OPTIONS.find((f) => f.value === supplement.frequency)?.label ||
+      supplement.frequency;
     const timeLabels = supplement.timeOfDay
-      .map(t => TIME_OF_DAY_OPTIONS.find(opt => opt.value === t)?.label || t)
+      .map((t) => TIME_OF_DAY_OPTIONS.find((opt) => opt.value === t)?.label || t)
       .join(', ');
 
     // Check if supplement has micronutrient data
@@ -518,9 +528,7 @@ export default function SupplementsScreen() {
           />
           <View style={styles.supplementCardInfo}>
             <Text style={styles.supplementCardName}>{supplement.name}</Text>
-            {supplement.brand && (
-              <Text style={styles.supplementCardBrand}>{supplement.brand}</Text>
-            )}
+            {supplement.brand && <Text style={styles.supplementCardBrand}>{supplement.brand}</Text>}
             <Text style={styles.supplementCardDosage}>
               {supplement.dosageAmount} {supplement.dosageUnit} - {frequencyLabel}
             </Text>
@@ -599,7 +607,9 @@ export default function SupplementsScreen() {
           style={[
             styles.content,
             { padding: contentPadding },
-            maxContentWidth ? { maxWidth: maxContentWidth, alignSelf: 'center', width: '100%' } : null,
+            maxContentWidth
+              ? { maxWidth: maxContentWidth, alignSelf: 'center', width: '100%' }
+              : null,
           ]}
         >
           {/* Today's Progress */}
@@ -637,7 +647,8 @@ export default function SupplementsScreen() {
               </View>
 
               <Text style={styles.progressSummary}>
-                {todayStatus.completedSupplements} of {todayStatus.totalSupplements} supplements completed
+                {todayStatus.completedSupplements} of {todayStatus.totalSupplements} supplements
+                completed
               </Text>
 
               {todayStatus.supplements.map(renderTodayCard)}
@@ -652,13 +663,14 @@ export default function SupplementsScreen() {
             </View>
 
             {supplements.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Ionicons name="medical-outline" size={48} color={colors.text.disabled} />
-                <Text style={styles.emptyStateTitle}>No supplements yet</Text>
-                <Text style={styles.emptyStateText}>
-                  Tap the + button to add your first supplement
-                </Text>
-              </View>
+              <EmptyState
+                icon="medical-outline"
+                title="No supplements yet"
+                description="Add your daily vitamins and supplements to track your intake."
+                actionLabel="Add supplement"
+                onAction={openAddModal}
+                testID="supplements-empty-state"
+              />
             ) : (
               supplements.map(renderSupplementCard)
             )}
@@ -731,7 +743,6 @@ export default function SupplementsScreen() {
             )}
 
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-
               {/* Form Fields */}
               <View style={styles.formSection}>
                 <Text style={styles.formLabel}>Name *</Text>
@@ -778,7 +789,7 @@ export default function SupplementsScreen() {
               <View style={styles.formSection}>
                 <Text style={styles.formLabel}>Unit</Text>
                 <View style={styles.unitChipContainer}>
-                  {DOSAGE_UNIT_OPTIONS.map(option => (
+                  {DOSAGE_UNIT_OPTIONS.map((option) => (
                     <TouchableOpacity
                       key={option.value}
                       style={[
@@ -803,13 +814,10 @@ export default function SupplementsScreen() {
               <View style={styles.formSection}>
                 <Text style={styles.formLabel}>Frequency</Text>
                 <View style={styles.chipContainer}>
-                  {FREQUENCY_OPTIONS.map(option => (
+                  {FREQUENCY_OPTIONS.map((option) => (
                     <TouchableOpacity
                       key={option.value}
-                      style={[
-                        styles.chip,
-                        formFrequency === option.value && styles.chipSelected,
-                      ]}
+                      style={[styles.chip, formFrequency === option.value && styles.chipSelected]}
                       onPress={() => setFormFrequency(option.value)}
                     >
                       <Text
@@ -828,7 +836,7 @@ export default function SupplementsScreen() {
               <View style={styles.formSection}>
                 <Text style={styles.formLabel}>Time of Day</Text>
                 <View style={styles.chipContainer}>
-                  {TIME_OF_DAY_OPTIONS.map(option => (
+                  {TIME_OF_DAY_OPTIONS.map((option) => (
                     <TouchableOpacity
                       key={option.value}
                       style={[
@@ -861,25 +869,15 @@ export default function SupplementsScreen() {
                     Enable if this supplement should be taken with meals
                   </Text>
                 </View>
-                <View
-                  style={[
-                    styles.toggle,
-                    formWithFood && styles.toggleActive,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.toggleKnob,
-                      formWithFood && styles.toggleKnobActive,
-                    ]}
-                  />
+                <View style={[styles.toggle, formWithFood && styles.toggleActive]}>
+                  <View style={[styles.toggleKnob, formWithFood && styles.toggleKnobActive]} />
                 </View>
               </TouchableOpacity>
 
               <View style={styles.formSection}>
                 <Text style={styles.formLabel}>Color</Text>
                 <View style={styles.colorContainer}>
-                  {SUPPLEMENT_COLORS.map(color => (
+                  {SUPPLEMENT_COLORS.map((color) => (
                     <TouchableOpacity
                       key={color}
                       style={[
@@ -889,9 +887,7 @@ export default function SupplementsScreen() {
                       ]}
                       onPress={() => setFormColor(color)}
                     >
-                      {formColor === color && (
-                        <Ionicons name="checkmark" size={16} color="#FFF" />
-                      )}
+                      {formColor === color && <Ionicons name="checkmark" size={16} color="#FFF" />}
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -1152,24 +1148,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
     paddingRight: spacing.md,
-  },
-
-  // Empty State
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: spacing['2xl'],
-  },
-  emptyStateTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.secondary,
-    marginTop: spacing.md,
-  },
-  emptyStateText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.tertiary,
-    marginTop: spacing.xs,
-    textAlign: 'center',
   },
 
   // Modal

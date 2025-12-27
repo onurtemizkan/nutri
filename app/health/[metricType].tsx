@@ -23,6 +23,7 @@ import {
   SOURCE_CONFIG,
 } from '@/lib/types/health-metrics';
 import { SwipeableHealthMetricCard } from '@/lib/components/SwipeableHealthMetricCard';
+import { EmptyState } from '@/lib/components/ui/EmptyState';
 import { showAlert } from '@/lib/utils/alert';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
@@ -207,7 +208,7 @@ export default function HealthMetricDetailScreen() {
       case '7d':
         return 7;
       case '30d':
-        return 6;  // Show fewer points to prevent overlap
+        return 6; // Show fewer points to prevent overlap
       case '90d':
         return 6;
       case '1y':
@@ -331,7 +332,11 @@ export default function HealthMetricDetailScreen() {
     <SafeAreaView style={styles.container} testID="health-metric-detail-screen">
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerBackButton} testID="health-metric-detail-back-button">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.headerBackButton}
+          testID="health-metric-detail-back-button"
+        >
           <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>
@@ -346,7 +351,7 @@ export default function HealthMetricDetailScreen() {
         contentContainerStyle={[
           styles.scrollContent,
           { paddingHorizontal: responsiveSpacing.horizontal },
-          isTablet && styles.scrollContentTablet
+          isTablet && styles.scrollContentTablet,
         ]}
       >
         <View style={styles.content}>
@@ -367,13 +372,25 @@ export default function HealthMetricDetailScreen() {
                     style={styles.dateRangeButtonActive}
                   >
                     <Text style={styles.dateRangeTextActive}>
-                      {range === '7d' ? '7D' : range === '30d' ? '30D' : range === '90d' ? '90D' : '1Y'}
+                      {range === '7d'
+                        ? '7D'
+                        : range === '30d'
+                          ? '30D'
+                          : range === '90d'
+                            ? '90D'
+                            : '1Y'}
                     </Text>
                   </LinearGradient>
                 ) : (
                   <View style={styles.dateRangeButtonInactive}>
                     <Text style={styles.dateRangeText}>
-                      {range === '7d' ? '7D' : range === '30d' ? '30D' : range === '90d' ? '90D' : '1Y'}
+                      {range === '7d'
+                        ? '7D'
+                        : range === '30d'
+                          ? '30D'
+                          : range === '90d'
+                            ? '90D'
+                            : '1Y'}
                     </Text>
                   </View>
                 )}
@@ -401,13 +418,14 @@ export default function HealthMetricDetailScreen() {
 
           {/* No Data State */}
           {!isLoading && !error && timeSeries.length === 0 && (
-            <View style={styles.emptyCard}>
-              <Ionicons name="analytics-outline" size={48} color={colors.text.disabled} />
-              <Text style={styles.emptyTitle}>No data for this period</Text>
-              <Text style={styles.emptySubtitle}>
-                Add health metrics to see your history
-              </Text>
-            </View>
+            <EmptyState
+              icon="analytics-outline"
+              title="No data for this period"
+              description="Start tracking this metric to see trends and insights over time."
+              actionLabel="Add a reading"
+              onAction={() => router.push('/health/add')}
+              testID="health-metric-empty-state"
+            />
           )}
 
           {/* Chart */}
@@ -478,8 +496,8 @@ export default function HealthMetricDetailScreen() {
                 {stats.trend === 'up'
                   ? 'Your values are trending upward'
                   : stats.trend === 'down'
-                  ? 'Your values are trending downward'
-                  : 'Your values are stable'}
+                    ? 'Your values are trending downward'
+                    : 'Your values are stable'}
                 {' compared to the previous period.'}
               </Text>
             </View>
@@ -531,7 +549,7 @@ export default function HealthMetricDetailScreen() {
               {visibleEntriesCount < recentMetrics.length && (
                 <TouchableOpacity
                   style={styles.showMoreButton}
-                  onPress={() => setVisibleEntriesCount(prev => prev + ENTRIES_PER_PAGE)}
+                  onPress={() => setVisibleEntriesCount((prev) => prev + ENTRIES_PER_PAGE)}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.showMoreText}>
@@ -688,28 +706,6 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
     color: colors.primary.main,
-  },
-
-  // Empty
-  emptyCard: {
-    backgroundColor: colors.background.tertiary,
-    borderRadius: borderRadius.lg,
-    padding: spacing.xl,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border.secondary,
-  },
-  emptyTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  emptySubtitle: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.tertiary,
-    textAlign: 'center',
   },
 
   // Chart

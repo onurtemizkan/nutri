@@ -33,6 +33,7 @@ import { SupplementTracker } from '@/lib/components/SupplementTracker';
 import { DailyMicronutrientSummary } from '@/lib/components/DailyMicronutrientSummary';
 import { WeightWidget } from '@/lib/components/WeightWidget';
 import { GoalProgressSection } from '@/lib/components/GoalProgressSection';
+import { EmptyState } from '@/lib/components/ui/EmptyState';
 import { showAlert } from '@/lib/utils/alert';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
 
@@ -473,18 +474,29 @@ export default function HomeScreen() {
           <View style={styles.mealsSection} testID="home-meals-section">
             <Text style={styles.sectionTitle}>Today's Meals</Text>
 
-            {MEAL_TYPES.map((mealType) => {
-              const meals = mealsByType[mealType];
-              return (
-                <MealTypeSection
-                  key={mealType}
-                  mealType={mealType}
-                  meals={meals}
-                  onEdit={handleEditMeal}
-                  onDelete={handleDeleteMeal}
-                />
-              );
-            })}
+            {!summary?.meals?.length ? (
+              <EmptyState
+                icon="restaurant-outline"
+                title="No meals logged yet"
+                description="Track your nutrition by logging your first meal for today."
+                actionLabel="Log a meal"
+                onAction={handleAddMeal}
+                testID="home-meals-empty"
+              />
+            ) : (
+              MEAL_TYPES.map((mealType) => {
+                const meals = mealsByType[mealType];
+                return (
+                  <MealTypeSection
+                    key={mealType}
+                    mealType={mealType}
+                    meals={meals}
+                    onEdit={handleEditMeal}
+                    onDelete={handleDeleteMeal}
+                  />
+                );
+              })
+            )}
           </View>
 
           {/* Today's Supplements */}
