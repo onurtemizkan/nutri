@@ -1449,3 +1449,330 @@ model CGMConnection {
   @@index([userId, isActive])
   @@index([provider, isActive])
 }
+
+// ============================================================================
+// EMAIL MARKETING SYSTEM
+// ============================================================================
+
+/**
+ * EmailTemplate - Reusable email templates with MJML content
+ * Supports both transactional and marketing email types
+ */
+model EmailTemplate {
+  id              String          @id @default(cuid())
+
+  // Template identification
+  name            String          // Human-readable name
+  slug            String          @unique  // Unique identifier for API usage
+  category        EmailCategory   // TRANSACTIONAL or MARKETING
+
+  // Content
+  subject         String          // Email subject (supports variables)
+  mjmlContent     String          @db.Text  // MJML source content
+  htmlContent     String?         @db.Text  // Compiled HTML (cached)
+  plainTextContent String?        @db.Text  // Plain text version
+
+  // Variable definitions
+  variables       Json?           // Array of variable names: ["userName", "goalProgress"]
+
+  // Versioning
+  version         Int             @default(1)
+  isActive        Boolean         @default(true)
+
+  // Audit
+  createdBy       String?         // AdminUser ID
+  updatedBy       String?         // AdminUser ID
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  campaigns       EmailCampaign[]
+
+  @@index([slug])
+  @@index([category, isActive])
+}
+
+/**
+ * EmailCampaign - Marketing email campaigns with targeting and scheduling
+ */
+model EmailCampaign {
+  id                  String              @id @default(cuid())
+
+  // Campaign details
+  name                String
+  description         String?
+
+  // Template
+  templateId          String
+  template            EmailTemplate       @relation(fields: [templateId], references: [id])
+
+  // Targeting
+  segmentCriteria     Json?               // {activityLevel: "active", subscriptionTier: "PRO", ...}
+  estimatedAudience   Int?                // Calculated audience size
+  actualSent          Int                 @default(0)
+
+  // Scheduling
+  scheduledAt         DateTime?           // When to send (null = immediately)
+  sentAt              DateTime?           // When actually started sending
+  completedAt         DateTime?           // When finished sending
+
+  // Status
+  status              EmailCampaignStatus @default(DRAFT)
+
+  // A/B Testing
+  abTestConfig        Json?               // {subjectVariants: ["A", "B"], splitPercentage: 50}
+  winningVariant      String?             // "A" or "B"
+
+  // Analytics (denormalized for fast access)
+  deliveredCount      Int                 @default(0)
+  openedCount         Int                 @default(0)
+  clickedCount        Int                 @default(0)
+  bouncedCount        Int                 @default(0)
+  unsubscribedCount   Int                 @default(0)
+  complainedCount     Int                 @default(0)
+
+  // Audit
+  createdBy           String?             // AdminUser ID
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  // Relations
+  emailLogs           EmailLog[]
+
+  @@index([status, scheduledAt])
+  @@index([templateId])
+}
+
+/**
+ * EmailLog - Record of individual emails sent to users
+ * Tracks delivery, opens, clicks, bounces, and unsubscribes
+ */
+model EmailLog {
+  id                  String          @id @default(cuid())
+  userId              String
+  email               String          // Email address sent to
+
+  // Email reference
+  templateSlug        String          // Template used
+  campaignId          String?         // Campaign (null for transactional)
+  campaign            EmailCampaign?  @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  sequenceEnrollmentId String?        // Sequence enrollment (null if not from sequence)
+
+  // Status tracking
+  status              EmailLogStatus  @default(QUEUED)
+
+  // Provider info
+  providerMessageId   String?         // Resend/SendGrid message ID
+
+  // Timestamps for delivery funnel
+  queuedAt            DateTime        @default(now())
+  sentAt              DateTime?
+  deliveredAt         DateTime?
+  openedAt            DateTime?
+  clickedAt           DateTime?
+  bouncedAt           DateTime?
+  unsubscribedAt      DateTime?
+  complainedAt        DateTime?
+
+  // Open tracking
+  isAppleProxyOpen    Boolean         @default(false)  // Apple Mail Privacy Protection
+  openCount           Int             @default(0)      // Total opens (for re-opens)
+
+  // Click tracking
+  clickData           Json?           // [{url: "...", clickedAt: "..."}]
+
+  // Bounce details
+  bounceType          String?         // "hard" or "soft"
+  bounceReason        String?         // Error message from provider
+
+  // Metadata
+  metadata            Json?           // Additional tracking data
+
+  // Audit
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([campaignId, status])
+  @@index([templateSlug])
+  @@index([status])
+  @@index([email])
+}
+
+/**
+ * EmailPreference - User email subscription preferences
+ * Tracks opt-in status, categories, and frequency settings
+ */
+model EmailPreference {
+  id                      String          @id @default(cuid())
+  userId                  String          @unique
+
+  // Category preferences (JSON for flexibility)
+  // {weekly_reports: true, health_insights: true, tips: true, features: true, promotions: false}
+  categories              Json?
+
+  // Frequency
+  frequency               EmailFrequency  @default(REALTIME)
+
+  // Marketing consent
+  marketingOptIn          Boolean         @default(false)
+  doubleOptInConfirmedAt  DateTime?       // When double opt-in was confirmed
+
+  // Unsubscribe tracking
+  globalUnsubscribedAt    DateTime?       // When user unsubscribed from all marketing
+
+  // One-click unsubscribe token
+  unsubscribeToken        String          @unique @default(cuid())
+
+  // Suppression (for bounces/complaints)
+  isSuppressed            Boolean         @default(false)
+  suppressionReason       String?         // "hard_bounce", "complaint", "manual"
+  suppressedAt            DateTime?
+
+  // Engagement score (calculated periodically)
+  engagementScore         Float?          // 0-100 based on opens/clicks
+  lastEngagementAt        DateTime?       // Last open or click
+
+  // Audit
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([unsubscribeToken])
+  @@index([isSuppressed])
+}
+
+/**
+ * EmailSequence - Automated email sequences (drip campaigns)
+ * Triggered by events like signup, first meal, inactivity, etc.
+ */
+model EmailSequence {
+  id                  String                  @id @default(cuid())
+
+  // Sequence details
+  name                String
+  description         String?
+
+  // Trigger
+  triggerEvent        EmailSequenceTrigger
+
+  // Status
+  isActive            Boolean                 @default(false)
+
+  // Steps (JSON array of sequence steps)
+  // [{stepNumber: 1, delayHours: 0, templateId: "...", condition: {...}}]
+  steps               Json
+
+  // Entry/Exit criteria
+  enrollmentCriteria  Json?                   // Who can enter this sequence
+  exitCriteria        Json?                   // When to auto-exit
+
+  // Analytics (denormalized)
+  totalEnrollments    Int                     @default(0)
+  activeEnrollments   Int                     @default(0)
+  completedEnrollments Int                    @default(0)
+  exitedEnrollments   Int                     @default(0)
+
+  // Audit
+  createdBy           String?                 // AdminUser ID
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  // Relations
+  enrollments         EmailSequenceEnrollment[]
+
+  @@index([triggerEvent, isActive])
+}
+
+/**
+ * EmailSequenceEnrollment - User enrollment in an email sequence
+ * Tracks progress through the sequence steps
+ */
+model EmailSequenceEnrollment {
+  id                  String                  @id @default(cuid())
+  userId              String
+  sequenceId          String
+  sequence            EmailSequence           @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+
+  // Progress
+  currentStep         Int                     @default(0)
+  status              EmailSequenceStatus     @default(ACTIVE)
+
+  // Timestamps
+  startedAt           DateTime                @default(now())
+  pausedAt            DateTime?
+  completedAt         DateTime?
+  exitedAt            DateTime?
+
+  // Next scheduled email
+  nextStepScheduledAt DateTime?
+
+  // Exit reason
+  exitReason          String?                 // "user_unsubscribed", "goal_achieved", etc.
+
+  // Metadata
+  metadata            Json?                   // Tracking data
+
+  // Audit
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  @@unique([userId, sequenceId])  // User can only be enrolled once per sequence
+  @@index([userId, status])
+  @@index([sequenceId, status])
+  @@index([nextStepScheduledAt])
+}
+
+// ============================================================================
+// EMAIL MARKETING ENUMS
+// ============================================================================
+
+enum EmailCategory {
+  TRANSACTIONAL       // Always delivered: password reset, receipts, etc.
+  MARKETING           // Requires opt-in: newsletters, promotions, etc.
+}
+
+enum EmailCampaignStatus {
+  DRAFT               // Being created
+  SCHEDULED           // Waiting to be sent
+  SENDING             // Currently sending
+  SENT                // Finished sending (legacy, use COMPLETED)
+  COMPLETED           // All emails sent
+  CANCELLED           // Cancelled by admin
+  FAILED              // Failed to send
+}
+
+enum EmailLogStatus {
+  QUEUED              // In queue, waiting to be sent
+  SENDING             // Being sent to provider
+  SENT                // Sent to provider (not yet delivered)
+  DELIVERED           // Confirmed delivered
+  OPENED              // User opened the email
+  CLICKED             // User clicked a link
+  BOUNCED             // Failed to deliver
+  COMPLAINED          // Marked as spam
+  UNSUBSCRIBED        // User unsubscribed via this email
+}
+
+enum EmailFrequency {
+  REALTIME            // Send immediately as events happen
+  DAILY_DIGEST        // Combine into daily summary
+  WEEKLY_DIGEST       // Combine into weekly summary
+}
+
+enum EmailSequenceTrigger {
+  SIGNUP              // New user registration
+  FIRST_MEAL          // First meal logged
+  GOAL_ACHIEVED       // User achieved a goal
+  SUBSCRIPTION_CHANGED // Subscription tier changed
+  INACTIVITY_7D       // No activity for 7 days
+  INACTIVITY_14D      // No activity for 14 days
+  INACTIVITY_30D      // No activity for 30 days
+}
+
+enum EmailSequenceStatus {
+  ACTIVE              // Currently progressing through sequence
+  PAUSED              // Temporarily paused
+  COMPLETED           // Finished all steps
+  EXITED              // Exited early (unsubscribed, criteria met, etc.)
+}

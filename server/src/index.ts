@@ -24,9 +24,11 @@ import cgmRoutes from './routes/cgmRoutes';
 import debugRoutes from './routes/debugRoutes';
 import reportRoutes from './routes/reportRoutes';
 import subscriptionRoutes from './routes/subscriptionRoutes';
+import emailRoutes from './routes/email';
 import prisma from './config/database';
 import { notificationScheduler } from './services/notificationScheduler';
 import { initSentry, setupSentryErrorHandler } from './config/sentry';
+import { emailQueue, campaignQueue, sequenceQueue } from './services/emailQueueService';
 
 // Bull Board imports for queue monitoring
 import { createBullBoard } from '@bull-board/api';
@@ -109,7 +111,12 @@ const serverAdapter = new ExpressAdapter();
 serverAdapter.setBasePath('/admin/queues');
 
 createBullBoard({
-  queues: [new BullAdapter(notificationScheduler.getQueue())],
+  queues: [
+    new BullAdapter(notificationScheduler.getQueue()),
+    new BullAdapter(emailQueue),
+    new BullAdapter(campaignQueue),
+    new BullAdapter(sequenceQueue),
+  ],
   serverAdapter,
 });
 
@@ -379,6 +386,7 @@ app.use('/api/cgm', cgmRoutes);
 app.use('/api/debug', debugRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/email', emailRoutes);
 
 // =============================================================================
 // Error Handlers
