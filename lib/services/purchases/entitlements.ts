@@ -125,18 +125,44 @@ export async function syncEntitlements(): Promise<EntitlementResult> {
   try {
     console.log('[Entitlements] Syncing with server...');
 
-    // TODO: Call backend API to get subscription status (subtask 38.7)
-    // For now, just update the lastSyncedAt timestamp on current cache
-    const current = await getSubscriptionInfo();
+    // Import subscription API dynamically to avoid circular dependencies
+    const subscriptionApi = await import('@/lib/api/subscription');
+
+    // Call backend API to get subscription status
+    const serverStatus = await subscriptionApi.getSubscriptionStatus();
+
+    // Map server status to local format
+    const tierMap: Record<string, SubscriptionTier> = {
+      FREE: 'free',
+      PRO_TRIAL: 'pro',
+      PRO: 'pro',
+    };
+
+    const statusMap: Record<string, LocalSubscriptionInfo['status']> = {
+      ACTIVE: 'active',
+      EXPIRED: 'expired',
+      IN_GRACE_PERIOD: 'in_grace_period',
+      IN_BILLING_RETRY: 'in_billing_retry',
+      REVOKED: 'revoked',
+      REFUNDED: 'refunded',
+    };
+
     const updated: LocalSubscriptionInfo = {
-      ...current,
+      tier: tierMap[serverStatus.tier] || 'free',
+      status: serverStatus.status ? statusMap[serverStatus.status] || null : null,
+      expiresAt: serverStatus.expiresAt,
+      productId: serverStatus.productId,
+      originalTransactionId: null, // Not exposed by backend
+      autoRenewEnabled: serverStatus.autoRenewEnabled,
       lastSyncedAt: new Date().toISOString(),
     };
 
     await saveSubscriptionInfo(updated);
 
+    console.log('[Entitlements] Sync complete:', { tier: updated.tier, status: updated.status });
+
     return {
-      hasAccess: updated.tier === 'pro' && updated.status === 'active',
+      hasAccess: serverStatus.isActive,
       tier: updated.tier,
       expiresAt: updated.expiresAt,
       source: 'server',

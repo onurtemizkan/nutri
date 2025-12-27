@@ -7,3 +7,4 @@
 export { PaywallCard } from './PaywallCard';
 export { SubscriptionBadge } from './SubscriptionBadge';
 export { UpgradePrompt } from './UpgradePrompt';
+export { PremiumGate, usePremiumGate, withPremiumGate } from './PremiumGate';
