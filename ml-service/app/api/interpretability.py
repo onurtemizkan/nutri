@@ -6,6 +6,7 @@ Endpoints for model interpretability and explainability:
 - POST /global-importance - Global feature importance
 - POST /what-if - Test what-if scenarios
 - POST /counterfactual - Generate counterfactual explanations
+- POST /trajectory - Multi-day trajectory simulation
 - GET /attention/{user_id}/{metric}/{target_date} - Attention weights (TODO)
 """
 
@@ -22,6 +23,8 @@ from app.schemas.interpretability import (
     WhatIfResponse,
     CounterfactualRequest,
     CounterfactualResponse,
+    TrajectoryRequest,
+    TrajectoryResponse,
 )
 from app.services.shap_explainer import SHAPExplainerService
 from app.services.what_if import WhatIfService
@@ -357,4 +360,116 @@ async def generate_counterfactual(
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Counterfactual generation failed: {str(e)}"
+        )
+
+
+# ============================================================================
+# Multi-Day Trajectory Simulation
+# ============================================================================
+
+
+@router.post("/trajectory", response_model=TrajectoryResponse)
+async def generate_trajectory(
+    request: TrajectoryRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Generate multi-day trajectory projections with confidence intervals.
+
+    **What this does:**
+    - Projects how health metrics will evolve over 7/14/30 days
+    - Uses autoregressive LSTM predictions (each day feeds into next)
+    - Applies nutrition changes with time-lag awareness
+    - Calculates confidence intervals that widen over time
+    - Optionally generates baseline trajectory for comparison
+
+    **Use case:**
+    - "What will happen to my RHR if I increase protein by 30g for the next 2 weeks?"
+    - "How will my HRV change if I reduce late-night eating?"
+
+    **Example Request:**
+    ```json
+    {
+        "user_id": "user_123",
+        "nutrition_changes": [
+            {
+                "feature_name": "nutrition_protein_daily",
+                "delta": 30.0,
+                "change_description": "+30g protein daily"
+            },
+            {
+                "feature_name": "nutrition_late_night_carbs",
+                "delta": -40.0,
+                "change_description": "-40g late-night carbs"
+            }
+        ],
+        "duration_days": 14,
+        "metrics_to_predict": ["RESTING_HEART_RATE", "HEART_RATE_VARIABILITY_SDNN"],
+        "include_no_change_baseline": true
+    }
+    ```
+
+    **Example Response:**
+    ```json
+    {
+        "user_id": "user_123",
+        "start_date": "2025-01-16",
+        "end_date": "2025-01-30",
+        "duration_days": 14,
+        "nutrition_changes": [...],
+        "trajectories": [
+            {
+                "metric": "RESTING_HEART_RATE",
+                "baseline_value": 65.0,
+                "projected_final_value": 61.5,
+                "change_from_baseline": -3.5,
+                "percent_change": -5.4,
+                "trajectory": [
+                    {"day": 0, "timestamp": "2025-01-16", "predicted_value": 65.0,
+                     "confidence_lower": 62.1, "confidence_upper": 67.9},
+                    {"day": 1, "timestamp": "2025-01-17", "predicted_value": 64.5,
+                     "confidence_lower": 60.8, "confidence_upper": 68.2},
+                    ...
+                ],
+                "min_value": 61.0,
+                "max_value": 65.0,
+                "average_value": 62.8,
+                "optimal_lag_hours": 24,
+                "lag_description": "Effects typically appear after 1 day(s)"
+            }
+        ],
+        "baseline_trajectories": [
+            {
+                "metric": "RESTING_HEART_RATE",
+                "baseline_value": 65.0,
+                "projected_final_value": 65.2,
+                "change_from_baseline": 0.2,
+                ...
+            }
+        ],
+        "model_confidence": 0.82,
+        "summary": "Simulating 14-day projections with changes: +30g protein daily, -40g late-night carbs. RESTING_HEART_RATE: Projected to decrease from 65.0 to 61.5 (-5.4%). Effects typically appear after 1 day(s). Compared to no changes: 3.7 better.",
+        "recommendation": "These changes are projected to improve RESTING_HEART_RATE. Consider implementing these nutrition adjustments."
+    }
+    ```
+
+    **Duration Options:**
+    - `7`: 1 week simulation
+    - `14`: 2 week simulation
+    - `30`: 1 month simulation
+
+    **Notes:**
+    - Confidence intervals widen with sqrt(day_number) due to error accumulation
+    - Time-lag detection uses CorrelationEngineService to determine when nutrition effects appear
+    - Model confidence is based on training metrics (R², MAE)
+    """
+    try:
+        what_if_service = WhatIfService(db)
+        result = await what_if_service.generate_trajectory(request)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Trajectory generation failed: {str(e)}"
         )
