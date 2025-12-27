@@ -8,3 +8,4 @@
 export { Input } from './Input';
 export type { InputProps, InputRef } from './Input';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
+export { Button, type ButtonProps, type ButtonVariant, type ButtonSize } from './Button';
