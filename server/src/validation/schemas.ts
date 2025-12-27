@@ -1353,3 +1353,187 @@ export type WeeklyReportExportQuery = z.infer<typeof weeklyReportExportQuerySche
 export type MonthlyReportExportQuery = z.infer<typeof monthlyReportExportQuerySchema>;
 export type ReportExportFormat = z.infer<typeof reportExportFormatSchema>;
 export type ReportGenerationOptions = z.infer<typeof reportGenerationOptionsSchema>;
+
+// ============================================================================
+// QUICK ADD & FAVORITES SCHEMAS
+// ============================================================================
+
+/**
+ * Favorite Source Type enum
+ */
+export const favoriteSourceTypeSchema = z.enum(['CUSTOM', 'MEAL', 'DATABASE', 'BARCODE']);
+
+/**
+ * Quick Add Preset Type enum
+ */
+export const quickAddPresetTypeSchema = z.enum(['MEAL', 'WATER', 'SUPPLEMENT']);
+
+/**
+ * Create Favorite Meal Schema
+ */
+export const createFavoriteMealSchema = z.object({
+  name: nonEmptyStringSchema.max(200),
+  mealType: mealTypeSchema.optional(),
+  calories: nonNegativeNumberSchema.max(10000),
+  protein: nonNegativeNumberSchema.max(1000),
+  carbs: nonNegativeNumberSchema.max(1000),
+  fat: nonNegativeNumberSchema.max(1000),
+  fiber: nonNegativeNumberSchema.max(200).optional(),
+  sugar: nonNegativeNumberSchema.max(500).optional(),
+  sodium: nonNegativeNumberSchema.max(10000).optional(),
+  servingSize: z.string().max(100).optional(),
+  sourceType: favoriteSourceTypeSchema.optional().default('CUSTOM'),
+  sourceMealId: z.string().optional(),
+  fdcId: z.number().int().positive().optional(),
+  barcode: z.string().max(50).optional(),
+  customName: z.string().max(200).optional(),
+  notes: z.string().max(500).optional(),
+  imageUrl: z.string().url().optional(),
+  sortOrder: z.number().int().min(0).optional(),
+});
+
+/**
+ * Update Favorite Meal Schema
+ */
+export const updateFavoriteMealSchema = createFavoriteMealSchema.partial();
+
+/**
+ * Create Meal Template Schema
+ */
+export const mealTemplateItemSchema = z.object({
+  name: nonEmptyStringSchema.max(200),
+  calories: nonNegativeNumberSchema,
+  protein: nonNegativeNumberSchema,
+  carbs: nonNegativeNumberSchema,
+  fat: nonNegativeNumberSchema,
+  fiber: nonNegativeNumberSchema.optional(),
+  servingSize: z.string().max(100).optional(),
+  quantity: positiveNumberSchema.optional().default(1),
+});
+
+export const createMealTemplateSchema = z.object({
+  name: nonEmptyStringSchema.max(200),
+  description: z.string().max(500).optional(),
+  mealType: mealTypeSchema.optional(),
+  imageUrl: z.string().url().optional(),
+  items: z.array(mealTemplateItemSchema).min(1).max(20),
+  sortOrder: z.number().int().min(0).optional(),
+});
+
+/**
+ * Update Meal Template Schema
+ */
+export const updateMealTemplateSchema = createMealTemplateSchema.partial();
+
+/**
+ * Quick Add Preset base object (without refinement)
+ */
+const quickAddPresetBaseSchema = z.object({
+  name: nonEmptyStringSchema.max(100),
+  icon: z.string().max(50).optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .optional(),
+  presetType: quickAddPresetTypeSchema,
+  // For MEAL type
+  mealName: z.string().max(200).optional(),
+  mealType: mealTypeSchema.optional(),
+  calories: nonNegativeNumberSchema.optional(),
+  protein: nonNegativeNumberSchema.optional(),
+  carbs: nonNegativeNumberSchema.optional(),
+  fat: nonNegativeNumberSchema.optional(),
+  fiber: nonNegativeNumberSchema.optional(),
+  servingSize: z.string().max(100).optional(),
+  // For WATER type
+  waterAmount: z.number().int().positive().max(5000).optional(),
+  sortOrder: z.number().int().min(0).optional(),
+  isActive: z.boolean().optional().default(true),
+});
+
+/**
+ * Create Quick Add Preset Schema (with validation)
+ */
+export const createQuickAddPresetSchema = quickAddPresetBaseSchema.refine(
+  (data) => {
+    // Validate that MEAL type has required fields
+    if (data.presetType === 'MEAL') {
+      return data.mealName && data.calories !== undefined;
+    }
+    // Validate that WATER type has amount
+    if (data.presetType === 'WATER') {
+      return data.waterAmount !== undefined;
+    }
+    return true;
+  },
+  {
+    message: 'MEAL type requires mealName and calories. WATER type requires waterAmount.',
+  }
+);
+
+/**
+ * Update Quick Add Preset Schema (partial, no cross-field validation for updates)
+ */
+export const updateQuickAddPresetSchema = quickAddPresetBaseSchema.partial();
+
+/**
+ * Execute Quick Add Preset Schema
+ */
+export const executeQuickAddPresetSchema = z.object({
+  presetId: nonEmptyStringSchema,
+  mealType: mealTypeSchema.optional(), // Override meal type if needed
+  consumedAt: datetimeSchema.optional(), // Override timestamp
+});
+
+/**
+ * Get Favorites Query Schema
+ */
+export const getFavoritesQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).optional().default(50),
+  offset: z.coerce.number().int().min(0).optional().default(0),
+  sortBy: z.enum(['usageCount', 'lastUsedAt', 'name', 'createdAt', 'sortOrder']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
+});
+
+/**
+ * Get Recent Foods Query Schema
+ */
+export const getRecentFoodsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+});
+
+/**
+ * Create Favorite from Meal ID Schema
+ */
+export const createFavoriteFromMealSchema = z.object({
+  mealId: nonEmptyStringSchema,
+  customName: z.string().max(200).optional(),
+});
+
+/**
+ * Reorder Favorites Schema
+ */
+export const reorderFavoritesSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        id: nonEmptyStringSchema,
+        sortOrder: z.number().int().min(0),
+      })
+    )
+    .min(1),
+});
+
+// Type exports for Quick Add & Favorites schemas
+export type CreateFavoriteMeal = z.infer<typeof createFavoriteMealSchema>;
+export type UpdateFavoriteMeal = z.infer<typeof updateFavoriteMealSchema>;
+export type CreateMealTemplate = z.infer<typeof createMealTemplateSchema>;
+export type UpdateMealTemplate = z.infer<typeof updateMealTemplateSchema>;
+export type MealTemplateItem = z.infer<typeof mealTemplateItemSchema>;
+export type CreateQuickAddPreset = z.infer<typeof createQuickAddPresetSchema>;
+export type UpdateQuickAddPreset = z.infer<typeof updateQuickAddPresetSchema>;
+export type ExecuteQuickAddPreset = z.infer<typeof executeQuickAddPresetSchema>;
+export type GetFavoritesQuery = z.infer<typeof getFavoritesQuerySchema>;
+export type GetRecentFoodsQuery = z.infer<typeof getRecentFoodsQuerySchema>;
+export type CreateFavoriteFromMeal = z.infer<typeof createFavoriteFromMealSchema>;
+export type ReorderFavorites = z.infer<typeof reorderFavoritesSchema>;

@@ -1299,6 +1299,193 @@ model SubscriptionEvent {
 }
 
 // ============================================================================
+// QUICK ADD & FAVORITES SYSTEM
+// ============================================================================
+
+/**
+ * FavoriteMeal - User's saved favorite meals for quick logging
+ * Contains nutritional data snapshot at time of saving
+ */
+model FavoriteMeal {
+  id              String    @id @default(cuid())
+  userId          String
+
+  // Meal information (snapshot)
+  name            String
+  mealType        String?   // breakfast, lunch, dinner, snack (optional default)
+  calories        Float
+  protein         Float
+  carbs           Float
+  fat             Float
+  fiber           Float?
+  sugar           Float?
+  sodium          Float?
+  servingSize     String?
+
+  // Source tracking
+  sourceType      FavoriteSourceType @default(CUSTOM)
+  sourceMealId    String?   // Original meal ID if copied from a meal
+  fdcId           Int?      // USDA FDC ID if from food database
+  barcode         String?   // Barcode if scanned
+
+  // User customization
+  customName      String?   // User's custom name for this favorite
+  notes           String?
+  imageUrl        String?
+
+  // Usage tracking
+  usageCount      Int       @default(0)
+  lastUsedAt      DateTime?
+
+  // Ordering
+  sortOrder       Int       @default(0) // For manual reordering
+
+  // Audit
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId, usageCount])
+  @@index([userId, lastUsedAt])
+  @@index([userId, sortOrder])
+}
+
+/**
+ * MealTemplate - Reusable meal templates with multiple items
+ * Useful for recurring meals like "Breakfast Combo" with multiple foods
+ */
+model MealTemplate {
+  id              String    @id @default(cuid())
+  userId          String
+
+  // Template info
+  name            String
+  description     String?
+  mealType        String?   // Default meal type
+  imageUrl        String?
+
+  // Total nutritional values (calculated from items)
+  totalCalories   Float     @default(0)
+  totalProtein    Float     @default(0)
+  totalCarbs      Float     @default(0)
+  totalFat        Float     @default(0)
+  totalFiber      Float?
+
+  // Template items (JSON for flexibility)
+  // Array of: [{name, calories, protein, carbs, fat, fiber?, servingSize?, quantity?}]
+  items           Json
+
+  // Usage tracking
+  usageCount      Int       @default(0)
+  lastUsedAt      DateTime?
+
+  // Ordering
+  sortOrder       Int       @default(0)
+
+  // Audit
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId, usageCount])
+  @@index([userId, lastUsedAt])
+}
+
+/**
+ * QuickAddPreset - User's custom quick-add buttons
+ * For frequently logged items like water amounts, snacks, etc.
+ */
+model QuickAddPreset {
+  id              String    @id @default(cuid())
+  userId          String
+
+  // Preset info
+  name            String    // e.g., "Morning Coffee", "Protein Shake"
+  icon            String?   // Icon identifier (e.g., "coffee", "protein")
+  color           String?   // Hex color for UI
+
+  // What this preset adds
+  presetType      QuickAddPresetType
+
+  // For MEAL/FOOD type
+  mealName        String?
+  mealType        String?
+  calories        Float?
+  protein         Float?
+  carbs           Float?
+  fat             Float?
+  fiber           Float?
+  servingSize     String?
+
+  // For WATER type
+  waterAmount     Int?      // in ml
+
+  // Usage tracking
+  usageCount      Int       @default(0)
+  lastUsedAt      DateTime?
+
+  // Ordering
+  sortOrder       Int       @default(0)
+
+  // Active status
+  isActive        Boolean   @default(true)
+
+  // Audit
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId, isActive, sortOrder])
+  @@index([userId, usageCount])
+}
+
+/**
+ * RecentFood - Cache of recently logged foods for quick access
+ * Auto-populated when meals are logged, pruned to keep recent items
+ */
+model RecentFood {
+  id              String    @id @default(cuid())
+  userId          String
+
+  // Food info
+  name            String
+  calories        Float
+  protein         Float
+  carbs           Float
+  fat             Float
+  fiber           Float?
+  sugar           Float?
+  servingSize     String?
+
+  // Source tracking
+  fdcId           Int?
+  barcode         String?
+
+  // Recency tracking
+  logCount        Int       @default(1)  // How many times logged
+  lastLoggedAt    DateTime  @default(now())
+
+  // Audit
+  createdAt       DateTime  @default(now())
+
+  @@unique([userId, name])  // One entry per food name per user
+  @@index([userId, lastLoggedAt])
+  @@index([userId, logCount])
+}
+
+// Enum for favorite source type
+enum FavoriteSourceType {
+  CUSTOM      // User created
+  MEAL        // Copied from a logged meal
+  DATABASE    // From food database (USDA, OpenFoodFacts)
+  BARCODE     // From barcode scan
+}
+
+// Enum for quick add preset types
+enum QuickAddPresetType {
+  MEAL        // Adds a meal entry
+  WATER       // Adds water intake
+  SUPPLEMENT  // Adds supplement log
+}
+
+// ============================================================================
 // CONTINUOUS GLUCOSE MONITOR (CGM) INTEGRATION
 // ============================================================================
 
