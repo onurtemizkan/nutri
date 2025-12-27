@@ -113,6 +113,13 @@ module.exports = {
           background: false,
         },
       ],
+      [
+        'react-native-iap',
+        {
+          // Enable StoreKit 2 for iOS
+          paymentMode: 'STOREKIT2',
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,

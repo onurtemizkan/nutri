@@ -331,6 +331,21 @@ function RootLayoutNav() {
           animation: 'slide_from_right',
         }}
       />
+      <Stack.Screen
+        name="paywall"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="subscription"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      />
       <Stack.Screen name="+not-found" options={{ headerShown: false }} />
     </Stack>
   );
