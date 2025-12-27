@@ -113,8 +113,17 @@ const TrendCard = memo(function TrendCard({ metricType, data, onPress }: TrendCa
           : colors.status.warning
         : colors.text.tertiary;
 
+  const accessibilityLabel = `${config.shortName}: ${metricType === 'SLEEP_DURATION' ? `${data.latest?.value.toFixed(1)} hours` : `${Math.round(data.latest?.value || 0)} ${config.unit}`}${data.stats ? `, ${data.stats.trend === 'up' ? 'trending up' : data.stats.trend === 'down' ? 'trending down' : 'stable'} ${Math.abs(data.stats.percentChange).toFixed(0)} percent` : ''}`;
+
   return (
-    <TouchableOpacity style={styles.trendCard} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={styles.trendCard}
+      onPress={onPress}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint="Double tap to view detailed history"
+    >
       <View style={styles.trendCardHeader}>
         <Ionicons
           name={config.icon as keyof typeof Ionicons.glyphMap}
@@ -455,7 +464,13 @@ export default function HomeScreen() {
             <View style={styles.trendsSection} testID="home-health-trends">
               <View style={styles.trendsSectionHeader}>
                 <Text style={styles.sectionTitle}>7-Day Trends</Text>
-                <TouchableOpacity onPress={handleViewAllTrends} style={styles.viewAllButton}>
+                <TouchableOpacity
+                  onPress={handleViewAllTrends}
+                  style={styles.viewAllButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="View all health trends"
+                  accessibilityHint="Navigate to health screen"
+                >
                   <Text style={styles.viewAllText}>View All</Text>
                   <Ionicons name="chevron-forward" size={16} color={colors.primary.main} />
                 </TouchableOpacity>
@@ -511,6 +526,9 @@ export default function HomeScreen() {
         onPress={handleAddMeal}
         activeOpacity={0.8}
         testID="home-add-meal-fab"
+        accessibilityRole="button"
+        accessibilityLabel="Add new meal"
+        accessibilityHint="Double tap to log a meal"
       >
         <LinearGradient
           colors={gradients.primary}

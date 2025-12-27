@@ -297,7 +297,10 @@ export default function ProfileScreen() {
               onPress={handleAvatarPress}
               disabled={isUploadingPicture}
               activeOpacity={0.8}
+              accessibilityRole="button"
               accessibilityLabel="Change profile picture"
+              accessibilityHint="Double tap to take or choose a new profile picture"
+              accessibilityState={{ disabled: isUploadingPicture, busy: isUploadingPicture }}
               testID="profile-avatar-button"
             >
               <View style={styles.avatarContainer}>
@@ -417,7 +420,13 @@ export default function ProfileScreen() {
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Daily Goals</Text>
               {!isEditing && (
-                <TouchableOpacity onPress={() => setIsEditing(true)} testID="profile-edit-goals-button">
+                <TouchableOpacity
+                  onPress={() => setIsEditing(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit daily goals"
+                  accessibilityHint="Double tap to edit your nutrition goals"
+                  testID="profile-edit-goals-button"
+                >
                   <Text style={styles.editButton}>Edit</Text>
                 </TouchableOpacity>
               )}
@@ -435,6 +444,8 @@ export default function ProfileScreen() {
                       keyboardType="numeric"
                       editable={!isLoading}
                       placeholderTextColor={colors.text.disabled}
+                      accessibilityLabel="Calorie goal"
+                      accessibilityHint="Enter your daily calorie goal"
                     />
                   </View>
                 </View>
@@ -449,6 +460,8 @@ export default function ProfileScreen() {
                       keyboardType="numeric"
                       editable={!isLoading}
                       placeholderTextColor={colors.text.disabled}
+                      accessibilityLabel="Protein goal in grams"
+                      accessibilityHint="Enter your daily protein goal"
                     />
                   </View>
                 </View>
@@ -463,6 +476,8 @@ export default function ProfileScreen() {
                       keyboardType="numeric"
                       editable={!isLoading}
                       placeholderTextColor={colors.text.disabled}
+                      accessibilityLabel="Carbohydrates goal in grams"
+                      accessibilityHint="Enter your daily carbohydrates goal"
                     />
                   </View>
                 </View>
@@ -477,6 +492,8 @@ export default function ProfileScreen() {
                       keyboardType="numeric"
                       editable={!isLoading}
                       placeholderTextColor={colors.text.disabled}
+                      accessibilityLabel="Fat goal in grams"
+                      accessibilityHint="Enter your daily fat goal"
                     />
                   </View>
                 </View>
@@ -493,6 +510,10 @@ export default function ProfileScreen() {
                     }}
                     disabled={isLoading}
                     activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Cancel editing"
+                    accessibilityHint="Double tap to discard changes and stop editing"
+                    accessibilityState={{ disabled: isLoading }}
                     testID="profile-cancel-edit-button"
                   >
                     <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -503,6 +524,10 @@ export default function ProfileScreen() {
                     onPress={handleSaveGoals}
                     disabled={isLoading}
                     activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={isLoading ? 'Saving goals' : 'Save goals'}
+                    accessibilityHint="Double tap to save your nutrition goals"
+                    accessibilityState={{ disabled: isLoading, busy: isLoading }}
                     testID="profile-save-goals-button"
                   >
                     <LinearGradient
@@ -552,7 +577,9 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={styles.menuItemWithArrow}
               onPress={() => router.push('/health-settings')}
-              accessibilityLabel="Open health settings"
+              accessibilityRole="button"
+              accessibilityLabel="Apple Health settings"
+              accessibilityHint="Double tap to configure health data sync"
               testID="health-integration-button"
             >
               <View style={styles.menuItemLeft}>
@@ -581,7 +608,9 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={[styles.menuItemWithArrow, styles.menuItemLast]}
               onPress={() => router.push('/notification-settings')}
-              accessibilityLabel="Manage notification preferences"
+              accessibilityRole="button"
+              accessibilityLabel="Notification preferences"
+              accessibilityHint="Double tap to manage reminders and alerts"
               testID="notification-settings-button"
             >
               <View style={styles.menuItemLeft}>
@@ -608,7 +637,9 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={[styles.menuItemWithArrow, styles.menuItemLast]}
               onPress={() => router.push('/supplements')}
+              accessibilityRole="button"
               accessibilityLabel="Manage supplements"
+              accessibilityHint="Double tap to track your daily supplements"
               testID="supplements-button"
             >
               <View style={styles.menuItemLeft}>
@@ -635,7 +666,9 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={styles.menuItemWithArrow}
               onPress={() => router.push('/terms')}
-              accessibilityLabel="View Terms and Conditions"
+              accessibilityRole="link"
+              accessibilityLabel="Terms and Conditions"
+              accessibilityHint="Double tap to view terms of service"
               testID="terms-conditions-button"
             >
               <View style={styles.menuItemLeft}>
@@ -657,7 +690,9 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={styles.menuItemWithArrow}
               onPress={() => router.push('/privacy')}
-              accessibilityLabel="View Privacy Policy"
+              accessibilityRole="link"
+              accessibilityLabel="Privacy Policy"
+              accessibilityHint="Double tap to view how we handle your data"
               testID="privacy-policy-button"
             >
               <View style={styles.menuItemLeft}>
@@ -681,13 +716,23 @@ export default function ProfileScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Account</Text>
 
-            <TouchableOpacity style={styles.menuItem} onPress={handleLogout} testID="profile-logout-button">
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={handleLogout}
+              accessibilityRole="button"
+              accessibilityLabel="Logout"
+              accessibilityHint="Double tap to sign out of your account"
+              testID="profile-logout-button"
+            >
               <Text style={[styles.menuItemText, styles.logoutText]}>Logout</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.menuItem, styles.menuItemLast]}
               onPress={() => setShowDeleteModal(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Delete account"
+              accessibilityHint="Double tap to permanently delete your account and all data"
               testID="profile-delete-account-button"
             >
               <Text style={[styles.menuItemText, styles.deleteText]}>Delete Account</Text>
@@ -742,6 +787,8 @@ export default function ProfileScreen() {
                 autoCapitalize="characters"
                 autoCorrect={false}
                 editable={!isDeleting}
+                accessibilityLabel="Delete confirmation"
+                accessibilityHint="Type DELETE in capital letters to confirm account deletion"
                 testID="delete-confirmation-input"
               />
             </View>
@@ -754,6 +801,10 @@ export default function ProfileScreen() {
                   setDeleteConfirmation('');
                 }}
                 disabled={isDeleting}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel"
+                accessibilityHint="Double tap to cancel and close this dialog"
+                accessibilityState={{ disabled: isDeleting }}
                 testID="delete-cancel-button"
               >
                 <Text style={styles.modalCancelButtonText}>Cancel</Text>
@@ -766,6 +817,10 @@ export default function ProfileScreen() {
                 ]}
                 onPress={handleDeleteAccount}
                 disabled={deleteConfirmation !== 'DELETE' || isDeleting}
+                accessibilityRole="button"
+                accessibilityLabel={isDeleting ? 'Deleting account' : 'Delete account forever'}
+                accessibilityHint={deleteConfirmation !== 'DELETE' ? 'Type DELETE above to enable this button' : 'Double tap to permanently delete your account'}
+                accessibilityState={{ disabled: deleteConfirmation !== 'DELETE' || isDeleting, busy: isDeleting }}
                 testID="delete-confirm-button"
               >
                 {isDeleting ? (
@@ -805,6 +860,10 @@ export default function ProfileScreen() {
                 takePhoto();
               }}
               disabled={isUploadingPicture}
+              accessibilityRole="button"
+              accessibilityLabel="Take photo"
+              accessibilityHint="Double tap to take a new profile picture with camera"
+              accessibilityState={{ disabled: isUploadingPicture }}
             >
               <View style={styles.pictureModalOptionIcon}>
                 <Ionicons name="camera" size={22} color={colors.primary.main} />
@@ -819,6 +878,10 @@ export default function ProfileScreen() {
                 pickImageFromLibrary();
               }}
               disabled={isUploadingPicture}
+              accessibilityRole="button"
+              accessibilityLabel="Choose from library"
+              accessibilityHint="Double tap to select a photo from your library"
+              accessibilityState={{ disabled: isUploadingPicture }}
             >
               <View style={styles.pictureModalOptionIcon}>
                 <Ionicons name="images" size={22} color={colors.primary.main} />
@@ -831,6 +894,10 @@ export default function ProfileScreen() {
                 style={styles.pictureModalOption}
                 onPress={removeProfilePicture}
                 disabled={isUploadingPicture}
+                accessibilityRole="button"
+                accessibilityLabel="Remove photo"
+                accessibilityHint="Double tap to remove your current profile picture"
+                accessibilityState={{ disabled: isUploadingPicture }}
               >
                 <View style={styles.pictureModalOptionIcon}>
                   <Ionicons name="trash" size={22} color={colors.status.error} />
@@ -845,6 +912,10 @@ export default function ProfileScreen() {
               style={styles.pictureModalCancelButton}
               onPress={() => setShowPictureModal(false)}
               disabled={isUploadingPicture}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
+              accessibilityHint="Double tap to close this menu"
+              accessibilityState={{ disabled: isUploadingPicture }}
             >
               <Text style={styles.pictureModalCancelText}>Cancel</Text>
             </TouchableOpacity>
