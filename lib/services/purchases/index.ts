@@ -46,6 +46,7 @@ import type {
   LocalSubscriptionInfo,
   SubscriptionTier,
 } from './types';
+import * as subscriptionApi from '@/lib/api/subscription';
 
 /** Default subscription info for free tier */
 const DEFAULT_SUBSCRIPTION_INFO: LocalSubscriptionInfo = {
@@ -160,9 +161,6 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
 
   try {
     currentPurchaseState = 'verifying';
-
-    // TODO: Verify with backend (subtask 38.7)
-    // For now, we trust the local purchase and update cache
     console.log('[Purchases] Processing purchase for:', productId);
 
     // Get original transaction ID for iOS
@@ -171,20 +169,55 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
         ? purchase.originalTransactionIdentifierIOS
         : transactionId;
 
-    // Update local subscription info
-    const subscriptionInfo: LocalSubscriptionInfo = {
-      tier: 'pro',
-      productId,
-      status: 'active',
-      expiresAt: null, // Will be set by backend
-      isTrialPeriod: false, // Will be determined by backend
-      isIntroOfferPeriod: false,
-      autoRenewEnabled: true,
-      lastSyncedAt: new Date().toISOString(),
-      originalTransactionId: originalTransactionId ?? null,
-    };
+    // Verify purchase with backend
+    try {
+      const verifyResult = await subscriptionApi.verifyPurchase({
+        transactionId: transactionId!,
+        originalTransactionId: originalTransactionId ?? undefined,
+        productId,
+        purchaseDate: purchase.transactionDate
+          ? new Date(purchase.transactionDate).toISOString()
+          : undefined,
+        environment: __DEV__ ? 'Sandbox' : 'Production',
+      });
 
-    await saveSubscriptionInfo(subscriptionInfo);
+      console.log('[Purchases] Backend verification result:', verifyResult.success);
+
+      // Update local subscription info from backend response
+      const subscriptionInfo: LocalSubscriptionInfo = {
+        tier:
+          verifyResult.userStatus.tier === 'PRO' || verifyResult.userStatus.tier === 'PRO_TRIAL'
+            ? 'pro'
+            : 'free',
+        productId,
+        status: verifyResult.userStatus.status === 'ACTIVE' ? 'active' : 'expired',
+        expiresAt: verifyResult.userStatus.expiresAt,
+        isTrialPeriod: verifyResult.userStatus.isTrialPeriod,
+        isIntroOfferPeriod: false,
+        autoRenewEnabled: verifyResult.userStatus.autoRenewEnabled,
+        lastSyncedAt: new Date().toISOString(),
+        originalTransactionId: originalTransactionId ?? null,
+      };
+
+      await saveSubscriptionInfo(subscriptionInfo);
+    } catch (verifyError) {
+      console.warn('[Purchases] Backend verification failed, using local info:', verifyError);
+
+      // Fallback to local info if backend is unreachable
+      const subscriptionInfo: LocalSubscriptionInfo = {
+        tier: 'pro',
+        productId,
+        status: 'active',
+        expiresAt: null,
+        isTrialPeriod: false,
+        isIntroOfferPeriod: false,
+        autoRenewEnabled: true,
+        lastSyncedAt: new Date().toISOString(),
+        originalTransactionId: originalTransactionId ?? null,
+      };
+
+      await saveSubscriptionInfo(subscriptionInfo);
+    }
 
     // IMPORTANT: Finish the transaction to prevent duplicate charges
     // This must be called after we've processed and saved the purchase
@@ -424,12 +457,12 @@ export async function restorePurchases(): Promise<PurchaseResult> {
       };
     }
 
-    // Find the most recent subscription purchase
-    const subscriptionPurchase = purchases.find((p) =>
+    // Get all subscription transaction IDs
+    const subscriptionPurchases = purchases.filter((p) =>
       SUBSCRIPTION_PRODUCT_IDS.includes(p.productId as (typeof SUBSCRIPTION_PRODUCT_IDS)[number])
     );
 
-    if (!subscriptionPurchase) {
+    if (subscriptionPurchases.length === 0) {
       currentPurchaseState = 'idle';
       return {
         success: false,
@@ -441,23 +474,84 @@ export async function restorePurchases(): Promise<PurchaseResult> {
       };
     }
 
-    // Process the restored purchase
-    await handlePurchaseUpdate(subscriptionPurchase);
+    // Extract transaction IDs for backend restore
+    const transactionIds = subscriptionPurchases
+      .map((p) => {
+        if ('originalTransactionIdentifierIOS' in p && p.originalTransactionIdentifierIOS) {
+          return p.originalTransactionIdentifierIOS;
+        }
+        if ('transactionId' in p && p.transactionId) {
+          return p.transactionId;
+        }
+        return p.purchaseToken;
+      })
+      .filter((id): id is string => !!id);
 
-    currentPurchaseState = 'idle';
-    // Get transaction ID: for iOS use transactionId, for Android use purchaseToken
-    let transactionId: string | undefined;
-    if ('transactionId' in subscriptionPurchase && subscriptionPurchase.transactionId) {
-      transactionId = subscriptionPurchase.transactionId;
-    } else if (subscriptionPurchase.purchaseToken) {
-      transactionId = subscriptionPurchase.purchaseToken;
+    // Restore with backend
+    try {
+      const restoreResult = await subscriptionApi.restorePurchases(transactionIds);
+      console.log('[Purchases] Backend restore result:', restoreResult);
+
+      if (restoreResult.restored > 0 || restoreResult.alreadyActive > 0) {
+        // Update local subscription info from backend response
+        const subscriptionInfo: LocalSubscriptionInfo = {
+          tier:
+            restoreResult.userStatus.tier === 'PRO' || restoreResult.userStatus.tier === 'PRO_TRIAL'
+              ? 'pro'
+              : 'free',
+          productId: restoreResult.userStatus.productId,
+          status: restoreResult.userStatus.status === 'ACTIVE' ? 'active' : 'expired',
+          expiresAt: restoreResult.userStatus.expiresAt,
+          isTrialPeriod: restoreResult.userStatus.isTrialPeriod,
+          isIntroOfferPeriod: false,
+          autoRenewEnabled: restoreResult.userStatus.autoRenewEnabled,
+          lastSyncedAt: new Date().toISOString(),
+          originalTransactionId: transactionIds[0] ?? null,
+        };
+
+        await saveSubscriptionInfo(subscriptionInfo);
+        clearEligibilityCache();
+
+        currentPurchaseState = 'idle';
+        return {
+          success: true,
+          productId: restoreResult.userStatus.productId ?? undefined,
+          originalTransactionId: transactionIds[0],
+        };
+      } else {
+        currentPurchaseState = 'idle';
+        return {
+          success: false,
+          error: createPurchaseError(
+            'E_PURCHASE_FAILED',
+            'No valid purchases found',
+            restoreResult.errors.length > 0
+              ? restoreResult.errors[0]
+              : 'No valid purchases were found to restore.'
+          ),
+        };
+      }
+    } catch (backendError) {
+      console.warn('[Purchases] Backend restore failed, using local process:', backendError);
+
+      // Fallback: Process the first subscription purchase locally
+      const subscriptionPurchase = subscriptionPurchases[0];
+      await handlePurchaseUpdate(subscriptionPurchase);
+
+      currentPurchaseState = 'idle';
+      let transactionId: string | undefined;
+      if ('transactionId' in subscriptionPurchase && subscriptionPurchase.transactionId) {
+        transactionId = subscriptionPurchase.transactionId;
+      } else if (subscriptionPurchase.purchaseToken) {
+        transactionId = subscriptionPurchase.purchaseToken;
+      }
+
+      return {
+        success: true,
+        productId: subscriptionPurchase.productId,
+        originalTransactionId: transactionId,
+      };
     }
-
-    return {
-      success: true,
-      productId: subscriptionPurchase.productId,
-      originalTransactionId: transactionId,
-    };
   } catch (error) {
     console.error('[Purchases] Restore error:', error);
     currentPurchaseState = 'error';

@@ -21,6 +21,7 @@ import weightRoutes from './routes/weightRoutes';
 import goalRoutes from './routes/goalRoutes';
 import webhookRoutes from './routes/webhookRoutes';
 import cgmRoutes from './routes/cgmRoutes';
+import subscriptionRoutes from './routes/subscriptionRoutes';
 import prisma from './config/database';
 import { notificationScheduler } from './services/notificationScheduler';
 
@@ -367,6 +368,7 @@ app.use('/api/weight', weightRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/cgm', cgmRoutes);
+app.use('/api/subscription', subscriptionRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);
