@@ -74,11 +74,13 @@ export default function ForgotPasswordScreen() {
   if (emailSent) {
     return (
       <SafeAreaView style={styles.container} testID="forgot-password-success-screen">
-        <View style={[
-          styles.successContent,
-          { paddingHorizontal: responsiveSpacing.horizontal },
-          isTablet && styles.tabletContent
-        ]}>
+        <View
+          style={[
+            styles.successContent,
+            { paddingHorizontal: responsiveSpacing.horizontal },
+            isTablet && styles.tabletContent,
+          ]}
+        >
           <View style={styles.successContainer}>
             {/* Success Icon */}
             <View style={styles.successIconContainer}>
@@ -100,6 +102,9 @@ export default function ForgotPasswordScreen() {
                 onPress={() => router.push('/auth/signin')}
                 activeOpacity={0.8}
                 testID="forgot-password-back-to-signin-button"
+                accessibilityRole="button"
+                accessibilityLabel="Back to sign in"
+                accessibilityHint="Navigate back to sign in screen"
               >
                 <LinearGradient
                   colors={gradients.primary}
@@ -116,6 +121,9 @@ export default function ForgotPasswordScreen() {
                 onPress={() => setEmailSent(false)}
                 activeOpacity={0.8}
                 testID="forgot-password-try-another-email-button"
+                accessibilityRole="button"
+                accessibilityLabel="Try another email"
+                accessibilityHint="Go back to enter a different email address"
               >
                 <Text style={styles.secondaryButtonText}>Try Another Email</Text>
               </TouchableOpacity>
@@ -137,7 +145,7 @@ export default function ForgotPasswordScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             { paddingHorizontal: responsiveSpacing.horizontal },
-            isTablet && styles.tabletContent
+            isTablet && styles.tabletContent,
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -170,6 +178,8 @@ export default function ForgotPasswordScreen() {
                   returnKeyType="done"
                   onSubmitEditing={handleForgotPassword}
                   testID="forgot-password-email-input"
+                  accessibilityLabel="Email address"
+                  accessibilityHint="Enter the email address associated with your account"
                 />
               </View>
             </View>
@@ -180,9 +190,15 @@ export default function ForgotPasswordScreen() {
               disabled={isLoading}
               activeOpacity={0.8}
               testID="forgot-password-submit-button"
+              accessibilityRole="button"
+              accessibilityLabel={isLoading ? 'Sending reset link' : 'Send reset link'}
+              accessibilityHint="Double tap to send password reset link to your email"
+              accessibilityState={{ disabled: isLoading, busy: isLoading }}
             >
               <LinearGradient
-                colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
+                colors={
+                  isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary
+                }
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.buttonGradient}
@@ -198,7 +214,13 @@ export default function ForgotPasswordScreen() {
             <View style={styles.footer}>
               <Text style={styles.footerText}>Remember your password? </Text>
               <Link href="/auth/signin" asChild>
-                <TouchableOpacity disabled={isLoading} testID="forgot-password-signin-link">
+                <TouchableOpacity
+                  disabled={isLoading}
+                  testID="forgot-password-signin-link"
+                  accessibilityRole="link"
+                  accessibilityLabel="Sign in"
+                  accessibilityHint="Navigate back to sign in screen"
+                >
                   <Text style={styles.link}>Sign In</Text>
                 </TouchableOpacity>
               </Link>

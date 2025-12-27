@@ -36,28 +36,31 @@ export default function ResetPasswordScreen() {
 
   const confirmPasswordInputRef = useRef<TextInputType>(null);
 
-  const verifyToken = useCallback(async (tokenToVerify: string) => {
-    setIsVerifying(true);
-    try {
-      const response = await authApi.verifyResetToken(tokenToVerify);
-      setTokenValid(true);
-      setUserEmail(response.email);
-    } catch {
-      Alert.alert(
-        'Invalid Token',
-        'This password reset link is invalid or has expired. Please request a new one.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/auth/forgot-password'),
-          },
-        ]
-      );
-      setTokenValid(false);
-    } finally {
-      setIsVerifying(false);
-    }
-  }, [router]);
+  const verifyToken = useCallback(
+    async (tokenToVerify: string) => {
+      setIsVerifying(true);
+      try {
+        const response = await authApi.verifyResetToken(tokenToVerify);
+        setTokenValid(true);
+        setUserEmail(response.email);
+      } catch {
+        Alert.alert(
+          'Invalid Token',
+          'This password reset link is invalid or has expired. Please request a new one.',
+          [
+            {
+              text: 'OK',
+              onPress: () => router.replace('/auth/forgot-password'),
+            },
+          ]
+        );
+        setTokenValid(false);
+      } finally {
+        setIsVerifying(false);
+      }
+    },
+    [router]
+  );
 
   useEffect(() => {
     // Check if token is in URL params
@@ -124,10 +127,7 @@ export default function ResetPasswordScreen() {
   if (isVerifying) {
     return (
       <SafeAreaView style={styles.container} testID="reset-password-verifying-screen">
-        <View style={[
-          styles.centerContainer,
-          isTablet && styles.tabletContent
-        ]}>
+        <View style={[styles.centerContainer, isTablet && styles.tabletContent]}>
           <ActivityIndicator size="large" color={colors.primary.main} />
           <Text style={styles.loadingText}>Verifying reset token...</Text>
         </View>
@@ -147,7 +147,7 @@ export default function ResetPasswordScreen() {
             contentContainerStyle={[
               styles.scrollContent,
               { paddingHorizontal: responsiveSpacing.horizontal },
-              isTablet && styles.tabletContent
+              isTablet && styles.tabletContent,
             ]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
@@ -175,6 +175,8 @@ export default function ResetPasswordScreen() {
                     multiline
                     numberOfLines={3}
                     testID="reset-password-token-input"
+                    accessibilityLabel="Reset token"
+                    accessibilityHint="Enter the password reset token from your email"
                   />
                 </View>
               </View>
@@ -185,9 +187,15 @@ export default function ResetPasswordScreen() {
                 disabled={isLoading}
                 activeOpacity={0.8}
                 testID="reset-password-verify-token-button"
+                accessibilityRole="button"
+                accessibilityLabel={isLoading ? 'Verifying token' : 'Verify token'}
+                accessibilityHint="Double tap to verify your reset token"
+                accessibilityState={{ disabled: isLoading, busy: isLoading }}
               >
                 <LinearGradient
-                  colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
+                  colors={
+                    isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary
+                  }
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.buttonGradient}
@@ -206,6 +214,9 @@ export default function ResetPasswordScreen() {
                   onPress={() => router.push('/auth/forgot-password')}
                   disabled={isLoading}
                   testID="reset-password-request-token-link"
+                  accessibilityRole="link"
+                  accessibilityLabel="Request a reset token"
+                  accessibilityHint="Navigate to request a new password reset token"
                 >
                   <Text style={styles.link}>Request One</Text>
                 </TouchableOpacity>
@@ -228,7 +239,7 @@ export default function ResetPasswordScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             { paddingHorizontal: responsiveSpacing.horizontal },
-            isTablet && styles.tabletContent
+            isTablet && styles.tabletContent,
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -237,9 +248,7 @@ export default function ResetPasswordScreen() {
           <View style={styles.header}>
             <Text style={styles.title}>Reset Password</Text>
             {userEmail && (
-              <Text style={styles.subtitle}>
-                Create a new password for {userEmail}
-              </Text>
+              <Text style={styles.subtitle}>Create a new password for {userEmail}</Text>
             )}
           </View>
 
@@ -260,6 +269,8 @@ export default function ResetPasswordScreen() {
                   onSubmitEditing={() => confirmPasswordInputRef.current?.focus()}
                   blurOnSubmit={false}
                   testID="reset-password-new-password-input"
+                  accessibilityLabel="New password"
+                  accessibilityHint="Create a new password with at least 6 characters"
                 />
               </View>
             </View>
@@ -280,6 +291,8 @@ export default function ResetPasswordScreen() {
                   returnKeyType="done"
                   onSubmitEditing={handleResetPassword}
                   testID="reset-password-confirm-password-input"
+                  accessibilityLabel="Confirm new password"
+                  accessibilityHint="Re-enter your new password to confirm"
                 />
               </View>
             </View>
@@ -290,9 +303,15 @@ export default function ResetPasswordScreen() {
               disabled={isLoading}
               activeOpacity={0.8}
               testID="reset-password-submit-button"
+              accessibilityRole="button"
+              accessibilityLabel={isLoading ? 'Resetting password' : 'Reset password'}
+              accessibilityHint="Double tap to reset your password"
+              accessibilityState={{ disabled: isLoading, busy: isLoading }}
             >
               <LinearGradient
-                colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
+                colors={
+                  isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary
+                }
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.buttonGradient}
@@ -311,6 +330,9 @@ export default function ResetPasswordScreen() {
                 onPress={() => router.push('/auth/signin')}
                 disabled={isLoading}
                 testID="reset-password-signin-link"
+                accessibilityRole="link"
+                accessibilityLabel="Sign in"
+                accessibilityHint="Navigate back to sign in screen"
               >
                 <Text style={styles.link}>Sign In</Text>
               </TouchableOpacity>

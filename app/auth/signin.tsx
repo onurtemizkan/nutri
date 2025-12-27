@@ -66,7 +66,7 @@ export default function SignInScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             { paddingHorizontal: responsiveSpacing.horizontal },
-            isTablet && styles.tabletContent
+            isTablet && styles.tabletContent,
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -98,6 +98,8 @@ export default function SignInScreen() {
                   onSubmitEditing={() => passwordInputRef.current?.focus()}
                   blurOnSubmit={false}
                   testID="signin-email-input"
+                  accessibilityLabel="Email address"
+                  accessibilityHint="Enter your email to sign in"
                 />
               </View>
             </View>
@@ -107,7 +109,13 @@ export default function SignInScreen() {
               <View style={styles.labelRow}>
                 <Text style={styles.label}>Password</Text>
                 <Link href="/auth/forgot-password" asChild>
-                  <TouchableOpacity disabled={isLoading} testID="signin-forgot-password-link">
+                  <TouchableOpacity
+                    disabled={isLoading}
+                    testID="signin-forgot-password-link"
+                    accessibilityRole="link"
+                    accessibilityLabel="Forgot password"
+                    accessibilityHint="Navigate to password recovery"
+                  >
                     <Text style={styles.forgotPasswordLink}>Forgot?</Text>
                   </TouchableOpacity>
                 </Link>
@@ -126,6 +134,8 @@ export default function SignInScreen() {
                   returnKeyType="done"
                   onSubmitEditing={handleSignIn}
                   testID="signin-password-input"
+                  accessibilityLabel="Password"
+                  accessibilityHint="Enter your password to sign in"
                 />
               </View>
             </View>
@@ -137,9 +147,15 @@ export default function SignInScreen() {
               disabled={isLoading}
               activeOpacity={0.8}
               testID="signin-submit-button"
+              accessibilityRole="button"
+              accessibilityLabel={isLoading ? 'Signing in' : 'Sign in'}
+              accessibilityHint="Double tap to sign in to your account"
+              accessibilityState={{ disabled: isLoading, busy: isLoading }}
             >
               <LinearGradient
-                colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
+                colors={
+                  isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary
+                }
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.buttonGradient}
@@ -156,7 +172,13 @@ export default function SignInScreen() {
             <View style={styles.footer}>
               <Text style={styles.footerText}>Don't have an account? </Text>
               <Link href="/auth/signup" asChild>
-                <TouchableOpacity disabled={isLoading} testID="signin-signup-link">
+                <TouchableOpacity
+                  disabled={isLoading}
+                  testID="signin-signup-link"
+                  accessibilityRole="link"
+                  accessibilityLabel="Sign up"
+                  accessibilityHint="Navigate to create a new account"
+                >
                   <Text style={styles.link}>Sign Up</Text>
                 </TouchableOpacity>
               </Link>
