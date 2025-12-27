@@ -22,6 +22,8 @@ import goalRoutes from './routes/goalRoutes';
 import webhookRoutes from './routes/webhookRoutes';
 import cgmRoutes from './routes/cgmRoutes';
 import debugRoutes from './routes/debugRoutes';
+import emailWebhookRoutes from './routes/emailWebhookRoutes';
+import emailPreferenceRoutes from './routes/emailPreferenceRoutes';
 import prisma from './config/database';
 import { notificationScheduler } from './services/notificationScheduler';
 import { initSentry, setupSentryErrorHandler } from './config/sentry';
@@ -375,6 +377,8 @@ app.use('/api/goals', goalRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/cgm', cgmRoutes);
 app.use('/api/debug', debugRoutes);
+app.use('/api/webhooks/email', emailWebhookRoutes);
+app.use('/api/email', emailPreferenceRoutes);
 
 // =============================================================================
 // Error Handlers
