@@ -1963,3 +1963,199 @@ enum EmailSequenceStatus {
   COMPLETED           // Finished all steps
   EXITED              // Exited early (unsubscribed, criteria met, etc.)
 }
+
+// =============================================================================
+// GAMIFICATION MODELS
+// =============================================================================
+
+/**
+ * UserStreak - Track user's daily activity streaks
+ */
+model UserStreak {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+
+  // Current streak
+  currentStreak   Int       @default(0)
+  longestStreak   Int       @default(0)
+  lastActivityDate DateTime? // Last date user logged activity
+
+  // Streak types
+  mealStreak      Int       @default(0)   // Days with at least one meal logged
+  waterStreak     Int       @default(0)   // Days with water goal met
+  exerciseStreak  Int       @default(0)   // Days with exercise logged
+
+  // Freeze tokens (streak protection)
+  freezeTokens    Int       @default(0)   // Available streak freeze tokens
+  freezeUsedAt    DateTime? // Last time a freeze was used
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([currentStreak])
+  @@index([longestStreak])
+}
+
+/**
+ * Achievement - Define available achievements/badges
+ */
+model Achievement {
+  id              String    @id @default(cuid())
+
+  // Achievement info
+  name            String    @unique
+  title           String    // Display title
+  description     String
+  icon            String?   // Icon name or URL
+  category        AchievementCategory
+
+  // Requirements
+  requirement     AchievementRequirement // Type of requirement
+  targetValue     Int       // Target value to unlock
+
+  // Rewards
+  xpReward        Int       @default(0)
+  badgeColor      String?   // Badge display color
+
+  // Tiers (optional)
+  tier            AchievementTier @default(BRONZE)
+  parentId        String?   // For tiered achievements (e.g., Bronze -> Silver -> Gold)
+  parent          Achievement? @relation("AchievementTiers", fields: [parentId], references: [id])
+  children        Achievement[] @relation("AchievementTiers")
+
+  // Status
+  isActive        Boolean   @default(true)
+  isHidden        Boolean   @default(false) // Hidden achievements
+
+  // Relations
+  userAchievements UserAchievement[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([category])
+  @@index([requirement])
+  @@index([isActive])
+}
+
+/**
+ * UserAchievement - Track user's earned achievements
+ */
+model UserAchievement {
+  id              String    @id @default(cuid())
+  userId          String
+  achievementId   String
+  achievement     Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  // Progress
+  currentProgress Int       @default(0)
+  isCompleted     Boolean   @default(false)
+  completedAt     DateTime?
+
+  // Notification
+  hasBeenSeen     Boolean   @default(false) // User has seen the achievement popup
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, achievementId])
+  @@index([userId, isCompleted])
+  @@index([achievementId])
+}
+
+/**
+ * UserXP - Track user's XP points and level
+ */
+model UserXP {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+
+  // XP tracking
+  totalXP         Int       @default(0)
+  currentLevel    Int       @default(1)
+  xpToNextLevel   Int       @default(100)
+
+  // Weekly/monthly XP (for leaderboards)
+  weeklyXP        Int       @default(0)
+  monthlyXP       Int       @default(0)
+  weekStartDate   DateTime  @default(now())
+  monthStartDate  DateTime  @default(now())
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([totalXP])
+  @@index([currentLevel])
+  @@index([weeklyXP])
+  @@index([monthlyXP])
+}
+
+/**
+ * XPTransaction - Log all XP gains/losses
+ */
+model XPTransaction {
+  id              String    @id @default(cuid())
+  userId          String
+
+  amount          Int       // Positive for gain, negative for loss
+  source          XPSource  // What action triggered this XP
+  description     String?   // Human-readable description
+
+  // Reference to what earned the XP
+  referenceId     String?   // ID of meal, achievement, etc.
+  referenceType   String?   // "meal", "achievement", "streak", etc.
+
+  createdAt       DateTime  @default(now())
+
+  @@index([userId])
+  @@index([source])
+  @@index([createdAt])
+}
+
+// Achievement Enums
+enum AchievementCategory {
+  STREAK          // Streak-based achievements
+  LOGGING         // Meal/water logging achievements
+  NUTRITION       // Nutrition goal achievements
+  EXERCISE        // Exercise/activity achievements
+  MILESTONE       // Level/XP milestones
+  SOCIAL          // Social features (if added)
+  SPECIAL         // Special/seasonal achievements
+}
+
+enum AchievementRequirement {
+  STREAK_DAYS       // Maintain streak for X days
+  MEALS_LOGGED      // Log X total meals
+  WATER_GOALS_MET   // Meet water goal X times
+  CALORIES_UNDER    // Stay under calorie goal X times
+  PROTEIN_GOAL      // Meet protein goal X times
+  EXERCISES_LOGGED  // Log X exercises
+  LEVEL_REACHED     // Reach level X
+  XP_EARNED         // Earn X total XP
+  WEIGHT_LOGGED     // Log weight X times
+  FOODS_SCANNED     // Scan X food items
+}
+
+enum AchievementTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+}
+
+enum XPSource {
+  MEAL_LOGGED       // Logged a meal
+  WATER_LOGGED      // Logged water
+  WATER_GOAL_MET    // Met daily water goal
+  EXERCISE_LOGGED   // Logged exercise
+  WEIGHT_LOGGED     // Logged weight
+  STREAK_BONUS      // Bonus for maintaining streak
+  ACHIEVEMENT       // Earned an achievement
+  LEVEL_UP          // Leveled up bonus
+  DAILY_BONUS       // Daily login bonus
+  CALORIE_GOAL      // Met calorie goal
+  MACRO_GOAL        // Met macro goal
+}
