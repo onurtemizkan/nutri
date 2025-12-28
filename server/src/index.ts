@@ -27,6 +27,7 @@ import reportRoutes from './routes/reportRoutes';
 import subscriptionRoutes from './routes/subscriptionRoutes';
 import emailRoutes from './routes/email';
 import gamificationRoutes from './routes/gamificationRoutes';
+import fastingRoutes from './routes/fastingRoutes';
 import prisma from './config/database';
 import { notificationScheduler } from './services/notificationScheduler';
 import { initSentry, setupSentryErrorHandler } from './config/sentry';
@@ -425,6 +426,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/gamification', gamificationRoutes);
+app.use('/api/fasting', fastingRoutes);
 
 // =============================================================================
 // Error Handlers

@@ -2164,3 +2164,187 @@ enum XPSource {
   CALORIE_GOAL      // Met calorie goal
   MACRO_GOAL        // Met macro goal
 }
+
+
+// =============================================================================
+// INTERMITTENT FASTING MODELS
+// =============================================================================
+
+/**
+ * FastingProtocol - Predefined and custom fasting protocols
+ */
+model FastingProtocol {
+  id              String    @id @default(cuid())
+  userId          String?   // Null for system protocols, user ID for custom
+
+  // Protocol info
+  name            String    // "16:8", "18:6", "OMAD", etc.
+  description     String?
+  fastingHours    Int       // Hours of fasting (e.g., 16 for 16:8)
+  eatingHours     Int       // Hours of eating window (e.g., 8 for 16:8)
+
+  // For 5:2 style protocols
+  isWeeklyProtocol Boolean  @default(false)
+  fastingDaysPerWeek Int?   // Days of fasting per week (e.g., 2 for 5:2)
+  caloriesOnFastDays Int?   // Calorie limit on fasting days
+
+  // Display
+  icon            String?
+  color           String?
+
+  // System vs custom
+  isSystem        Boolean   @default(false)
+  isActive        Boolean   @default(true)
+
+  // Relations
+  fastingSessions FastingSession[]
+  userSettings    UserFastingSettings[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, name])
+  @@index([isSystem, isActive])
+  @@index([userId])
+}
+
+/**
+ * UserFastingSettings - User's fasting preferences
+ */
+model UserFastingSettings {
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+
+  // Active protocol
+  activeProtocolId    String?
+  activeProtocol      FastingProtocol? @relation(fields: [activeProtocolId], references: [id])
+
+  // Preferred schedule
+  preferredStartTime  String?   // Time to start fasting (e.g., "20:00")
+  preferredEndTime    String?   // Time to end fasting (e.g., "12:00")
+
+  // Notifications
+  notifyOnFastStart   Boolean   @default(true)
+  notifyOnFastEnd     Boolean   @default(true)
+  notifyBeforeEnd     Int?      // Minutes before fast ends to notify
+
+  // Goals
+  weeklyFastingGoal   Int?      // Target hours of fasting per week
+  monthlyFastingGoal  Int?      // Target hours of fasting per month
+
+  // Display preferences
+  showOnDashboard     Boolean   @default(true)
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+/**
+ * FastingSession - Individual fasting sessions
+ */
+model FastingSession {
+  id              String    @id @default(cuid())
+  userId          String
+
+  // Protocol used
+  protocolId      String?
+  protocol        FastingProtocol? @relation(fields: [protocolId], references: [id])
+
+  // Timing
+  startedAt       DateTime  // When fasting started
+  plannedEndAt    DateTime  // When fasting is planned to end
+  actualEndAt     DateTime? // When fasting actually ended (null if ongoing)
+
+  // Duration
+  plannedDuration Int       // Planned duration in minutes
+  actualDuration  Int?      // Actual duration in minutes
+
+  // Status
+  status          FastingStatus @default(ACTIVE)
+
+  // Notes
+  notes           String?
+  earlyEndReason  String?   // Why the fast was ended early
+
+  // Metrics during fast
+  moodRating      Int?      // 1-5 rating
+  energyLevel     Int?      // 1-5 rating
+  hungerLevel     Int?      // 1-5 rating
+
+  // Health metrics correlation
+  startWeight     Float?    // Weight at start of fast
+  endWeight       Float?    // Weight at end of fast
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Checkpoints during the fast
+  checkpoints     FastingCheckpoint[]
+
+  @@index([userId, status])
+  @@index([userId, startedAt])
+  @@index([startedAt])
+}
+
+/**
+ * FastingCheckpoint - Checkpoints during a fasting session
+ */
+model FastingCheckpoint {
+  id              String    @id @default(cuid())
+  sessionId       String
+  session         FastingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  // Timing
+  hoursIntoFast   Int       // Hours into the fast
+
+  // Metrics
+  moodRating      Int?      // 1-5 rating
+  energyLevel     Int?      // 1-5 rating
+  hungerLevel     Int?      // 1-5 rating
+  notes           String?
+
+  createdAt       DateTime  @default(now())
+
+  @@index([sessionId])
+}
+
+/**
+ * FastingStreak - Track fasting streaks
+ */
+model FastingStreak {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+
+  // Streaks
+  currentStreak   Int       @default(0)   // Consecutive successful fasts
+  longestStreak   Int       @default(0)
+  lastFastDate    DateTime? // Last completed fast date
+
+  // Stats
+  totalFasts      Int       @default(0)
+  totalMinutes    Int       @default(0)
+  successfulFasts Int       @default(0)  // Completed as planned
+  brokenFasts     Int       @default(0)  // Ended early
+
+  // Weekly/Monthly stats
+  weeklyMinutes   Int       @default(0)
+  monthlyMinutes  Int       @default(0)
+  weekStartDate   DateTime  @default(now())
+  monthStartDate  DateTime  @default(now())
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([currentStreak])
+}
+
+// Fasting Enums
+enum FastingStatus {
+  ACTIVE          // Currently fasting
+  COMPLETED       // Completed as planned
+  BROKEN          // Ended early
+  CANCELLED       // Cancelled before significant progress
+}
