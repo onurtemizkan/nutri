@@ -583,3 +583,78 @@ export interface CGMSyncResult {
   endDate: Date;
   error?: string;
 }
+
+// ============================================================================
+// ML INSIGHTS TYPES
+// ============================================================================
+
+export type MLInsightType =
+  | 'CORRELATION'
+  | 'PREDICTION'
+  | 'ANOMALY'
+  | 'RECOMMENDATION'
+  | 'GOAL_PROGRESS'
+  | 'PATTERN_DETECTED';
+
+export type InsightPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+export interface CreateInsightInput {
+  insightType: MLInsightType;
+  priority: InsightPriority;
+  title: string;
+  description: string;
+  recommendation: string;
+  correlation?: number;
+  confidence: number;
+  dataPoints: number;
+  metadata?: Record<string, unknown>;
+  expiresAt?: Date;
+}
+
+export interface UpdateInsightInput {
+  viewed?: boolean;
+  dismissed?: boolean;
+  helpful?: boolean;
+}
+
+export interface GetInsightsQuery {
+  insightType?: MLInsightType;
+  priority?: InsightPriority;
+  viewed?: boolean;
+  dismissed?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
+export interface InsightFeedbackInput {
+  helpful: boolean;
+  feedbackText?: string;
+}
+
+export interface GenerateInsightsRequest {
+  targetMetrics?: string[];
+  lookbackDays?: number;
+  regenerate?: boolean;
+}
+
+export interface InsightMetadata {
+  chartData?: Array<{ date: string; value: number }>;
+  references?: Array<{ featureName: string; correlation: number }>;
+  lagAnalysis?: {
+    optimalLagHours: number;
+    immediateEffect: boolean;
+    delayedEffect: boolean;
+  };
+  trendData?: {
+    direction: 'up' | 'down' | 'stable';
+    percentChange: number;
+  };
+}
+
+export interface InsightSummary {
+  totalInsights: number;
+  unviewedCount: number;
+  highPriorityCount: number;
+  byType: Record<MLInsightType, number>;
+  lastGeneratedAt?: Date;
+}
