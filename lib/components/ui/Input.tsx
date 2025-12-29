@@ -15,8 +15,8 @@ import {
   KeyboardTypeOptions,
   NativeSyntheticEvent,
   TextInputFocusEventData,
-  AccessibilityRole,
   Platform,
+  ViewStyle,
 } from 'react-native';
 import { colors, spacing, borderRadius, typography } from '@/lib/theme/colors';
 
@@ -165,9 +165,9 @@ export function Input({
           styles.inputContainer,
           {
             borderColor: animatedBorderColor,
-          },
+          } as Animated.WithAnimatedValue<ViewStyle>,
           disabled && styles.inputContainerDisabled,
-          multiline && { height: 'auto', minHeight: 48 * numberOfLines },
+          multiline && { minHeight: 48 * numberOfLines },
         ]}
       >
         {/* Left Icon */}
@@ -201,7 +201,6 @@ export function Input({
           // Accessibility
           accessibilityLabel={label}
           accessibilityHint={accessibilityHint}
-          accessibilityRole={'none' as AccessibilityRole} // TextInput handles its own role
           accessibilityState={{
             disabled: disabled,
           }}
