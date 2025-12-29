@@ -557,6 +557,17 @@ class GdprService {
     });
   }
 
+  /**
+   * Increment download count for an export request
+   * Used for auditing and detecting potential token compromise
+   */
+  async incrementDownloadCount(requestId: string) {
+    return prisma.dataExportRequest.update({
+      where: { id: requestId },
+      data: { downloadCount: { increment: 1 } },
+    });
+  }
+
   // ==========================================================================
   // ACCOUNT DELETION (Right to Erasure - GDPR Article 17)
   // ==========================================================================

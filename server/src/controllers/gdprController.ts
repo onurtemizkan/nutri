@@ -229,6 +229,9 @@ export class GdprController {
       }
     }
 
+    // Increment download count for audit trail
+    await gdprService.incrementDownloadCount(id);
+
     // Collect user data for download
     const exportData = await gdprService.collectUserData(userId, request.includeRaw);
 
