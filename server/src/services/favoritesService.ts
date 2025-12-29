@@ -540,59 +540,59 @@ class FavoritesService {
       barcode?: string | null;
     }
   ) {
-    // Upsert recent food entry
-    await prisma.recentFood.upsert({
-      where: {
-        userId_name: { userId, name: food.name },
-      },
-      update: {
-        calories: food.calories,
-        protein: food.protein,
-        carbs: food.carbs,
-        fat: food.fat,
-        fiber: food.fiber,
-        sugar: food.sugar,
-        servingSize: food.servingSize,
-        fdcId: food.fdcId,
-        barcode: food.barcode,
-        logCount: { increment: 1 },
-        lastLoggedAt: new Date(),
-      },
-      create: {
-        userId,
-        name: food.name,
-        calories: food.calories,
-        protein: food.protein,
-        carbs: food.carbs,
-        fat: food.fat,
-        fiber: food.fiber,
-        sugar: food.sugar,
-        servingSize: food.servingSize,
-        fdcId: food.fdcId,
-        barcode: food.barcode,
-      },
+    // Use transaction to ensure atomicity of upsert + prune
+    // This prevents race conditions where concurrent calls could exceed MAX_RECENT_FOODS
+    await prisma.$transaction(async (tx) => {
+      // Upsert recent food entry
+      await tx.recentFood.upsert({
+        where: {
+          userId_name: { userId, name: food.name },
+        },
+        update: {
+          calories: food.calories,
+          protein: food.protein,
+          carbs: food.carbs,
+          fat: food.fat,
+          fiber: food.fiber,
+          sugar: food.sugar,
+          servingSize: food.servingSize,
+          fdcId: food.fdcId,
+          barcode: food.barcode,
+          logCount: { increment: 1 },
+          lastLoggedAt: new Date(),
+        },
+        create: {
+          userId,
+          name: food.name,
+          calories: food.calories,
+          protein: food.protein,
+          carbs: food.carbs,
+          fat: food.fat,
+          fiber: food.fiber,
+          sugar: food.sugar,
+          servingSize: food.servingSize,
+          fdcId: food.fdcId,
+          barcode: food.barcode,
+        },
+      });
+
+      // Prune old entries if exceeding limit (within same transaction)
+      const count = await tx.recentFood.count({ where: { userId } });
+
+      if (count > MAX_RECENT_FOODS) {
+        // Get IDs of entries to delete (oldest by lastLoggedAt)
+        const toDelete = await tx.recentFood.findMany({
+          where: { userId },
+          orderBy: { lastLoggedAt: 'asc' },
+          take: count - MAX_RECENT_FOODS,
+          select: { id: true },
+        });
+
+        await tx.recentFood.deleteMany({
+          where: { id: { in: toDelete.map((r) => r.id) } },
+        });
+      }
     });
-
-    // Prune old entries if exceeding limit
-    await this.pruneRecentFoods(userId);
-  }
-
-  private async pruneRecentFoods(userId: string) {
-    const count = await prisma.recentFood.count({ where: { userId } });
-
-    if (count > MAX_RECENT_FOODS) {
-      // Get IDs of entries to delete (oldest by lastLoggedAt)
-      const toDelete = await prisma.recentFood.findMany({
-        where: { userId },
-        orderBy: { lastLoggedAt: 'asc' },
-        take: count - MAX_RECENT_FOODS,
-        select: { id: true },
-      });
-
-      await prisma.recentFood.deleteMany({
-        where: { id: { in: toDelete.map((r) => r.id) } },
-      });
-    }
   }
 
   async getRecentFoods(userId: string, limit = 20) {
