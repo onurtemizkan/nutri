@@ -75,7 +75,7 @@ interface EndFastingOptions {
   energyLevel?: number;
   hungerLevel?: number;
   notes?: string;
-  breakFastReason?: string;
+  earlyEndReason?: string;
   endWeight?: number;
 }
 
@@ -169,12 +169,21 @@ class FastingService {
   }
 
   async deleteCustomProtocol(userId: string, protocolId: string) {
-    const protocol = await prisma.fastingProtocol.findFirst({
-      where: { id: protocolId, userId, isSystem: false },
+    // First check if protocol exists at all
+    const protocol = await prisma.fastingProtocol.findUnique({
+      where: { id: protocolId },
     });
 
     if (!protocol) {
-      throw new Error('Protocol not found or cannot be deleted');
+      throw new Error('Protocol not found');
+    }
+
+    if (protocol.isSystem) {
+      throw new Error('System protocols cannot be deleted');
+    }
+
+    if (protocol.userId !== userId) {
+      throw new Error('You can only delete your own protocols');
     }
 
     await prisma.fastingProtocol.update({
@@ -344,7 +353,7 @@ class FastingService {
         energyLevel: options.energyLevel,
         hungerLevel: options.hungerLevel,
         notes: options.notes || session.notes,
-        breakFastReason: options.breakFastReason,
+        earlyEndReason: options.earlyEndReason,
         endWeight: options.endWeight,
       },
       include: { protocol: true },
@@ -367,7 +376,8 @@ class FastingService {
       throw new Error('Active fasting session not found');
     }
 
-    const hoursIntoFast = Math.floor((Date.now() - session.startedAt.getTime()) / (60 * 60 * 1000));
+    // Use Math.round for better accuracy (exact timing available via createdAt)
+    const hoursIntoFast = Math.round((Date.now() - session.startedAt.getTime()) / (60 * 60 * 1000));
 
     const checkpoint = await prisma.fastingCheckpoint.create({
       data: {
@@ -461,20 +471,28 @@ class FastingService {
       totalMinutes: { increment: durationMinutes },
     };
 
-    // Check for weekly/monthly reset
-    const weekAgo = new Date(today);
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const monthAgo = new Date(today);
-    monthAgo.setMonth(monthAgo.getMonth() - 1);
+    // Check for weekly/monthly reset using day differences
+    const weekStartDate = new Date(streak.weekStartDate);
+    const monthStartDate = new Date(streak.monthStartDate);
 
-    if (new Date(streak.weekStartDate) < weekAgo) {
+    // Calculate days since week/month started
+    const daysSinceWeekStart = Math.floor(
+      (today.getTime() - weekStartDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const daysSinceMonthStart = Math.floor(
+      (today.getTime() - monthStartDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    // Reset weekly after 7 days (>= 7, so day 7 starts a new week)
+    if (daysSinceWeekStart >= 7) {
       updates.weeklyMinutes = durationMinutes;
       updates.weekStartDate = today;
     } else {
       updates.weeklyMinutes = { increment: durationMinutes };
     }
 
-    if (new Date(streak.monthStartDate) < monthAgo) {
+    // Reset monthly after 30 days (>= 30, so day 30 starts a new month period)
+    if (daysSinceMonthStart >= 30) {
       updates.monthlyMinutes = durationMinutes;
       updates.monthStartDate = today;
     } else {
@@ -569,7 +587,7 @@ class FastingService {
         startedAt: { gte: startDate },
         status: { not: FastingStatus.CANCELLED },
       },
-      include: { checkpoints: true },
+      include: { checkpoints: true, protocol: true },
       orderBy: { startedAt: 'asc' },
     });
 
@@ -633,10 +651,10 @@ class FastingService {
       byDayOfWeek[day]++;
     }
 
-    // Protocol usage
+    // Protocol usage (using protocol names for readability)
     const protocolUsage = new Map<string, number>();
     for (const session of sessions) {
-      const name = session.protocolId ? session.protocolId : 'Custom';
+      const name = session.protocol?.name || 'Custom';
       protocolUsage.set(name, (protocolUsage.get(name) || 0) + 1);
     }
 

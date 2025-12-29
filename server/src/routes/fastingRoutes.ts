@@ -279,7 +279,7 @@ router.get('/sessions', (req, res) => fastingController.getHistory(req, res));
  *                 maximum: 5
  *               notes:
  *                 type: string
- *               breakFastReason:
+ *               earlyEndReason:
  *                 type: string
  *               endWeight:
  *                 type: number

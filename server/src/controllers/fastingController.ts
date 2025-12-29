@@ -7,17 +7,32 @@ import { z } from 'zod';
 import { FastingStatus } from '@prisma/client';
 
 // Validation schemas
-const createProtocolSchema = z.object({
-  name: z.string().min(1).max(50),
-  description: z.string().max(500).optional(),
-  fastingHours: z.number().int().min(1).max(48),
-  eatingHours: z.number().int().min(0).max(24),
-  icon: z.string().max(50).optional(),
-  color: z
-    .string()
-    .regex(/^#[0-9A-Fa-f]{6}$/)
-    .optional(),
-});
+const createProtocolSchema = z
+  .object({
+    name: z.string().min(1).max(50),
+    description: z.string().max(500).optional(),
+    fastingHours: z.number().int().min(1).max(48),
+    eatingHours: z.number().int().min(0).max(24),
+    icon: z.string().max(50).optional(),
+    color: z
+      .string()
+      .regex(/^#[0-9A-Fa-f]{6}$/)
+      .optional(),
+  })
+  .refine(
+    (data) => {
+      // For daily protocols with an eating window, hours must sum to 24
+      // Extended fasts (no eating window) don't have this constraint
+      if (data.eatingHours > 0) {
+        return data.fastingHours + data.eatingHours === 24;
+      }
+      return true;
+    },
+    {
+      message: 'For daily protocols, fasting hours + eating hours must equal 24',
+      path: ['eatingHours'],
+    }
+  );
 
 const updateSettingsSchema = z.object({
   activeProtocolId: z.string().optional(),
@@ -49,7 +64,7 @@ const endFastSchema = z.object({
   energyLevel: z.number().int().min(1).max(5).optional(),
   hungerLevel: z.number().int().min(1).max(5).optional(),
   notes: z.string().max(500).optional(),
-  breakFastReason: z.string().max(200).optional(),
+  earlyEndReason: z.string().max(200).optional(),
   endWeight: z.number().positive().optional(),
 });
 

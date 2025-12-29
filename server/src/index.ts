@@ -459,7 +459,7 @@ if (process.env.NODE_ENV !== 'test') {
     // Initialize system fasting protocols
     try {
       await fastingService.initializeSystemProtocols();
-      logger.info('System fasting protocols initialized');
+      // Log is already done inside initializeSystemProtocols()
     } catch (error) {
       logger.error({ error }, 'Failed to initialize system fasting protocols');
     }
