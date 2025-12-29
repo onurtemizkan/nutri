@@ -2,6 +2,11 @@ import prisma from '../config/database';
 import { logger } from '../config/logger';
 import { FastingStatus } from '@prisma/client';
 
+// Completion threshold: 90% of planned duration counts as completed
+const COMPLETION_THRESHOLD = 0.9;
+// Minimum duration (in minutes) before marking as cancelled
+const CANCELLATION_THRESHOLD_MINUTES = 60;
+
 // Default system protocols
 const SYSTEM_PROTOCOLS = [
   {
@@ -321,9 +326,9 @@ class FastingService {
 
     // Determine status
     let status: FastingStatus;
-    if (actualDuration >= session.plannedDuration * 0.9) {
+    if (actualDuration >= session.plannedDuration * COMPLETION_THRESHOLD) {
       status = FastingStatus.COMPLETED;
-    } else if (actualDuration < 60) {
+    } else if (actualDuration < CANCELLATION_THRESHOLD_MINUTES) {
       status = FastingStatus.CANCELLED;
     } else {
       status = FastingStatus.BROKEN;
@@ -485,17 +490,22 @@ class FastingService {
       yesterday.setDate(yesterday.getDate() - 1);
 
       if (!lastFastDate) {
+        // First fast ever - start streak at 1
         updates.currentStreak = 1;
-      } else if (
-        lastFastDate.getTime() === yesterday.getTime() ||
-        lastFastDate.getTime() === today.getTime()
-      ) {
+      } else if (lastFastDate.getTime() === today.getTime()) {
+        // Already fasted today - don't increment streak (already counted)
+        // Just keep current streak value, don't modify
+      } else if (lastFastDate.getTime() === yesterday.getTime()) {
+        // Fasted yesterday - continue the streak
         updates.currentStreak = streak.currentStreak + 1;
       } else {
+        // Missed days - reset streak to 1
         updates.currentStreak = 1;
       }
 
-      updates.longestStreak = Math.max(updates.currentStreak, streak.longestStreak);
+      if (updates.currentStreak !== undefined) {
+        updates.longestStreak = Math.max(updates.currentStreak, streak.longestStreak);
+      }
       updates.lastFastDate = today;
     } else if (status === FastingStatus.BROKEN) {
       updates.brokenFasts = { increment: 1 };
@@ -616,9 +626,9 @@ class FastingService {
       Fri: 0,
       Sat: 0,
     };
-    const days_names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     for (const session of sessions) {
-      const day = days_names[session.startedAt.getDay()];
+      const day = dayNames[session.startedAt.getDay()];
       byDayOfWeek[day]++;
     }
 

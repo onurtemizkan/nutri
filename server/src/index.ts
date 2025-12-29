@@ -32,6 +32,7 @@ import prisma from './config/database';
 import { notificationScheduler } from './services/notificationScheduler';
 import { initSentry, setupSentryErrorHandler } from './config/sentry';
 import { emailQueue, campaignQueue, sequenceQueue } from './services/emailQueueService';
+import { fastingService } from './services/fastingService';
 
 // Bull Board imports for queue monitoring
 import { createBullBoard } from '@bull-board/api';
@@ -454,6 +455,14 @@ if (process.env.NODE_ENV !== 'test') {
       },
       'Server started'
     );
+
+    // Initialize system fasting protocols
+    try {
+      await fastingService.initializeSystemProtocols();
+      logger.info('System fasting protocols initialized');
+    } catch (error) {
+      logger.error({ error }, 'Failed to initialize system fasting protocols');
+    }
 
     // Initialize notification scheduler maintenance jobs
     try {
