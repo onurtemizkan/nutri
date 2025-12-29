@@ -280,18 +280,25 @@ export class InsightsService {
     // Process significant correlations (top 3 per metric to avoid overwhelming user)
     const topCorrelations = correlationResponse.correlations.slice(0, 3);
 
-    for (const correlation of topCorrelations) {
-      // Skip if we already have a similar insight
-      const existingInsight = await prisma.mLInsight.findFirst({
-        where: {
-          userId,
-          title: { contains: formatFeatureName(correlation.feature_name) },
-          dismissed: false,
-          createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }, // Within last 7 days
-        },
-      });
+    // Batch query: Get all existing insights for these correlations to avoid N+1 queries
+    const featureNames = topCorrelations.map((c) => formatFeatureName(c.feature_name));
+    const existingInsights = await prisma.mLInsight.findMany({
+      where: {
+        userId,
+        dismissed: false,
+        createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }, // Within last 7 days
+        OR: featureNames.map((name) => ({ title: { contains: name } })),
+      },
+      select: { title: true },
+    });
+    const existingTitles = new Set(existingInsights.map((i) => i.title));
 
-      if (existingInsight) continue;
+    for (const correlation of topCorrelations) {
+      // Skip if we already have a similar insight (check against pre-fetched titles)
+      const featureName = formatFeatureName(correlation.feature_name);
+      const hasSimilarInsight = [...existingTitles].some((title) => title.includes(featureName));
+
+      if (hasSimilarInsight) continue;
 
       // Check for delayed effects on strong correlations
       let lagAnalysis: LagAnalysisResponse | null = null;
@@ -737,18 +744,34 @@ export class InsightsService {
       where.viewed = viewed;
     }
 
+    // Priority order map (higher number = higher priority)
+    const priorityOrder: Record<InsightPriority, number> = {
+      LOW: 1,
+      MEDIUM: 2,
+      HIGH: 3,
+      CRITICAL: 4,
+    };
+
     const [insights, total] = await Promise.all([
       prisma.mLInsight.findMany({
         where,
-        orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
+        // Primary sort by createdAt in DB (priority sorted in code due to enum alphabetical issue)
+        orderBy: { createdAt: 'desc' },
         take: cappedLimit,
         skip: offset,
       }),
       prisma.mLInsight.count({ where }),
     ]);
 
+    // Sort by priority (descending) then by createdAt (descending)
+    const sortedInsights = insights.sort((a, b) => {
+      const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
+      if (priorityDiff !== 0) return priorityDiff;
+      return b.createdAt.getTime() - a.createdAt.getTime();
+    });
+
     return {
-      insights,
+      insights: sortedInsights,
       total,
       limit: cappedLimit,
       offset,

@@ -3,7 +3,7 @@
  * Displays ML-generated personalized nutrition insights and recommendations
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -26,10 +26,9 @@ import {
   MLInsight,
   InsightSummary,
   MLInsightType,
-  InsightPriority,
   getInsightTypeLabel,
 } from '@/lib/types/insights';
-import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
+import { colors, gradients, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import { useResponsive } from '@/hooks/useResponsive';
 
 // ============================================================================
@@ -67,11 +66,12 @@ export default function InsightsScreen() {
   const [hasMore, setHasMore] = useState(false);
   const [offset, setOffset] = useState(0);
   const [filter, setFilter] = useState<FilterType>('all');
-  const [sortBy, setSortBy] = useState<SortType>('priority');
+  // Sorting is handled server-side, state kept for future client-side sorting
+  const [_sortBy] = useState<SortType>('priority');
 
   const { user } = useAuth();
   const router = useRouter();
-  const { getResponsiveValue, isTablet, isLandscape, width } = useResponsive();
+  const { getResponsiveValue } = useResponsive();
 
   // Responsive values
   const contentPadding = getResponsiveValue({
@@ -131,7 +131,7 @@ export default function InsightsScreen() {
     useCallback(() => {
       setIsLoading(true);
       loadInsights(true);
-    }, [filter])
+    }, [loadInsights])
   );
 
   // Handle pull-to-refresh

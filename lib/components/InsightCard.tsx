@@ -18,7 +18,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, borderRadius, typography, shadows, gradients } from '@/lib/theme/colors';
 import {
   MLInsight,
-  MLInsightType,
   InsightPriority,
   getPriorityColor,
   getInsightTypeIcon,
