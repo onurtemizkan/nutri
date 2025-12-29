@@ -1985,6 +1985,11 @@ model UserStreak {
   waterStreak     Int       @default(0)   // Days with water goal met
   exerciseStreak  Int       @default(0)   // Days with exercise logged
 
+  // Last date for each specific streak (to ensure once-per-day increment)
+  lastMealDate    DateTime? // Last date a meal was logged
+  lastWaterDate   DateTime? // Last date water goal was met
+  lastExerciseDate DateTime? // Last date exercise was logged
+
   // Freeze tokens (streak protection)
   freezeTokens    Int       @default(0)   // Available streak freeze tokens
   freezeUsedAt    DateTime? // Last time a freeze was used

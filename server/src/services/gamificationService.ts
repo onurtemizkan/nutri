@@ -158,12 +158,39 @@ class GamificationService {
           ? 'waterStreak'
           : 'exerciseStreak';
 
-    await prisma.userStreak.update({
+    const lastDateField =
+      activityType === 'meal'
+        ? 'lastMealDate'
+        : activityType === 'water'
+          ? 'lastWaterDate'
+          : 'lastExerciseDate';
+
+    // Get current streak to check the last date for this specific activity type
+    const streak = await prisma.userStreak.findUnique({
       where: { userId },
-      data: {
-        [field]: { increment: 1 },
-      },
     });
+
+    if (!streak) return;
+
+    // Use UTC for consistent tracking across all users
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    const lastDate = streak[lastDateField] ? new Date(streak[lastDateField] as Date) : null;
+    if (lastDate) {
+      lastDate.setUTCHours(0, 0, 0, 0);
+    }
+
+    // Only increment if this is the first activity of this type today
+    if (!lastDate || lastDate.getTime() !== today.getTime()) {
+      await prisma.userStreak.update({
+        where: { userId },
+        data: {
+          [field]: { increment: 1 },
+          [lastDateField]: today,
+        },
+      });
+    }
   }
 
   async getStreakStats(userId: string) {
@@ -322,17 +349,25 @@ class GamificationService {
   }
 
   private async onLevelUp(userId: string, newLevel: number) {
-    // Award level up bonus XP
-    await prisma.xPTransaction.create({
-      data: {
-        userId,
-        amount: XP_AMOUNTS.LEVEL_UP_BONUS,
-        source: XPSource.LEVEL_UP,
-        description: `Reached level ${newLevel}`,
-        referenceType: 'level',
-        referenceId: String(newLevel),
-      },
-    });
+    // Award level up bonus XP (actually add it to totalXP)
+    await prisma.$transaction([
+      prisma.userXP.update({
+        where: { userId },
+        data: {
+          totalXP: { increment: XP_AMOUNTS.LEVEL_UP_BONUS },
+        },
+      }),
+      prisma.xPTransaction.create({
+        data: {
+          userId,
+          amount: XP_AMOUNTS.LEVEL_UP_BONUS,
+          source: XPSource.LEVEL_UP,
+          description: `Reached level ${newLevel}`,
+          referenceType: 'level',
+          referenceId: String(newLevel),
+        },
+      }),
+    ]);
 
     // Award freeze token every 5 levels
     if (newLevel % 5 === 0) {
@@ -342,7 +377,7 @@ class GamificationService {
     // Check level-based achievements
     await this.checkLevelAchievements(userId, newLevel);
 
-    logger.info({ userId, newLevel }, 'User leveled up');
+    logger.info({ userId, newLevel, bonusXP: XP_AMOUNTS.LEVEL_UP_BONUS }, 'User leveled up');
   }
 
   async getXPStats(userId: string) {
