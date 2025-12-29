@@ -2780,6 +2780,7 @@ model EmailLog {
   @@index([campaignId, status])
   @@index([templateSlug])
   @@index([email])
+  @@index([providerId])  // Used in webhook lookups
   @@unique([userId, templateSlug, campaignId, sentAt])
 }
 

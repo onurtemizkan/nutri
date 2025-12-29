@@ -18,6 +18,30 @@ import { MARKETING_CATEGORIES, EMAIL_CONFIG } from '../config/resend';
 import { AuthenticatedRequest } from '../types';
 
 /**
+ * Escape HTML special characters to prevent XSS
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
+ * Set security headers for HTML responses
+ */
+function setSecurityHeaders(res: Response): void {
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; style-src 'unsafe-inline'; script-src 'none'; frame-ancestors 'none'"
+  );
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+}
+
+/**
  * Schema for updating email preferences
  */
 const updatePreferencesSchema = z.object({
@@ -198,7 +222,8 @@ export async function confirmDoubleOptIn(req: Request, res: Response): Promise<v
 
   logger.info({ userId }, 'Double opt-in confirmed');
 
-  // Return success page HTML
+  // Set security headers and return success page HTML
+  setSecurityHeaders(res);
   res.send(`
     <!DOCTYPE html>
     <html>
@@ -228,6 +253,9 @@ export async function confirmDoubleOptIn(req: Request, res: Response): Promise<v
  */
 export async function unsubscribePage(req: Request, res: Response): Promise<void> {
   const { token } = req.params;
+
+  // Set security headers for all HTML responses
+  setSecurityHeaders(res);
 
   const decoded = verifyUnsubscribeToken(token);
   if (!decoded) {
@@ -279,7 +307,7 @@ export async function unsubscribePage(req: Request, res: Response): Promise<void
       <p>Choose which emails you'd like to receive:</p>
 
       <form action="/api/email/unsubscribe" method="POST">
-        <input type="hidden" name="token" value="${token}">
+        <input type="hidden" name="token" value="${escapeHtml(token)}">
 
         <div class="category">
           <label>
@@ -357,6 +385,7 @@ export async function processUnsubscribe(req: Request, res: Response): Promise<v
 
     logger.info({ userId, campaignId }, 'User unsubscribed from all marketing');
 
+    setSecurityHeaders(res);
     res.send(`
       <!DOCTYPE html>
       <html>
@@ -385,6 +414,7 @@ export async function processUnsubscribe(req: Request, res: Response): Promise<v
 
   logger.info({ userId, categories: categoryPreferences }, 'Email preferences updated');
 
+  setSecurityHeaders(res);
   res.send(`
     <!DOCTYPE html>
     <html>
