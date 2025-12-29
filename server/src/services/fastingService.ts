@@ -494,7 +494,8 @@ class FastingService {
         updates.currentStreak = 1;
       } else if (lastFastDate.getTime() === today.getTime()) {
         // Already fasted today - don't increment streak (already counted)
-        // Just keep current streak value, don't modify
+        // Explicitly keep the current streak value for consistency
+        updates.currentStreak = streak.currentStreak;
       } else if (lastFastDate.getTime() === yesterday.getTime()) {
         // Fasted yesterday - continue the streak
         updates.currentStreak = streak.currentStreak + 1;
