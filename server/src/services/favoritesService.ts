@@ -214,7 +214,8 @@ class FavoritesService {
   }
 
   async reorderFavorites(userId: string, items: Array<{ id: string; sortOrder: number }>) {
-    await Promise.all(
+    // Use transaction for atomicity - ensures all updates succeed or none do
+    await prisma.$transaction(
       items.map((item) =>
         prisma.favoriteMeal.updateMany({
           where: { id: item.id, userId },
