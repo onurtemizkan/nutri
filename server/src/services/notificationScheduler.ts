@@ -341,12 +341,22 @@ export class NotificationScheduler {
       return;
     }
 
-    // Update status to SENDING on first batch
+    // Update status to SENDING on first batch (using optimistic locking to prevent race conditions)
     if (batchIndex === 0) {
-      await prisma.notificationCampaign.update({
-        where: { id: campaignId },
+      // Only update if status is still SCHEDULED (prevents duplicate processing)
+      const result = await prisma.notificationCampaign.updateMany({
+        where: {
+          id: campaignId,
+          status: 'SCHEDULED',
+        },
         data: { status: 'SENDING' },
       });
+
+      // If no rows updated, another process already started this campaign
+      if (result.count === 0 && campaign.status === 'SCHEDULED') {
+        logger.info({ campaignId }, 'Campaign already being processed by another job');
+        return;
+      }
     }
 
     // Get target segment users

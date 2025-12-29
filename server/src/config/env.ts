@@ -4,10 +4,23 @@ dotenv.config();
 
 // Validate required environment variables
 const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET'];
+// Additional vars required in production when email is enabled
+const productionEmailVars = ['RESEND_API_KEY'];
 const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
 
 if (missingEnvVars.length > 0 && process.env.NODE_ENV === 'production') {
   throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+}
+
+// Validate email config in production
+if (process.env.NODE_ENV === 'production' && process.env.EMAIL_ENABLED !== 'false') {
+  const missingEmailVars = productionEmailVars.filter((envVar) => !process.env[envVar]);
+  if (missingEmailVars.length > 0) {
+    throw new Error(
+      `Missing required email environment variables: ${missingEmailVars.join(', ')}. ` +
+        'Set EMAIL_ENABLED=false to disable email functionality.'
+    );
+  }
 }
 
 // Warn in development

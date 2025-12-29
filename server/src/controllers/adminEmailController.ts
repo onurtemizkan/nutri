@@ -394,7 +394,9 @@ export async function previewTemplate(
   let previewSubject = template.subject;
 
   for (const [key, value] of Object.entries(variables)) {
-    const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+    // Escape regex special characters in key to prevent regex injection
+    const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`{{\\s*${escapedKey}\\s*}}`, 'g');
     previewHtml = previewHtml.replace(regex, String(value));
     previewSubject = previewSubject.replace(regex, String(value));
   }
@@ -437,7 +439,9 @@ export async function sendTestEmail(req: AdminAuthenticatedRequest, res: Respons
   let subject = `[TEST] ${template.subject}`;
 
   for (const [key, value] of Object.entries(variables)) {
-    const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+    // Escape regex special characters in key to prevent regex injection
+    const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`{{\\s*${escapedKey}\\s*}}`, 'g');
     html = html.replace(regex, String(value));
     subject = subject.replace(regex, String(value));
   }
