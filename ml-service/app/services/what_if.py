@@ -14,7 +14,7 @@ import math
 import pickle
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union, cast
 
 import numpy as np
 import torch
@@ -38,6 +38,7 @@ from app.schemas.interpretability import (
     NutritionChange,
 )
 from app.schemas.predictions import PredictionMetric
+from app.schemas.correlations import LagAnalysisRequest, HealthMetricTarget
 from app.services.data_preparation import DataPreparationService
 from app.services.correlation_engine import CorrelationEngineService
 
@@ -104,9 +105,9 @@ class WhatIfService:
 
             if feature in NUTRITION_SAFE_BOUNDS:
                 bounds = NUTRITION_SAFE_BOUNDS[feature]
-                min_delta = bounds["min_delta"]
-                max_delta = bounds["max_delta"]
-                unit = bounds["unit"]
+                min_delta = cast(float, bounds["min_delta"])
+                max_delta = cast(float, bounds["max_delta"])
+                unit = cast(str, bounds["unit"])
 
                 # Clamp to safe bounds
                 if delta < min_delta:
@@ -1023,7 +1024,7 @@ class WhatIfService:
             trajectories.append(trajectory)
 
             # Run baseline simulation WITHOUT changes if requested
-            if request.include_no_change_baseline:
+            if request.include_no_change_baseline and baseline_trajectories is not None:
                 baseline_trajectory = await self._run_autoregressive_simulation(
                     model=model,
                     X_baseline=X_baseline,
@@ -1266,16 +1267,26 @@ class WhatIfService:
                 "_daily", ""
             )
 
-            # Get correlation analysis
-            result = await correlation_service.analyze_lag(
+            # Map PredictionMetric to HealthMetricTarget
+            target_metric = HealthMetricTarget(metric.value)
+
+            # Get correlation analysis using LagAnalysisRequest
+            lag_request = LagAnalysisRequest(
                 user_id="",  # Not used in basic analysis
                 feature_name=feature_key,
-                metric=metric,
+                target_metric=target_metric,
                 max_lag_hours=72,
             )
+            result = await correlation_service.analyze_lag(lag_request)
 
-            if result and result.is_significant:
-                return result.lag_hours
+            # Check if we have a significant result (optimal_correlation exists and is strong)
+            if (
+                result
+                and result.optimal_lag_hours is not None
+                and result.optimal_correlation is not None
+            ):
+                if abs(result.optimal_correlation) > 0.3:  # Significance threshold
+                    return result.optimal_lag_hours
 
         except Exception as e:
             print(f"⚠️ Could not get optimal lag: {e}")
