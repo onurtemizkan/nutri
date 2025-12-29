@@ -375,6 +375,15 @@ app.get('/health', async (_req, res) => {
 // Only enabled in development or when ENABLE_SWAGGER=true
 // =============================================================================
 if (config.nodeEnv !== 'production' || process.env.ENABLE_SWAGGER === 'true') {
+  // Security warning for production Swagger exposure
+  if (config.nodeEnv === 'production' && process.env.ENABLE_SWAGGER === 'true') {
+    logger.warn(
+      'SECURITY WARNING: Swagger UI is enabled in production. ' +
+        'This exposes API documentation publicly. ' +
+        'Consider disabling ENABLE_SWAGGER or adding authentication to /api-docs.'
+    );
+  }
+
   app.use(
     '/api-docs',
     swaggerUi.serve,
