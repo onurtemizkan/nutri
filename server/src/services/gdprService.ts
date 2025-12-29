@@ -224,11 +224,11 @@ class GdprService {
         });
 
         // Log the consent change within transaction
-        await tx.dataAuditLog.create({
+        await tx.dataAccessLog.create({
           data: {
             userId,
             action: DataAccessAction.MODIFY,
-            resourceType: 'consent',
+            resource: 'consent',
             resourceId: consent.id,
             metadata: { purpose, granted },
             ipAddress,
