@@ -22,6 +22,25 @@ function xpForLevel(level: number): number {
   return Math.floor(100 * Math.pow(1.2, level - 1));
 }
 
+// Get ISO week number (1-53) for a date
+function getISOWeek(date: Date): number {
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+}
+
+// Get year-week string for comparison (e.g., "2025-W01")
+function getYearWeek(date: Date): string {
+  return `${date.getUTCFullYear()}-W${String(getISOWeek(date)).padStart(2, '0')}`;
+}
+
+// Get year-month string for comparison (e.g., "2025-01")
+function getYearMonth(date: Date): string {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
 /**
  * Gamification Service
  * Handles streaks, XP, achievements, and leaderboards
@@ -47,13 +66,14 @@ class GamificationService {
 
   async updateStreak(userId: string, activityType: 'meal' | 'water' | 'exercise') {
     const streak = await this.getOrCreateStreak(userId);
+    // Use UTC for consistent streak calculation across all users and servers
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
 
     const lastActivityDate = streak.lastActivityDate ? new Date(streak.lastActivityDate) : null;
 
     if (lastActivityDate) {
-      lastActivityDate.setHours(0, 0, 0, 0);
+      lastActivityDate.setUTCHours(0, 0, 0, 0);
     }
 
     // Check if already logged today
@@ -149,17 +169,17 @@ class GamificationService {
   async getStreakStats(userId: string) {
     const streak = await this.getOrCreateStreak(userId);
 
-    // Check if streak is still active
+    // Check if streak is still active (using UTC for consistency)
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
 
     const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
 
     let isActive = false;
     if (streak.lastActivityDate) {
       const lastDate = new Date(streak.lastActivityDate);
-      lastDate.setHours(0, 0, 0, 0);
+      lastDate.setUTCHours(0, 0, 0, 0);
       isActive =
         lastDate.getTime() === today.getTime() || lastDate.getTime() === yesterday.getTime();
     }
@@ -221,15 +241,15 @@ class GamificationService {
   ) {
     const userXP = await this.getOrCreateXP(userId);
 
-    // Reset weekly/monthly XP if needed
+    // Reset weekly/monthly XP if calendar week/month has changed (using UTC)
     const now = new Date();
-    const weekAgo = new Date(now);
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const monthAgo = new Date(now);
-    monthAgo.setMonth(monthAgo.getMonth() - 1);
+    const currentYearWeek = getYearWeek(now);
+    const currentYearMonth = getYearMonth(now);
+    const storedYearWeek = getYearWeek(new Date(userXP.weekStartDate));
+    const storedYearMonth = getYearMonth(new Date(userXP.monthStartDate));
 
-    const weeklyReset = new Date(userXP.weekStartDate) < weekAgo;
-    const monthlyReset = new Date(userXP.monthStartDate) < monthAgo;
+    const weeklyReset = currentYearWeek !== storedYearWeek;
+    const monthlyReset = currentYearMonth !== storedYearMonth;
 
     // Update XP
     const newTotalXP = userXP.totalXP + amount;
