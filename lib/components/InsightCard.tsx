@@ -39,7 +39,6 @@ interface InsightCardProps {
   onPress?: () => void;
   onDismiss?: () => void;
   onFeedback?: (helpful: boolean) => void;
-  onMarkViewed?: () => void;
   compact?: boolean;
 }
 
@@ -85,7 +84,6 @@ export const InsightCard = memo(function InsightCard({
   onPress,
   onDismiss,
   onFeedback,
-  onMarkViewed,
   compact = false,
 }: InsightCardProps) {
   const [showFeedback, setShowFeedback] = useState(false);
@@ -125,11 +123,8 @@ export const InsightCard = memo(function InsightCard({
   ).current;
 
   const handlePress = useCallback(() => {
-    if (!insight.viewed && onMarkViewed) {
-      onMarkViewed();
-    }
     onPress?.();
-  }, [insight.viewed, onMarkViewed, onPress]);
+  }, [onPress]);
 
   const handleFeedbackPress = useCallback(
     (helpful: boolean) => {

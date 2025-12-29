@@ -347,9 +347,6 @@ export default function InsightsScreen() {
       onPress={() => handleInsightPress(item)}
       onDismiss={() => handleDismiss(item.id)}
       onFeedback={(helpful) => handleFeedback(item.id, helpful)}
-      onMarkViewed={() =>
-        setInsights((prev) => prev.map((i) => (i.id === item.id ? { ...i, viewed: true } : i)))
-      }
     />
   );
 
