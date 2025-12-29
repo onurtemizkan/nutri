@@ -251,4 +251,15 @@ export const rateLimiters = {
       return userId || req.ip || 'unknown';
     },
   }),
+
+  // ML Insight generation: 5 requests per 15 minutes per user (computationally expensive)
+  insightGeneration: createRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 5,
+    keyPrefix: 'insight-gen',
+    keyGenerator: (req: Request) => {
+      const userId = (req as Request & { userId?: string }).userId;
+      return userId || req.ip || 'unknown';
+    },
+  }),
 };

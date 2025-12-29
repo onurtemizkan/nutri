@@ -184,11 +184,16 @@ export default function InsightsScreen() {
   }, [isGenerating, loadInsights]);
 
   // Handle insight actions
-  const handleInsightPress = useCallback((insight: MLInsight) => {
-    // Mark as viewed
+  const handleInsightPress = useCallback(async (insight: MLInsight) => {
+    // Mark as viewed only after successful API call
     if (!insight.viewed) {
-      insightsApi.markAsViewed(insight.id).catch(console.error);
-      setInsights((prev) => prev.map((i) => (i.id === insight.id ? { ...i, viewed: true } : i)));
+      try {
+        await insightsApi.markAsViewed(insight.id);
+        setInsights((prev) => prev.map((i) => (i.id === insight.id ? { ...i, viewed: true } : i)));
+      } catch (err) {
+        console.error('Failed to mark insight as viewed:', err);
+        // State is not updated if API fails
+      }
     }
     // Could navigate to detail view if needed
   }, []);

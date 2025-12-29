@@ -155,6 +155,7 @@
 
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
+import { rateLimiters } from '../middleware/rateLimiter';
 import {
   getInsights,
   getInsightsSummary,
@@ -297,7 +298,7 @@ router.get('/summary', getInsightsSummary);
  *       401:
  *         description: Unauthorized
  */
-router.post('/generate', generateInsights);
+router.post('/generate', rateLimiters.insightGeneration, generateInsights);
 
 /**
  * @swagger
