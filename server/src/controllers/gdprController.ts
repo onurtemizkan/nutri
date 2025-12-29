@@ -186,6 +186,7 @@ export class GdprController {
     if (!userId) return;
 
     const { id } = req.params;
+    const { token } = req.query;
 
     // Verify the export belongs to the user and is ready
     const requests = await gdprService.getExportRequests(userId);
@@ -204,6 +205,17 @@ export class GdprController {
     if (request.expiresAt && new Date(request.expiresAt) < new Date()) {
       res.status(410).json({ error: 'Export link has expired' });
       return;
+    }
+
+    // Validate download token for additional security
+    // Token is embedded in the stored downloadUrl as ?token=XXX
+    if (request.downloadUrl && token) {
+      const storedUrl = new URL(request.downloadUrl, 'http://localhost');
+      const expectedToken = storedUrl.searchParams.get('token');
+      if (expectedToken && token !== expectedToken) {
+        res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: 'Invalid download token' });
+        return;
+      }
     }
 
     // Collect user data for download

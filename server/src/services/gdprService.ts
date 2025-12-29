@@ -177,14 +177,70 @@ class GdprService {
 
   /**
    * Update multiple consents at once
+   * Uses a transaction to ensure atomicity - either all consents update or none do
    */
   async updateConsents(userId: string, consents: ConsentUpdate[]) {
-    const results = [];
-    for (const consent of consents) {
-      const result = await this.updateConsent(userId, consent);
-      results.push(result);
-    }
-    return results;
+    return await prisma.$transaction(async (tx) => {
+      const results = [];
+      for (const consentUpdate of consents) {
+        const {
+          purpose,
+          granted,
+          ipAddress,
+          userAgent,
+          source = ConsentSource.APP,
+          version = '1.0',
+        } = consentUpdate;
+
+        // Essential consent cannot be revoked
+        if (purpose === ConsentPurpose.ESSENTIAL && !granted) {
+          throw new Error('Essential consent cannot be revoked while using the service');
+        }
+
+        const consent = await tx.userConsent.upsert({
+          where: {
+            userId_purpose: { userId, purpose },
+          },
+          create: {
+            userId,
+            purpose,
+            granted,
+            grantedAt: granted ? new Date() : null,
+            revokedAt: granted ? null : new Date(),
+            ipAddress,
+            userAgent,
+            source,
+            version,
+          },
+          update: {
+            granted,
+            grantedAt: granted ? new Date() : undefined,
+            revokedAt: granted ? null : new Date(),
+            ipAddress,
+            userAgent,
+            source,
+            version,
+          },
+        });
+
+        // Log the consent change within transaction
+        await tx.dataAuditLog.create({
+          data: {
+            userId,
+            action: DataAccessAction.MODIFY,
+            resourceType: 'consent',
+            resourceId: consent.id,
+            metadata: { purpose, granted },
+            ipAddress,
+            userAgent,
+          },
+        });
+
+        logger.info({ userId, purpose, granted }, 'Consent updated');
+        results.push(consent);
+      }
+      return results;
+    });
   }
 
   // ==========================================================================
