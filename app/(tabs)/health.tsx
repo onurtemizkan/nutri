@@ -333,7 +333,7 @@ export default function HealthScreen() {
                         const percentChange = data?.stats?.percentChange;
 
                         const trendDescription = trend === 'up' ? 'trending up' : trend === 'down' ? 'trending down' : 'stable';
-                        const metricAccessibilityLabel = `${config.shortName}: ${formatValue(value, metricType)} ${config.unit}${trend ? `, ${trendDescription}${percentChange !== undefined ? ` ${Math.abs(percentChange).toFixed(1)} percent` : ''}` : ''}`;
+                        const metricAccessibilityLabel = `${config.shortName}: ${formatValue(value ?? 0, metricType)} ${config.unit}${trend ? `, ${trendDescription}${percentChange !== undefined ? ` ${Math.abs(percentChange).toFixed(1)} percent` : ''}` : ''}`;
 
                         return (
                           <TouchableOpacity
