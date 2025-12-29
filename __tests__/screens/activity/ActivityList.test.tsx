@@ -131,7 +131,7 @@ describe('ActivityListScreen', () => {
 
     await waitFor(() => {
       expect(getByTestId('activity-empty-state')).toBeTruthy();
-      expect(getByText('No activities yet')).toBeTruthy();
+      expect(getByText('No activities logged yet')).toBeTruthy();
     });
   });
 
