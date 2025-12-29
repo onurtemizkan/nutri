@@ -2,6 +2,7 @@ import prisma from '../config/database';
 import { WEEK_IN_DAYS } from '../config/constants';
 import { CreateWaterIntakeInput, UpdateWaterIntakeInput } from '../types';
 import { getDayBoundaries, getDaysAgo, getStartOfDay } from '../utils/dateHelpers';
+import { gamificationService } from './gamificationService';
 
 // Preset water amounts in ml
 const WATER_PRESETS = {
@@ -22,6 +23,9 @@ export class WaterService {
         recordedAt: data.recordedAt || new Date(),
       },
     });
+
+    // Trigger gamification events for water logging
+    await gamificationService.onWaterLogged(userId, waterIntake.id);
 
     return waterIntake;
   }

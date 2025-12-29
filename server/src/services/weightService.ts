@@ -7,6 +7,7 @@ import {
   WeightProgressResult,
 } from '../types';
 import { getDayBoundaries, getDaysAgo } from '../utils/dateHelpers';
+import { gamificationService } from './gamificationService';
 
 /**
  * Weight Record Service
@@ -22,9 +23,9 @@ export class WeightService {
     const recordedAt = data.recordedAt ? new Date(data.recordedAt) : new Date();
 
     // Use transaction to prevent race condition when checking latest record
-    return prisma.$transaction(async (tx) => {
+    const weightRecord = await prisma.$transaction(async (tx) => {
       // Create the weight record
-      const weightRecord = await tx.weightRecord.create({
+      const record = await tx.weightRecord.create({
         data: {
           userId,
           weight: data.weight,
@@ -38,15 +39,20 @@ export class WeightService {
         orderBy: { recordedAt: 'desc' },
       });
 
-      if (latestRecord && latestRecord.id === weightRecord.id) {
+      if (latestRecord && latestRecord.id === record.id) {
         await tx.user.update({
           where: { id: userId },
           data: { currentWeight: data.weight },
         });
       }
 
-      return weightRecord;
+      return record;
     });
+
+    // Trigger gamification events for weight logging (after transaction completes)
+    await gamificationService.onWeightLogged(userId, weightRecord.id);
+
+    return weightRecord;
   }
 
   /**

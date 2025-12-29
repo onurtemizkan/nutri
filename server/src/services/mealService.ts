@@ -2,6 +2,7 @@ import prisma from '../config/database';
 import { USER_GOALS_SELECT_FIELDS, WEEK_IN_DAYS } from '../config/constants';
 import { CreateMealInput, UpdateMealInput } from '../types';
 import { getDayBoundaries, getDaysAgo } from '../utils/dateHelpers';
+import { gamificationService } from './gamificationService';
 
 export class MealService {
   async createMeal(userId: string, data: CreateMealInput) {
@@ -48,6 +49,9 @@ export class MealService {
         niacin: data.niacin,
       },
     });
+
+    // Trigger gamification events for meal logging
+    await gamificationService.onMealLogged(userId, meal.id);
 
     return meal;
   }
