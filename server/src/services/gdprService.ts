@@ -131,6 +131,15 @@ class GdprService {
       throw new Error('Essential consent cannot be revoked while using the service');
     }
 
+    // First check if consent exists and its current state
+    const existingConsent = await prisma.userConsent.findUnique({
+      where: { userId_purpose: { userId, purpose } },
+    });
+
+    // For re-granting consent, preserve the original grantedAt timestamp
+    // Only set grantedAt for new grants (create) or first-time grant after revocation
+    const shouldSetGrantedAt = granted && (!existingConsent || !existingConsent.grantedAt);
+
     const consent = await prisma.userConsent.upsert({
       where: {
         userId_purpose: { userId, purpose },
@@ -148,7 +157,8 @@ class GdprService {
       },
       update: {
         granted,
-        grantedAt: granted ? new Date() : undefined,
+        // Only update grantedAt if it's a first-time grant (preserve original timestamp)
+        ...(shouldSetGrantedAt ? { grantedAt: new Date() } : {}),
         revokedAt: granted ? null : new Date(),
         ipAddress,
         userAgent,
@@ -197,6 +207,12 @@ class GdprService {
           throw new Error('Essential consent cannot be revoked while using the service');
         }
 
+        // Check existing consent to preserve original grantedAt
+        const existingConsent = await tx.userConsent.findUnique({
+          where: { userId_purpose: { userId, purpose } },
+        });
+        const shouldSetGrantedAt = granted && (!existingConsent || !existingConsent.grantedAt);
+
         const consent = await tx.userConsent.upsert({
           where: {
             userId_purpose: { userId, purpose },
@@ -214,7 +230,8 @@ class GdprService {
           },
           update: {
             granted,
-            grantedAt: granted ? new Date() : undefined,
+            // Only update grantedAt if it's a first-time grant (preserve original timestamp)
+            ...(shouldSetGrantedAt ? { grantedAt: new Date() } : {}),
             revokedAt: granted ? null : new Date(),
             ipAddress,
             userAgent,
@@ -298,30 +315,34 @@ class GdprService {
 
   /**
    * Request a data export
+   * Uses transaction to prevent race conditions
    */
   async requestDataExport(userId: string, options: DataExportOptions = {}) {
     const { format = ExportFormat.JSON, includeRaw = false, ipAddress, userAgent } = options;
 
-    // Check for existing pending/processing request
-    const existingRequest = await prisma.dataExportRequest.findFirst({
-      where: {
-        userId,
-        status: { in: [DataRequestStatus.PENDING, DataRequestStatus.PROCESSING] },
-      },
-    });
+    // Use transaction to prevent race condition between check and create
+    const request = await prisma.$transaction(async (tx) => {
+      // Check for existing pending/processing request within transaction
+      const existingRequest = await tx.dataExportRequest.findFirst({
+        where: {
+          userId,
+          status: { in: [DataRequestStatus.PENDING, DataRequestStatus.PROCESSING] },
+        },
+      });
 
-    if (existingRequest) {
-      throw new Error('You already have a pending data export request');
-    }
+      if (existingRequest) {
+        throw new Error('You already have a pending data export request');
+      }
 
-    const request = await prisma.dataExportRequest.create({
-      data: {
-        userId,
-        format,
-        includeRaw,
-        ipAddress,
-        userAgent,
-      },
+      return await tx.dataExportRequest.create({
+        data: {
+          userId,
+          format,
+          includeRaw,
+          ipAddress,
+          userAgent,
+        },
+      });
     });
 
     // Log the request
@@ -542,49 +563,53 @@ class GdprService {
 
   /**
    * Request account deletion
+   * Uses transaction to prevent race conditions
    */
   async requestAccountDeletion(userId: string, options: DeletionRequestOptions = {}) {
     const { deletionType = DeletionType.FULL, reason, ipAddress, userAgent } = options;
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { email: true },
-    });
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    // Check for existing pending request
-    const existingRequest = await prisma.dataDeletionRequest.findFirst({
-      where: {
-        userId,
-        status: { in: [DataRequestStatus.PENDING, DataRequestStatus.PROCESSING] },
-      },
-    });
-
-    if (existingRequest) {
-      throw new Error('You already have a pending account deletion request');
-    }
-
-    // Generate verification code
+    // Generate verification code outside transaction (crypto is sync)
     const verificationCode = crypto.randomBytes(32).toString('hex');
 
     // Schedule deletion after grace period
     const scheduledAt = new Date();
     scheduledAt.setDate(scheduledAt.getDate() + DELETION_GRACE_PERIOD_DAYS);
 
-    const request = await prisma.dataDeletionRequest.create({
-      data: {
-        userId,
-        userEmail: user.email,
-        deletionType,
-        verificationCode,
-        scheduledAt,
-        reason,
-        ipAddress,
-        userAgent,
-      },
+    // Use transaction to prevent race condition between check and create
+    const request = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { email: true },
+      });
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // Check for existing pending request within transaction
+      const existingRequest = await tx.dataDeletionRequest.findFirst({
+        where: {
+          userId,
+          status: { in: [DataRequestStatus.PENDING, DataRequestStatus.PROCESSING] },
+        },
+      });
+
+      if (existingRequest) {
+        throw new Error('You already have a pending account deletion request');
+      }
+
+      return await tx.dataDeletionRequest.create({
+        data: {
+          userId,
+          userEmail: user.email,
+          deletionType,
+          verificationCode,
+          scheduledAt,
+          reason,
+          ipAddress,
+          userAgent,
+        },
+      });
     });
 
     // Log the request
@@ -614,8 +639,9 @@ class GdprService {
 
   /**
    * Verify deletion request
+   * Verifies that the request belongs to the authenticated user
    */
-  async verifyDeletionRequest(requestId: string, verificationCode: string) {
+  async verifyDeletionRequest(userId: string, requestId: string, verificationCode: string) {
     const request = await prisma.dataDeletionRequest.findUnique({
       where: { id: requestId },
     });
@@ -624,7 +650,19 @@ class GdprService {
       throw new Error('Deletion request not found');
     }
 
-    if (request.verificationCode !== verificationCode) {
+    // Verify the request belongs to the authenticated user
+    if (request.userId !== userId) {
+      throw new Error('Deletion request not found');
+    }
+
+    // Use timing-safe comparison to prevent timing attacks
+    const codeBuffer = Buffer.from(verificationCode);
+    const storedBuffer = Buffer.from(request.verificationCode || '');
+    const codesMatch =
+      codeBuffer.length === storedBuffer.length &&
+      crypto.timingSafeEqual(codeBuffer, storedBuffer);
+
+    if (!codesMatch) {
       throw new Error('Invalid verification code');
     }
 

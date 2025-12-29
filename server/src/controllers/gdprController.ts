@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { gdprService } from '../services/gdprService';
 import { AuthenticatedRequest } from '../types';
 import { requireAuth } from '../utils/authHelpers';
@@ -209,12 +210,22 @@ export class GdprController {
 
     // Validate download token for additional security
     // Token is embedded in the stored downloadUrl as ?token=XXX
-    if (request.downloadUrl && token) {
+    const tokenStr = typeof token === 'string' ? token : undefined;
+    if (request.downloadUrl && tokenStr) {
       const storedUrl = new URL(request.downloadUrl, 'http://localhost');
       const expectedToken = storedUrl.searchParams.get('token');
-      if (expectedToken && token !== expectedToken) {
-        res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: 'Invalid download token' });
-        return;
+      if (expectedToken) {
+        // Use timing-safe comparison to prevent timing attacks
+        const tokenBuffer = Buffer.from(tokenStr);
+        const expectedBuffer = Buffer.from(expectedToken);
+        const tokensMatch =
+          tokenBuffer.length === expectedBuffer.length &&
+          crypto.timingSafeEqual(tokenBuffer, expectedBuffer);
+
+        if (!tokensMatch) {
+          res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: 'Invalid download token' });
+          return;
+        }
       }
     }
 
@@ -254,12 +265,16 @@ export class GdprController {
 
   /**
    * Verify deletion request
+   * Requires authentication to ensure the request belongs to the user
    */
   verifyDeletionRequest = withErrorHandling<AuthenticatedRequest>(async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
     const { id } = req.params;
     const { verificationCode } = verifyDeletionSchema.parse(req.body);
 
-    const result = await gdprService.verifyDeletionRequest(id, verificationCode);
+    const result = await gdprService.verifyDeletionRequest(userId, id, verificationCode);
 
     res.status(HTTP_STATUS.OK).json(result);
   });
