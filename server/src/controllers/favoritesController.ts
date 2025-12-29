@@ -74,6 +74,11 @@ export class FavoritesController {
     const { mealId, customName } = createFavoriteFromMealSchema.parse(req.body);
     const favorite = await favoritesService.createFavoriteFromMeal(userId, mealId, customName);
 
+    if (!favorite) {
+      res.status(HTTP_STATUS.NOT_FOUND).json({ error: 'Source meal not found' });
+      return;
+    }
+
     res.status(HTTP_STATUS.CREATED).json(favorite);
   });
 

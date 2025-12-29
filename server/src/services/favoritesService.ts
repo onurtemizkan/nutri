@@ -60,7 +60,7 @@ class FavoritesService {
     });
 
     if (!meal) {
-      throw new Error('Meal not found');
+      return null; // Let controller handle not found
     }
 
     // Create favorite from meal data
