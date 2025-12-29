@@ -372,15 +372,24 @@ app.get('/health', async (_req, res) => {
 
 // =============================================================================
 // API Documentation (Swagger UI)
+// Only enabled in development or when ENABLE_SWAGGER=true
 // =============================================================================
-app.use(
-  '/api-docs',
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec, {
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'Nutri API Documentation',
-  })
-);
+if (config.nodeEnv !== 'production' || process.env.ENABLE_SWAGGER === 'true') {
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: 'Nutri API Documentation',
+    })
+  );
+  logger.info('Swagger UI enabled at /api-docs');
+} else {
+  // Return 404 for /api-docs in production (unless explicitly enabled)
+  app.use('/api-docs', (_req, res) => {
+    res.status(404).json({ error: 'API documentation not available in production' });
+  });
+}
 
 // Routes
 app.use('/api/auth', authRoutes);
