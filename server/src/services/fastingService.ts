@@ -91,21 +91,35 @@ class FastingService {
   // ============================================================================
 
   async initializeSystemProtocols() {
-    for (const protocol of SYSTEM_PROTOCOLS) {
-      const existing = await prisma.fastingProtocol.findFirst({
-        where: { name: protocol.name, isSystem: true },
-      });
-
-      if (!existing) {
-        await prisma.fastingProtocol.create({
-          data: {
-            ...protocol,
-            isSystem: true,
-            userId: null,
-          },
+    // Use transaction to avoid race conditions when multiple servers start simultaneously
+    // The transaction ensures atomicity and handles concurrent initialization gracefully
+    await prisma.$transaction(async (tx) => {
+      for (const protocol of SYSTEM_PROTOCOLS) {
+        const existing = await tx.fastingProtocol.findFirst({
+          where: { name: protocol.name, isSystem: true },
         });
+
+        if (!existing) {
+          try {
+            await tx.fastingProtocol.create({
+              data: {
+                ...protocol,
+                isSystem: true,
+                userId: null,
+              },
+            });
+          } catch (error) {
+            // Handle potential duplicate from concurrent initialization
+            // If creation fails due to constraint, protocol was created by another process
+            if (error instanceof Error && error.message.includes('Unique constraint')) {
+              logger.debug(`System protocol ${protocol.name} already exists (concurrent init)`);
+            } else {
+              throw error;
+            }
+          }
+        }
       }
-    }
+    });
     logger.info('System fasting protocols initialized');
   }
 
