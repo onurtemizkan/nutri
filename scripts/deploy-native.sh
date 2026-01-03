@@ -118,23 +118,36 @@ if [ "$NEEDS_PREBUILD" = true ]; then
     print_step "Generating pure native iOS project (excluding expo-dev-client)..."
     echo ""
 
-    # Set environment variable to exclude dev client
+    # Set environment variable to exclude dev client from plugins
     export EXCLUDE_DEV_CLIENT=true
+
+    # CRITICAL: Temporarily remove expo-dev-client from package.json
+    # This ensures the native code is NOT linked during prebuild
+    print_info "Temporarily removing expo-dev-client from dependencies..."
+    cp package.json package.json.backup
+
+    # Remove expo-dev-client line from package.json
+    sed -i '' '/"expo-dev-client":/d' package.json
 
     # Clean prebuild for fresh native project without dev features
     if [ "$CLEAN_BUILD" = true ]; then
-        print_info "Running clean prebuild..."
-        npx expo prebuild --platform ios --clean --no-install 2>&1 | grep -E "(Prebuild|Generated|iOS|CocoaPods)" | head -20 || true
+        print_info "Running clean prebuild (NO expo-dev-client)..."
+        rm -rf "$IOS_DIR"
+        npx expo prebuild --platform ios --clean --no-install 2>&1 | grep -E "(Prebuild|Generated|iOS|CocoaPods|expo-dev)" | head -20 || true
     else
-        npx expo prebuild --platform ios --no-install 2>&1 | grep -E "(Prebuild|Generated|iOS|CocoaPods)" | head -20 || true
+        npx expo prebuild --platform ios --no-install 2>&1 | grep -E "(Prebuild|Generated|iOS|CocoaPods|expo-dev)" | head -20 || true
     fi
 
-    print_success "Native iOS project generated (without expo-dev-client)"
+    # Restore original package.json
+    mv package.json.backup package.json
+    print_success "Restored package.json with expo-dev-client"
 
-    # Install CocoaPods dependencies
+    print_success "Native iOS project generated (WITHOUT expo-dev-client)"
+
+    # Install CocoaPods dependencies (without expo-dev-client)
     print_step "Installing CocoaPods dependencies..."
     cd "$IOS_DIR"
-    pod install --silent 2>&1 | grep -E "(Installing|Generating|Pod)" | head -10 || true
+    pod install 2>&1 | grep -E "(Installing|Generating|Pod|EXDevMenu|expo-dev)" | head -20 || true
     cd "$PROJECT_DIR"
     print_success "CocoaPods dependencies installed"
 fi
@@ -144,7 +157,39 @@ if [ ! -d "$IOS_DIR" ]; then
     print_error "iOS directory not found after prebuild. Something went wrong."
     exit 1
 fi
-print_success "iOS native project ready"
+
+# =============================================================================
+# VERIFY NO EXPO-DEV-CLIENT IN BUILD
+# =============================================================================
+
+# Check if expo-dev-client is still in Podfile.lock (it shouldn't be)
+if [ -f "$IOS_DIR/Podfile.lock" ]; then
+    if grep -q "expo-dev-client\|EXDevMenu\|EXDevLauncher" "$IOS_DIR/Podfile.lock"; then
+        print_warning "expo-dev-client detected in Podfile.lock!"
+        print_info "Forcing clean rebuild to remove dev client..."
+
+        # Force a clean prebuild
+        export EXCLUDE_DEV_CLIENT=true
+        cp "$PROJECT_DIR/package.json" "$PROJECT_DIR/package.json.backup"
+        sed -i '' '/"expo-dev-client":/d' "$PROJECT_DIR/package.json"
+
+        rm -rf "$IOS_DIR"
+        cd "$PROJECT_DIR"
+        npx expo prebuild --platform ios --clean --no-install 2>&1 | grep -E "(Prebuild|Generated|iOS)" | head -10 || true
+
+        mv "$PROJECT_DIR/package.json.backup" "$PROJECT_DIR/package.json"
+
+        cd "$IOS_DIR"
+        pod install 2>&1 | grep -E "(Installing|Generating|Pod)" | head -10 || true
+        cd "$PROJECT_DIR"
+
+        print_success "Rebuilt iOS project without expo-dev-client"
+    else
+        print_success "Verified: NO expo-dev-client in build"
+    fi
+fi
+
+print_success "iOS native project ready (production-grade)"
 
 # Find connected iPhone
 print_step "Detecting connected iPhone..."
