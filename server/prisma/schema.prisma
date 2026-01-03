@@ -89,6 +89,12 @@ model User {
   glucoseReadings GlucoseReading[]
   cgmConnections  CGMConnection[]
 
+  // GDPR Compliance
+  consents             UserConsent[]
+  dataExportRequests   DataExportRequest[]
+  dataDeletionRequests DataDeletionRequest[]
+  privacySettings      PrivacySettings?
+
   @@index([email])
   @@index([appleId])
   @@index([resetToken])
@@ -2347,4 +2353,275 @@ enum FastingStatus {
   COMPLETED       // Completed as planned
   BROKEN          // Ended early
   CANCELLED       // Cancelled before significant progress
+}
+
+
+// ============================================================================
+// GDPR COMPLIANCE MODELS
+// ============================================================================
+
+/**
+ * UserConsent - Track user consent for various data processing purposes
+ * Required for GDPR Article 7 (Conditions for consent)
+ */
+model UserConsent {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Consent purpose
+  purpose         ConsentPurpose
+
+  // Consent status
+  granted         Boolean       @default(false)
+  grantedAt       DateTime?
+  revokedAt       DateTime?
+
+  // Consent metadata
+  version         String        @default("1.0")  // Privacy policy version
+  ipAddress       String?       // IP when consent was given
+  userAgent       String?       // Browser/app info when consent was given
+
+  // Source of consent
+  source          ConsentSource @default(APP)
+
+  // Audit
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([userId, purpose])
+  @@index([userId])
+  @@index([purpose, granted])
+}
+
+/**
+ * DataExportRequest - Track data portability requests (GDPR Article 20)
+ * Users can request all their data in a machine-readable format
+ */
+model DataExportRequest {
+  id              String              @id @default(cuid())
+  userId          String
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Request status
+  status          DataRequestStatus   @default(PENDING)
+
+  // Export details
+  format          ExportFormat        @default(JSON)
+  includeRaw      Boolean             @default(false)  // Include raw ML data
+
+  // Processing info
+  requestedAt     DateTime            @default(now())
+  processedAt     DateTime?
+  completedAt     DateTime?
+  expiresAt       DateTime?           // Download link expiration
+
+  // Download details
+  downloadUrl     String?             // Secure, temporary download URL
+  downloadCount   Int                 @default(0)
+  fileSize        Int?                // Size in bytes
+
+  // Error handling
+  errorMessage    String?
+  retryCount      Int                 @default(0)
+
+  // Request metadata
+  ipAddress       String?
+  userAgent       String?
+
+  // Audit
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([userId, status])
+  @@index([status, requestedAt])
+}
+
+/**
+ * DataDeletionRequest - Track right to erasure requests (GDPR Article 17)
+ * Users can request complete deletion of their data
+ */
+model DataDeletionRequest {
+  id              String              @id @default(cuid())
+  userId          String?             // Nullable for SetNull to work when user is deleted
+  user            User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // User email for verification after user is deleted
+  userEmail       String
+
+  // Request status
+  status          DataRequestStatus   @default(PENDING)
+
+  // Deletion scope
+  deletionType    DeletionType        @default(FULL)
+
+  // Verification
+  verifiedAt      DateTime?           // Email verification timestamp
+  verificationCode String?            // Secure verification code
+
+  // Processing info
+  requestedAt     DateTime            @default(now())
+  scheduledAt     DateTime?           // When deletion will occur (grace period)
+  processedAt     DateTime?
+  completedAt     DateTime?
+
+  // Cancellation
+  cancelledAt     DateTime?
+  cancellationReason String?
+
+  // What was deleted (for audit trail after deletion)
+  deletionSummary Json?               // {meals: 150, healthMetrics: 500, ...}
+
+  // Error handling
+  errorMessage    String?
+  retryCount      Int                 @default(0)
+
+  // Request metadata
+  ipAddress       String?
+  userAgent       String?
+  reason          String?             // User-provided reason
+
+  // Audit
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([userId, status])
+  @@index([status, scheduledAt])
+  @@index([userEmail])
+}
+
+/**
+ * PrivacySettings - User privacy preferences
+ * Centralized privacy controls for the user
+ */
+model PrivacySettings {
+  id                    String    @id @default(cuid())
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Data retention preferences
+  dataRetentionDays     Int       @default(730)  // Default 2 years
+  autoDeleteOldData     Boolean   @default(false)
+
+  // Analytics & tracking
+  allowAnalytics        Boolean   @default(true)
+  allowCrashReporting   Boolean   @default(true)
+  allowPerformanceMonitoring Boolean @default(true)
+
+  // Data sharing
+  shareAnonymousData    Boolean   @default(false)  // For research
+  shareWithPartners     Boolean   @default(false)
+
+  // Communication preferences
+  marketingEmails       Boolean   @default(false)
+  productUpdates        Boolean   @default(true)
+  securityAlerts        Boolean   @default(true)  // Cannot be disabled
+
+  // Data visibility
+  profileVisibility     ProfileVisibility @default(PRIVATE)
+  showOnLeaderboard     Boolean   @default(false)
+
+  // Third-party integrations consent
+  healthKitDataSharing  Boolean   @default(false)
+
+  // Last privacy policy acceptance
+  privacyPolicyVersion  String?
+  privacyPolicyAcceptedAt DateTime?
+  termsVersion          String?
+  termsAcceptedAt       DateTime?
+
+  // Audit
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+/**
+ * AuditLog - Immutable record of data access and changes
+ * Required for GDPR accountability (Article 5)
+ */
+model DataAccessLog {
+  id              String        @id @default(cuid())
+  userId          String?       // May be null if user is deleted
+
+  // Action details
+  action          DataAccessAction
+  resource        String        // e.g., "meals", "health_metrics", "user_profile"
+  resourceId      String?       // Specific record ID if applicable
+
+  // Context
+  accessedBy      String?       // "user", "admin", "system", "third_party"
+  accessorId      String?       // ID of the accessor
+
+  // Request metadata
+  ipAddress       String?
+  userAgent       String?
+
+  // Additional context
+  metadata        Json?         // {reason: "data_export", admin_id: "..."}
+
+  // Timestamp (immutable)
+  accessedAt      DateTime      @default(now())
+
+  @@index([userId, accessedAt])
+  @@index([action, accessedAt])
+  @@index([resource, accessedAt])
+}
+
+// ============================================================================
+// GDPR ENUMS
+// ============================================================================
+
+enum ConsentPurpose {
+  ESSENTIAL           // Essential for service operation (cannot revoke)
+  ANALYTICS           // Usage analytics
+  MARKETING           // Marketing communications
+  RESEARCH            // Anonymous data for research
+  THIRD_PARTY         // Third-party integrations
+  PERSONALIZATION     // Personalized recommendations
+  HEALTH_DATA_SHARING // HealthKit/Health Connect data
+}
+
+enum ConsentSource {
+  APP                 // Mobile app
+  WEB                 // Web interface
+  EMAIL               // Email link
+  ADMIN               // Admin action
+}
+
+enum DataRequestStatus {
+  PENDING             // Request received
+  PROCESSING          // Currently being processed
+  COMPLETED           // Successfully completed
+  FAILED              // Failed to process
+  CANCELLED           // Cancelled by user
+  EXPIRED             // Download link expired (for exports)
+}
+
+enum ExportFormat {
+  JSON                // Machine-readable JSON
+  CSV                 // Spreadsheet-compatible
+  PDF                 // Human-readable PDF report
+}
+
+enum DeletionType {
+  FULL                // Delete all user data
+  PARTIAL             // Delete specific data categories
+  ANONYMIZE           // Keep data but remove PII
+}
+
+enum ProfileVisibility {
+  PRIVATE             // Only visible to user
+  FRIENDS             // Visible to connected users
+  PUBLIC              // Publicly visible
+}
+
+enum DataAccessAction {
+  VIEW                // Data was viewed
+  EXPORT              // Data was exported
+  MODIFY              // Data was modified
+  DELETE              // Data was deleted
+  SHARE               // Data was shared
+  ADMIN_ACCESS        // Admin accessed data
 }
