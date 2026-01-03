@@ -332,6 +332,13 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
+        name="simulate"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
         name="paywall"
         options={{
           headerShown: false,
