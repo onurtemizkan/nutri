@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -24,6 +24,9 @@ import { colors, gradients, shadows, spacing, borderRadius, typography } from '@
 import { showAlert } from '@/lib/utils/alert';
 import { useResponsive } from '@/hooks/useResponsive';
 import { getErrorMessage } from '@/lib/utils/errorHandling';
+import { Input, type InputRef } from '@/lib/components/ui/Input';
+
+type GoalFieldName = 'goalCalories' | 'goalProtein' | 'goalCarbs' | 'goalFat';
 
 export default function ProfileScreen() {
   const { user, logout, updateUser, deleteAccount } = useAuth();
@@ -59,6 +62,25 @@ export default function ProfileScreen() {
   const [goalProtein, setGoalProtein] = useState(user?.goalProtein.toString() || '150');
   const [goalCarbs, setGoalCarbs] = useState(user?.goalCarbs.toString() || '200');
   const [goalFat, setGoalFat] = useState(user?.goalFat.toString() || '65');
+
+  // Validation state for goal fields
+  const [touched, setTouched] = useState<Record<GoalFieldName, boolean>>({
+    goalCalories: false,
+    goalProtein: false,
+    goalCarbs: false,
+    goalFat: false,
+  });
+  const [errors, setErrors] = useState<Record<GoalFieldName, string>>({
+    goalCalories: '',
+    goalProtein: '',
+    goalCarbs: '',
+    goalFat: '',
+  });
+
+  // Refs for keyboard navigation
+  const goalProteinRef = useRef<InputRef>(null);
+  const goalCarbsRef = useRef<InputRef>(null);
+  const goalFatRef = useRef<InputRef>(null);
 
   // Delete account state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -176,6 +198,99 @@ export default function ProfileScreen() {
     }
   };
 
+  // Validation functions for goal fields
+  const getGoalFieldLabel = useCallback((field: GoalFieldName): string => {
+    switch (field) {
+      case 'goalCalories':
+        return 'Calorie goal';
+      case 'goalProtein':
+        return 'Protein goal';
+      case 'goalCarbs':
+        return 'Carbs goal';
+      case 'goalFat':
+        return 'Fat goal';
+    }
+  }, []);
+
+  const validateGoalField = useCallback(
+    (field: GoalFieldName, value: string): string => {
+      const label = getGoalFieldLabel(field);
+      if (!value.trim()) {
+        return `${label} is required`;
+      }
+      const num = parseFloat(value);
+      if (isNaN(num) || num < 0) {
+        return `Please enter a valid ${label.toLowerCase()}`;
+      }
+      if (field === 'goalCalories' && num > 10000) {
+        return 'Calorie goal cannot exceed 10,000';
+      }
+      if (field !== 'goalCalories' && num > 1000) {
+        return `${label} cannot exceed 1,000g`;
+      }
+      return '';
+    },
+    [getGoalFieldLabel]
+  );
+
+  const handleGoalBlur = useCallback(
+    (field: GoalFieldName, value: string) => {
+      setTouched((prev) => ({ ...prev, [field]: true }));
+      const error = validateGoalField(field, value);
+      setErrors((prev) => ({ ...prev, [field]: error }));
+    },
+    [validateGoalField]
+  );
+
+  const handleGoalChange = useCallback(
+    (field: GoalFieldName, value: string, setter: (v: string) => void) => {
+      setter(value);
+      if (touched[field]) {
+        const error = validateGoalField(field, value);
+        setErrors((prev) => ({ ...prev, [field]: error }));
+      }
+    },
+    [touched, validateGoalField]
+  );
+
+  const validateAllGoalFields = useCallback((): boolean => {
+    const caloriesError = validateGoalField('goalCalories', goalCalories);
+    const proteinError = validateGoalField('goalProtein', goalProtein);
+    const carbsError = validateGoalField('goalCarbs', goalCarbs);
+    const fatError = validateGoalField('goalFat', goalFat);
+
+    setErrors({
+      goalCalories: caloriesError,
+      goalProtein: proteinError,
+      goalCarbs: carbsError,
+      goalFat: fatError,
+    });
+
+    setTouched({
+      goalCalories: true,
+      goalProtein: true,
+      goalCarbs: true,
+      goalFat: true,
+    });
+
+    return !caloriesError && !proteinError && !carbsError && !fatError;
+  }, [goalCalories, goalProtein, goalCarbs, goalFat, validateGoalField]);
+
+  const resetGoalValidation = useCallback(() => {
+    setTouched({
+      goalCalories: false,
+      goalProtein: false,
+      goalCarbs: false,
+      goalFat: false,
+    });
+    setErrors({
+      goalCalories: '',
+      goalProtein: '',
+      goalCarbs: '',
+      goalFat: '',
+    });
+  }, []);
+
   const handleDeleteAccount = async () => {
     if (deleteConfirmation !== 'DELETE') {
       return;
@@ -194,6 +309,11 @@ export default function ProfileScreen() {
   };
 
   const handleSaveGoals = async () => {
+    // Validate all fields before saving
+    if (!validateAllGoalFields()) {
+      return;
+    }
+
     setIsLoading(true);
     try {
       await updateUser({
@@ -205,6 +325,7 @@ export default function ProfileScreen() {
 
       showAlert('Success', 'Goals updated successfully!');
       setIsEditing(false);
+      resetGoalValidation();
     } catch {
       showAlert('Error', 'Failed to update goals');
     } finally {
@@ -434,69 +555,64 @@ export default function ProfileScreen() {
 
             {isEditing ? (
               <>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Calorie Goal</Text>
-                  <View style={styles.inputWrapper}>
-                    <TextInput
-                      style={styles.input}
-                      value={goalCalories}
-                      onChangeText={setGoalCalories}
-                      keyboardType="numeric"
-                      editable={!isLoading}
-                      placeholderTextColor={colors.text.disabled}
-                      accessibilityLabel="Calorie goal"
-                      accessibilityHint="Enter your daily calorie goal"
-                    />
-                  </View>
-                </View>
+                <Input
+                  label="Calorie Goal"
+                  value={goalCalories}
+                  onChangeText={(value) => handleGoalChange('goalCalories', value, setGoalCalories)}
+                  onBlur={() => handleGoalBlur('goalCalories', goalCalories)}
+                  placeholder="e.g., 2000"
+                  error={touched.goalCalories ? errors.goalCalories : undefined}
+                  keyboardType="numeric"
+                  returnKeyType="next"
+                  onSubmitEditing={() => goalProteinRef.current?.focus()}
+                  disabled={isLoading}
+                  testID="profile-goal-calories-input"
+                />
 
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Protein Goal (g)</Text>
-                  <View style={styles.inputWrapper}>
-                    <TextInput
-                      style={styles.input}
-                      value={goalProtein}
-                      onChangeText={setGoalProtein}
-                      keyboardType="numeric"
-                      editable={!isLoading}
-                      placeholderTextColor={colors.text.disabled}
-                      accessibilityLabel="Protein goal in grams"
-                      accessibilityHint="Enter your daily protein goal"
-                    />
-                  </View>
-                </View>
+                <Input
+                  ref={goalProteinRef}
+                  label="Protein Goal (g)"
+                  value={goalProtein}
+                  onChangeText={(value) => handleGoalChange('goalProtein', value, setGoalProtein)}
+                  onBlur={() => handleGoalBlur('goalProtein', goalProtein)}
+                  placeholder="e.g., 150"
+                  error={touched.goalProtein ? errors.goalProtein : undefined}
+                  keyboardType="numeric"
+                  returnKeyType="next"
+                  onSubmitEditing={() => goalCarbsRef.current?.focus()}
+                  disabled={isLoading}
+                  testID="profile-goal-protein-input"
+                />
 
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Carbs Goal (g)</Text>
-                  <View style={styles.inputWrapper}>
-                    <TextInput
-                      style={styles.input}
-                      value={goalCarbs}
-                      onChangeText={setGoalCarbs}
-                      keyboardType="numeric"
-                      editable={!isLoading}
-                      placeholderTextColor={colors.text.disabled}
-                      accessibilityLabel="Carbohydrates goal in grams"
-                      accessibilityHint="Enter your daily carbohydrates goal"
-                    />
-                  </View>
-                </View>
+                <Input
+                  ref={goalCarbsRef}
+                  label="Carbs Goal (g)"
+                  value={goalCarbs}
+                  onChangeText={(value) => handleGoalChange('goalCarbs', value, setGoalCarbs)}
+                  onBlur={() => handleGoalBlur('goalCarbs', goalCarbs)}
+                  placeholder="e.g., 200"
+                  error={touched.goalCarbs ? errors.goalCarbs : undefined}
+                  keyboardType="numeric"
+                  returnKeyType="next"
+                  onSubmitEditing={() => goalFatRef.current?.focus()}
+                  disabled={isLoading}
+                  testID="profile-goal-carbs-input"
+                />
 
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Fat Goal (g)</Text>
-                  <View style={styles.inputWrapper}>
-                    <TextInput
-                      style={styles.input}
-                      value={goalFat}
-                      onChangeText={setGoalFat}
-                      keyboardType="numeric"
-                      editable={!isLoading}
-                      placeholderTextColor={colors.text.disabled}
-                      accessibilityLabel="Fat goal in grams"
-                      accessibilityHint="Enter your daily fat goal"
-                    />
-                  </View>
-                </View>
+                <Input
+                  ref={goalFatRef}
+                  label="Fat Goal (g)"
+                  value={goalFat}
+                  onChangeText={(value) => handleGoalChange('goalFat', value, setGoalFat)}
+                  onBlur={() => handleGoalBlur('goalFat', goalFat)}
+                  placeholder="e.g., 65"
+                  error={touched.goalFat ? errors.goalFat : undefined}
+                  keyboardType="numeric"
+                  returnKeyType="done"
+                  onSubmitEditing={handleSaveGoals}
+                  disabled={isLoading}
+                  testID="profile-goal-fat-input"
+                />
 
                 <View style={styles.buttonRow}>
                   <TouchableOpacity
@@ -507,6 +623,7 @@ export default function ProfileScreen() {
                       setGoalProtein(user?.goalProtein.toString() || '150');
                       setGoalCarbs(user?.goalCarbs.toString() || '200');
                       setGoalFat(user?.goalFat.toString() || '65');
+                      resetGoalValidation();
                     }}
                     disabled={isLoading}
                     activeOpacity={0.8}
@@ -1066,32 +1183,6 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text.primary,
-  },
-
-  // Input
-  inputContainer: {
-    marginBottom: spacing.md,
-  },
-  label: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.secondary,
-    marginBottom: spacing.sm,
-    letterSpacing: 0.3,
-  },
-  inputWrapper: {
-    backgroundColor: colors.background.elevated,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border.secondary,
-    overflow: 'hidden',
-  },
-  input: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    fontSize: typography.fontSize.md,
-    color: colors.text.primary,
-    height: 48,
   },
 
   // Buttons

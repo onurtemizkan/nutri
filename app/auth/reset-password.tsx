@@ -10,7 +10,6 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
-  type TextInput as TextInputType,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,21 +19,137 @@ import { getErrorMessage } from '@/lib/utils/errorHandling';
 import { colors, gradients, shadows, spacing, borderRadius, typography } from '@/lib/theme/colors';
 import { useResponsive } from '@/hooks/useResponsive';
 import { FORM_MAX_WIDTH } from '@/lib/responsive/breakpoints';
+import { Input, type InputRef } from '@/lib/components/ui/Input';
+
+const MIN_PASSWORD_LENGTH = 6;
+
+type PasswordFieldName = 'newPassword' | 'confirmPassword';
 
 export default function ResetPasswordScreen() {
   const [token, setToken] = useState('');
+  const [tokenTouched, setTokenTouched] = useState(false);
+  const [tokenError, setTokenError] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [tokenValid, setTokenValid] = useState(false);
   const [userEmail, setUserEmail] = useState('');
+  const [touched, setTouched] = useState<Record<PasswordFieldName, boolean>>({
+    newPassword: false,
+    confirmPassword: false,
+  });
+  const [errors, setErrors] = useState<Record<PasswordFieldName, string>>({
+    newPassword: '',
+    confirmPassword: '',
+  });
+
   const router = useRouter();
   const params = useLocalSearchParams();
   const { isTablet, getSpacing } = useResponsive();
   const responsiveSpacing = getSpacing();
 
-  const confirmPasswordInputRef = useRef<TextInputType>(null);
+  const confirmPasswordInputRef = useRef<InputRef>(null);
+
+  // Token validation
+  const validateToken = useCallback((value: string): string => {
+    if (!value.trim()) {
+      return 'Reset token is required';
+    }
+    return '';
+  }, []);
+
+  // Password validation
+  const validateNewPassword = useCallback((value: string): string => {
+    if (!value) {
+      return 'Password is required';
+    }
+    if (value.length < MIN_PASSWORD_LENGTH) {
+      return `Password must be at least ${MIN_PASSWORD_LENGTH} characters`;
+    }
+    if (!/[A-Za-z]/.test(value) || !/[0-9]/.test(value)) {
+      return 'Password must contain both letters and numbers';
+    }
+    return '';
+  }, []);
+
+  const validateConfirmPassword = useCallback(
+    (value: string, currentPassword: string): string => {
+      if (!value) {
+        return 'Please confirm your password';
+      }
+      if (value !== currentPassword) {
+        return 'Passwords do not match';
+      }
+      return '';
+    },
+    []
+  );
+
+  const validatePasswordField = useCallback(
+    (name: PasswordFieldName, value: string): string => {
+      switch (name) {
+        case 'newPassword':
+          return validateNewPassword(value);
+        case 'confirmPassword':
+          return validateConfirmPassword(value, newPassword);
+        default:
+          return '';
+      }
+    },
+    [validateNewPassword, validateConfirmPassword, newPassword]
+  );
+
+  // Token handlers
+  const handleTokenBlur = useCallback(() => {
+    setTokenTouched(true);
+    const error = validateToken(token);
+    setTokenError(error);
+  }, [token, validateToken]);
+
+  const handleTokenChange = useCallback(
+    (value: string) => {
+      setToken(value);
+      if (tokenTouched) {
+        const error = validateToken(value);
+        setTokenError(error);
+      }
+    },
+    [tokenTouched, validateToken]
+  );
+
+  // Password handlers
+  const handlePasswordBlur = useCallback(
+    (name: PasswordFieldName, value: string) => {
+      setTouched((prev) => ({ ...prev, [name]: true }));
+      const error = validatePasswordField(name, value);
+      setErrors((prev) => ({ ...prev, [name]: error }));
+
+      // If password changed and confirmPassword is touched, re-validate confirmPassword
+      if (name === 'newPassword' && touched.confirmPassword) {
+        const confirmError = validateConfirmPassword(confirmPassword, value);
+        setErrors((prev) => ({ ...prev, confirmPassword: confirmError }));
+      }
+    },
+    [validatePasswordField, touched.confirmPassword, confirmPassword, validateConfirmPassword]
+  );
+
+  const handlePasswordChange = useCallback(
+    (name: PasswordFieldName, value: string, setter: (v: string) => void) => {
+      setter(value);
+      if (touched[name]) {
+        const error = validatePasswordField(name, value);
+        setErrors((prev) => ({ ...prev, [name]: error }));
+      }
+
+      // If password changes and confirmPassword has been touched, re-validate confirmPassword
+      if (name === 'newPassword' && touched.confirmPassword) {
+        const confirmError = validateConfirmPassword(confirmPassword, value);
+        setErrors((prev) => ({ ...prev, confirmPassword: confirmError }));
+      }
+    },
+    [touched, validatePasswordField, confirmPassword, validateConfirmPassword]
+  );
 
   const verifyToken = useCallback(async (tokenToVerify: string) => {
     setIsVerifying(true);
@@ -68,32 +183,43 @@ export default function ResetPasswordScreen() {
   }, [params.token, verifyToken]);
 
   const handleVerifyToken = async () => {
-    if (!token) {
-      Alert.alert('Error', 'Please enter your reset token');
+    // Validate on submit
+    setTokenTouched(true);
+    const error = validateToken(token);
+    setTokenError(error);
+
+    if (error) {
       return;
     }
 
     verifyToken(token);
   };
 
+  const validateAllPasswordFields = useCallback((): boolean => {
+    const newPasswordError = validatePasswordField('newPassword', newPassword);
+    const confirmPasswordError = validateConfirmPassword(confirmPassword, newPassword);
+
+    setErrors({
+      newPassword: newPasswordError,
+      confirmPassword: confirmPasswordError,
+    });
+
+    setTouched({
+      newPassword: true,
+      confirmPassword: true,
+    });
+
+    return !newPasswordError && !confirmPasswordError;
+  }, [newPassword, confirmPassword, validatePasswordField, validateConfirmPassword]);
+
   const handleResetPassword = async () => {
+    // Validate all fields on submit
+    if (!validateAllPasswordFields()) {
+      return;
+    }
+
     if (!token) {
       Alert.alert('Error', 'Reset token is missing');
-      return;
-    }
-
-    if (!newPassword || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
       return;
     }
 
@@ -161,21 +287,37 @@ export default function ResetPasswordScreen() {
             </View>
 
             <View style={styles.form}>
+              {/* Token Input - custom multiline styling */}
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Reset Token</Text>
-                <View style={styles.inputWrapper}>
+                <Text style={[styles.label, tokenTouched && tokenError && styles.labelError]}>
+                  Reset Token
+                </Text>
+                <View style={[
+                  styles.inputWrapper,
+                  tokenTouched && tokenError && styles.inputWrapperError,
+                ]}>
                   <TextInput
                     style={[styles.input, styles.tokenInput]}
                     placeholder="Enter your reset token"
                     placeholderTextColor={colors.text.disabled}
                     value={token}
-                    onChangeText={setToken}
+                    onChangeText={handleTokenChange}
+                    onBlur={handleTokenBlur}
                     autoCapitalize="none"
                     editable={!isLoading}
                     multiline
                     numberOfLines={3}
                     testID="reset-password-token-input"
+                    accessibilityLabel="Reset token"
+                    accessibilityHint="Enter the reset token from your email"
                   />
+                </View>
+                <View style={styles.messageContainer}>
+                  {tokenTouched && tokenError ? (
+                    <Text style={styles.errorText} accessibilityRole="alert">
+                      {tokenError}
+                    </Text>
+                  ) : null}
                 </View>
               </View>
 
@@ -185,6 +327,10 @@ export default function ResetPasswordScreen() {
                 disabled={isLoading}
                 activeOpacity={0.8}
                 testID="reset-password-verify-token-button"
+                accessibilityRole="button"
+                accessibilityLabel={isLoading ? 'Verifying token' : 'Verify token'}
+                accessibilityHint="Double tap to verify your reset token"
+                accessibilityState={{ disabled: isLoading, busy: isLoading }}
               >
                 <LinearGradient
                   colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
@@ -206,6 +352,9 @@ export default function ResetPasswordScreen() {
                   onPress={() => router.push('/auth/forgot-password')}
                   disabled={isLoading}
                   testID="reset-password-request-token-link"
+                  accessibilityRole="link"
+                  accessibilityLabel="Request one"
+                  accessibilityHint="Navigate to request a password reset token"
                 >
                   <Text style={styles.link}>Request One</Text>
                 </TouchableOpacity>
@@ -244,45 +393,39 @@ export default function ResetPasswordScreen() {
           </View>
 
           <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>New Password</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="At least 6 characters"
-                  placeholderTextColor={colors.text.disabled}
-                  value={newPassword}
-                  onChangeText={setNewPassword}
-                  secureTextEntry
-                  editable={!isLoading}
-                  autoComplete="password-new"
-                  returnKeyType="next"
-                  onSubmitEditing={() => confirmPasswordInputRef.current?.focus()}
-                  blurOnSubmit={false}
-                  testID="reset-password-new-password-input"
-                />
-              </View>
-            </View>
+            {/* New Password Input */}
+            <Input
+              label="New Password"
+              value={newPassword}
+              onChangeText={(value) => handlePasswordChange('newPassword', value, setNewPassword)}
+              onBlur={() => handlePasswordBlur('newPassword', newPassword)}
+              placeholder="At least 6 characters"
+              error={touched.newPassword ? errors.newPassword : undefined}
+              helperText={!touched.newPassword || !errors.newPassword ? 'Use letters and numbers for security' : undefined}
+              secureTextEntry
+              autoComplete="password-new"
+              returnKeyType="next"
+              onSubmitEditing={() => confirmPasswordInputRef.current?.focus()}
+              disabled={isLoading}
+              testID="reset-password-new-password-input"
+            />
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Confirm New Password</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  ref={confirmPasswordInputRef}
-                  style={styles.input}
-                  placeholder="Re-enter your password"
-                  placeholderTextColor={colors.text.disabled}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry
-                  editable={!isLoading}
-                  autoComplete="password-new"
-                  returnKeyType="done"
-                  onSubmitEditing={handleResetPassword}
-                  testID="reset-password-confirm-password-input"
-                />
-              </View>
-            </View>
+            {/* Confirm Password Input */}
+            <Input
+              ref={confirmPasswordInputRef}
+              label="Confirm New Password"
+              value={confirmPassword}
+              onChangeText={(value) => handlePasswordChange('confirmPassword', value, setConfirmPassword)}
+              onBlur={() => handlePasswordBlur('confirmPassword', confirmPassword)}
+              placeholder="Re-enter your password"
+              error={touched.confirmPassword ? errors.confirmPassword : undefined}
+              secureTextEntry
+              autoComplete="password-new"
+              returnKeyType="done"
+              onSubmitEditing={handleResetPassword}
+              disabled={isLoading}
+              testID="reset-password-confirm-password-input"
+            />
 
             <TouchableOpacity
               style={[styles.button, isLoading && styles.buttonDisabled]}
@@ -290,6 +433,10 @@ export default function ResetPasswordScreen() {
               disabled={isLoading}
               activeOpacity={0.8}
               testID="reset-password-submit-button"
+              accessibilityRole="button"
+              accessibilityLabel={isLoading ? 'Resetting password' : 'Reset password'}
+              accessibilityHint="Double tap to reset your password"
+              accessibilityState={{ disabled: isLoading, busy: isLoading }}
             >
               <LinearGradient
                 colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
@@ -311,6 +458,9 @@ export default function ResetPasswordScreen() {
                 onPress={() => router.push('/auth/signin')}
                 disabled={isLoading}
                 testID="reset-password-signin-link"
+                accessibilityRole="link"
+                accessibilityLabel="Sign in"
+                accessibilityHint="Navigate to sign in to your account"
               >
                 <Text style={styles.link}>Sign In</Text>
               </TouchableOpacity>
@@ -376,18 +526,22 @@ const styles = StyleSheet.create({
 
   // Form
   form: {
-    gap: spacing.lg,
+    gap: spacing.xs,
   },
 
-  // Input
+  // Token input styles (custom for multiline)
   inputContainer: {
-    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   label: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text.secondary,
+    marginBottom: spacing.sm,
     letterSpacing: 0.3,
+  },
+  labelError: {
+    color: colors.status.error,
   },
   inputWrapper: {
     backgroundColor: colors.background.tertiary,
@@ -395,6 +549,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.secondary,
     overflow: 'hidden',
+  },
+  inputWrapperError: {
+    borderColor: colors.status.error,
+    backgroundColor: colors.special.errorLight,
   },
   input: {
     paddingHorizontal: spacing.md,
@@ -409,12 +567,21 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     height: 'auto',
   },
+  messageContainer: {
+    minHeight: spacing.lg,
+    marginTop: spacing.xs,
+  },
+  errorText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.status.error,
+    fontWeight: typography.fontWeight.medium,
+  },
 
   // Button
   button: {
     borderRadius: borderRadius.md,
     overflow: 'hidden',
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
     ...shadows.md,
   },
   buttonDisabled: {
@@ -437,7 +604,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
   },
   footerText: {
     color: colors.text.tertiary,
