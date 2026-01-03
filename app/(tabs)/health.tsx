@@ -217,13 +217,17 @@ export default function HealthScreen() {
           </View>
 
           {/* Time Range Selector */}
-          <View style={styles.timeRangeContainer}>
+          <View style={styles.timeRangeContainer} accessibilityRole="tablist">
             {timeRanges.map((range) => (
               <TouchableOpacity
                 key={range}
                 style={styles.timeRangeButton}
                 onPress={() => setTimeRange(range)}
                 activeOpacity={0.8}
+                accessibilityRole="tab"
+                accessibilityLabel={`${range.charAt(0).toUpperCase() + range.slice(1)} time range`}
+                accessibilityState={{ selected: timeRange === range }}
+                accessibilityHint={`Show health metrics for ${range === 'today' ? 'today' : range === 'week' ? 'the past week' : 'the past month'}`}
               >
                 {timeRange === range ? (
                   <LinearGradient
@@ -262,7 +266,13 @@ export default function HealthScreen() {
             <View style={styles.errorContainer}>
               <Ionicons name="alert-circle-outline" size={24} color={colors.status.error} />
               <Text style={styles.errorText}>{error}</Text>
-              <TouchableOpacity onPress={loadHealthData} style={styles.retryButton}>
+              <TouchableOpacity
+                onPress={loadHealthData}
+                style={styles.retryButton}
+                accessibilityRole="button"
+                accessibilityLabel="Retry loading health data"
+                accessibilityHint="Double tap to try loading health data again"
+              >
                 <Text style={styles.retryText}>Retry</Text>
               </TouchableOpacity>
             </View>
@@ -280,6 +290,9 @@ export default function HealthScreen() {
                 style={styles.emptyButton}
                 onPress={() => router.push('/health/add' as `/health/${string}`)}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Add health metric"
+                accessibilityHint="Double tap to add your first health metric"
               >
                 <LinearGradient
                   colors={gradients.primary}
@@ -319,12 +332,18 @@ export default function HealthScreen() {
                         const trend = data?.stats?.trend;
                         const percentChange = data?.stats?.percentChange;
 
+                        const trendDescription = trend === 'up' ? 'trending up' : trend === 'down' ? 'trending down' : 'stable';
+                        const metricAccessibilityLabel = `${config.shortName}: ${formatValue(value ?? 0, metricType)} ${config.unit}${trend ? `, ${trendDescription}${percentChange !== undefined ? ` ${Math.abs(percentChange).toFixed(1)} percent` : ''}` : ''}`;
+
                         return (
                           <TouchableOpacity
                             key={metricType}
                             style={[styles.metricCard, { width: cardWidth }]}
                             onPress={() => router.push(`/health/${metricType}` as `/health/${string}`)}
                             activeOpacity={0.7}
+                            accessibilityRole="button"
+                            accessibilityLabel={metricAccessibilityLabel}
+                            accessibilityHint={`Double tap to view ${config.shortName} details and history`}
                           >
                             <View style={styles.metricHeader}>
                               <View style={styles.metricIconContainer}>
@@ -388,6 +407,9 @@ export default function HealthScreen() {
                 style={styles.allMetricsButton}
                 onPress={() => router.push('/health/add' as `/health/${string}`)}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Add health metric"
+                accessibilityHint="Double tap to add a new health metric"
               >
                 <Ionicons name="add-circle-outline" size={24} color={colors.primary.main} />
                 <Text style={styles.allMetricsText}>Add Health Metric</Text>
@@ -407,6 +429,9 @@ export default function HealthScreen() {
           ]}
           onPress={() => router.push('/health/add' as `/health/${string}`)}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Add health metric"
+          accessibilityHint="Double tap to add a new health metric"
         >
           <LinearGradient
             colors={gradients.primary}
