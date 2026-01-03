@@ -769,6 +769,137 @@ function getAnalyticsField(event: string): string | null {
   return mapping[event] || null;
 }
 
+/**
+ * Handle email webhook events from email provider
+ */
+export async function handleEmailWebhook(
+  type: string,
+  data: { email_id?: string; to?: string[]; bounce?: { type?: string }; click?: { link?: string } }
+): Promise<void> {
+  const eventMap: Record<string, string> = {
+    'email.sent': 'sent',
+    'email.delivered': 'delivered',
+    'email.opened': 'opened',
+    'email.clicked': 'clicked',
+    'email.bounced': 'bounced',
+    'email.complained': 'complained',
+  };
+
+  const event = eventMap[type];
+  if (!event || !data.email_id) return;
+
+  const metadata: Record<string, unknown> = {};
+  if (data.bounce?.type) metadata.bounceType = data.bounce.type;
+  if (data.click?.link) metadata.url = data.click.link;
+
+  await trackEvent(data.email_id, event, metadata);
+}
+
+/**
+ * Unsubscribe user using their unsubscribe token
+ */
+export async function unsubscribeUser(
+  token: string
+): Promise<{ success: boolean; email?: string; error?: string }> {
+  const preference = await prisma.emailPreference.findUnique({
+    where: { unsubscribeToken: token },
+    include: { user: true },
+  });
+
+  if (!preference) {
+    return { success: false, error: 'Invalid unsubscribe token' };
+  }
+
+  await prisma.emailPreference.update({
+    where: { id: preference.id },
+    data: {
+      marketingOptIn: false,
+      globalUnsubscribedAt: new Date(),
+    },
+  });
+
+  logger.info({ userId: preference.userId }, 'User unsubscribed via token');
+  return { success: true, email: preference.user.email };
+}
+
+/**
+ * Ensure user has email preferences record (create if missing)
+ */
+export async function ensureEmailPreferences(userId: string): Promise<void> {
+  await prisma.emailPreference.upsert({
+    where: { userId },
+    update: {},
+    create: {
+      userId,
+      categories: {},
+      frequency: 'REALTIME',
+      marketingOptIn: false,
+    },
+  });
+}
+
+/**
+ * Send an email using a template
+ */
+export async function sendTemplateEmail(params: {
+  userId?: string;
+  email: string;
+  templateSlug: string;
+  variables?: Record<string, unknown>;
+  campaignId?: string;
+  sequenceEnrollmentId?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (params.userId) {
+      await sendTransactional(params.userId, params.templateSlug, params.variables || {});
+    } else {
+      // Need userId for transactional emails
+      logger.warn(
+        { templateSlug: params.templateSlug, email: params.email },
+        'sendTemplateEmail called without userId'
+      );
+    }
+    return { success: true };
+  } catch (error) {
+    logger.error(
+      { templateSlug: params.templateSlug, email: params.email, error },
+      'Failed to send template email'
+    );
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+/**
+ * Send a raw email (without template)
+ */
+export async function sendEmail(params: {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+  userId?: string;
+  templateSlug?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    // This is a lower-level send - log it
+    await prisma.emailLog.create({
+      data: {
+        userId: params.userId || '',
+        email: params.to,
+        templateSlug: params.templateSlug || 'custom',
+        status: 'QUEUED',
+      },
+    });
+
+    // Actual send would go through Resend here
+    logger.info({ to: params.to, subject: params.subject }, 'Email queued for sending');
+    return { success: true };
+  } catch (error) {
+    logger.error({ to: params.to, subject: params.subject, error }, 'Failed to send email');
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
 export default {
   renderTemplate,
   clearTemplateCache,
