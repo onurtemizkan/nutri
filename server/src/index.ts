@@ -27,10 +27,12 @@ import reportRoutes from './routes/reportRoutes';
 import subscriptionRoutes from './routes/subscriptionRoutes';
 import emailRoutes from './routes/email';
 import gamificationRoutes from './routes/gamificationRoutes';
+import fastingRoutes from './routes/fastingRoutes';
 import prisma from './config/database';
 import { notificationScheduler } from './services/notificationScheduler';
 import { initSentry, setupSentryErrorHandler } from './config/sentry';
 import { emailQueue, campaignQueue, sequenceQueue } from './services/emailQueueService';
+import { fastingService } from './services/fastingService';
 
 // Bull Board imports for queue monitoring
 import { createBullBoard } from '@bull-board/api';
@@ -425,6 +427,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/gamification', gamificationRoutes);
+app.use('/api/fasting', fastingRoutes);
 
 // =============================================================================
 // Error Handlers
@@ -452,6 +455,14 @@ if (process.env.NODE_ENV !== 'test') {
       },
       'Server started'
     );
+
+    // Initialize system fasting protocols
+    try {
+      await fastingService.initializeSystemProtocols();
+      // Log is already done inside initializeSystemProtocols()
+    } catch (error) {
+      logger.error({ error }, 'Failed to initialize system fasting protocols');
+    }
 
     // Initialize notification scheduler maintenance jobs
     try {
