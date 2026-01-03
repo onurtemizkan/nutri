@@ -228,7 +228,7 @@ describe('HealthMetricDetailScreen', () => {
 
     // Assert
     await findByText('No data for this period');
-    await findByText('Add health metrics to see your history');
+    await findByText('Start tracking this metric to see trends and insights over time.');
   });
 
   it('shows loading state', async () => {
