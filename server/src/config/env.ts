@@ -4,10 +4,23 @@ dotenv.config();
 
 // Validate required environment variables
 const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET'];
+// Additional vars required in production when email is enabled
+const productionEmailVars = ['RESEND_API_KEY'];
 const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
 
 if (missingEnvVars.length > 0 && process.env.NODE_ENV === 'production') {
   throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+}
+
+// Validate email config in production
+if (process.env.NODE_ENV === 'production' && process.env.EMAIL_ENABLED !== 'false') {
+  const missingEmailVars = productionEmailVars.filter((envVar) => !process.env[envVar]);
+  if (missingEmailVars.length > 0) {
+    throw new Error(
+      `Missing required email environment variables: ${missingEmailVars.join(', ')}. ` +
+        'Set EMAIL_ENABLED=false to disable email functionality.'
+    );
+  }
 }
 
 // Warn in development
@@ -97,5 +110,33 @@ export const config = {
      * 1.0 = 100% in development
      */
     tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || '0.1'),
+  },
+  email: {
+    /** Resend API key for sending emails */
+    resendApiKey: process.env.RESEND_API_KEY || '',
+    /** Webhook secret for verifying Resend webhooks */
+    webhookSecret: process.env.RESEND_WEBHOOK_SECRET || '',
+    /** From address for transactional emails */
+    fromTransactional: process.env.EMAIL_FROM_TRANSACTIONAL || 'Nutri <hello@mail.nutriapp.com>',
+    /** From address for marketing emails */
+    fromMarketing: process.env.EMAIL_FROM_MARKETING || 'Nutri <updates@marketing.nutriapp.com>',
+    /** Reply-to address for all emails */
+    replyTo: process.env.EMAIL_REPLY_TO || 'support@nutriapp.com',
+    /** Domain for transactional emails */
+    domainTransactional: process.env.EMAIL_DOMAIN_TRANSACTIONAL || 'mail.nutriapp.com',
+    /** Domain for marketing emails */
+    domainMarketing: process.env.EMAIL_DOMAIN_MARKETING || 'marketing.nutriapp.com',
+    /** Rate limit for email sending (per second) */
+    rateLimitPerSecond: parseInt(process.env.EMAIL_RATE_LIMIT_PER_SECOND || '100', 10),
+    /** Batch size for bulk email sending */
+    batchSize: parseInt(process.env.EMAIL_BATCH_SIZE || '1000', 10),
+    /** Base URL for email links (unsubscribe, etc.) */
+    baseUrl: process.env.EMAIL_BASE_URL || process.env.APP_URL || 'https://nutriapp.com',
+    /** Whether email sending is enabled */
+    enabled: process.env.EMAIL_ENABLED !== 'false',
+  },
+  redis: {
+    /** Redis URL for queues and caching */
+    url: process.env.REDIS_URL || 'redis://localhost:6379',
   },
 };

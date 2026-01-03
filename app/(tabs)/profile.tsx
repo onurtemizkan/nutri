@@ -122,7 +122,10 @@ export default function ProfileScreen() {
   const pickImageFromLibrary = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      showAlert('Permission Required', 'Please allow access to your photo library to select a profile picture.');
+      showAlert(
+        'Permission Required',
+        'Please allow access to your photo library to select a profile picture.'
+      );
       return;
     }
 
@@ -141,7 +144,10 @@ export default function ProfileScreen() {
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      showAlert('Permission Required', 'Please allow access to your camera to take a profile picture.');
+      showAlert(
+        'Permission Required',
+        'Please allow access to your camera to take a profile picture.'
+      );
       return;
     }
 
@@ -356,7 +362,10 @@ export default function ProfileScreen() {
     // Calculate remaining days for trial
     let remainingDays = 0;
     if (tier === 'PRO_TRIAL' && endDate) {
-      remainingDays = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+      remainingDays = Math.max(
+        0,
+        Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      );
     }
 
     // Format end date
@@ -365,9 +374,7 @@ export default function ProfileScreen() {
       : null;
 
     // Format price
-    const formattedPrice = user?.subscriptionPrice
-      ? `$${user.subscriptionPrice.toFixed(2)}`
-      : null;
+    const formattedPrice = user?.subscriptionPrice ? `$${user.subscriptionPrice.toFixed(2)}` : null;
 
     // Billing cycle label
     const billingCycleLabel = user?.subscriptionBillingCycle === 'ANNUAL' ? 'Annual' : 'Monthly';
@@ -380,7 +387,12 @@ export default function ProfileScreen() {
       billingCycleLabel,
       isExpired: endDate ? endDate < now : false,
     };
-  }, [user?.subscriptionTier, user?.subscriptionEndDate, user?.subscriptionPrice, user?.subscriptionBillingCycle]);
+  }, [
+    user?.subscriptionTier,
+    user?.subscriptionEndDate,
+    user?.subscriptionPrice,
+    user?.subscriptionBillingCycle,
+  ]);
 
   const getSubscriptionBadgeStyle = (tier: SubscriptionTier) => {
     switch (tier) {
@@ -407,11 +419,13 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container} testID="profile-screen">
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={[
-          styles.content,
-          { padding: contentPadding },
-          maxContentWidth && { maxWidth: maxContentWidth, alignSelf: 'center', width: '100%' }
-        ]}>
+        <View
+          style={[
+            styles.content,
+            { padding: contentPadding },
+            maxContentWidth && { maxWidth: maxContentWidth, alignSelf: 'center', width: '100%' },
+          ]}
+        >
           {/* Profile Header */}
           <View style={styles.profileHeader} testID="profile-header">
             <TouchableOpacity
@@ -430,7 +444,7 @@ export default function ProfileScreen() {
                     source={{ uri: user.profilePicture }}
                     style={[
                       styles.avatarImage,
-                      { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }
+                      { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 },
                     ]}
                   />
                 ) : (
@@ -440,12 +454,10 @@ export default function ProfileScreen() {
                     end={{ x: 1, y: 1 }}
                     style={[
                       styles.avatar,
-                      { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }
+                      { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 },
                     ]}
                   >
-                    <Text style={styles.avatarText}>
-                      {user?.name.charAt(0).toUpperCase()}
-                    </Text>
+                    <Text style={styles.avatarText}>{user?.name.charAt(0).toUpperCase()}</Text>
                   </LinearGradient>
                 )}
                 {isUploadingPicture ? (
@@ -471,23 +483,28 @@ export default function ProfileScreen() {
 
             <View style={styles.subscriptionCard}>
               <View style={styles.subscriptionHeader}>
-                <View style={[styles.subscriptionBadge, getSubscriptionBadgeStyle(subscriptionInfo.tier)]}>
+                <View
+                  style={[
+                    styles.subscriptionBadge,
+                    getSubscriptionBadgeStyle(subscriptionInfo.tier),
+                  ]}
+                >
                   <Text style={styles.subscriptionBadgeText}>
                     {getSubscriptionLabel(subscriptionInfo.tier)}
                   </Text>
                 </View>
                 {subscriptionInfo.tier === 'PRO' && (
                   <View style={styles.subscriptionCycleBadge}>
-                    <Text style={styles.subscriptionCycleText}>{subscriptionInfo.billingCycleLabel}</Text>
+                    <Text style={styles.subscriptionCycleText}>
+                      {subscriptionInfo.billingCycleLabel}
+                    </Text>
                   </View>
                 )}
               </View>
 
               {/* Free tier */}
               {subscriptionInfo.tier === 'FREE' && (
-                <Text style={styles.subscriptionDescription}>
-                  Basic features included
-                </Text>
+                <Text style={styles.subscriptionDescription}>Basic features included</Text>
               )}
 
               {/* Pro Trial */}
@@ -519,7 +536,8 @@ export default function ProfileScreen() {
                     <View style={styles.subscriptionDetailRow}>
                       <Ionicons name="calendar-outline" size={16} color={colors.text.tertiary} />
                       <Text style={styles.subscriptionDetailText}>
-                        {subscriptionInfo.isExpired ? 'Expired' : 'Renews'} {subscriptionInfo.formattedEndDate}
+                        {subscriptionInfo.isExpired ? 'Expired' : 'Renews'}{' '}
+                        {subscriptionInfo.formattedEndDate}
                       </Text>
                     </View>
                   )}
@@ -527,7 +545,8 @@ export default function ProfileScreen() {
                     <View style={styles.subscriptionDetailRow}>
                       <Ionicons name="card-outline" size={16} color={colors.text.tertiary} />
                       <Text style={styles.subscriptionDetailText}>
-                        {subscriptionInfo.formattedPrice}/{subscriptionInfo.billingCycleLabel === 'Annual' ? 'year' : 'month'}
+                        {subscriptionInfo.formattedPrice}/
+                        {subscriptionInfo.billingCycleLabel === 'Annual' ? 'year' : 'month'}
                       </Text>
                     </View>
                   )}
@@ -648,7 +667,9 @@ export default function ProfileScreen() {
                     testID="profile-save-goals-button"
                   >
                     <LinearGradient
-                      colors={isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary}
+                      colors={
+                        isLoading ? [colors.text.disabled, colors.text.disabled] : gradients.primary
+                      }
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                       style={styles.saveButtonGradient}
@@ -723,7 +744,7 @@ export default function ProfileScreen() {
             <Text style={styles.sectionTitle}>Notifications</Text>
 
             <TouchableOpacity
-              style={[styles.menuItemWithArrow, styles.menuItemLast]}
+              style={styles.menuItemWithArrow}
               onPress={() => router.push('/notification-settings')}
               accessibilityRole="button"
               accessibilityLabel="Notification preferences"
@@ -732,15 +753,29 @@ export default function ProfileScreen() {
             >
               <View style={styles.menuItemLeft}>
                 <View style={styles.menuItemIcon}>
-                  <Ionicons
-                    name="notifications"
-                    size={20}
-                    color={colors.primary.main}
-                  />
+                  <Ionicons name="notifications" size={20} color={colors.primary.main} />
                 </View>
                 <View>
-                  <Text style={styles.menuItemText}>Notification Preferences</Text>
+                  <Text style={styles.menuItemText}>Push Notifications</Text>
                   <Text style={styles.menuItemSubtext}>Manage reminders and alerts</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.menuItemWithArrow, styles.menuItemLast]}
+              onPress={() => router.push('/email-settings')}
+              accessibilityLabel="Manage email preferences"
+              testID="email-settings-button"
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={styles.menuItemIcon}>
+                  <Ionicons name="mail" size={20} color={colors.primary.main} />
+                </View>
+                <View>
+                  <Text style={styles.menuItemText}>Email Preferences</Text>
+                  <Text style={styles.menuItemSubtext}>Choose which emails to receive</Text>
                 </View>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
@@ -761,11 +796,7 @@ export default function ProfileScreen() {
             >
               <View style={styles.menuItemLeft}>
                 <View style={styles.menuItemIcon}>
-                  <Ionicons
-                    name="medical"
-                    size={20}
-                    color={colors.primary.main}
-                  />
+                  <Ionicons name="medical" size={20} color={colors.primary.main} />
                 </View>
                 <View>
                   <Text style={styles.menuItemText}>Manage Supplements</Text>
@@ -790,11 +821,7 @@ export default function ProfileScreen() {
             >
               <View style={styles.menuItemLeft}>
                 <View style={styles.menuItemIcon}>
-                  <Ionicons
-                    name="document-text"
-                    size={20}
-                    color={colors.text.tertiary}
-                  />
+                  <Ionicons name="document-text" size={20} color={colors.text.tertiary} />
                 </View>
                 <View>
                   <Text style={styles.menuItemText}>Terms & Conditions</Text>
@@ -814,11 +841,7 @@ export default function ProfileScreen() {
             >
               <View style={styles.menuItemLeft}>
                 <View style={styles.menuItemIcon}>
-                  <Ionicons
-                    name="shield-checkmark"
-                    size={20}
-                    color={colors.text.tertiary}
-                  />
+                  <Ionicons name="shield-checkmark" size={20} color={colors.text.tertiary} />
                 </View>
                 <View>
                   <Text style={styles.menuItemText}>Privacy Policy</Text>
@@ -880,7 +903,8 @@ export default function ProfileScreen() {
             </View>
 
             <Text style={styles.modalDescription}>
-              This action is permanent and cannot be undone. All your data will be permanently deleted, including:
+              This action is permanent and cannot be undone. All your data will be permanently
+              deleted, including:
             </Text>
 
             <View style={styles.modalList}>

@@ -229,6 +229,262 @@ export const adminApi = {
     api.get<{ logs: unknown[]; pagination: unknown }>('/admin/audit-logs', {
       params,
     }),
+
+  // Email Templates
+  getEmailTemplates: (params?: {
+    category?: 'TRANSACTIONAL' | 'MARKETING';
+    isActive?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) =>
+    api.get<{ templates: EmailTemplate[]; pagination: Pagination }>(
+      '/admin/email/templates',
+      { params }
+    ),
+
+  getEmailTemplate: (id: string) =>
+    api.get<EmailTemplate>(`/admin/email/templates/${id}`),
+
+  createEmailTemplate: (data: CreateEmailTemplateData) =>
+    api.post<EmailTemplate>('/admin/email/templates', data),
+
+  updateEmailTemplate: (id: string, data: Partial<CreateEmailTemplateData>) =>
+    api.put<EmailTemplate>(`/admin/email/templates/${id}`, data),
+
+  deleteEmailTemplate: (id: string) =>
+    api.delete(`/admin/email/templates/${id}`),
+
+  previewEmailTemplate: (id: string, testData?: Record<string, unknown>) =>
+    api.post<{ html: string; subject: string }>(
+      `/admin/email/templates/${id}/preview`,
+      { testData }
+    ),
+
+  sendTestEmail: (id: string, email: string, testData?: Record<string, unknown>) =>
+    api.post(`/admin/email/templates/${id}/test`, { email, testData }),
+
+  // Template Versions
+  getEmailTemplateVersions: (
+    id: string,
+    params?: { page?: number; limit?: number }
+  ) =>
+    api.get<{
+      versions: EmailTemplateVersion[];
+      currentVersion: number;
+      pagination: Pagination;
+    }>(`/admin/email/templates/${id}/versions`, { params }),
+
+  getEmailTemplateVersion: (id: string, version: number) =>
+    api.get<{ version: EmailTemplateVersion }>(
+      `/admin/email/templates/${id}/versions/${version}`
+    ),
+
+  restoreEmailTemplateVersion: (id: string, version: number) =>
+    api.post<{ template: EmailTemplate; message: string }>(
+      `/admin/email/templates/${id}/versions/${version}/restore`
+    ),
+
+  // Email Campaigns
+  getEmailCampaigns: (params?: {
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) =>
+    api.get<{ campaigns: EmailCampaign[]; pagination: Pagination }>(
+      '/admin/email/campaigns',
+      { params }
+    ),
+
+  getEmailCampaign: (id: string) =>
+    api.get<EmailCampaign>(`/admin/email/campaigns/${id}`),
+
+  createEmailCampaign: (data: CreateEmailCampaignData) =>
+    api.post<EmailCampaign>('/admin/email/campaigns', data),
+
+  updateEmailCampaign: (id: string, data: Partial<CreateEmailCampaignData>) =>
+    api.put<EmailCampaign>(`/admin/email/campaigns/${id}`, data),
+
+  deleteEmailCampaign: (id: string) =>
+    api.delete(`/admin/email/campaigns/${id}`),
+
+  sendEmailCampaign: (id: string) =>
+    api.post(`/admin/email/campaigns/${id}/send`),
+
+  cancelEmailCampaign: (id: string) =>
+    api.post(`/admin/email/campaigns/${id}/cancel`),
+
+  // Email Sequences
+  getEmailSequences: (params?: {
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) =>
+    api.get<{ sequences: EmailSequence[]; pagination: Pagination }>(
+      '/admin/email/sequences',
+      { params }
+    ),
+
+  getEmailSequence: (id: string) =>
+    api.get<EmailSequence>(`/admin/email/sequences/${id}`),
+
+  createEmailSequence: (data: CreateEmailSequenceData) =>
+    api.post<EmailSequence>('/admin/email/sequences', data),
+
+  updateEmailSequence: (id: string, data: Partial<CreateEmailSequenceData>) =>
+    api.put<EmailSequence>(`/admin/email/sequences/${id}`, data),
+
+  deleteEmailSequence: (id: string) =>
+    api.delete(`/admin/email/sequences/${id}`),
+
+  // Email Analytics
+  getEmailAnalytics: (params?: { days?: number }) =>
+    api.get<EmailAnalytics>('/admin/email/analytics', { params }),
+
+  getEmailSubscriberStats: () =>
+    api.get<SubscriberStats>('/admin/email/subscribers'),
 };
+
+// Email Types
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  slug: string;
+  category: 'TRANSACTIONAL' | 'MARKETING';
+  subject: string;
+  mjmlContent: string;
+  htmlContent: string | null;
+  variables: Record<string, unknown>;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateEmailTemplateData {
+  name: string;
+  slug: string;
+  category: 'TRANSACTIONAL' | 'MARKETING';
+  subject: string;
+  mjmlContent: string;
+  variables?: Record<string, unknown>;
+}
+
+export interface EmailTemplateVersion {
+  id: string;
+  templateId: string;
+  version: number;
+  subject: string;
+  mjmlContent: string;
+  htmlContent: string | null;
+  plainTextContent: string | null;
+  variables: Record<string, unknown> | null;
+  changeNotes: string | null;
+  createdByAdminId: string | null;
+  createdAt: string;
+}
+
+export interface EmailCampaign {
+  id: string;
+  name: string;
+  description: string | null;
+  templateId: string;
+  template?: EmailTemplate;
+  status: 'DRAFT' | 'SCHEDULED' | 'SENDING' | 'SENT' | 'CANCELLED';
+  scheduledAt: string | null;
+  sentAt: string | null;
+  completedAt: string | null;
+  segmentCriteria: Record<string, unknown>;
+  estimatedAudience: number;
+  actualSent: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateEmailCampaignData {
+  name: string;
+  description?: string;
+  templateId: string;
+  scheduledAt?: string;
+  segmentCriteria?: Record<string, unknown>;
+}
+
+export interface EmailSequence {
+  id: string;
+  name: string;
+  description: string | null;
+  triggerEvent: string;
+  isActive: boolean;
+  steps: unknown[];
+  enrollmentCriteria: Record<string, unknown>;
+  exitCriteria: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    enrollments: number;
+  };
+}
+
+export interface CreateEmailSequenceData {
+  name: string;
+  description?: string;
+  triggerEvent: string;
+  isActive?: boolean;
+  steps?: unknown[];
+  enrollmentCriteria?: Record<string, unknown>;
+  exitCriteria?: Record<string, unknown>;
+}
+
+export interface EmailAnalytics {
+  period: {
+    days: number;
+    startDate: string;
+  };
+  overview: {
+    totalEmails: number;
+    delivered: number;
+    opened: number;
+    clicked: number;
+    bounced: number;
+    complained: number;
+    openRate: string;
+    clickRate: string;
+    bounceRate: string;
+    complaintRate: string;
+  };
+  dailyStats: {
+    date: string;
+    sent: number;
+    opened: number;
+    clicked: number;
+  }[];
+  topCampaigns: {
+    id: string;
+    name: string;
+    sentAt: string;
+    actualSent: number;
+    openedCount: number;
+    clickedCount: number;
+  }[];
+  bouncesByType: {
+    type: string;
+    count: number;
+  }[];
+}
+
+export interface SubscriberStats {
+  totalSubscribers: number;
+  unsubscribed: number;
+  subscribed: number;
+  marketingOptIn: number;
+  doubleOptInConfirmed: number;
+  subscriptionRate: string;
+}
+
+export interface Pagination {
+  page: number;
+  limit: number;
+  totalPages: number;
+  totalItems: number;
+}
 
 export default apiClient;

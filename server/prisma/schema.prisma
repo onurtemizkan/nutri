@@ -95,6 +95,9 @@ model User {
   dataDeletionRequests DataDeletionRequest[]
   privacySettings      PrivacySettings?
 
+  // Email Marketing
+  emailPreference      EmailPreference?
+
   @@index([email])
   @@index([appleId])
   @@index([resetToken])
@@ -1673,16 +1676,42 @@ model EmailTemplate {
   isActive        Boolean         @default(true)
 
   // Audit
-  createdBy       String?         // AdminUser ID
-  updatedBy       String?         // AdminUser ID
+  createdByAdminId String?        // AdminUser ID
+  updatedByAdminId String?        // AdminUser ID
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
   // Relations
   campaigns       EmailCampaign[]
+  versions        EmailTemplateVersion[]
 
   @@index([slug])
   @@index([category, isActive])
+}
+
+/**
+ * EmailTemplateVersion - Historical versions of email templates
+ */
+model EmailTemplateVersion {
+  id              String        @id @default(cuid())
+  templateId      String
+  template        EmailTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  // Snapshot of template at this version
+  version         Int           // Version number
+  subject         String
+  mjmlContent     String        @db.Text
+  htmlContent     String?       @db.Text
+  plainTextContent String?      @db.Text
+  variables       Json?
+
+  // Metadata
+  changeNotes     String?       // Optional notes about what changed
+  createdByAdminId String?
+  createdAt       DateTime      @default(now())
+
+  @@unique([templateId, version])
+  @@index([templateId, version])
 }
 
 /**
@@ -1725,7 +1754,7 @@ model EmailCampaign {
   complainedCount     Int                 @default(0)
 
   // Audit
-  createdBy           String?             // AdminUser ID
+  createdByAdminId    String?             // AdminUser ID
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
 
@@ -1734,6 +1763,7 @@ model EmailCampaign {
 
   @@index([status, scheduledAt])
   @@index([templateId])
+  @@index([createdByAdminId])
 }
 
 /**
@@ -1755,7 +1785,8 @@ model EmailLog {
   status              EmailLogStatus  @default(QUEUED)
 
   // Provider info
-  providerMessageId   String?         // Resend/SendGrid message ID
+  providerId          String?         // Resend/SendGrid message ID
+  providerError       String?         // Error message from provider
 
   // Timestamps for delivery funnel
   queuedAt            DateTime        @default(now())
@@ -1790,6 +1821,7 @@ model EmailLog {
   @@index([templateSlug])
   @@index([status])
   @@index([email])
+  @@index([providerId])
 }
 
 /**
@@ -1799,6 +1831,7 @@ model EmailLog {
 model EmailPreference {
   id                      String          @id @default(cuid())
   userId                  String          @unique
+  user                    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Category preferences (JSON for flexibility)
   // {weekly_reports: true, health_insights: true, tips: true, features: true, promotions: false}
@@ -1867,7 +1900,7 @@ model EmailSequence {
   exitedEnrollments   Int                     @default(0)
 
   // Audit
-  createdBy           String?                 // AdminUser ID
+  createdByAdminId    String?                 // AdminUser ID
   createdAt           DateTime                @default(now())
   updatedAt           DateTime                @updatedAt
 
