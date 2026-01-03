@@ -89,6 +89,12 @@ model User {
   glucoseReadings GlucoseReading[]
   cgmConnections  CGMConnection[]
 
+  // GDPR Compliance
+  consents             UserConsent[]
+  dataExportRequests   DataExportRequest[]
+  dataDeletionRequests DataDeletionRequest[]
+  privacySettings      PrivacySettings?
+
   @@index([email])
   @@index([appleId])
   @@index([resetToken])
