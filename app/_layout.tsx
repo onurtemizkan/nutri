@@ -368,6 +368,20 @@ function RootLayoutNav() {
           presentation: 'modal',
         }}
       />
+      <Stack.Screen
+        name="predictions/index"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="predictions/[metric]"
+        options={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      />
       <Stack.Screen name="+not-found" options={{ headerShown: false }} />
     </Stack>
   );
