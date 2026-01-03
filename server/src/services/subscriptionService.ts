@@ -482,7 +482,7 @@ export async function restorePurchases(
 
       // Check if subscription is still valid
       const now = new Date();
-      if (subscription.expiresAt < now) {
+      if (!subscription.expiresAt || subscription.expiresAt < now) {
         errors.push(`Transaction ${transactionId} has expired`);
         continue;
       }
