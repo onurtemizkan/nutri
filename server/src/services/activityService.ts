@@ -8,6 +8,7 @@ import {
 import { Prisma } from '@prisma/client';
 import { DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT, WEEK_IN_DAYS } from '../config/constants';
 import { getDayBoundaries, getDaysAgo } from '../utils/dateHelpers';
+import { gamificationService } from './gamificationService';
 
 export class ActivityService {
   /**
@@ -32,6 +33,9 @@ export class ActivityService {
         notes: data.notes,
       },
     });
+
+    // Trigger gamification events for exercise logging
+    await gamificationService.onExerciseLogged(userId, activity.id);
 
     return activity;
   }
