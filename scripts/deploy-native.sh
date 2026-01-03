@@ -85,6 +85,20 @@ DEVICE_UDID=$(echo "$DEVICE_INFO" | sed -E 's/.*\(([A-Fa-f0-9-]+)\)$/\1/')
 print_success "Found: $DEVICE_NAME"
 print_success "UDID: $DEVICE_UDID"
 
+cd "$PROJECT_DIR"
+
+# For Release builds, remove push notification entitlement (requires Apple Developer setup)
+if [ "$CONFIGURATION" = "Release" ]; then
+    print_step "Preparing for production build..."
+    # Remove aps-environment entitlement that requires Push Notifications capability
+    ENTITLEMENTS_FILE="$IOS_DIR/nutri/nutri.entitlements"
+    if [ -f "$ENTITLEMENTS_FILE" ] && grep -q "aps-environment" "$ENTITLEMENTS_FILE"; then
+        # Remove aps-environment entries from entitlements
+        sed -i '' '/<key>aps-environment<\/key>/,/<\/string>/d' "$ENTITLEMENTS_FILE"
+        print_success "Removed push notification entitlement for local build"
+    fi
+fi
+
 cd "$IOS_DIR"
 
 # Clean if requested
@@ -103,6 +117,9 @@ xcodebuild \
     -scheme nutri \
     -destination "id=$DEVICE_UDID" \
     -configuration "$CONFIGURATION" \
+    -allowProvisioningUpdates \
+    DEVELOPMENT_TEAM="6FJ4QBBQTK" \
+    CODE_SIGN_STYLE="Automatic" \
     build \
     2>&1 | grep -E "(error:|warning:|BUILD|Signing|Compiling|Linking)" | head -50
 

@@ -12,6 +12,7 @@ const PRODUCTION_API_URL = process.env.PRODUCTION_API_URL;
 const BETA_API_URL = process.env.BETA_API_URL;
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL;
 const APP_ENV = process.env.APP_ENV || 'production'; // 'production', 'beta', or 'development'
+const EXCLUDE_DEV_CLIENT = process.env.EXCLUDE_DEV_CLIENT === 'true';
 
 module.exports = {
   expo: {
@@ -28,6 +29,7 @@ module.exports = {
       requireFullScreen: false, // Allow iPad multitasking (Split View, Slide Over)
       bundleIdentifier: 'com.anonymous.nutri',
       bitcode: false,
+      appleTeamId: '6FJ4QBBQTK',
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         NSCameraUsageDescription:
@@ -69,6 +71,8 @@ module.exports = {
       favicon: './assets/images/favicon.png',
     },
     plugins: [
+      // Conditionally include expo-dev-client (excluded in production builds)
+      ...(EXCLUDE_DEV_CLIENT ? [] : ['expo-dev-client']),
       'expo-router',
       [
         'expo-screen-orientation',

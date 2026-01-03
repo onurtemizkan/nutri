@@ -53,6 +53,16 @@
       "ios": {
         "resourceClass": "default"
       }
+    },
+    "production-device": {
+      "distribution": "internal",
+      "ios": {
+        "buildConfiguration": "Release",
+        "resourceClass": "default"
+      },
+      "env": {
+        "EXCLUDE_DEV_CLIENT": "true"
+      }
     }
   },
   "submit": {
