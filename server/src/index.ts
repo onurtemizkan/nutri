@@ -35,6 +35,10 @@ import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { ExpressAdapter } from '@bull-board/express';
 
+// Swagger/OpenAPI documentation
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
+
 // Import version from package.json
 const packageJson = require('../package.json');
 
@@ -365,6 +369,36 @@ app.get('/health', async (_req, res) => {
     checks,
   });
 });
+
+// =============================================================================
+// API Documentation (Swagger UI)
+// Only enabled in development or when ENABLE_SWAGGER=true
+// =============================================================================
+if (config.nodeEnv !== 'production' || process.env.ENABLE_SWAGGER === 'true') {
+  // Security warning for production Swagger exposure
+  if (config.nodeEnv === 'production' && process.env.ENABLE_SWAGGER === 'true') {
+    logger.warn(
+      'SECURITY WARNING: Swagger UI is enabled in production. ' +
+        'This exposes API documentation publicly. ' +
+        'Consider disabling ENABLE_SWAGGER or adding authentication to /api-docs.'
+    );
+  }
+
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: 'Nutri API Documentation',
+    })
+  );
+  logger.info('Swagger UI enabled at /api-docs');
+} else {
+  // Return 404 for /api-docs in production (unless explicitly enabled)
+  app.use('/api-docs', (_req, res) => {
+    res.status(404).json({ error: 'API documentation not available in production' });
+  });
+}
 
 // Routes
 app.use('/api/auth', authRoutes);

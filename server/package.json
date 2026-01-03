@@ -60,6 +60,8 @@
     "resend": "^6.6.0",
     "sanitize-html": "^2.17.0",
     "speakeasy": "^2.0.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "zod": "^3.24.1"
   },
   "devDependencies": {
@@ -77,6 +79,8 @@
     "@types/sanitize-html": "^2.16.0",
     "@types/speakeasy": "^2.0.10",
     "@types/supertest": "^6.0.3",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "@typescript-eslint/eslint-plugin": "^8.21.0",
     "@typescript-eslint/parser": "^8.21.0",
     "eslint": "^9.18.0",
