@@ -53,8 +53,8 @@
     "prebuild:ios:clean": "npx expo prebuild --platform ios --clean",
     "deploy:native": "./scripts/deploy-native.sh",
     "deploy:native:debug": "./scripts/deploy-native.sh --debug",
-    "deploy:native:clean": "./scripts/deploy-native.sh --clean",
-    "deploy:native:prod": "EXCLUDE_DEV_CLIENT=true npx expo prebuild --platform ios --clean && npm run deploy:native",
+    "deploy:native:clean": "./scripts/deploy-native.sh --clean --prebuild",
+    "deploy:native:fresh": "./scripts/deploy-native.sh --clean --prebuild",
     "prepare": "husky"
   },
   "dependencies": {
